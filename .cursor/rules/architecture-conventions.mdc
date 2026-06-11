@@ -1,0 +1,107 @@
+---
+description: Coding conventions, patterns, and architectural decisions for the portal
+alwaysApply: true
+---
+
+# Architecture Conventions
+
+## Component Patterns
+
+### Pages are thin — logic lives in features
+```tsx
+// ✅ app/dashboard/page.tsx — just wraps the feature
+"use client";
+import { AppLayout } from "@/layouts/AppLayout";
+import { DashboardPage } from "@/features/dashboard/DashboardPage";
+
+export default function Dashboard() {
+  return <AppLayout><DashboardPage /></AppLayout>;
+}
+```
+
+### Use `AppLayout` for all authenticated pages
+All pages inside `dashboard`, `applications`, `profile` must be wrapped in `AppLayout`. The wizard (`loan-application/*`) has its own full-screen layout and does NOT use `AppLayout`.
+
+### Server vs Client components
+- All interactive components must have `"use client"` at the top.
+- Pages that use hooks (`useQuery`, `useStore`, etc.) must be `"use client"`.
+- Metadata exports can only be in Server Components (remove `"use client"` if exporting `metadata`).
+
+## State Management
+
+### TanStack Query — server/async state
+```tsx
+const { data, isLoading } = useQuery({
+  queryKey: ["applications"],
+  queryFn: () => applicationService.getApplications(),
+});
+```
+Query keys: always use descriptive string arrays. Mutations use `useMutation`.
+
+### Zustand — UI/client state
+Two stores exist. Do not add more stores; extend these if needed:
+- `useAuthStore` — user session (`user`, `isAuthenticated`, `setUser`, `logout`)
+- `useWizardStore` — wizard drafts and form data (persisted to localStorage)
+
+```tsx
+const { user, setUser } = useAuthStore();
+const { updateFormData, getDraft } = useWizardStore();
+```
+
+## Styling Rules
+
+- Use `cn()` from `@/lib/utils` for conditional class merging (clsx + tailwind-merge).
+- Design tokens are CSS variables in `globals.css` — always use semantic names (`bg-primary`, `text-muted-foreground`, `border-input`), not raw colors.
+- Tailwind CSS v3 syntax — use `@tailwind base/components/utilities` in CSS, NOT `@import "tailwindcss"` (that is v4 syntax).
+- Tailwind config is at `tailwind.config.ts`. The `content` array includes `src/features/**` and `src/layouts/**`.
+
+## Forms
+
+- All forms use **React Hook Form** with `zodResolver`.
+- Zod version is **v3** — use `z.string().min()`, `z.coerce.number()`, etc. (not v4 API).
+- Never call `useForm` inside a loop or callback — it violates React Hook rules.
+- For inline try/catch: never return JSX from inside a `try` block (ESLint rule). Compute the value first, then return JSX.
+
+```tsx
+// ❌ BAD
+try { return <span>{formatDate(val)}</span>; } catch {}
+
+// ✅ GOOD
+let formatted = val;
+try { formatted = formatDate(val); } catch { /* noop */ }
+return <span>{formatted}</span>;
+```
+
+## Services (Mock API)
+
+All services simulate network delay via `sleep()` and return mock data. They use localStorage for persistence. When the real API is available, replace service methods with `apiClient` (Axios) calls — the interfaces stay identical.
+
+```tsx
+// Pattern for adding a new service call
+export const myService = {
+  async getData(): Promise<MyType> {
+    await sleep(500); // simulate latency
+    return MOCK_DATA;
+  }
+};
+```
+
+## Import Aliases
+
+Always use `@/` alias (maps to `src/`). Never use relative `../../` imports.
+
+```tsx
+import { cn } from "@/lib/utils";           // ✅
+import { cn } from "../../lib/utils";        // ❌
+```
+
+## File Naming
+
+| Type | Convention | Example |
+|------|-----------|---------|
+| Pages | `page.tsx` | `app/dashboard/page.tsx` |
+| Features | PascalCase | `DashboardPage.tsx` |
+| UI components | PascalCase | `Button.tsx` |
+| Services | camelCase | `auth.service.ts` |
+| Stores | camelCase | `auth.store.ts` |
+| Types | `index.ts` in `types/` | `types/index.ts` |

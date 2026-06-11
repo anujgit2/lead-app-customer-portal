@@ -1,0 +1,101 @@
+---
+description: Project overview, tech stack, and folder structure for the Loan Origination Customer Portal
+alwaysApply: true
+---
+
+# Lead App — Loan Origination Customer Portal
+
+A production-grade, JSON-driven Loan Origination Customer Portal. All loan forms render dynamically from a `LoanProduct` JSON configuration — nothing is hardcoded.
+
+## Tech Stack
+
+| Layer | Library | Version |
+|-------|---------|---------|
+| Framework | Next.js (App Router) | 15.3.3 |
+| Language | TypeScript strict mode | 5.x |
+| Styling | Tailwind CSS | v3 |
+| UI Primitives | Radix UI + custom Shadcn-style components | — |
+| Forms | React Hook Form + Zod | RHF 7, Zod 3 |
+| Server state | TanStack Query | v5 |
+| Client state | Zustand (persisted) | v5 |
+| HTTP | Axios | — |
+| File upload | react-dropzone | — |
+| Toasts | sonner | — |
+| Icons | lucide-react | — |
+
+**Node.js:** v22 installed via Homebrew at `/usr/local/opt/node@22/bin`. Always prefix commands with:
+```bash
+export PATH="/usr/local/opt/node@22/bin:$PATH"
+```
+
+## Folder Structure
+
+```
+src/
+├── app/                        # Next.js App Router pages
+│   ├── auth/login/page.tsx
+│   ├── auth/register/page.tsx
+│   ├── dashboard/page.tsx
+│   ├── applications/page.tsx
+│   ├── profile/page.tsx
+│   ├── loan-application/
+│   │   ├── new/page.tsx        # Start new application
+│   │   └── [id]/page.tsx       # Resume draft
+│   ├── layout.tsx
+│   ├── providers.tsx           # QueryClient + Toaster
+│   └── globals.css
+│
+├── components/
+│   ├── ui/                     # Reusable UI primitives (Button, Card, Input…)
+│   └── forms/                  # Form engine components
+│       ├── DynamicField.tsx    # Renders any field type from JSON
+│       ├── DynamicSection.tsx  # Renders a section (supports repeatable)
+│       ├── DynamicForm.tsx     # Full form from a FormTemplate
+│       └── FileUploadField.tsx # Drag-drop upload with progress
+│
+├── features/
+│   ├── auth/                   # LoginForm, RegisterForm
+│   ├── dashboard/              # DashboardPage
+│   ├── profile/                # ProfilePage (tabs: Personal, Contact, Security)
+│   └── loan-application/       # FormWizard, WizardStep, WizardProgress, ReviewScreen
+│
+├── layouts/
+│   └── AppLayout.tsx           # Top navbar + mobile drawer (wraps dashboard pages)
+│
+├── services/
+│   ├── auth.service.ts         # login, register, logout, getProfile, updateProfile
+│   ├── application.service.ts  # getApplications, saveDraft, submitApplication
+│   └── mock-data.ts            # MOCK_USER, MOCK_APPLICATIONS, LOAN_FORM_TEMPLATES
+│
+├── store/
+│   ├── auth.store.ts           # Zustand: { user, isAuthenticated, setUser, logout }
+│   └── wizard.store.ts         # Zustand: wizard drafts, step state, formData
+│
+├── types/index.ts              # All TypeScript types (FormTemplate, FormField, etc.)
+├── utils/schema-builder.ts     # Dynamic Zod schema from FormTemplate JSON
+└── lib/
+    ├── utils.ts                # cn(), formatCurrency(), getPasswordStrength(), etc.
+    ├── axios.ts                # Axios instance with auth interceptors
+    └── query-client.ts         # TanStack QueryClient singleton
+```
+
+## Available Routes
+
+| Route | Description |
+|-------|-------------|
+| `/` | Redirects to `/auth/login` |
+| `/auth/login` | Login (demo: demo@example.com / Password@123) |
+| `/auth/register` | Registration with password strength |
+| `/dashboard` | Summary cards + recent applications |
+| `/applications` | All applications list |
+| `/profile` | User profile with 3 tabs |
+| `/loan-application/new` | Start a new loan wizard |
+| `/loan-application/[id]` | Resume a draft wizard |
+
+## Dev Commands
+
+```bash
+npm run dev       # Start dev server (localhost:3000)
+npm run build     # Production build
+npm run lint      # ESLint
+```

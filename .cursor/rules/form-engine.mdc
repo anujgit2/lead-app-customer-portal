@@ -1,0 +1,149 @@
+---
+description: JSON-driven form engine — types, schema builder, and wizard architecture
+globs: src/components/forms/**,src/features/loan-application/**,src/utils/schema-builder.ts,src/types/index.ts,src/services/mock-data.ts
+alwaysApply: false
+---
+
+# Form Engine — JSON-Driven Wizard
+
+The entire loan application is rendered from a `LoanProduct` JSON config. **Never hardcode form fields.**
+
+## Core Type Hierarchy
+
+```
+LoanProduct
+└── templates: FormTemplate[]       ← each template = one wizard step
+    └── sections: FormSection[]     ← each section = one Card
+        └── fields: FormField[]     ← each field = one input
+            └── validation: FieldValidation
+```
+
+## FormTemplate — Wizard Step Config
+
+```ts
+interface FormTemplate {
+  code: string;         // unique key, used as formData key
+  title: string;        // step label
+  repeatable?: boolean; // true → user can add/remove instances (e.g. Owner Profile)
+  minInstances?: number;
+  maxInstances?: number;
+  sections: FormSection[];
+}
+```
+
+## FormSection — Card inside a Step
+
+```ts
+interface FormSection {
+  code: string;
+  title: string;
+  repeatable?: boolean;   // section-level repeatable (e.g. multiple addresses)
+  columns?: 1 | 2 | 3 | 4;
+  fields: FormField[];
+}
+```
+
+## FormField — Individual Input
+
+```ts
+interface FormField {
+  name: string;
+  label: string;
+  type: FieldType;        // see supported types below
+  placeholder?: string;
+  options?: FieldOption[]; // for 'select' type
+  validation?: FieldValidation;
+  span?: 1 | 2 | 3 | 4 | 6 | 12; // grid column span
+  accept?: string;        // for 'file' type (e.g. ".pdf,.jpg")
+  maxFiles?: number;
+  maxSize?: number;       // in MB
+}
+```
+
+## Supported Field Types → Component Mapping
+
+| `type` | Rendered as |
+|--------|-------------|
+| `text` | `<Input type="text">` |
+| `textarea` | `<Textarea>` |
+| `number` | `<Input type="number">` |
+| `currency` | Input with ₹ prefix |
+| `percentage` | Input with % suffix |
+| `email` | `<Input type="email">` |
+| `tel` | `<Input type="tel">` |
+| `checkbox` | `<Checkbox>` |
+| `select` | `<Select>` (Radix) |
+| `datetime` | `<Input type="date">` |
+| `file` | `<FileUploadField>` (drag-drop) |
+| `json` | `<Textarea>` (raw JSON) |
+
+## Validation Rules (Zod v3 generated dynamically)
+
+```ts
+interface FieldValidation {
+  required?: boolean;
+  maxLength?: number;
+  minLength?: number;
+  pattern?: string;       // regex string → z.string().regex(new RegExp(pattern))
+  min?: number;
+  max?: number;
+  minExclusive?: number;  // z.number().gt()
+  maxExclusive?: number;  // z.number().lt()
+  integer?: boolean;      // z.number().int()
+  email?: boolean;        // z.string().email()
+  phone?: boolean;        // regex validation
+  message?: string;       // custom error message
+}
+```
+
+Schema is built in `src/utils/schema-builder.ts`:
+- `buildFieldSchema(field)` → `z.ZodTypeAny`
+- `buildSectionSchema(section)` → `z.ZodObject`
+- `buildTemplateSchema(template)` → `z.ZodObject`
+
+## Form Data Shape
+
+State is stored in `useWizardStore` keyed by `templateCode`:
+
+```ts
+formData = {
+  "BUSINESS_PROFILE": {         // templateCode
+    "BUSINESS_DETAILS": { ... }, // sectionCode → field values
+    "BUSINESS_ADDRESS": { ... },
+  },
+  "OWNER_PROFILE": [            // repeatable template → array
+    { "OWNER_DETAILS": { ... } },
+    { "OWNER_DETAILS": { ... } },
+  ],
+}
+```
+
+## Wizard Step Components
+
+```
+FormWizard        — top-level orchestrator; owns step state, navigation, save/submit
+├── WizardProgress  — step indicator with completion dots
+├── WizardStep      — renders a single FormTemplate
+│   ├── SingleTemplateForm     — non-repeatable: FormProvider + DynamicSection[]
+│   └── RepeatableTemplateInstances → RepeatableInstance[] (each has own useForm)
+└── ReviewScreen    — shows all formData; edit buttons jump back to step
+```
+
+## Adding a New Wizard Step
+
+1. Add a new `FormTemplate` object to `templates[]` in `src/services/mock-data.ts`.
+2. No component changes needed — `FormWizard` iterates `product.templates` dynamically.
+
+## Adding a New Field Type
+
+1. Add the type string to `FieldType` union in `src/types/index.ts`.
+2. Handle it in `DynamicField.tsx` (render the right component).
+3. Handle it in `buildFieldSchema()` in `src/utils/schema-builder.ts` (Zod rule).
+
+## Mock Data Location
+
+`src/services/mock-data.ts` exports:
+- `MOCK_USER` — demo user object
+- `MOCK_APPLICATIONS` — 5 sample applications (draft/submitted/approved/rejected)
+- `MOCK_SUMMARY` — dashboard counts
+- `LOAN_FORM_TEMPLATES` — full 6-step `LoanProduct` for Business Loan

@@ -1,0 +1,138 @@
+---
+description: UI component library — available components, props, and usage patterns
+globs: src/components/**,src/features/**,src/layouts/**
+alwaysApply: false
+---
+
+# UI Component Library
+
+All components are in `src/components/ui/` and built on Radix UI primitives. Import from `@/components/ui/<name>`.
+
+## Available Components
+
+### Button
+```tsx
+import { Button } from "@/components/ui/button";
+
+<Button variant="default" size="default" loading={false}>Label</Button>
+
+// variants: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"
+// sizes:    "default" | "sm" | "lg" | "xl" | "icon"
+// loading:  shows spinner, disables button
+```
+
+### Input
+```tsx
+import { Input } from "@/components/ui/input";
+
+<Input
+  type="text"
+  placeholder="..."
+  error={!!errors.field}       // red border when true
+  startAdornment={<Icon />}   // left content
+  endAdornment={<Icon />}     // right content (e.g. show/hide password)
+/>
+```
+
+### Card
+```tsx
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+
+<Card>
+  <CardHeader>
+    <CardTitle>Title</CardTitle>
+    <CardDescription>Subtitle</CardDescription>
+  </CardHeader>
+  <CardContent>content</CardContent>
+</Card>
+```
+
+### Badge
+```tsx
+import { Badge } from "@/components/ui/badge";
+
+// variants: "default" | "secondary" | "destructive" | "outline"
+//         | "success" | "warning" | "info" | "draft"
+<Badge variant="success">Approved</Badge>
+```
+
+### Select (Radix)
+```tsx
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+
+<Select value={value} onValueChange={setValue}>
+  <SelectTrigger error={!!error}><SelectValue placeholder="Choose…" /></SelectTrigger>
+  <SelectContent>
+    <SelectItem value="opt1">Option 1</SelectItem>
+  </SelectContent>
+</Select>
+```
+
+### Tabs (Radix)
+```tsx
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+
+<Tabs defaultValue="tab1">
+  <TabsList>
+    <TabsTrigger value="tab1">Tab 1</TabsTrigger>
+  </TabsList>
+  <TabsContent value="tab1">Content</TabsContent>
+</Tabs>
+```
+
+### Other Components
+| Component | Import | Notes |
+|-----------|--------|-------|
+| `Checkbox` | `@/components/ui/checkbox` | Radix, use with Controller |
+| `Textarea` | `@/components/ui/textarea` | has `error` prop |
+| `Label` | `@/components/ui/label` | Radix |
+| `Progress` | `@/components/ui/progress` | `value` 0–100 |
+| `Separator` | `@/components/ui/separator` | horizontal/vertical |
+| `Avatar` + `AvatarFallback` | `@/components/ui/avatar` | Radix |
+| `Switch` | `@/components/ui/switch` | Radix |
+| `Dialog` + family | `@/components/ui/dialog` | Radix modal |
+| `Tooltip` | `@/components/ui/tooltip` | wrap in `TooltipProvider` |
+
+## Design Tokens (CSS Variables)
+
+```css
+--primary          /* blue — main CTAs */
+--secondary        /* light gray — secondary actions */
+--muted            /* very light — backgrounds */
+--muted-foreground /* medium gray — placeholders, hints */
+--destructive      /* red — errors, delete actions */
+--border           /* subtle border color */
+--card             /* white — card backgrounds */
+--radius           /* 0.75rem — border radius */
+```
+
+## Toast Notifications
+
+Uses **sonner**. Call anywhere in client components:
+```tsx
+import { toast } from "sonner";
+
+toast.success("Saved successfully");
+toast.error("Something went wrong");
+toast.info("Processing…");
+```
+`<Toaster>` is already mounted in `src/app/providers.tsx`.
+
+## Icons
+
+Use **lucide-react** exclusively:
+```tsx
+import { ArrowRight, Save, CheckCircle2 } from "lucide-react";
+<ArrowRight className="h-4 w-4" />
+```
+
+## Layout
+
+`AppLayout` provides the sticky top navbar (14px height), mobile drawer, and profile dropdown. All dashboard pages use it:
+```tsx
+<AppLayout>
+  <div className="p-6 sm:p-8 max-w-7xl mx-auto">
+    {/* page content */}
+  </div>
+</AppLayout>
+```
