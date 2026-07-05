@@ -1,12 +1,19 @@
 // ─── Auth Types ────────────────────────────────────────────────────────────────
 export interface User {
   id: string;
+  tenantId?: string;
   firstName: string;
+  middleName?: string | null;
   lastName: string;
   email: string;
-  mobile: string;
-  createdAt: string;
-  updatedAt: string;
+  phone: string;
+  profilePictureUrl?: string | null;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
+  consented?: boolean;
+  status?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AuthTokens {
@@ -54,6 +61,7 @@ export interface InvitationDetails {
   invitedPhone: string;
   status: InvitationStatus;
   expiresAt: string;
+  programId?: string;
   preFilledData?: InvitationPreFilledData;
 }
 
@@ -107,6 +115,7 @@ export interface LoanApplication {
   updatedAt: string;
   submittedAt?: string;
   userId: string;
+  programId?: string;
   formData?: Record<string, unknown>;
 }
 
@@ -221,6 +230,7 @@ export interface WizardStepStatus {
 export interface DraftApplication {
   applicationId?: string;
   productCode: string;
+  programId?: string;
   currentStep: number;
   formData: FormData;
   stepStatuses: WizardStepStatus[];
@@ -230,9 +240,15 @@ export interface DraftApplication {
 // ─── API Types ─────────────────────────────────────────────────────────────────
 export interface ApiResponse<T> {
   success: boolean;
-  data: T;
+  data?: T;
   message?: string;
+  error?: {
+    code?: string;
+    message?: string;
+    details?: string[];
+  };
   errors?: Record<string, string[]>;
+  timestamp?: string;
 }
 
 export interface PaginatedResponse<T> {

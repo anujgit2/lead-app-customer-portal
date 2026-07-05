@@ -41,7 +41,7 @@ function buildUserFromRegistration(
     firstName: data.firstName,
     lastName: data.lastName,
     email: data.email,
-    mobile: data.phone,
+    phone: data.phone,
     createdAt: now,
     updatedAt: now,
   };
@@ -131,23 +131,25 @@ export const authService = {
 
   async completeRegistration(
     registerData: RegisterApiRequest,
-    userId: string
+    userId: string,
+    accessToken?: string | null
   ): Promise<AuthResponse> {
     const user = buildUserFromRegistration(userId, registerData);
-    persistUser(user);
 
-    try {
-      return await this.login({
-        email: registerData.email,
-        password: registerData.password,
-        rememberMe: true,
-      });
-    } catch {
+    if (accessToken) {
+      persistTokens(accessToken, undefined, true);
+      persistUser(user);
       return {
         user,
-        tokens: { accessToken: "", refreshToken: "" },
+        tokens: { accessToken, refreshToken: "" },
       };
     }
+
+    return this.login({
+      email: registerData.email,
+      password: registerData.password,
+      rememberMe: true,
+    });
   },
 
   async logout(): Promise<void> {
@@ -161,7 +163,7 @@ export const authService = {
 
   async getProfile(): Promise<User> {
     try {
-      const { data } = await apiClient.get<User>("/auth/me");
+      const { data } = await apiClient.get<User>("/auth/profile");
       persistUser(data);
       return data;
     } catch {
@@ -173,11 +175,49 @@ export const authService = {
     }
   },
 
-  async updateProfile(data: Partial<User>): Promise<User> {
+  async updateProfile(data: { firstName: string; lastName: string }): Promise<User> {
     try {
-      const { data: updated } = await apiClient.patch<User>("/auth/me", data);
+      const { data: updated } = await apiClient.patch<User>("/auth/profile", data);
       persistUser(updated);
       return updated;
+    } catch (error) {
+      throw parseApiError(error);
+    }
+  },
+
+  async updateContact(data: { phone: string }): Promise<User> {
+    try {
+      const { data: updated } = await apiClient.patch<User>("/auth/profile", data);
+      persistUser(updated);
+      return updated;
+    } catch (error) {
+      throw parseApiError(error);
+    }
+  },
+
+  async forgotPassword(identifier: string): Promise<void> {
+    try {
+      await apiClient.post("/auth/password/forgot", {
+        identifier,
+        channel: "EMAIL",
+      });
+    } catch (error) {
+      throw parseApiError(error);
+    }
+  },
+
+  async resetPassword(data: {
+    identifier: string;
+    otp: string;
+    newPassword: string;
+  }): Promise<void> {
+    try {
+      await apiClient.post("/auth/password/reset", {
+        identifier: data.identifier,
+        channel: "EMAIL",
+        otp: data.otp,
+        newPassword: data.newPassword,
+      });
     } catch (error) {
       throw parseApiError(error);
     }

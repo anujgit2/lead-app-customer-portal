@@ -6,17 +6,50 @@ import { useQuery } from "@tanstack/react-query";
 import { FormWizard } from "@/features/loan-application/FormWizard";
 import { applicationService } from "@/services/application.service";
 import { Building2 } from "lucide-react";
+import { ErrorState } from "@/components/ErrorState";
+import { parseApiError } from "@/lib/api-error";
+import type { FormData } from "@/types";
+import { normalizeApplicationFormData } from "@/utils/prefill-mapper";
 
 export default function LoanApplicationPage() {
   const params = useParams();
-  const draftId = params.id as string;
+  const applicationId = params.id as string;
 
-  const { data: products, isLoading } = useQuery({
-    queryKey: ["loan-products"],
-    queryFn: () => applicationService.getLoanProducts(),
+  const {
+    data: application,
+    isLoading: appLoading,
+    isError: appError,
+    error: appQueryError,
+  } = useQuery({
+    queryKey: ["application", applicationId],
+    queryFn: () => applicationService.getApplication(applicationId),
+    retry: 1,
   });
 
-  if (isLoading) {
+  const { data: product, isLoading: productLoading } = useQuery({
+    queryKey: ["loan-product", application?.programId],
+    queryFn: () =>
+      application?.programId
+        ? applicationService.getLoanProductByProgramId(application.programId)
+        : applicationService.getLoanProducts().then((p) => p[0]),
+    enabled: !!application,
+  });
+
+  if (appError) {
+    const apiError = parseApiError(appQueryError);
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <ErrorState
+          compact
+          title="Unable to load application"
+          message={apiError.message}
+          onRetry={() => window.location.reload()}
+        />
+      </div>
+    );
+  }
+
+  if (appLoading || productLoading || !product || !application) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
@@ -29,8 +62,24 @@ export default function LoanApplicationPage() {
     );
   }
 
-  const product = products?.[0];
-  if (!product) return null;
+  if (application.status !== "draft") {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <ErrorState
+          compact
+          title="Application is read-only"
+          message={`This application has been ${application.status.replace("_", " ")} and can no longer be edited.`}
+        />
+      </div>
+    );
+  }
 
-  return <FormWizard product={product} draftId={draftId} />;
+  return (
+    <FormWizard
+      product={product}
+      draftId={applicationId}
+      initialFormData={normalizeApplicationFormData(application.formData, product)}
+      programId={application.programId}
+    />
+  );
 }

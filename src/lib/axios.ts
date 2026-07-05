@@ -1,5 +1,6 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
 import { handleSessionExpired } from "@/lib/session";
+import { getTenantId } from "@/lib/tenant";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
@@ -20,8 +21,14 @@ function getAccessToken(): string | null {
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getAccessToken();
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (config.headers) {
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      const tenantId = getTenantId();
+      if (tenantId) {
+        config.headers["X-Tenant-ID"] = tenantId;
+      }
     }
     return config;
   },
@@ -29,7 +36,18 @@ apiClient.interceptors.request.use(
 );
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const body = response.data;
+    if (
+      body &&
+      typeof body === "object" &&
+      "success" in body &&
+      "data" in body
+    ) {
+      response.data = body.data ?? body;
+    }
+    return response;
+  },
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
       if (typeof window !== "undefined") {

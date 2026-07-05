@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 import { invitationService } from "@/services/invitation.service";
+import { acceptStoredInvitation } from "@/utils/invitation-flow";
 import { toast } from "sonner";
 import type { RegisterApiRequest } from "@/types";
 import { useRouter } from "next/navigation";
@@ -62,20 +63,22 @@ export function EmailVerificationForm({
         return;
       }
 
-      if (result.accessToken) {
-        if (typeof window !== "undefined") {
-          localStorage.setItem("accessToken", result.accessToken);
-        }
-      }
-
       const authResult = await authService.completeRegistration(
         registerData,
-        userId
+        userId,
+        result.accessToken
       );
       setUser(authResult.user);
+
+      const accepted = await acceptStoredInvitation();
       invitationService.clearStoredInvitation();
       toast.success(result.message || "Email verified successfully!");
-      router.push("/dashboard");
+
+      if (accepted?.applicationId) {
+        router.push(`/loan-application/${accepted.applicationId}`);
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "message" in err

@@ -1,20 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   User,
   Phone,
   Shield,
   Save,
-  Eye,
-  EyeOff,
+  Mail,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,60 +22,64 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 import { getInitials } from "@/lib/utils";
 import { toast } from "sonner";
+import type { User as UserType } from "@/types";
+
+// ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const personalSchema = z.object({
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
-  email: z.string().email("Invalid email"),
 });
 
 const contactSchema = z.object({
-  mobile: z.string().regex(/^[+]?[\d\s\-().]{10,15}$/, "Invalid number"),
-  alternatePhone: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  pincode: z.string().optional(),
+  phone: z.string().regex(/^[+]?[\d\s\-().]{10,15}$/, "Invalid number"),
 });
-
-const securitySchema = z
-  .object({
-    currentPassword: z.string().min(1, "Required"),
-    newPassword: z
-      .string()
-      .min(8, "At least 8 characters")
-      .regex(/[A-Z]/, "Uppercase letter required")
-      .regex(/[0-9]/, "Number required"),
-    confirmPassword: z.string(),
-  })
-  .refine((d) => d.newPassword === d.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
 
 type PersonalFormData = z.infer<typeof personalSchema>;
 type ContactFormData = z.infer<typeof contactSchema>;
-type SecurityFormData = z.infer<typeof securitySchema>;
 
-function PersonalTab() {
-  const { user, setUser } = useAuthStore();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<PersonalFormData>({
-    resolver: zodResolver(personalSchema),
-    defaultValues: {
-      firstName: user?.firstName ?? "",
-      lastName: user?.lastName ?? "",
-      email: user?.email ?? "",
-    },
-  });
+// ─── Personal Tab ─────────────────────────────────────────────────────────────
+
+function PersonalTab({ profile }: { profile: UserType | null }) {
+  const { setUser } = useAuthStore();
+  const queryClient = useQueryClient();
+
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
+    useForm<PersonalFormData>({
+      resolver: zodResolver(personalSchema),
+      defaultValues: {
+        firstName: profile?.firstName ?? "",
+        lastName: profile?.lastName ?? "",
+      },
+    });
+
+  useEffect(() => {
+    if (profile) {
+      reset({
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+      });
+    }
+  }, [profile, reset]);
 
   const onSubmit = async (data: PersonalFormData) => {
-    const updated = await authService.updateProfile(data);
-    setUser(updated);
-    toast.success("Personal information updated");
+    try {
+      const updated = await authService.updateProfile(data);
+      setUser(updated);
+      queryClient.setQueryData(["profile"], updated);
+      toast.success("Personal information updated");
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message: string }).message)
+          : "Failed to update profile";
+      toast.error(message);
+    }
   };
 
   return (
@@ -84,14 +88,14 @@ function PersonalTab() {
       <div className="flex items-center gap-4 pb-2">
         <Avatar className="h-16 w-16">
           <AvatarFallback className="text-lg bg-primary text-white">
-            {user ? getInitials(user.firstName, user.lastName) : "U"}
+            {profile ? getInitials(profile.firstName, profile.lastName) : "U"}
           </AvatarFallback>
         </Avatar>
         <div>
           <p className="text-sm font-medium">
-            {user?.firstName} {user?.lastName}
+            {profile?.firstName} {profile?.lastName}
           </p>
-          <p className="text-xs text-muted-foreground">{user?.email}</p>
+          <p className="text-xs text-muted-foreground">{profile?.email}</p>
         </div>
       </div>
 
@@ -116,9 +120,94 @@ function PersonalTab() {
 
       <div className="space-y-1.5">
         <Label htmlFor="email">Email Address</Label>
-        <Input id="email" type="email" error={!!errors.email} {...register("email")} />
-        {errors.email && (
-          <p className="text-xs text-destructive">{errors.email.message}</p>
+        <div className="relative">
+          <Input
+            id="email"
+            type="email"
+            value={profile?.email ?? ""}
+            readOnly
+            className="bg-muted/50 pr-28"
+          />
+          {profile?.emailVerified && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-green-600">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Verified
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">Email cannot be changed here.</p>
+      </div>
+
+      {profile?.status && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Account status:</span>
+          <Badge variant={profile.status === "ACTIVE" ? "success" : "secondary"}>
+            {profile.status}
+          </Badge>
+        </div>
+      )}
+
+      <div className="flex justify-end pt-2">
+        <Button type="submit" loading={isSubmitting} className="gap-2">
+          <Save className="h-4 w-4" />
+          Save Changes
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// ─── Contact Tab ──────────────────────────────────────────────────────────────
+
+function ContactTab({ profile }: { profile: UserType | null }) {
+  const { setUser } = useAuthStore();
+  const queryClient = useQueryClient();
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } =
+    useForm<ContactFormData>({
+      resolver: zodResolver(contactSchema),
+      defaultValues: { phone: profile?.phone ?? "" },
+    });
+
+  useEffect(() => {
+    if (profile) reset({ phone: profile.phone ?? "" });
+  }, [profile, reset]);
+
+  const onSubmit = async (data: ContactFormData) => {
+    try {
+      const updated = await authService.updateContact({ phone: data.phone });
+      setUser(updated);
+      queryClient.setQueryData(["profile"], updated);
+      toast.success("Contact information updated");
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message: string }).message)
+          : "Failed to update contact information";
+      toast.error(message);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <div className="space-y-1.5">
+        <Label htmlFor="phone">Mobile Number</Label>
+        <div className="relative">
+          <Input
+            id="phone"
+            type="tel"
+            error={!!errors.phone}
+            className={profile?.phoneVerified ? "pr-28" : ""}
+            {...register("phone")}
+          />
+          {profile?.phoneVerified && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-green-600">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Verified
+            </span>
+          )}
+        </div>
+        {errors.phone && (
+          <p className="text-xs text-destructive">{errors.phone.message}</p>
         )}
       </div>
 
@@ -132,146 +221,72 @@ function PersonalTab() {
   );
 }
 
-function ContactTab() {
-  const { user } = useAuthStore();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ContactFormData>({
-    resolver: zodResolver(contactSchema),
-    defaultValues: { mobile: user?.mobile ?? "" },
-  });
+// ─── Security Tab ─────────────────────────────────────────────────────────────
 
-  const onSubmit = async (_data: ContactFormData) => {
-    await new Promise((r) => setTimeout(r, 800));
-    toast.success("Contact information updated");
-  };
+function SecurityTab({ profile }: { profile: UserType | null }) {
+  const [resetSent, setResetSent] = useState(false);
+  const [sending, setSending] = useState(false);
 
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="mobile">Mobile Number</Label>
-          <Input id="mobile" type="tel" error={!!errors.mobile} {...register("mobile")} />
-          {errors.mobile && (
-            <p className="text-xs text-destructive">{errors.mobile.message}</p>
-          )}
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="alternatePhone">Alternate Phone</Label>
-          <Input id="alternatePhone" type="tel" placeholder="Optional" {...register("alternatePhone")} />
-        </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label htmlFor="address">Address</Label>
-        <Input id="address" placeholder="Street address" {...register("address")} />
-      </div>
-
-      <div className="grid sm:grid-cols-3 gap-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="city">City</Label>
-          <Input id="city" placeholder="City" {...register("city")} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="state">State</Label>
-          <Input id="state" placeholder="State" {...register("state")} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="pincode">PIN Code</Label>
-          <Input id="pincode" placeholder="400001" {...register("pincode")} />
-        </div>
-      </div>
-
-      <div className="flex justify-end pt-2">
-        <Button type="submit" loading={isSubmitting} className="gap-2">
-          <Save className="h-4 w-4" />
-          Save Changes
-        </Button>
-      </div>
-    </form>
-  );
-}
-
-function SecurityTab() {
-  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<SecurityFormData>({
-    resolver: zodResolver(securitySchema),
-  });
-
-  const toggle = (key: string) =>
-    setShowPasswords((prev) => ({ ...prev, [key]: !prev[key] }));
-
-  const onSubmit = async (_data: SecurityFormData) => {
-    await new Promise((r) => setTimeout(r, 1000));
-    toast.success("Password updated successfully");
-    reset();
+  const handleForgotPassword = async () => {
+    if (!profile?.email) return;
+    setSending(true);
+    try {
+      await authService.forgotPassword(profile.email);
+      setResetSent(true);
+      toast.success("Password reset email sent. Check your inbox.");
+    } catch (err: unknown) {
+      const message =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message: string }).message)
+          : "Failed to send reset email";
+      toast.error(message);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="space-y-1.5">
-          <Label htmlFor="currentPassword">Current Password</Label>
-          <Input
-            id="currentPassword"
-            type={showPasswords.current ? "text" : "password"}
-            error={!!errors.currentPassword}
-            endAdornment={
-              <button type="button" onClick={() => toggle("current")} className="text-muted-foreground">
-                {showPasswords.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            }
-            {...register("currentPassword")}
-          />
-          {errors.currentPassword && (
-            <p className="text-xs text-destructive">{errors.currentPassword.message}</p>
-          )}
+      {/* Reset Password */}
+      <div className="space-y-4">
+        <div>
+          <h4 className="text-sm font-medium">Password Reset</h4>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            We&apos;ll send a password reset OTP to your email address.
+          </p>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="newPassword">New Password</Label>
-          <Input
-            id="newPassword"
-            type={showPasswords.new ? "text" : "password"}
-            error={!!errors.newPassword}
-            endAdornment={
-              <button type="button" onClick={() => toggle("new")} className="text-muted-foreground">
-                {showPasswords.new ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            }
-            {...register("newPassword")}
-          />
-          {errors.newPassword && (
-            <p className="text-xs text-destructive">{errors.newPassword.message}</p>
-          )}
+        <div className="rounded-lg border bg-muted/30 p-4 flex items-center gap-3">
+          <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+          <span className="text-sm">{profile?.email ?? "—"}</span>
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="confirmPassword">Confirm New Password</Label>
-          <Input
-            id="confirmPassword"
-            type={showPasswords.confirm ? "text" : "password"}
-            error={!!errors.confirmPassword}
-            endAdornment={
-              <button type="button" onClick={() => toggle("confirm")} className="text-muted-foreground">
-                {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            }
-            {...register("confirmPassword")}
-          />
-          {errors.confirmPassword && (
-            <p className="text-xs text-destructive">{errors.confirmPassword.message}</p>
-          )}
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <Button type="submit" loading={isSubmitting} className="gap-2">
-            <Shield className="h-4 w-4" />
-            Update Password
+        {resetSent ? (
+          <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            Reset OTP sent. Check your inbox and enter the code on the reset page.
+          </div>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            className="gap-2"
+            disabled={sending || !profile?.email}
+            onClick={handleForgotPassword}
+          >
+            {sending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Shield className="h-4 w-4" />
+            )}
+            Send Password Reset Email
           </Button>
-        </div>
-      </form>
+        )}
+      </div>
 
       <Separator />
 
+      {/* Security Preferences */}
       <div className="space-y-4">
         <h4 className="text-sm font-medium">Security Preferences</h4>
         <div className="space-y-3">
@@ -294,8 +309,22 @@ function SecurityTab() {
   );
 }
 
+// ─── Profile Page ─────────────────────────────────────────────────────────────
+
 export function ProfilePage() {
-  const { user } = useAuthStore();
+  const { user: storeUser, setUser } = useAuthStore();
+
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ["profile"],
+    queryFn: () => authService.getProfile(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    if (profile) setUser(profile);
+  }, [profile, setUser]);
+
+  const displayUser = profile ?? storeUser;
 
   return (
     <div className="p-6 sm:p-8 max-w-3xl mx-auto space-y-6">
@@ -308,32 +337,39 @@ export function ProfilePage() {
 
       <Card>
         <CardContent className="p-6">
-          <Tabs defaultValue="personal">
-            <TabsList className="mb-6">
-              <TabsTrigger value="personal" className="gap-2">
-                <User className="h-3.5 w-3.5" />
-                Personal
-              </TabsTrigger>
-              <TabsTrigger value="contact" className="gap-2">
-                <Phone className="h-3.5 w-3.5" />
-                Contact
-              </TabsTrigger>
-              <TabsTrigger value="security" className="gap-2">
-                <Shield className="h-3.5 w-3.5" />
-                Security
-              </TabsTrigger>
-            </TabsList>
+          {isLoading && !displayUser ? (
+            <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="text-sm">Loading profile…</span>
+            </div>
+          ) : (
+            <Tabs defaultValue="personal">
+              <TabsList className="mb-6">
+                <TabsTrigger value="personal" className="gap-2">
+                  <User className="h-3.5 w-3.5" />
+                  Personal
+                </TabsTrigger>
+                <TabsTrigger value="contact" className="gap-2">
+                  <Phone className="h-3.5 w-3.5" />
+                  Contact
+                </TabsTrigger>
+                <TabsTrigger value="security" className="gap-2">
+                  <Shield className="h-3.5 w-3.5" />
+                  Security
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="personal">
-              <PersonalTab />
-            </TabsContent>
-            <TabsContent value="contact">
-              <ContactTab />
-            </TabsContent>
-            <TabsContent value="security">
-              <SecurityTab />
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="personal">
+                <PersonalTab profile={displayUser} />
+              </TabsContent>
+              <TabsContent value="contact">
+                <ContactTab profile={displayUser} />
+              </TabsContent>
+              <TabsContent value="security">
+                <SecurityTab profile={displayUser} />
+              </TabsContent>
+            </Tabs>
+          )}
         </CardContent>
       </Card>
     </div>

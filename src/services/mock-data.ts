@@ -5,7 +5,10 @@ export const MOCK_USER: User = {
   firstName: "Priya",
   lastName: "Sharma",
   email: "priya.sharma@example.com",
-  mobile: "+91 98765 43210",
+  phone: "+91 98765 43210",
+  emailVerified: true,
+  phoneVerified: true,
+  status: "ACTIVE",
   createdAt: "2024-01-15T10:00:00Z",
   updatedAt: "2024-06-01T14:30:00Z",
 };

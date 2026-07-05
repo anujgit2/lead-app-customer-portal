@@ -13,7 +13,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { authService } from "@/services/auth.service";
-import { InvitationSummary } from "@/features/auth/InvitationSummary";
 import { getPasswordStrength } from "@/lib/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -68,6 +67,7 @@ interface RegisterFormProps {
     userId: string;
     registerData: RegisterApiRequest;
     emailVerificationPending: boolean;
+    accessToken: string | null;
   }) => void;
 }
 
@@ -119,6 +119,7 @@ export function RegisterForm({
         userId: res.userId,
         registerData,
         emailVerificationPending: res.emailVerificationPending,
+        accessToken: res.accessToken,
       });
     } catch (err: unknown) {
       const message =
@@ -144,8 +145,6 @@ export function RegisterForm({
 
         <Card className="border-0 shadow-xl shadow-gray-100/50">
           <CardContent className="p-8">
-            <InvitationSummary preFilledData={invitation.preFilledData} />
-
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">

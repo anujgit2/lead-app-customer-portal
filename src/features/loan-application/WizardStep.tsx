@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { FormTemplate } from "@/types";
@@ -10,6 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 
+export interface WizardStepHandle {
+  validate: () => Promise<boolean>;
+}
+
 interface WizardStepProps {
   template: FormTemplate;
   defaultValues?: unknown;
@@ -18,7 +22,6 @@ interface WizardStepProps {
   formRef?: React.RefObject<HTMLFormElement | null>;
 }
 
-// A single repeatable instance rendered as its own form
 function RepeatableInstance({
   template,
   index,
@@ -26,6 +29,7 @@ function RepeatableInstance({
   canRemove,
   onRemove,
   onChange,
+  onValidateRef,
 }: {
   template: FormTemplate;
   index: number;
@@ -33,6 +37,7 @@ function RepeatableInstance({
   canRemove: boolean;
   onRemove: () => void;
   onChange: (index: number, data: unknown) => void;
+  onValidateRef?: (index: number, validate: () => Promise<boolean>) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const schema = buildTemplateSchema(template);
@@ -46,6 +51,10 @@ function RepeatableInstance({
     const sub = methods.watch((data) => onChange(index, data));
     return () => sub.unsubscribe();
   }, [methods, index, onChange]);
+
+  React.useEffect(() => {
+    onValidateRef?.(index, () => methods.trigger());
+  }, [methods, index, onValidateRef]);
 
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
@@ -97,16 +106,36 @@ function RepeatableTemplateInstances({
   template,
   defaultValues,
   onDataChange,
+  validateRef,
 }: {
   template: FormTemplate;
   defaultValues?: unknown;
   onDataChange?: (data: unknown) => void;
+  validateRef?: React.RefObject<WizardStepHandle | null>;
 }) {
-  const initData = Array.isArray(defaultValues) && defaultValues.length > 0
-    ? defaultValues as unknown[]
-    : [{}];
+  const initData =
+    Array.isArray(defaultValues) && defaultValues.length > 0
+      ? (defaultValues as unknown[])
+      : [{}];
 
   const [instances, setInstances] = useState<unknown[]>(initData);
+  const validatorsRef = React.useRef<Map<number, () => Promise<boolean>>>(new Map());
+
+  const handleValidateRef = useCallback(
+    (index: number, validate: () => Promise<boolean>) => {
+      validatorsRef.current.set(index, validate);
+    },
+    []
+  );
+
+  useImperativeHandle(validateRef, () => ({
+    validate: async () => {
+      const validators = Array.from(validatorsRef.current.values());
+      if (validators.length === 0) return true;
+      const results = await Promise.all(validators.map((fn) => fn()));
+      return results.every(Boolean);
+    },
+  }));
 
   const handleChange = useCallback(
     (index: number, data: unknown) => {
@@ -129,6 +158,7 @@ function RepeatableTemplateInstances({
   };
 
   const removeInstance = (index: number) => {
+    validatorsRef.current.delete(index);
     setInstances((prev) => {
       const updated = prev.filter((_, i) => i !== index);
       onDataChange?.(updated);
@@ -150,6 +180,7 @@ function RepeatableTemplateInstances({
           canRemove={instances.length > minInstances}
           onRemove={() => removeInstance(index)}
           onChange={handleChange}
+          onValidateRef={handleValidateRef}
         />
       ))}
 
@@ -168,53 +199,59 @@ function RepeatableTemplateInstances({
   );
 }
 
-function SingleTemplateForm({
-  template,
-  defaultValues,
-  onValidChange,
-  onDataChange,
-  formRef,
-}: WizardStepProps) {
-  const schema = buildTemplateSchema(template);
-  const methods = useForm({
-    resolver: zodResolver(schema),
-    defaultValues: (defaultValues as Record<string, unknown>) ?? {},
-    mode: "onChange",
-  });
-
-  React.useEffect(() => {
-    const subscription = methods.watch((data) => {
-      onDataChange?.(data);
-      methods.trigger().then((valid) => onValidChange?.(valid));
+const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
+  function SingleTemplateForm(
+    { template, defaultValues, onValidChange, onDataChange, formRef },
+    ref
+  ) {
+    const schema = buildTemplateSchema(template);
+    const methods = useForm({
+      resolver: zodResolver(schema),
+      defaultValues: (defaultValues as Record<string, unknown>) ?? {},
+      mode: "onChange",
     });
-    return () => subscription.unsubscribe();
-  }, [methods, onDataChange, onValidChange]);
 
-  return (
-    <FormProvider {...methods}>
-      <form
-        ref={formRef}
-        className="space-y-6"
-        noValidate
-        onSubmit={(e) => e.preventDefault()}
-      >
-        {template.sections.map((section) => (
-          <DynamicSection key={section.code} section={section} />
-        ))}
-      </form>
-    </FormProvider>
-  );
-}
+    useImperativeHandle(ref, () => ({
+      validate: () => methods.trigger(),
+    }));
 
-export function WizardStep(props: WizardStepProps) {
-  if (props.template.repeatable) {
+    React.useEffect(() => {
+      const subscription = methods.watch((data) => {
+        onDataChange?.(data);
+        methods.trigger().then((valid) => onValidChange?.(valid));
+      });
+      return () => subscription.unsubscribe();
+    }, [methods, onDataChange, onValidChange]);
+
     return (
-      <RepeatableTemplateInstances
-        template={props.template}
-        defaultValues={props.defaultValues}
-        onDataChange={props.onDataChange}
-      />
+      <FormProvider {...methods}>
+        <form
+          ref={formRef}
+          className="space-y-6"
+          noValidate
+          onSubmit={(e) => e.preventDefault()}
+        >
+          {template.sections.map((section) => (
+            <DynamicSection key={section.code} section={section} />
+          ))}
+        </form>
+      </FormProvider>
     );
   }
-  return <SingleTemplateForm {...props} />;
-}
+);
+
+export const WizardStep = forwardRef<WizardStepHandle, WizardStepProps>(
+  function WizardStep(props, ref) {
+    if (props.template.repeatable) {
+      return (
+        <RepeatableTemplateInstances
+          template={props.template}
+          defaultValues={props.defaultValues}
+          onDataChange={props.onDataChange}
+          validateRef={ref as React.RefObject<WizardStepHandle | null>}
+        />
+      );
+    }
+    return <SingleTemplateForm {...props} ref={ref} />;
+  }
+);
