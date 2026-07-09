@@ -45,7 +45,7 @@ jobs:
           SHA_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$SHA_TAG
 
           docker build \
-            --build-arg NEXT_PUBLIC_API_URL=http://${{ secrets.EC2_HOST }}:8082 \
+            --build-arg NEXT_PUBLIC_API_URL=${{ secrets.EC2_HOST }}\
             -t "$LATEST_IMAGE" \
             -t "$SHA_IMAGE" \
             .
