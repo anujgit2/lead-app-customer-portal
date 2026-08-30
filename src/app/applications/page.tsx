@@ -89,7 +89,7 @@ export default function ApplicationsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       {app.status === "draft" && (
-                        <Link href={`/loan-application/${app.id}`}>
+                        <Link href={`/loan-application/resume?id=${app.id}`}>
                           <Button variant="outline" size="sm">Continue</Button>
                         </Link>
                       )}

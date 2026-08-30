@@ -18,6 +18,24 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Environment Variables
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | yes | Base URL for the backend API. |
+| `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | production | reCAPTCHA v2 ("I'm not a robot") site key used by the human check on self-serve signup. |
+
+Create a site key at the [reCAPTCHA admin console](https://www.google.com/recaptcha/admin), choosing **reCAPTCHA v2 → "I'm not a robot" Checkbox**, and add every host you serve from (including `localhost` for local work):
+
+```bash
+# .env.local
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_site_key_here
+```
+
+If the variable is unset, signup falls back to Google's public test key so the flow stays clickable locally. That key accepts everyone, so it must not reach production.
+
+The signup form only obtains the token. **The matching secret key must be verified server side** via `https://www.google.com/recaptcha/api/siteverify` on the `/auth/register` endpoint — the client-side widget alone blocks nothing. The token is sent to the API as `recaptchaToken`.
+
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
 ## Learn More

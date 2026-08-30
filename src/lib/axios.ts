@@ -1,6 +1,16 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
-import { handleSessionExpired } from "@/lib/session";
+import {
+  handleSessionExpired,
+  isSessionExpiredRedirectSuppressed,
+} from "@/lib/session";
 import { getTenantId } from "@/lib/tenant";
+
+declare module "axios" {
+  export interface AxiosRequestConfig {
+    /** Opt a request out of the automatic session-expired redirect on 401. */
+    skipAuthRedirect?: boolean;
+  }
+}
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 console.log("NEXT_PUBLIC_API_URL =", process.env.NEXT_PUBLIC_API_URL);
@@ -52,7 +62,11 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
-      if (typeof window !== "undefined") {
+      if (
+        typeof window !== "undefined" &&
+        !error.config?.skipAuthRedirect &&
+        !isSessionExpiredRedirectSuppressed()
+      ) {
         const path = window.location.pathname;
         const isAuthPage =
           path.startsWith("/auth/login") ||

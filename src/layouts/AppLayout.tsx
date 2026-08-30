@@ -56,7 +56,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const handleLogout = async () => {
     await authService.logout();
     toast.success("Logged out successfully");
-    router.push("/auth/login");
+    router.push("/");
   };
 
   const initials = user ? getInitials(user.firstName, user.lastName) : "U";

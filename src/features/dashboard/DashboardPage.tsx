@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -8,6 +8,12 @@ import {
   PlusCircle,
   User,
   ArrowRight,
+  Layers,
+  PenLine,
+  Send,
+  CheckCircle2,
+  Mail,
+  Phone,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,6 +38,32 @@ function StatusBadge({ status }: { status: ApplicationStatus }) {
   return <Badge variant={c.variant}>{c.label}</Badge>;
 }
 
+function SummaryCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: typeof Layers;
+  label: string;
+  value: number;
+  tone: string;
+}) {
+  return (
+    <Card className="transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md">
+      <CardContent className="p-5 flex items-center gap-4">
+        <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${tone}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-2xl font-semibold tracking-tight leading-none">{value}</p>
+          <p className="text-xs text-muted-foreground mt-1.5 truncate">{label}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function DashboardPage() {
   const { user } = useAuthStore();
 
@@ -49,6 +81,20 @@ export function DashboardPage() {
       return status !== 401 && status !== 403 && failureCount < 2;
     },
   });
+
+  const summary = useMemo(() => {
+    const list = applications ?? [];
+    return {
+      total: list.length,
+      drafts: list.filter((a) => a.status === "draft").length,
+      inReview: list.filter(
+        (a) => a.status === "submitted" || a.status === "under_review"
+      ).length,
+      approved: list.filter(
+        (a) => a.status === "approved" || a.status === "disbursed"
+      ).length,
+    };
+  }, [applications]);
 
   if (appsError) {
     const apiError = parseApiError(appsQueryError);
@@ -96,6 +142,34 @@ export function DashboardPage() {
         </Link>
       </div>
 
+      {/* Status summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <SummaryCard
+          icon={Layers}
+          label="Total applications"
+          value={summary.total}
+          tone="bg-primary/10 text-primary"
+        />
+        <SummaryCard
+          icon={PenLine}
+          label="Drafts in progress"
+          value={summary.drafts}
+          tone="bg-amber-50 text-amber-600"
+        />
+        <SummaryCard
+          icon={Send}
+          label="Submitted / in review"
+          value={summary.inReview}
+          tone="bg-blue-50 text-blue-600"
+        />
+        <SummaryCard
+          icon={CheckCircle2}
+          label="Approved"
+          value={summary.approved}
+          tone="bg-emerald-50 text-emerald-600"
+        />
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Loan Applications List */}
         <div className="lg:col-span-2">
@@ -104,11 +178,17 @@ export function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-base">Loan Applications</CardTitle>
-                  <CardDescription>Your loan applications</CardDescription>
+                  <CardDescription>
+                    {appsLoading
+                      ? "Loading your applications…"
+                      : summary.total === 1
+                        ? "1 application on your account"
+                        : `All ${summary.total} applications on your account`}
+                  </CardDescription>
                 </div>
                 <Link href="/applications">
                   <Button variant="ghost" size="sm" className="gap-1 text-primary">
-                    View all
+                    Manage
                     <ArrowRight className="h-3.5 w-3.5" />
                   </Button>
                 </Link>
@@ -128,16 +208,22 @@ export function DashboardPage() {
                 <div className="px-6 py-12 text-center">
                   <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm font-medium">No applications yet</p>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-1 mb-5">
                     Start your first loan application
                   </p>
+                  <Link href="/loan-application/new">
+                    <Button size="sm" className="gap-2">
+                      <PlusCircle className="h-3.5 w-3.5" />
+                      Start Application
+                    </Button>
+                  </Link>
                 </div>
               ) : (
-                <div className="divide-y">
-                  {applications?.slice(0, 5).map((app) => (
+                <div className="divide-y max-h-[32rem] overflow-y-auto">
+                  {applications?.map((app) => (
                     <div
                       key={app.id}
-                      className="px-6 py-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
+                      className="px-6 py-4 flex items-center justify-between transition-colors duration-200 ease-out hover:bg-muted/30"
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
@@ -153,7 +239,7 @@ export function DashboardPage() {
                       </div>
                       <div className="flex items-center gap-2 ml-4 flex-shrink-0">
                         {app.status === "draft" && (
-                          <Link href={`/loan-application/${app.id}`}>
+                          <Link href={`/loan-application/resume?id=${app.id}`}>
                             <Button variant="outline" size="sm">
                               Continue
                             </Button>
@@ -183,13 +269,40 @@ export function DashboardPage() {
                   <p className="text-sm font-medium truncate">
                     {user?.firstName} {user?.lastName}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  {user?.status && (
+                    <p className="text-xs text-muted-foreground">
+                      Account {user.status.toLowerCase()}
+                    </p>
+                  )}
                 </div>
               </div>
-              <Link href="/profile" className="block">
-                <Button variant="outline" className="w-full gap-2">
+
+              <div className="space-y-2.5 px-1">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs truncate" title={user?.email}>
+                    {user?.email ?? "—"}
+                  </span>
+                  {user?.emailVerified && (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 ml-auto" />
+                  )}
+                </div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs truncate">{user?.phone || "Not added"}</span>
+                  {user?.phoneVerified && (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 ml-auto" />
+                  )}
+                </div>
+              </div>
+
+              <Link href="/profile" className="block pt-1">
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 transition-all duration-200 ease-out hover:-translate-y-0.5"
+                >
                   <User className="h-4 w-4" />
-                  Manage Profile
+                  View profile details
                   <ArrowRight className="h-4 w-4 ml-auto" />
                 </Button>
               </Link>

@@ -73,7 +73,7 @@ export function ErrorState({
     try {
       await authService.logout();
       toast.success("Signed out successfully");
-      router.push("/auth/login");
+      router.push("/");
     } finally {
       setIsLoggingOut(false);
     }

@@ -71,7 +71,10 @@ export interface RegisterApiRequest {
   firstName: string;
   lastName: string;
   password: string;
-  invitationToken: string;
+  /** Present only for invitation-based signups. */
+  invitationToken?: string;
+  /** reCAPTCHA v2 token for self-serve signups; must be verified server side. */
+  recaptchaToken?: string;
 }
 
 export interface RegisterApiResponse {
@@ -81,7 +84,7 @@ export interface RegisterApiResponse {
   phoneVerificationPending: boolean;
   message: string;
   accessToken: string | null;
-  invitationToken: string;
+  invitationToken?: string;
 }
 
 export interface VerifyEmailOtpRequest {

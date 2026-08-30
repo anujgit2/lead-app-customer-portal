@@ -19,6 +19,22 @@ export interface AuthErrorContext {
 
 const AUTH_ERROR_KEY = "auth-error";
 
+/**
+ * Signing out intentionally invalidates the token, so any 401 that lands while
+ * a logout is in flight is expected rather than an expired session. Stored as a
+ * deadline instead of a boolean so a failed logout can never strand the app in
+ * a state where genuine session expiries are ignored.
+ */
+let sessionExpiredRedirectSuppressedUntil = 0;
+
+export function suppressSessionExpiredRedirect(durationMs = 8000) {
+  sessionExpiredRedirectSuppressedUntil = Date.now() + durationMs;
+}
+
+export function isSessionExpiredRedirectSuppressed(): boolean {
+  return Date.now() < sessionExpiredRedirectSuppressedUntil;
+}
+
 export function hasAuthArtifacts(): boolean {
   if (typeof window === "undefined") return false;
   const { user, isAuthenticated } = useAuthStore.getState();

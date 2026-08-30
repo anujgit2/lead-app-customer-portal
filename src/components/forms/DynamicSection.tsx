@@ -125,6 +125,10 @@ function RepeatableSectionInstances({
 }
 
 export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
+  const sectionPrefix = namePrefix
+    ? `${namePrefix}.${section.code}`
+    : section.code;
+
   return (
     <Card>
       <CardHeader className="pb-4">
@@ -137,7 +141,7 @@ export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
         {section.repeatable ? (
           <RepeatableSectionInstances section={section} namePrefix={namePrefix} />
         ) : (
-          <FieldGrid section={section} namePrefix={namePrefix} />
+          <FieldGrid section={section} namePrefix={sectionPrefix} />
         )}
       </CardContent>
     </Card>

@@ -13,6 +13,8 @@ import {
   Mail,
   CheckCircle2,
   Loader2,
+  AlertCircle,
+  CalendarDays,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +27,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
-import { getInitials } from "@/lib/utils";
+import { formatDate, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 import type { User as UserType } from "@/types";
 
@@ -84,23 +86,6 @@ function PersonalTab({ profile }: { profile: UserType | null }) {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-      {/* Avatar */}
-      <div className="flex items-center gap-4 pb-2">
-        <Avatar className="h-16 w-16">
-          <AvatarFallback className="text-lg bg-primary text-white">
-            {profile ? getInitials(profile.firstName, profile.lastName) : "U"}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <p className="text-sm font-medium">
-            {profile?.firstName} {profile?.lastName}
-          </p>
-          <p className="text-xs text-muted-foreground">{profile?.email}</p>
-        </div>
-      </div>
-
-      <Separator />
-
       <div className="grid sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="firstName">First Name</Label>
@@ -137,15 +122,6 @@ function PersonalTab({ profile }: { profile: UserType | null }) {
         </div>
         <p className="text-xs text-muted-foreground">Email cannot be changed here.</p>
       </div>
-
-      {profile?.status && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>Account status:</span>
-          <Badge variant={profile.status === "ACTIVE" ? "success" : "secondary"}>
-            {profile.status}
-          </Badge>
-        </div>
-      )}
 
       <div className="flex justify-end pt-2">
         <Button type="submit" loading={isSubmitting} className="gap-2">
@@ -309,6 +285,123 @@ function SecurityTab({ profile }: { profile: UserType | null }) {
   );
 }
 
+// ─── Details Overview ─────────────────────────────────────────────────────────
+
+function VerificationPill({ verified }: { verified?: boolean }) {
+  if (verified) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-green-600 shrink-0">
+        <CheckCircle2 className="h-3.5 w-3.5" />
+        Verified
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-xs text-amber-600 shrink-0">
+      <AlertCircle className="h-3.5 w-3.5" />
+      Unverified
+    </span>
+  );
+}
+
+function DetailRow({
+  icon: Icon,
+  label,
+  value,
+  trailing,
+}: {
+  icon: typeof Mail;
+  label: string;
+  value: string;
+  trailing?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 py-3">
+      <div className="h-8 w-8 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-sm font-medium truncate mt-0.5">{value}</p>
+      </div>
+      {trailing}
+    </div>
+  );
+}
+
+function ProfileOverview({ profile }: { profile: UserType | null }) {
+  if (!profile) return null;
+
+  let memberSince = "—";
+  if (profile.createdAt) {
+    try {
+      memberSince = formatDate(profile.createdAt);
+    } catch {
+      memberSince = "—";
+    }
+  }
+
+  const fullName = [profile.firstName, profile.middleName, profile.lastName]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <Card>
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <Avatar className="h-14 w-14">
+            <AvatarFallback className="text-base bg-primary text-white">
+              {getInitials(profile.firstName, profile.lastName)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold tracking-tight truncate">
+              {fullName || "—"}
+            </h2>
+            <div className="flex items-center gap-2 mt-1">
+              {profile.status && (
+                <Badge variant={profile.status === "ACTIVE" ? "success" : "secondary"}>
+                  {profile.status}
+                </Badge>
+              )}
+              <span className="text-xs text-muted-foreground">
+                Member since {memberSince}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <Separator className="my-4" />
+
+        <div className="grid sm:grid-cols-2 sm:gap-x-8 divide-y sm:divide-y-0">
+          <DetailRow
+            icon={Mail}
+            label="Email address"
+            value={profile.email || "—"}
+            trailing={<VerificationPill verified={profile.emailVerified} />}
+          />
+          <DetailRow
+            icon={Phone}
+            label="Mobile number"
+            value={profile.phone || "Not added"}
+            trailing={
+              profile.phone ? (
+                <VerificationPill verified={profile.phoneVerified} />
+              ) : undefined
+            }
+          />
+          <DetailRow
+            icon={CalendarDays}
+            label="Member since"
+            value={memberSince}
+          />
+          <DetailRow icon={User} label="Account ID" value={profile.id || "—"} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Profile Page ─────────────────────────────────────────────────────────────
 
 export function ProfilePage() {
@@ -334,6 +427,8 @@ export function ProfilePage() {
           Manage your personal information and account settings
         </p>
       </div>
+
+      {isLoading && !displayUser ? null : <ProfileOverview profile={displayUser} />}
 
       <Card>
         <CardContent className="p-6">

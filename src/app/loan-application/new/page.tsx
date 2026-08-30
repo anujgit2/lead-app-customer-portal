@@ -15,7 +15,7 @@ export default function NewLoanApplicationPage() {
     queryKey: ["create-application"],
     queryFn: async () => {
       const app = await applicationService.createApplication();
-      router.replace(`/loan-application/${app.id}`);
+      router.replace(`/loan-application/resume?id=${app.id}`);
       return app;
     },
     retry: 1,

@@ -9,9 +9,17 @@ import { Button } from "@/components/ui/button";
 import { useWizardStore } from "@/store/wizard.store";
 import { applicationService } from "@/services/application.service";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, Save, CheckCircle2 } from "lucide-react";
-import { buildTemplateSchema } from "@/utils/schema-builder";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Save,
+  SaveAll,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
+import { buildWizardSchema } from "@/utils/schema-builder";
 import { parseApiError } from "@/lib/api-error";
 import type { ApiError } from "@/types";
 
@@ -43,6 +51,7 @@ export function FormWizard({
   programId,
 }: FormWizardProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { initDraft, setCurrentStep, updateFormData, setStepStatus, getDraft } =
     useWizardStore();
   const stepRef = useRef<WizardStepHandle>(null);
@@ -73,7 +82,7 @@ export function FormWizard({
         touched: false,
       }))
   );
-  const [isSaving, setIsSaving] = useState(false);
+  const [savingMode, setSavingMode] = useState<"draft" | "close" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
 
@@ -135,8 +144,8 @@ export function FormWizard({
       }
     }
 
-    const schema = buildTemplateSchema(template);
-    const result = schema.safeParse(data ?? {});
+    const schema = buildWizardSchema(template, template.repeatable ?? false);
+    const result = schema.safeParse(data ?? (template.repeatable ? [] : {}));
     if (!result.success) {
       setStepError(formatValidationErrors(result));
       return false;
@@ -181,8 +190,8 @@ export function FormWizard({
     toast.error(error.message);
   };
 
-  const handleSaveDraft = async () => {
-    setIsSaving(true);
+  const handleSaveDraft = async (closeAfterSave = false) => {
+    setSavingMode(closeAfterSave ? "close" : "draft");
     try {
       await applicationService.saveDraft({
         applicationId: draftId,
@@ -192,11 +201,19 @@ export function FormWizard({
         formData: stepData as FormData,
         stepStatuses,
       });
+      // Refresh the dashboard and applications lists so the saved draft is current.
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+
+      if (closeAfterSave) {
+        toast.success("Draft saved. You can pick up where you left off anytime.");
+        router.push("/dashboard");
+        return;
+      }
       toast.success("Draft saved successfully");
     } catch (err) {
       showApiValidationErrors(parseApiError(err));
     } finally {
-      setIsSaving(false);
+      setSavingMode(null);
     }
   };
 
@@ -205,8 +222,10 @@ export function FormWizard({
     try {
       for (let i = 0; i < templates.length; i++) {
         const template = templates[i];
-        const schema = buildTemplateSchema(template);
-        const result = schema.safeParse(stepData[template.code] ?? {});
+        const schema = buildWizardSchema(template, template.repeatable ?? false);
+        const result = schema.safeParse(
+          stepData[template.code] ?? (template.repeatable ? [] : {})
+        );
         if (!result.success) {
           navigateToStep(i);
           setStepError(formatValidationErrors(result));
@@ -225,6 +244,7 @@ export function FormWizard({
         stepStatuses,
         lastSavedAt: new Date().toISOString(),
       });
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
       toast.success("Application submitted successfully!");
       router.push("/dashboard");
     } catch (err) {
@@ -240,24 +260,41 @@ export function FormWizard({
     : undefined;
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      <div className="bg-white border-b sticky top-0 z-30">
+    <div className="min-h-screen bg-slate-50/70">
+      {/* ── Sticky header ── */}
+      <div className="bg-white/90 backdrop-blur-sm border-b border-slate-100 sticky top-0 z-30 shadow-[0_2px_12px_rgb(0,0,0,0.04)]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">{product.name}</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">{product.description}</p>
+            <div className="flex flex-col gap-0.5">
+              <h1 className="text-base font-semibold tracking-tight text-slate-900 leading-snug">
+                {product.name}
+              </h1>
+              <p className="text-xs text-slate-400 font-normal">{product.description}</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSaveDraft}
-              loading={isSaving}
-              className="gap-2"
-            >
-              <Save className="h-3.5 w-3.5" />
-              Save Draft
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSaveDraft(false)}
+                loading={savingMode === "draft"}
+                disabled={savingMode !== null || isSubmitting}
+                className="gap-1.5 text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 active:scale-[0.98]"
+              >
+                <Save className="h-3.5 w-3.5" />
+                Save Draft
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleSaveDraft(true)}
+                loading={savingMode === "close"}
+                disabled={savingMode !== null || isSubmitting}
+                className="gap-1.5 transition-all duration-200 active:scale-[0.98]"
+              >
+                <SaveAll className="h-3.5 w-3.5" />
+                Save &amp; Close
+              </Button>
+            </div>
           </div>
           <WizardProgress
             templates={templates}
@@ -268,17 +305,18 @@ export function FormWizard({
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+      {/* ── Main content ── */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {currentTemplate && (
-          <div className="mb-6">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-              <span>
-                Step {currentStep + 1} of {totalSteps + 1}
-              </span>
-            </div>
-            <h2 className="text-xl font-semibold">{currentTemplate.title}</h2>
+          <div className="mb-8">
+            <p className="text-xs font-medium tracking-widest text-slate-400 uppercase mb-2">
+              Step {currentStep + 1} of {totalSteps + 1}
+            </p>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+              {currentTemplate.title}
+            </h2>
             {currentTemplate.description && (
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-slate-500 mt-1.5 leading-relaxed max-w-2xl">
                 {currentTemplate.description}
               </p>
             )}
@@ -288,9 +326,10 @@ export function FormWizard({
         {stepError && !isReviewStep(currentStep) && (
           <div
             role="alert"
-            className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+            className="mb-6 flex items-start gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3.5 text-sm text-destructive shadow-sm"
           >
-            {stepError}
+            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <span>{stepError}</span>
           </div>
         )}
 
@@ -317,14 +356,15 @@ export function FormWizard({
           )}
         </div>
 
+        {/* ── Navigation footer ── */}
         {!isReviewStep(currentStep) && (
-          <div className="flex items-center justify-between mt-8 pt-6 border-t">
+          <div className="flex items-center justify-between mt-10 pt-6 border-t border-slate-100">
             <Button
               type="button"
               variant="outline"
               onClick={handlePrev}
               disabled={currentStep === 0}
-              className="gap-2"
+              className="gap-2 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-40 transition-all duration-200 active:scale-[0.98]"
             >
               <ArrowLeft className="h-4 w-4" />
               Previous
@@ -334,17 +374,29 @@ export function FormWizard({
               <Button
                 type="button"
                 variant="ghost"
-                onClick={handleSaveDraft}
-                loading={isSaving}
-                className="gap-2 text-muted-foreground"
+                onClick={() => handleSaveDraft(false)}
+                loading={savingMode === "draft"}
+                disabled={savingMode !== null}
+                className="gap-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200 active:scale-[0.98]"
               >
                 <Save className="h-4 w-4" />
                 Save Draft
               </Button>
               <Button
                 type="button"
+                variant="outline"
+                onClick={() => handleSaveDraft(true)}
+                loading={savingMode === "close"}
+                disabled={savingMode !== null}
+                className="gap-2 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 active:scale-[0.98]"
+              >
+                <SaveAll className="h-4 w-4" />
+                Save &amp; Close
+              </Button>
+              <Button
+                type="button"
                 onClick={handleNext}
-                className="gap-2 min-w-[120px]"
+                className="gap-2 min-w-[130px] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
               >
                 {currentStep === totalSteps - 1 ? (
                   <>

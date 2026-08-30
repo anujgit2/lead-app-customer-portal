@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useFormContext, Controller } from "react-hook-form";
-import type { FormField } from "@/types";
+import type { FormField, FieldValidation } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,9 +14,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import { FileUploadField } from "./FileUploadField";
-import { DollarSign, Percent } from "lucide-react";
+import { Percent } from "lucide-react";
+
+// ─── Pattern → human-readable example map ────────────────────────────────────
+const PATTERN_EXAMPLES: Record<string, string> = {
+  "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$": "22AAAAA0000A1Z5",
+  "^[A-Z]{5}[0-9]{4}[A-Z]{1}$": "ABCDE0000A",
+  "^[A-Z]{4}0[A-Z0-9]{6}$": "SBIN0001234",
+  "^[1-9][0-9]{5}$": "400001",
+  "^[2-9]{1}[0-9]{11}$": "2XXXXXXXXXXX (12 digits)",
+};
+
+
+/**
+ * Returns a format example string derived from validation metadata.
+ * Only shows pattern/phone/email format templates — not constraints like
+ * length or range (those are enforced silently via HTML attributes).
+ */
+function getFormatHint(validation: FieldValidation | undefined, type: string): string | null {
+  if (!validation) return null;
+
+  if (validation.pattern) {
+    const example = PATTERN_EXAMPLES[validation.pattern];
+    if (example) return example;
+  }
+
+  if (validation.phone) return "+91 XXXXX XXXXX";
+  if (validation.email && type !== "email") return "name@domain.com";
+
+  return null;
+}
+
+/**
+ * Inline format badge shown after the field label. Keeps the hint close to
+ * the label so users see it before they start typing.
+ */
+function FormatBadge({ hint }: { hint: string | null }) {
+  if (!hint) return null;
+  return (
+    <span className="ml-2 font-mono text-[10px] font-normal tracking-wide text-slate-400 bg-slate-100 rounded px-1.5 py-0.5 leading-none select-none">
+      {hint}
+    </span>
+  );
+}
 
 interface DynamicFieldProps {
   field: FormField;
@@ -55,13 +96,23 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
   };
 
   const error = getError();
-  const isRequired = field.validation?.required;
+  const v = field.validation;
+  const isRequired = v?.required;
+  const formatHint = getFormatHint(v, field.type);
+
+  // Derive placeholder: use authored value first, fall back to pattern example
+  const derivedPlaceholder =
+    field.placeholder ??
+    (v?.pattern && PATTERN_EXAMPLES[v.pattern] ? PATTERN_EXAMPLES[v.pattern] : undefined);
 
   const labelEl = (
-    <Label htmlFor={fieldName} className="text-sm font-medium text-foreground">
-      {field.label}
-      {isRequired && <span className="text-destructive ml-1">*</span>}
-    </Label>
+    <div className="flex items-center flex-wrap gap-y-0.5">
+      <Label htmlFor={fieldName} className="text-sm font-medium text-foreground">
+        {field.label}
+        {isRequired && <span className="text-destructive ml-1">*</span>}
+      </Label>
+      <FormatBadge hint={formatHint} />
+    </div>
   );
 
   if (field.type === "textarea") {
@@ -75,6 +126,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
           readOnly={field.readonly}
           error={!!error}
           rows={4}
+          maxLength={v?.maxLength}
           {...register(fieldName)}
         />
         <FieldHint text={field.helpText} />
@@ -195,6 +247,9 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
           error={!!error}
           disabled={field.disabled}
           readOnly={field.readonly}
+          min={v?.min}
+          max={v?.max}
+          step={v?.integer ? 1 : undefined}
           startAdornment={<span className="text-xs font-medium">₹</span>}
           {...register(fieldName)}
         />
@@ -215,6 +270,9 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
           error={!!error}
           disabled={field.disabled}
           readOnly={field.readonly}
+          min={v?.min}
+          max={v?.max}
+          step={v?.integer ? 1 : 0.01}
           endAdornment={<Percent className="h-3.5 w-3.5 text-muted-foreground" />}
           {...register(fieldName)}
         />
@@ -236,11 +294,15 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
       <Input
         id={fieldName}
         type={inputType}
-        placeholder={field.placeholder}
+        placeholder={derivedPlaceholder}
         error={!!error}
         disabled={field.disabled}
         readOnly={field.readonly}
         autoComplete={field.type === "email" ? "email" : undefined}
+        maxLength={v?.maxLength}
+        min={inputType === "number" ? v?.min : undefined}
+        max={inputType === "number" ? v?.max : undefined}
+        step={inputType === "number" && v?.integer ? 1 : undefined}
         {...register(fieldName)}
       />
       <FieldHint text={field.helpText} />

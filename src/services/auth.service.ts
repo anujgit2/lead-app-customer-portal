@@ -1,6 +1,9 @@
 import { apiClient } from "@/lib/axios";
 import { parseApiError } from "@/lib/api-error";
-import { clearFullSession } from "@/lib/session";
+import {
+  clearFullSession,
+  suppressSessionExpiredRedirect,
+} from "@/lib/session";
 import { sleep } from "@/lib/utils";
 import type {
   AuthResponse,
@@ -115,6 +118,20 @@ export const authService = {
     }
   },
 
+  async registerSelfServe(
+    data: RegisterApiRequest
+  ): Promise<RegisterApiResponse> {
+    try {
+      const { data: response } = await apiClient.post<RegisterApiResponse>(
+        "/auth/register",
+        data
+      );
+      return response;
+    } catch (error) {
+      throw parseApiError(error);
+    }
+  },
+
   async verifyEmailOtp(
     data: VerifyEmailOtpRequest
   ): Promise<VerifyEmailOtpResponse> {
@@ -153,8 +170,11 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
+    // Covers both the logout call itself and any in-flight request that 401s
+    // once the token is revoked, so neither bounces the user to session-expired.
+    suppressSessionExpiredRedirect();
     try {
-      await apiClient.post("/auth/logout");
+      await apiClient.post("/auth/logout", undefined, { skipAuthRedirect: true });
     } catch {
       // ignore logout API errors
     }

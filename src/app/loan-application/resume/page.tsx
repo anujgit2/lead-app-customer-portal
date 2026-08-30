@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { useParams } from "next/navigation";
+import React, { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { FormWizard } from "@/features/loan-application/FormWizard";
 import { applicationService } from "@/services/application.service";
@@ -11,9 +11,22 @@ import { parseApiError } from "@/lib/api-error";
 import type { FormData } from "@/types";
 import { normalizeApplicationFormData } from "@/utils/prefill-mapper";
 
-export default function LoanApplicationPage() {
-  const params = useParams();
-  const applicationId = params.id as string;
+function LoadingState() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3 text-muted-foreground">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center animate-pulse">
+          <Building2 className="h-5 w-5 text-primary" />
+        </div>
+        <p className="text-sm">Loading application...</p>
+      </div>
+    </div>
+  );
+}
+
+function ResumeContent() {
+  const searchParams = useSearchParams();
+  const applicationId = searchParams.get("id") ?? "";
 
   const {
     data: application,
@@ -23,6 +36,7 @@ export default function LoanApplicationPage() {
   } = useQuery({
     queryKey: ["application", applicationId],
     queryFn: () => applicationService.getApplication(applicationId),
+    enabled: !!applicationId,
     retry: 1,
   });
 
@@ -34,6 +48,18 @@ export default function LoanApplicationPage() {
         : applicationService.getLoanProducts().then((p) => p[0]),
     enabled: !!application,
   });
+
+  if (!applicationId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <ErrorState
+          compact
+          title="Invalid link"
+          message="No application ID was provided. Please go back and try again."
+        />
+      </div>
+    );
+  }
 
   if (appError) {
     const apiError = parseApiError(appQueryError);
@@ -50,16 +76,7 @@ export default function LoanApplicationPage() {
   }
 
   if (appLoading || productLoading || !product || !application) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center animate-pulse">
-            <Building2 className="h-5 w-5 text-primary" />
-          </div>
-          <p className="text-sm">Loading application...</p>
-        </div>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (application.status !== "draft") {
@@ -81,5 +98,13 @@ export default function LoanApplicationPage() {
       initialFormData={normalizeApplicationFormData(application.formData, product)}
       programId={application.programId}
     />
+  );
+}
+
+export default function ResumeLoanApplicationPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ResumeContent />
+    </Suspense>
   );
 }

@@ -75,7 +75,7 @@ export function EmailVerificationForm({
       toast.success(result.message || "Email verified successfully!");
 
       if (accepted?.applicationId) {
-        router.push(`/loan-application/${accepted.applicationId}`);
+        router.push(`/loan-application/resume?id=${accepted.applicationId}`);
       } else {
         router.push("/dashboard");
       }
