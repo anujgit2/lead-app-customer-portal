@@ -171,7 +171,28 @@ export function FormWizard({
       };
       setStepStatuses(updatedStatuses);
       setStepStatus(draftId, currentStep, { completed: true, valid: true });
+
+      // Save current step data to backend via PATCH API
+      try {
+        setSavingMode("draft");
+        await applicationService.saveDraft({
+          applicationId: draftId,
+          productCode: product.code,
+          programId,
+          currentStep,
+          formData: stepData as FormData,
+          stepStatuses: updatedStatuses,
+        });
+        queryClient.invalidateQueries({ queryKey: ["applications"] });
+      } catch (err) {
+        showApiValidationErrors(parseApiError(err));
+        setSavingMode(null);
+        return;
+      } finally {
+        setSavingMode(null);
+      }
     }
+
     navigateToStep(currentStep + 1);
   };
 
