@@ -12,12 +12,20 @@ import type {
 import { MOCK_APPLICATIONS, MOCK_SUMMARY, LOAN_FORM_TEMPLATES } from "./mock-data";
 import { programService } from "./program.service";
 
+interface ApplicationProperty {
+  type: 'DocumentProperty' | 'CompanyProperty' | 'DebtObligationProperty' | 'OwnersProperty' | 'LoanPurposeProperty' | 'BankInfoProperty';
+  name: string;
+  access?: Record<string, any>;
+  value: any;
+}
+
 interface BackendApplication {
   id: string;
   programId: string;
   formDefinitionId: string;
   applicationNumber: string;
   formData?: Record<string, unknown>;
+  properties?: ApplicationProperty[];
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -38,6 +46,76 @@ function mapStatus(status: string): ApplicationStatus {
   return valid.includes(normalized as ApplicationStatus)
     ? (normalized as ApplicationStatus)
     : "draft";
+}
+
+/**
+ * Convert formData to ApplicationProperty array for the new API format.
+ * Maps common form fields to their corresponding property types.
+ */
+function formDataToApplicationProperties(formData: Record<string, unknown>): ApplicationProperty[] {
+  const properties: ApplicationProperty[] = [];
+
+  // Map company information
+  if (formData.company) {
+    properties.push({
+      type: 'CompanyProperty',
+      name: 'company',
+      access: {},
+      value: formData.company,
+    });
+  }
+
+  // Map loan purpose
+  if (formData.loan_request) {
+    properties.push({
+      type: 'LoanPurposeProperty',
+      name: 'loanPurpose',
+      access: {},
+      value: formData.loan_request,
+    });
+  }
+
+  // Map owners
+  if (formData.owner_profile) {
+    properties.push({
+      type: 'OwnersProperty',
+      name: 'owners',
+      access: {},
+      value: Array.isArray(formData.owner_profile) ? formData.owner_profile : [formData.owner_profile],
+    });
+  }
+
+  // Map bank information
+  if (formData.bank_info) {
+    properties.push({
+      type: 'BankInfoProperty',
+      name: 'bankInfo',
+      access: {},
+      value: Array.isArray(formData.bank_info) ? formData.bank_info : [formData.bank_info],
+    });
+  }
+
+  // Map debt obligations
+  if (formData.debt_obligation) {
+    properties.push({
+      type: 'DebtObligationProperty',
+      name: 'debtObligation',
+      access: {},
+      value: Array.isArray(formData.debt_obligation) ? formData.debt_obligation : [formData.debt_obligation],
+    });
+  }
+
+  // Map documents
+  if (formData.documents) {
+    properties.push({
+      type: 'DocumentProperty',
+      name: 'documents',
+      access: {},
+      value: formData.documents,
+    });
+  }
+
+  return properties;
 }
 
 function mapApplication(app: BackendApplication, loanType = "Business Loan"): LoanApplication {
@@ -204,7 +282,8 @@ export const applicationService = {
     }
 
     try {
-      await apiClient.put(`/api/applications/${applicationId}/data`, draft.formData);
+      const properties = formDataToApplicationProperties(draft.formData);
+      await apiClient.patch(`/api/applications/${applicationId}`, properties);
       return {
         ...draft,
         applicationId,
@@ -262,7 +341,8 @@ export const applicationService = {
     }
 
     try {
-      await apiClient.put(`/api/applications/${applicationId}/data`, draft.formData);
+      const properties = formDataToApplicationProperties(draft.formData);
+      await apiClient.patch(`/api/applications/${applicationId}`, properties);
       const { data } = await apiClient.post<BackendApplication>(
         `/api/applications/${applicationId}/submit`
       );
