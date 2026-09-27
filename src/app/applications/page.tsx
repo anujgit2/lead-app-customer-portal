@@ -4,13 +4,14 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { AppLayout } from "@/layouts/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { applicationService } from "@/services/application.service";
+import { ApplicationDetailsDialog } from "@/features/applications/ApplicationDetailsDialog";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import type { ApplicationStatus } from "@/types";
-import { FileText, PlusCircle } from "lucide-react";
+import type { ApplicationStatus, LoanApplication } from "@/types";
+import { Eye, FileText } from "lucide-react";
 
 function StatusBadge({ status }: { status: ApplicationStatus }) {
   const config: Record<ApplicationStatus, { label: string; variant: "success" | "warning" | "destructive" | "info" | "draft" | "default" }> = {
@@ -26,6 +27,8 @@ function StatusBadge({ status }: { status: ApplicationStatus }) {
 }
 
 export default function ApplicationsPage() {
+  const [selectedApplication, setSelectedApplication] =
+    React.useState<LoanApplication | null>(null);
   const { data: applications, isLoading } = useQuery({
     queryKey: ["applications"],
     queryFn: () => applicationService.getApplications(),
@@ -34,19 +37,13 @@ export default function ApplicationsPage() {
   return (
     <AppLayout>
       <div className="p-6 sm:p-8 max-w-5xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
+        <div>
           <div>
             <h1 className="text-2xl font-semibold">Applications</h1>
             <p className="text-muted-foreground text-sm mt-1">
               All your loan applications
             </p>
           </div>
-          <Link href="/loan-application/new">
-            <Button className="gap-2">
-              <PlusCircle className="h-4 w-4" />
-              New Application
-            </Button>
-          </Link>
         </div>
 
         <Card>
@@ -93,7 +90,16 @@ export default function ApplicationsPage() {
                           <Button variant="outline" size="sm">Continue</Button>
                         </Link>
                       )}
-                      <Button variant="ghost" size="sm">View</Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setSelectedApplication(app)}
+                        className="gap-1.5 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        View
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -102,6 +108,12 @@ export default function ApplicationsPage() {
           </CardContent>
         </Card>
       </div>
+      <ApplicationDetailsDialog
+        application={selectedApplication}
+        onOpenChange={(open) => {
+          if (!open) setSelectedApplication(null);
+        }}
+      />
     </AppLayout>
   );
 }

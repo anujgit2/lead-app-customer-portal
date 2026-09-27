@@ -13,10 +13,8 @@ import {
   Bell,
   ChevronDown,
   Building2,
-  PlusCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useAuthStore } from "@/store/auth.store";
@@ -34,11 +32,6 @@ const NAV_ITEMS = [
     label: "Applications",
     href: "/applications",
     icon: FileText,
-  },
-  {
-    label: "Profile",
-    href: "/profile",
-    icon: User,
   },
 ];
 
@@ -100,13 +93,6 @@ export function AppLayout({ children }: AppLayoutProps) {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
-            <Link href="/loan-application/new">
-              <Button size="sm" className="hidden sm:flex gap-2">
-                <PlusCircle className="h-3.5 w-3.5" />
-                New Application
-              </Button>
-            </Link>
-
             <button className="relative p-2 rounded-md hover:bg-muted transition-colors">
               <Bell className="h-4.5 w-4.5 text-muted-foreground" />
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-primary rounded-full" />
@@ -208,15 +194,6 @@ export function AppLayout({ children }: AppLayoutProps) {
                   </Link>
                 );
               })}
-              <Separator />
-              <Link
-                href="/loan-application/new"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium bg-primary text-white"
-              >
-                <PlusCircle className="h-4 w-4" />
-                New Application
-              </Link>
             </nav>
           </div>
         </>

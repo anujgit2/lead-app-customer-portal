@@ -51,7 +51,7 @@ function ReviewSection({
   const section = template.sections.find((s) => s.code === sectionCode);
   if (!section) return null;
 
-  const renderFields = (data: Record<string, unknown>, prefix?: string) => (
+  const renderFields = (data: Record<string, unknown>) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
       {section.fields.map((field) => {
         const value = data[field.name];
@@ -90,48 +90,47 @@ function ReviewSection({
   return null;
 }
 
-export function ReviewScreen({
+interface ApplicationFormSummaryProps {
+  templates: FormTemplate[];
+  formData: FormData;
+  onEditStep?: (stepIndex: number) => void;
+}
+
+export function ApplicationFormSummary({
   templates,
   formData,
   onEditStep,
-  onSubmit,
-  isSubmitting,
-}: ReviewScreenProps) {
+}: ApplicationFormSummaryProps) {
   return (
     <div className="space-y-6">
-      <div className="text-center py-4">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4">
-          <CheckCircle2 className="h-7 w-7 text-primary" />
-        </div>
-        <h2 className="text-xl font-semibold">Review Your Application</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Please review all the information before submitting
-        </p>
-      </div>
-
       {templates.map((template, stepIndex) => {
-        const templateData = formData[template.code] as Record<string, unknown> | undefined;
+        const templateData = formData[template.code] as
+          | Record<string, unknown>
+          | Record<string, unknown>[]
+          | undefined;
 
         return (
           <Card key={template.code}>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="text-xs">
                     Step {stepIndex + 1}
                   </Badge>
                   <CardTitle className="text-base">{template.title}</CardTitle>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onEditStep(stepIndex)}
-                  className="gap-1.5 text-primary hover:text-primary"
-                >
-                  <Edit2 className="h-3.5 w-3.5" />
-                  Edit
-                </Button>
+                {onEditStep && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onEditStep(stepIndex)}
+                    className="gap-1.5 text-primary hover:text-primary transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+                  >
+                    <Edit2 className="h-3.5 w-3.5" />
+                    Edit
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -143,7 +142,7 @@ export function ReviewScreen({
                         {template.title} #{i + 1}
                       </p>
                       {template.sections.map((section) => {
-                        const sData = (instance as Record<string, unknown>)?.[section.code];
+                        const sData = instance?.[section.code];
                         return (
                           <div key={section.code}>
                             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 mt-4 first:mt-0">
@@ -169,7 +168,11 @@ export function ReviewScreen({
                         {section.title}
                       </p>
                       <ReviewSection
-                        sectionData={templateData?.[section.code]}
+                        sectionData={
+                          !Array.isArray(templateData)
+                            ? templateData?.[section.code]
+                            : undefined
+                        }
                         template={template}
                         sectionCode={section.code}
                       />
@@ -181,6 +184,34 @@ export function ReviewScreen({
           </Card>
         );
       })}
+    </div>
+  );
+}
+
+export function ReviewScreen({
+  templates,
+  formData,
+  onEditStep,
+  onSubmit,
+  isSubmitting,
+}: ReviewScreenProps) {
+  return (
+    <div className="space-y-6">
+      <div className="text-center py-4">
+        <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 mb-4">
+          <CheckCircle2 className="h-7 w-7 text-primary" />
+        </div>
+        <h2 className="text-xl font-semibold">Review Your Application</h2>
+        <p className="text-muted-foreground text-sm mt-1">
+          Please review all the information before submitting
+        </p>
+      </div>
+
+      <ApplicationFormSummary
+        templates={templates}
+        formData={formData}
+        onEditStep={onEditStep}
+      />
 
       <Card className="border-primary/20 bg-primary/5">
         <CardContent className="p-6">

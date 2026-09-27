@@ -25,7 +25,28 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 | `NEXT_PUBLIC_API_URL` | yes | Base URL for the backend API. |
 | `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | production | reCAPTCHA v2 ("I'm not a robot") site key used by the human check on self-serve signup. |
 
-Create a site key at the [reCAPTCHA admin console](https://www.google.com/recaptcha/admin), choosing **reCAPTCHA v2 → "I'm not a robot" Checkbox**, and add every host you serve from (including `localhost` for local work):
+This app builds as a static export (`output: "export"` in `next.config.ts`) — there is no Next.js server at runtime, so `NEXT_PUBLIC_*` vars are baked into the JS bundle at build time and the browser calls the backend directly. **Changing an environment's backend URL always requires a rebuild.**
+
+### Building for different environments
+
+| File | Committed? | Loaded by |
+|---|---|---|
+| `.env.local` | No (personal, gitignored) | `npm run dev` (highest priority override) |
+| `.env.development` | Yes | `npm run dev` (default) / `npm run build:dev` |
+| `.env.uat` | Yes (placeholder value) | `npm run build:uat` |
+| `.env.production` | Yes | `npm run build` / `npm run build:prod` |
+
+```bash
+npm run dev          # local dev server — uses .env.local, falls back to .env.development
+npm run build:dev    # static build targeting the shared AWS dev backend
+npm run build:uat    # static build targeting UAT (edit .env.uat first, or use CI)
+npm run build:prod   # static build targeting production
+npm run start         # serve the built ./out folder locally (after any build above)
+```
+
+Real CI/CD deployments (`.github/workflows/*.yml`) don't read the committed `.env.uat`/`.env.production` files — they inject the real backend URL as a Docker `--build-arg NEXT_PUBLIC_API_URL=...` from GitHub Actions secrets/variables, so production URLs never need to live in the repo.
+
+Create a reCAPTCHA site key at the [reCAPTCHA admin console](https://www.google.com/recaptcha/admin), choosing **reCAPTCHA v2 → "I'm not a robot" Checkbox**, and add every host you serve from (including `localhost` for local work):
 
 ```bash
 # .env.local

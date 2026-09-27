@@ -6,14 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import {
   FileText,
   PlusCircle,
-  User,
   ArrowRight,
   Layers,
   PenLine,
   Send,
   CheckCircle2,
-  Mail,
-  Phone,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -170,9 +167,9 @@ export function DashboardPage() {
         />
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div>
         {/* Loan Applications List */}
-        <div className="lg:col-span-2">
+        <div>
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -254,61 +251,6 @@ export function DashboardPage() {
           </Card>
         </div>
 
-        {/* Profile */}
-        <div>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Profile</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <User className="h-5 w-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {user?.firstName} {user?.lastName}
-                  </p>
-                  {user?.status && (
-                    <p className="text-xs text-muted-foreground">
-                      Account {user.status.toLowerCase()}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2.5 px-1">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="text-xs truncate" title={user?.email}>
-                    {user?.email ?? "—"}
-                  </span>
-                  {user?.emailVerified && (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 ml-auto" />
-                  )}
-                </div>
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="text-xs truncate">{user?.phone || "Not added"}</span>
-                  {user?.phoneVerified && (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0 ml-auto" />
-                  )}
-                </div>
-              </div>
-
-              <Link href="/profile" className="block pt-1">
-                <Button
-                  variant="outline"
-                  className="w-full gap-2 transition-all duration-200 ease-out hover:-translate-y-0.5"
-                >
-                  <User className="h-4 w-4" />
-                  View profile details
-                  <ArrowRight className="h-4 w-4 ml-auto" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );
