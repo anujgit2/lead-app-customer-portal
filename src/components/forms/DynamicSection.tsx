@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { buildSectionDefaults } from "@/utils/schema-builder";
 
 interface DynamicSectionProps {
   section: FormSection;
@@ -24,14 +25,14 @@ function FieldGrid({ section, namePrefix }: { section: FormSection; namePrefix?:
     "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
 
   return (
-    <div className={cn("grid gap-4", gridClass)}>
+    <div className={cn("grid items-start gap-x-6 gap-y-5", gridClass)}>
       {section.fields.map((field) => (
         <div
           key={field.name}
           className={cn(
             field.span === 2 && "sm:col-span-2",
             field.span === 3 && "sm:col-span-2 lg:col-span-3",
-            field.span === 4 && "col-span-full"
+            (field.span === 4 || field.type === "json" || field.type === "textarea") && "col-span-full"
           )}
         >
           <DynamicField field={field} namePrefix={namePrefix} />
@@ -52,14 +53,6 @@ function RepeatableSectionInstances({
 
   const toggleCollapse = (index: number) => {
     setCollapsed((prev) => ({ ...prev, [index]: !prev[index] }));
-  };
-
-  const getDefaultValues = () => {
-    const defaults: Record<string, unknown> = {};
-    section.fields.forEach((f) => {
-      defaults[f.name] = f.defaultValue ?? (f.type === "checkbox" ? false : "");
-    });
-    return defaults;
   };
 
   return (
@@ -113,7 +106,7 @@ function RepeatableSectionInstances({
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => append(getDefaultValues())}
+          onClick={() => append(buildSectionDefaults(section))}
           className="gap-1.5"
         >
           <Plus className="h-3.5 w-3.5" />

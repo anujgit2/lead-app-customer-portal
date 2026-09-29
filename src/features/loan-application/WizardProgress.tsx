@@ -1,7 +1,6 @@
 "use client";
 
-import React from "react";
-import { CheckCircle2, Circle, AlertCircle } from "lucide-react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { FormTemplate, WizardStepStatus } from "@/types";
 
@@ -30,98 +29,95 @@ export function WizardProgress({
             style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
           />
         </div>
-        <span className="text-xs text-muted-foreground whitespace-nowrap">
-          Step {currentStep + 1} of {totalSteps}
-        </span>
       </div>
 
       {/* Desktop step indicator */}
-      <div className="hidden sm:flex items-center">
-        {templates.map((template, index) => {
-          const status = stepStatuses[index];
-          const isCurrent = index === currentStep;
-          const isCompleted = status?.completed;
-          const isPast = index < currentStep;
-          const canNavigate = isPast || isCurrent;
+      <div className="hidden sm:block">
+        <div
+          className="grid items-start"
+          style={{ gridTemplateColumns: `repeat(${totalSteps}, minmax(0, 1fr))` }}
+        >
+          {templates.map((template, index) => {
+            const isCurrent = index === currentStep;
+            const isCompleted = Boolean(stepStatuses[index]?.completed);
+            const canNavigate = index <= currentStep || isCompleted;
 
-          return (
-            <React.Fragment key={template.code}>
+            return (
               <button
+                key={template.code}
                 type="button"
                 onClick={() => canNavigate && onStepClick?.(index)}
                 disabled={!canNavigate}
+                aria-current={isCurrent ? "step" : undefined}
                 className={cn(
-                  "flex flex-col items-center gap-1.5 min-w-0 group",
-                  canNavigate ? "cursor-pointer" : "cursor-not-allowed"
+                  "group flex min-w-0 flex-col items-center gap-2 rounded-lg px-1 py-1 transition-all duration-200 ease-out active:scale-[0.98]",
+                  canNavigate
+                    ? "cursor-pointer hover:-translate-y-0.5"
+                    : "cursor-not-allowed"
                 )}
               >
-                <div
+                <span
                   className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs font-semibold transition-all duration-200",
-                    isCurrent &&
-                      "border-primary bg-primary text-white shadow-md shadow-primary/30 scale-110",
-                    isCompleted && !isCurrent &&
-                      "border-green-500 bg-green-500 text-white",
-                    !isCurrent && !isCompleted &&
-                      "border-muted-foreground/30 bg-background text-muted-foreground"
+                    "flex h-5 w-5 items-center justify-center rounded-full transition-all duration-200 ease-out",
+                    isCurrent && "bg-primary shadow-sm shadow-primary/25",
+                    isCompleted && !isCurrent && "bg-emerald-500",
+                    !isCurrent &&
+                      !isCompleted &&
+                      "border-2 border-slate-300 bg-white"
                   )}
                 >
                   {isCompleted && !isCurrent ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : (
-                    <span>{index + 1}</span>
-                  )}
-                </div>
+                    <Check className="h-3.5 w-3.5 stroke-[3] text-white" />
+                  ) : isCurrent ? (
+                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                  ) : null}
+                </span>
                 <span
                   className={cn(
-                    "text-xs text-center leading-tight max-w-[80px] transition-colors",
-                    isCurrent ? "text-primary font-semibold" :
-                    isCompleted ? "text-foreground" :
-                    "text-muted-foreground"
+                    "max-w-[110px] text-center text-xs leading-tight transition-colors duration-200",
+                    isCurrent
+                      ? "font-semibold text-slate-900"
+                      : isCompleted
+                        ? "font-medium text-slate-700"
+                        : "font-normal text-slate-500"
                   )}
                 >
                   {template.title}
                 </span>
               </button>
+            );
+          })}
 
-              {index < templates.length - 1 && (
-                <div
-                  className={cn(
-                    "flex-1 h-0.5 mx-1 transition-all duration-500",
-                    isPast ? "bg-green-500" : "bg-muted"
-                  )}
-                />
-              )}
-            </React.Fragment>
-          );
-        })}
-
-        {/* Review step */}
-        <>
-          <div className={cn("flex-1 h-0.5 mx-1", currentStep >= templates.length ? "bg-green-500" : "bg-muted")} />
-          <div className="flex flex-col items-center gap-1.5">
-            <div
-              className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs font-semibold transition-all",
-                currentStep === templates.length
-                  ? "border-primary bg-primary text-white shadow-md shadow-primary/30 scale-110"
-                  : "border-muted-foreground/30 bg-background text-muted-foreground"
-              )}
-            >
-              <span>{templates.length + 1}</span>
-            </div>
+          <div
+            aria-current={currentStep === templates.length ? "step" : undefined}
+            className="flex min-w-0 flex-col items-center gap-2 px-1 py-1"
+          >
             <span
               className={cn(
-                "text-xs text-center leading-tight max-w-[80px]",
+                "flex h-5 w-5 items-center justify-center rounded-full transition-all duration-200 ease-out",
                 currentStep === templates.length
-                  ? "text-primary font-semibold"
-                  : "text-muted-foreground"
+                  ? "bg-primary shadow-sm shadow-primary/25"
+                  : "border-2 border-slate-300 bg-white"
+              )}
+            >
+              {currentStep === templates.length && (
+                <span className="h-1.5 w-1.5 rounded-full bg-white" />
+              )}
+            </span>
+            <span
+              className={cn(
+                "text-center text-xs leading-tight",
+                currentStep === templates.length
+                  ? "font-semibold text-slate-900"
+                  : "font-normal text-slate-500"
               )}
             >
               Review
             </span>
           </div>
-        </>
+        </div>
+
+        <div className="mt-3 border-t-2 border-slate-200" />
       </div>
     </div>
   );

@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useCallback, useImperativeHandle, forwardRef } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { FormTemplate } from "@/types";
-import { buildTemplateSchema } from "@/utils/schema-builder";
+import { buildTemplateSchema, mergeTemplateDefaults } from "@/utils/schema-builder";
 import { DynamicSection } from "@/components/forms/DynamicSection";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -19,6 +19,8 @@ interface WizardStepProps {
   defaultValues?: unknown;
   onValidChange?: (valid: boolean) => void;
   onDataChange?: (data: unknown) => void;
+  /** Optional — surfaces the live RHF error tree (e.g. for a dev inspector). Unused in production. */
+  onErrorsChange?: (errors: FieldErrors) => void;
   formRef?: React.RefObject<HTMLFormElement | null>;
 }
 
@@ -30,6 +32,7 @@ function RepeatableInstance({
   onRemove,
   onChange,
   onValidateRef,
+  onErrors,
 }: {
   template: FormTemplate;
   index: number;
@@ -38,19 +41,23 @@ function RepeatableInstance({
   onRemove: () => void;
   onChange: (index: number, data: unknown) => void;
   onValidateRef?: (index: number, validate: () => Promise<boolean>) => void;
+  onErrors?: (index: number, errors: FieldErrors) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const schema = buildTemplateSchema(template);
   const methods = useForm({
     resolver: zodResolver(schema),
-    defaultValues: (defaultValues as Record<string, unknown>) ?? {},
+    defaultValues: mergeTemplateDefaults(template, defaultValues),
     mode: "onChange",
   });
 
   React.useEffect(() => {
-    const sub = methods.watch((data) => onChange(index, data));
+    const sub = methods.watch((data) => {
+      onChange(index, data);
+      onErrors?.(index, methods.formState.errors);
+    });
     return () => sub.unsubscribe();
-  }, [methods, index, onChange]);
+  }, [methods, index, onChange, onErrors]);
 
   React.useEffect(() => {
     onValidateRef?.(index, () => methods.trigger());
@@ -106,11 +113,13 @@ function RepeatableTemplateInstances({
   template,
   defaultValues,
   onDataChange,
+  onErrorsChange,
   validateRef,
 }: {
   template: FormTemplate;
   defaultValues?: unknown;
   onDataChange?: (data: unknown) => void;
+  onErrorsChange?: (errors: FieldErrors) => void;
   validateRef?: React.RefObject<WizardStepHandle | null>;
 }) {
   const initData =
@@ -120,12 +129,21 @@ function RepeatableTemplateInstances({
 
   const [instances, setInstances] = useState<unknown[]>(initData);
   const validatorsRef = React.useRef<Map<number, () => Promise<boolean>>>(new Map());
+  const errorsRef = React.useRef<Map<number, FieldErrors>>(new Map());
 
   const handleValidateRef = useCallback(
     (index: number, validate: () => Promise<boolean>) => {
       validatorsRef.current.set(index, validate);
     },
     []
+  );
+
+  const handleInstanceErrors = useCallback(
+    (index: number, errors: FieldErrors) => {
+      errorsRef.current.set(index, errors);
+      onErrorsChange?.(Array.from(errorsRef.current.values()) as unknown as FieldErrors);
+    },
+    [onErrorsChange]
   );
 
   useImperativeHandle(validateRef, () => ({
@@ -181,6 +199,7 @@ function RepeatableTemplateInstances({
           onRemove={() => removeInstance(index)}
           onChange={handleChange}
           onValidateRef={handleValidateRef}
+          onErrors={handleInstanceErrors}
         />
       ))}
 
@@ -201,13 +220,13 @@ function RepeatableTemplateInstances({
 
 const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
   function SingleTemplateForm(
-    { template, defaultValues, onValidChange, onDataChange, formRef },
+    { template, defaultValues, onValidChange, onDataChange, onErrorsChange, formRef },
     ref
   ) {
     const schema = buildTemplateSchema(template);
     const methods = useForm({
       resolver: zodResolver(schema),
-      defaultValues: (defaultValues as Record<string, unknown>) ?? {},
+      defaultValues: mergeTemplateDefaults(template, defaultValues),
       mode: "onChange",
     });
 
@@ -218,10 +237,13 @@ const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
     React.useEffect(() => {
       const subscription = methods.watch((data) => {
         onDataChange?.(data);
-        methods.trigger().then((valid) => onValidChange?.(valid));
+        methods.trigger().then((valid) => {
+          onValidChange?.(valid);
+          onErrorsChange?.(methods.formState.errors);
+        });
       });
       return () => subscription.unsubscribe();
-    }, [methods, onDataChange, onValidChange]);
+    }, [methods, onDataChange, onValidChange, onErrorsChange]);
 
     return (
       <FormProvider {...methods}>
@@ -248,6 +270,7 @@ export const WizardStep = forwardRef<WizardStepHandle, WizardStepProps>(
           template={props.template}
           defaultValues={props.defaultValues}
           onDataChange={props.onDataChange}
+          onErrorsChange={props.onErrorsChange}
           validateRef={ref as React.RefObject<WizardStepHandle | null>}
         />
       );

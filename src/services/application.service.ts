@@ -8,15 +8,133 @@ import type {
   DraftApplication,
   ApplicationStatus,
   FormData,
+  FormField,
+  FormSection,
+  FormTemplate,
 } from "@/types";
 import { MOCK_APPLICATIONS, MOCK_SUMMARY, LOAN_FORM_TEMPLATES } from "./mock-data";
 import { programService } from "./program.service";
 
 interface ApplicationProperty {
-  type: 'DocumentProperty' | 'CompanyProperty' | 'DebtObligationProperty' | 'OwnersProperty' | 'LoanPurposeProperty' | 'BankInfoProperty';
+  /** Template `type` from the backend, e.g. "CompanyProperty". */
+  type: string;
   name: string;
-  access?: Record<string, any>;
-  value: any;
+  access?: Record<string, unknown>;
+  value: unknown;
+}
+
+function toCamelCase(value: string): string {
+  return value.toLowerCase().replace(/[_-]+([a-z0-9])/g, (_, c: string) => c.toUpperCase());
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeFieldValue(field: FormField, value: unknown): unknown {
+  if (value === undefined || value === null || value === "") return undefined;
+
+  switch (field.type) {
+    case "number":
+    case "currency":
+    case "percentage": {
+      const num = typeof value === "number" ? value : Number(value);
+      return Number.isFinite(num) ? num : undefined;
+    }
+    case "checkbox":
+      return Boolean(value);
+    case "json":
+      if (typeof value !== "string") return value;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    case "file":
+      return undefined;
+    default:
+      return value;
+  }
+}
+
+/** Picks only the fields declared in the section, keyed by field `name`. */
+function buildSectionValue(
+  section: FormSection,
+  data: unknown
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  if (!isPlainObject(data)) return result;
+  for (const field of section.fields) {
+    const value = normalizeFieldValue(field, data[field.name]);
+    if (value !== undefined) result[field.name] = value;
+  }
+  return result;
+}
+
+/**
+ * Non-repeatable section fields are merged flat into the property value.
+ * Repeatable sections are nested under `payloadKey` (or the camelCased code):
+ * as a single object when `maxInstances` is 1, otherwise as an array.
+ */
+function buildTemplateValue(
+  template: FormTemplate,
+  data: unknown
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  if (!isPlainObject(data)) return result;
+
+  for (const section of template.sections) {
+    const sectionData = data[section.code];
+    if (section.repeatable) {
+      const items = (Array.isArray(sectionData) ? sectionData : [])
+        .map((item) => buildSectionValue(section, item))
+        .filter((item) => Object.keys(item).length > 0);
+      if (items.length === 0) continue;
+      const key = section.payloadKey ?? toCamelCase(section.code);
+      result[key] = section.maxInstances === 1 ? items[0] : items;
+    } else {
+      Object.assign(result, buildSectionValue(section, sectionData));
+    }
+  }
+  return result;
+}
+
+function formDataToApplicationProperties(
+  formData: Record<string, unknown>,
+  templates: FormTemplate[]
+): ApplicationProperty[] {
+  const properties: ApplicationProperty[] = [];
+
+  for (const template of templates) {
+    const data = formData[template.code];
+    if (data === undefined) continue;
+    if (!template.propertyType || !template.propertyName) {
+      console.warn(`[applicationService] Template "${template.code}" has no backend property type; skipped.`);
+      continue;
+    }
+
+    let value: unknown;
+    if (template.repeatable) {
+      const instances = (Array.isArray(data) ? data : [data])
+        .map((instance) => buildTemplateValue(template, instance))
+        .filter((instance) => Object.keys(instance).length > 0);
+      if (instances.length === 0) continue;
+      value = instances;
+    } else {
+      const single = buildTemplateValue(template, data);
+      if (Object.keys(single).length === 0) continue;
+      value = single;
+    }
+
+    properties.push({
+      type: template.propertyType,
+      name: template.propertyName,
+      access: {},
+      value,
+    });
+  }
+
+  return properties;
 }
 
 interface BackendApplication {
@@ -48,75 +166,6 @@ function mapStatus(status: string): ApplicationStatus {
     : "draft";
 }
 
-/**
- * Convert formData to ApplicationProperty array for the new API format.
- * Maps common form fields to their corresponding property types.
- */
-function formDataToApplicationProperties(formData: Record<string, unknown>): ApplicationProperty[] {
-  const properties: ApplicationProperty[] = [];
-
-  // Map company information
-  if (formData.company) {
-    properties.push({
-      type: 'CompanyProperty',
-      name: 'company',
-      access: {},
-      value: formData.company,
-    });
-  }
-
-  // Map loan purpose
-  if (formData.loan_request) {
-    properties.push({
-      type: 'LoanPurposeProperty',
-      name: 'loanPurpose',
-      access: {},
-      value: formData.loan_request,
-    });
-  }
-
-  // Map owners
-  if (formData.owner_profile) {
-    properties.push({
-      type: 'OwnersProperty',
-      name: 'owners',
-      access: {},
-      value: Array.isArray(formData.owner_profile) ? formData.owner_profile : [formData.owner_profile],
-    });
-  }
-
-  // Map bank information
-  if (formData.bank_info) {
-    properties.push({
-      type: 'BankInfoProperty',
-      name: 'bankInfo',
-      access: {},
-      value: Array.isArray(formData.bank_info) ? formData.bank_info : [formData.bank_info],
-    });
-  }
-
-  // Map debt obligations
-  if (formData.debt_obligation) {
-    properties.push({
-      type: 'DebtObligationProperty',
-      name: 'debtObligation',
-      access: {},
-      value: Array.isArray(formData.debt_obligation) ? formData.debt_obligation : [formData.debt_obligation],
-    });
-  }
-
-  // Map documents
-  if (formData.documents) {
-    properties.push({
-      type: 'DocumentProperty',
-      name: 'documents',
-      access: {},
-      value: formData.documents,
-    });
-  }
-
-  return properties;
-}
 
 function mapApplication(app: BackendApplication, loanType = "Business Loan"): LoanApplication {
   const formData = app.formData ?? {};
@@ -247,7 +296,7 @@ export const applicationService = {
 
       const programDetails = await apiClient.get<{
         name: string;
-        formTemplates: { formTemplate: { id: string } }[];
+        formTemplates: { template: { id: string } }[];
       }>(`/api/programs/${resolvedProgramId}/with-form-templates`);
 
       if (!programDetails.data.formTemplates?.length) {
@@ -255,7 +304,7 @@ export const applicationService = {
       }
 
       const formDefinitionId =
-        programDetails.data.formTemplates[0].formTemplate.id;
+        programDetails.data.formTemplates[0].template.id;
 
       const { data } = await apiClient.post<BackendApplication>(
         "/api/applications",
@@ -274,7 +323,8 @@ export const applicationService = {
   },
 
   async saveDraft(
-    draft: Omit<DraftApplication, "applicationId"> & { applicationId?: string }
+    draft: Omit<DraftApplication, "applicationId"> & { applicationId?: string },
+    templates: FormTemplate[]
   ): Promise<DraftApplication> {
     const applicationId = draft.applicationId;
     if (!applicationId) {
@@ -282,8 +332,10 @@ export const applicationService = {
     }
 
     try {
-      const properties = formDataToApplicationProperties(draft.formData);
-      await apiClient.patch(`/api/applications/${applicationId}`, properties);
+      const properties = formDataToApplicationProperties(draft.formData, templates);
+      if (properties.length > 0) {
+        await apiClient.patch(`/api/applications/${applicationId}`, properties);
+      }
       return {
         ...draft,
         applicationId,
@@ -334,6 +386,7 @@ export const applicationService = {
     }
   },
 
+  /** Each step is PATCHed on Continue, so submit only transitions the application's status. */
   async submitApplication(draft: DraftApplication): Promise<LoanApplication> {
     const applicationId = draft.applicationId;
     if (!applicationId) {
@@ -341,8 +394,6 @@ export const applicationService = {
     }
 
     try {
-      const properties = formDataToApplicationProperties(draft.formData);
-      await apiClient.patch(`/api/applications/${applicationId}`, properties);
       const { data } = await apiClient.post<BackendApplication>(
         `/api/applications/${applicationId}/submit`
       );

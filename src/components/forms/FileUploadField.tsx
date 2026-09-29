@@ -24,15 +24,19 @@ interface FileUploadFieldProps {
 }
 
 export function FileUploadField({
-  value = [],
+  value,
   onChange,
   accept,
   maxFiles = 1,
   maxSizeMB = 5,
   error,
 }: FileUploadFieldProps) {
+  // `value` may come from a dynamically-loaded/edited schema's `defaultValue` (e.g. in the
+  // dev form playground) which isn't guaranteed to be an array, so guard defensively here
+  // rather than assuming callers always pass File[] | undefined.
+  const safeValue = Array.isArray(value) ? value : [];
   const [fileItems, setFileItems] = useState<FileItem[]>(
-    value.map((f) => ({ file: f, progress: 100, status: "success" as const }))
+    safeValue.map((f) => ({ file: f, progress: 100, status: "success" as const }))
   );
 
   const simulateUpload = (item: FileItem) => {

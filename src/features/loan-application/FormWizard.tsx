@@ -14,7 +14,6 @@ import { toast } from "sonner";
 import {
   ArrowLeft,
   ArrowRight,
-  Save,
   SaveAll,
   CheckCircle2,
   AlertCircle,
@@ -182,7 +181,7 @@ export function FormWizard({
           currentStep,
           formData: stepData as FormData,
           stepStatuses: updatedStatuses,
-        });
+        }, [templates[currentStep]]);
         queryClient.invalidateQueries({ queryKey: ["applications"] });
       } catch (err) {
         showApiValidationErrors(parseApiError(err));
@@ -221,7 +220,7 @@ export function FormWizard({
         currentStep,
         formData: stepData as FormData,
         stepStatuses,
-      });
+      }, isReviewStep(currentStep) ? [] : [templates[currentStep]]);
       // Refresh the dashboard and applications lists so the saved draft is current.
       queryClient.invalidateQueries({ queryKey: ["applications"] });
 
@@ -285,36 +284,12 @@ export function FormWizard({
       {/* ── Sticky header ── */}
       <div className="bg-white/90 backdrop-blur-sm border-b border-slate-100 sticky top-0 z-30 shadow-[0_2px_12px_rgb(0,0,0,0.04)]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4">
             <div className="flex flex-col gap-0.5">
               <h1 className="text-base font-semibold tracking-tight text-slate-900 leading-snug">
                 {product.name}
               </h1>
               <p className="text-xs text-slate-400 font-normal">{product.description}</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleSaveDraft(false)}
-                loading={savingMode === "draft"}
-                disabled={savingMode !== null || isSubmitting}
-                className="gap-1.5 text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 active:scale-[0.98]"
-              >
-                <Save className="h-3.5 w-3.5" />
-                Save Draft
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleSaveDraft(true)}
-                loading={savingMode === "close"}
-                disabled={savingMode !== null || isSubmitting}
-                className="gap-1.5 transition-all duration-200 active:scale-[0.98]"
-              >
-                <SaveAll className="h-3.5 w-3.5" />
-                Save &amp; Close
-              </Button>
             </div>
           </div>
           <WizardProgress
@@ -323,6 +298,32 @@ export function FormWizard({
             stepStatuses={stepStatuses}
             onStepClick={navigateToStep}
           />
+          <div className="mt-1 grid grid-cols-3 items-center">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handlePrev}
+              disabled={currentStep === 0}
+              className="justify-self-start px-2 text-slate-500 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-transparent hover:text-slate-900 active:scale-[0.98]"
+            >
+              Back
+            </Button>
+            <span className="justify-self-center whitespace-nowrap text-xs font-medium text-slate-500">
+              Step {currentStep + 1} of {totalSteps + 1}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSaveDraft(false)}
+              loading={savingMode === "draft"}
+              disabled={savingMode !== null || isSubmitting}
+              className="justify-self-end px-2 text-slate-500 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-transparent hover:text-slate-900 active:scale-[0.98]"
+            >
+              Save
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -330,9 +331,6 @@ export function FormWizard({
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {currentTemplate && (
           <div className="mb-8">
-            <p className="text-xs font-medium tracking-widest text-slate-400 uppercase mb-2">
-              Step {currentStep + 1} of {totalSteps + 1}
-            </p>
             <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
               {currentTemplate.title}
             </h2>
@@ -388,21 +386,10 @@ export function FormWizard({
               className="gap-2 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-40 transition-all duration-200 active:scale-[0.98]"
             >
               <ArrowLeft className="h-4 w-4" />
-              Previous
+              Back
             </Button>
 
             <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => handleSaveDraft(false)}
-                loading={savingMode === "draft"}
-                disabled={savingMode !== null}
-                className="gap-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200 active:scale-[0.98]"
-              >
-                <Save className="h-4 w-4" />
-                Save Draft
-              </Button>
               <Button
                 type="button"
                 variant="outline"

@@ -141,9 +141,13 @@ export type FieldType =
   | "tel"
   | "checkbox"
   | "select"
+  | "radio"
   | "datetime"
+  | "date"
   | "json"
-  | "file";
+  | "file"
+  | "document"
+  | "hidden";
 
 export interface FieldOption {
   label: string;
@@ -165,12 +169,58 @@ export interface FieldValidation {
   message?: string;
 }
 
+/** Comparison operators supported by conditional field rules. */
+export type ConditionOperator =
+  | "equals"
+  | "notEquals"
+  | "in"
+  | "notIn"
+  | "exists"
+  | "notExists"
+  | "truthy"
+  | "falsy"
+  | "contains"
+  | "gt"
+  | "gte"
+  | "lt"
+  | "lte";
+
+/** A single condition evaluated against a sibling field's value within the same section/instance. */
+export interface ConditionRule {
+  field: string;
+  operator: ConditionOperator;
+  value?: unknown;
+}
+
+/** Conditional visibility/required rules for a field. Evaluated by `src/utils/rule-engine.ts`. */
+export interface FieldRules {
+  visibleWhen?: ConditionRule;
+  requiredWhen?: ConditionRule;
+}
+
+/** Input mask config. `pattern` uses `A` for a letter slot, `0` for a digit slot; any other
+ *  character is a literal that is auto-inserted (e.g. `AAAAA-0000-A`, `000-0000-000`). */
+export interface MaskConfig {
+  pattern: string;
+  transform?: "uppercase" | "lowercase";
+}
+
 export interface FormField {
   name: string;
   label: string;
   type: FieldType;
   placeholder?: string;
   helpText?: string;
+  info?: string;
+  /** Backend data path this field maps to (e.g. "business.legalName"). Informational — shown in Debug mode. */
+  path?: string;
+  /** Static text shown immediately before the input (e.g. "+91"). */
+  prefix?: string;
+  /** Static text shown immediately after the input (e.g. "%", "Kg"). */
+  suffix?: string;
+  mask?: MaskConfig;
+  /** Conditional visibility/required rules. Absent = always visible, required only if `validation.required`. */
+  rules?: FieldRules;
   defaultValue?: unknown;
   options?: FieldOption[];
   validation?: FieldValidation;
@@ -197,11 +247,17 @@ export interface FormSection {
   maxInstances?: number;
   fields: FormField[];
   columns?: 1 | 2 | 3 | 4;
+  /** Key used for this section in the backend property value; defaults to the camelCased code. */
+  payloadKey?: string;
 }
 
 export interface FormTemplate {
   code: string;
   title: string;
+  /** Backend application property this template's data is saved under (e.g. "CompanyProperty"). */
+  propertyType?: string;
+  /** Backend property name (e.g. "company"). */
+  propertyName?: string;
   description?: string;
   icon?: string;
   repeatable?: boolean;

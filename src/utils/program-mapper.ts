@@ -6,16 +6,19 @@ import type {
   FormTemplate,
   LoanProduct,
 } from "@/types";
-
 interface BackendFieldSchema {
   name: string;
   label: string;
   type: string;
+  column?: string;
   placeholder?: string;
   helpText?: string;
+  info?: string;
   required?: boolean;
   maxLength?: number;
   minLength?: number;
+  precision?: number;
+  scale?: number;
   defaultValue?: unknown;
   options?: string[] | FieldOption[];
   validation?: FieldValidation;
@@ -28,16 +31,19 @@ interface BackendFieldSchema {
 interface BackendSectionSchema {
   code: string;
   title: string;
+  table?: string;
   description?: string;
   repeatable?: boolean;
   minInstances?: number;
   maxInstances?: number;
   columns?: number;
+  displayOrder?: number;
   fields: BackendFieldSchema[];
 }
 
 interface BackendFormSchema {
   formCode: string;
+  table?: string;
   title?: string;
   description?: string;
   repeatable?: boolean;
@@ -46,16 +52,22 @@ interface BackendFormSchema {
   sections: BackendSectionSchema[];
 }
 
+type BackendSchemaPayload = BackendFormSchema[] | BackendFormSchema;
+
 export interface BackendFormTemplateMapping {
   id: string;
   displayOrder: number;
   required?: boolean;
   visible?: boolean;
-  formTemplate: {
+  template: {
     id: string;
-    templateCode: string;
+    type: string;
     name: string;
-    templateSchema: BackendFormSchema[] | BackendFormSchema;
+    version?: number;
+    status?: string;
+    schema?: BackendSchemaPayload;
+    /** Legacy key used by older API versions. */
+    templateSchema?: BackendSchemaPayload;
   };
 }
 
@@ -82,6 +94,18 @@ function formatOptionLabel(value: string): string {
     .join(" ");
 }
 
+/** Converts camelCase / snake_case identifiers into a readable title. */
+function humanize(value: string): string {
+  return value
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .trim();
+}
+
+const SPANS = [1, 2, 3, 4, 6, 12] as const;
+const COLUMNS = [1, 2, 3, 4] as const;
+
 function mapField(field: BackendFieldSchema): FormField {
   const validation: FieldValidation = {
     ...(field.validation ?? {}),
@@ -93,60 +117,81 @@ function mapField(field: BackendFieldSchema): FormField {
 
   return {
     name: field.name,
-    label: field.label,
+    label: field.label ?? humanize(field.name),
     type: field.type as FormField["type"],
     placeholder: field.placeholder,
     helpText: field.helpText,
+    info: field.info,
     defaultValue: field.defaultValue,
     options: mapOptions(field.options),
     validation: Object.keys(validation).length > 0 ? validation : undefined,
-    span: field.span as FormField["span"],
+    span: SPANS.find((s) => s === field.span),
     accept: field.accept,
     maxFiles: field.maxFiles,
     maxSize: field.maxSize,
   };
 }
 
+function byDisplayOrder<T extends { displayOrder?: number }>(a: T, b: T): number {
+  return (a.displayOrder ?? Number.MAX_SAFE_INTEGER) - (b.displayOrder ?? Number.MAX_SAFE_INTEGER);
+}
+
+/**
+ * Sections whose backend DTO shape differs from the template schema.
+ * `maxInstances: 1` means the backend accepts a single object, not an array.
+ */
+const SECTION_OVERRIDES: Record<string, Pick<FormSection, "payloadKey" | "maxInstances">> = {
+  business_address: { payloadKey: "address", maxInstances: 1 },
+};
+
 function mapSection(section: BackendSectionSchema): FormSection {
+  const override = SECTION_OVERRIDES[section.code];
   return {
     code: section.code,
-    title: section.title,
+    title: section.title ?? humanize(section.code),
     description: section.description,
     repeatable: section.repeatable,
-    minInstances: section.minInstances,
-    maxInstances: section.maxInstances,
-    columns: section.columns as FormSection["columns"],
-    fields: section.fields.map(mapField),
+    minInstances: section.minInstances ?? (section.repeatable ? 1 : undefined),
+    maxInstances: override?.maxInstances ?? section.maxInstances,
+    columns: COLUMNS.find((c) => c === section.columns),
+    fields: (section.fields ?? []).map(mapField),
+    payloadKey: override?.payloadKey,
   };
 }
 
-function extractFormSchema(
-  templateSchema: BackendFormSchema[] | BackendFormSchema
-): BackendFormSchema {
-  if (Array.isArray(templateSchema)) {
-    return templateSchema[0];
-  }
-  return templateSchema;
+function extractFormSchema(mapping: BackendFormTemplateMapping): BackendFormSchema | undefined {
+  const payload = mapping.template.schema ?? mapping.template.templateSchema;
+  return Array.isArray(payload) ? payload[0] : payload;
 }
 
-function mapTemplate(mapping: BackendFormTemplateMapping): FormTemplate {
-  const schema = extractFormSchema(mapping.formTemplate.templateSchema);
+function mapTemplate(
+  mapping: BackendFormTemplateMapping,
+  schema: BackendFormSchema
+): FormTemplate {
   return {
-    code: schema.formCode ?? mapping.formTemplate.templateCode,
-    title: schema.title ?? mapping.formTemplate.name,
+    code: schema.formCode ?? mapping.template.name ?? mapping.template.type,
+    title: schema.title ?? humanize(mapping.template.name ?? schema.formCode),
+    propertyType: mapping.template.type,
+    propertyName: mapping.template.name,
     description: schema.description,
     repeatable: schema.repeatable,
     minInstances: schema.minInstances ?? (schema.repeatable ? 1 : undefined),
     maxInstances: schema.maxInstances,
-    sections: schema.sections.map(mapSection),
+    sections: [...(schema.sections ?? [])].sort(byDisplayOrder).map(mapSection),
   };
 }
 
 export function mapProgramToLoanProduct(program: BackendProgramWithTemplates): LoanProduct {
-  const templates = [...program.formTemplates]
-    .filter((m) => m.visible !== false)
-    .sort((a, b) => a.displayOrder - b.displayOrder)
-    .map(mapTemplate);
+  const templates: FormTemplate[] = [];
+
+  for (const mapping of [...(program.formTemplates ?? [])].sort(byDisplayOrder)) {
+    if (mapping.visible === false) continue;
+
+    const schema = extractFormSchema(mapping);
+    if (!schema) continue;
+
+    templates.push(mapTemplate(mapping, schema));
+  }
 
   return {
     id: program.id,
