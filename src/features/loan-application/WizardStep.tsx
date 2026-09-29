@@ -3,12 +3,14 @@
 import React, { useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import { FormProvider, useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import type { FormTemplate } from "@/types";
 import { buildTemplateSchema, mergeTemplateDefaults } from "@/utils/schema-builder";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DynamicSection } from "@/components/forms/DynamicSection";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, FileWarning } from "lucide-react";
 
 export interface WizardStepHandle {
   validate: () => Promise<boolean>;
@@ -22,6 +24,27 @@ interface WizardStepProps {
   /** Optional — surfaces the live RHF error tree (e.g. for a dev inspector). Unused in production. */
   onErrorsChange?: (errors: FieldErrors) => void;
   formRef?: React.RefObject<HTMLFormElement | null>;
+}
+
+function SchemaBuildError({ error }: { error: string }) {
+  return (
+    <Alert variant="destructive">
+      <FileWarning className="h-4 w-4" />
+      <AlertTitle>Could not build form validation</AlertTitle>
+      <AlertDescription className="font-mono text-xs">{error}</AlertDescription>
+    </Alert>
+  );
+}
+
+function buildSchemaSafe(template: FormTemplate): { schema: z.ZodTypeAny; error: string | null } {
+  try {
+    return { schema: buildTemplateSchema(template), error: null };
+  } catch (err) {
+    return {
+      schema: z.object({}),
+      error: err instanceof Error ? err.message : "Failed to build validation schema",
+    };
+  }
 }
 
 function RepeatableInstance({
@@ -44,7 +67,7 @@ function RepeatableInstance({
   onErrors?: (index: number, errors: FieldErrors) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const schema = buildTemplateSchema(template);
+  const { schema, error: schemaError } = React.useMemo(() => buildSchemaSafe(template), [template]);
   const methods = useForm({
     resolver: zodResolver(schema),
     defaultValues: mergeTemplateDefaults(template, defaultValues),
@@ -96,13 +119,17 @@ function RepeatableInstance({
       {!collapsed && (
         <div className="px-5 pb-5">
           <Separator className="mb-5" />
-          <FormProvider {...methods}>
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-              {template.sections.map((section) => (
-                <DynamicSection key={section.code} section={section} />
-              ))}
-            </form>
-          </FormProvider>
+          {schemaError ? (
+            <SchemaBuildError error={schemaError} />
+          ) : (
+            <FormProvider {...methods}>
+              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                {template.sections.map((section) => (
+                  <DynamicSection key={section.code} section={section} />
+                ))}
+              </form>
+            </FormProvider>
+          )}
         </div>
       )}
     </div>
@@ -223,7 +250,7 @@ const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
     { template, defaultValues, onValidChange, onDataChange, onErrorsChange, formRef },
     ref
   ) {
-    const schema = buildTemplateSchema(template);
+    const { schema, error: schemaError } = React.useMemo(() => buildSchemaSafe(template), [template]);
     const methods = useForm({
       resolver: zodResolver(schema),
       defaultValues: mergeTemplateDefaults(template, defaultValues),
@@ -240,10 +267,16 @@ const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
         methods.trigger().then((valid) => {
           onValidChange?.(valid);
           onErrorsChange?.(methods.formState.errors);
+        }).catch(() => {
+          // Invalid authored regex/mask configs must not unhandled-reject and crash the playground.
         });
       });
       return () => subscription.unsubscribe();
     }, [methods, onDataChange, onValidChange, onErrorsChange]);
+
+    if (schemaError) {
+      return <SchemaBuildError error={schemaError} />;
+    }
 
     return (
       <FormProvider {...methods}>

@@ -17,6 +17,7 @@ export const KNOWN_FIELD_TYPES: ReadonlySet<FieldType | string> = new Set<FieldT
   "tel",
   "checkbox",
   "select",
+  "multiselect",
   "radio",
   "datetime",
   "date",
@@ -24,6 +25,7 @@ export const KNOWN_FIELD_TYPES: ReadonlySet<FieldType | string> = new Set<FieldT
   "file",
   "document",
   "hidden",
+  "address",
 ]);
 
 export function isKnownFieldType(type: string): boolean {

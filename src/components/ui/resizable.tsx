@@ -56,8 +56,8 @@ export function ResizableSplit({
   }, [dragging, minLeftWidth, maxLeftWidth]);
 
   return (
-    <div ref={containerRef} className={cn("flex h-full w-full", className)}>
-      <div style={{ width: `${leftWidth}%` }} className="min-w-0 overflow-hidden">
+    <div ref={containerRef} className={cn("flex h-full min-h-0 w-full", className)}>
+      <div style={{ width: `${leftWidth}%` }} className="h-full min-h-0 min-w-0 overflow-hidden">
         {left}
       </div>
       <div
@@ -82,7 +82,7 @@ export function ResizableSplit({
           <GripVertical className="h-3 w-3 text-slate-400" />
         </div>
       </div>
-      <div style={{ width: `${100 - leftWidth}%` }} className="min-w-0 overflow-hidden">
+      <div style={{ width: `${100 - leftWidth}%` }} className="h-full min-h-0 min-w-0 overflow-hidden">
         {right}
       </div>
     </div>

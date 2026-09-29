@@ -14,7 +14,7 @@ export function PreviewPanel() {
     usePlayground();
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2.5 dark:border-zinc-800">
         <p className="text-sm font-semibold tracking-tight text-slate-900">Live Form Preview</p>
         <Button type="button" variant="outline" size="sm" onClick={resetPreview} className="h-7 gap-1.5 px-2 text-[11px]">

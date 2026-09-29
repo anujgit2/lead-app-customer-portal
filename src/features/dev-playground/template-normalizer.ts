@@ -8,40 +8,18 @@
  * conventions for validation (top-level shorthand like `required`/`maxLength`, or
  * a nested `validation: {...}` object) since both appear in real-world examples.
  */
-import type { FieldOption, FieldValidation, FormField, FormSection, FormTemplate } from "@/types";
+import type { FieldOption, FormField, FormSection, FormTemplate, MaskConfig } from "@/types";
 import { isKnownFieldType } from "@/utils/field-types";
+import { normalizeFieldRules } from "@/utils/rule-engine";
+import { parseCurrencyFormat } from "@/utils/currency-format";
+import { mergeFieldValidation, parseInputFormat } from "@/utils/field-config";
+import { isDocumentSlot, parseUploadConfig } from "@/utils/upload-config";
 import type { NormalizedTemplateResult, ValidationIssue } from "./types";
 
 type Unknown = Record<string, unknown>;
 
 function isPlainObject(v: unknown): v is Unknown {
   return !!v && typeof v === "object" && !Array.isArray(v);
-}
-
-const VALIDATION_SHORTHAND_KEYS = [
-  "required",
-  "maxLength",
-  "minLength",
-  "pattern",
-  "min",
-  "max",
-  "minExclusive",
-  "maxExclusive",
-  "integer",
-  "email",
-  "phone",
-  "message",
-] as const;
-
-function normalizeValidation(raw: Unknown): FieldValidation | undefined {
-  const nested = isPlainObject(raw.validation) ? (raw.validation as Unknown) : {};
-  const merged: Unknown = { ...nested };
-  for (const key of VALIDATION_SHORTHAND_KEYS) {
-    if (merged[key] === undefined && raw[key] !== undefined) {
-      merged[key] = raw[key];
-    }
-  }
-  return Object.keys(merged).length > 0 ? (merged as FieldValidation) : undefined;
 }
 
 function normalizeOptions(raw: unknown): FieldOption[] | undefined {
@@ -60,9 +38,18 @@ function normalizeField(raw: unknown, path: string, issues: ValidationIssue[]): 
     return null;
   }
 
-  const name = raw.name;
-  const type = raw.type;
-  const label = raw.label;
+  const coerced: Unknown = isDocumentSlot(raw)
+    ? {
+        ...raw,
+        name: typeof raw.name === "string" && raw.name.length > 0 ? raw.name : raw.documentType,
+        type: typeof raw.type === "string" && raw.type.length > 0 ? raw.type : "document",
+        helpText: raw.helpText ?? raw.description,
+      }
+    : raw;
+
+  const name = coerced.name;
+  const type = coerced.type;
+  const label = coerced.label;
 
   if (typeof name !== "string" || name.length === 0) {
     issues.push({ path: `${path}.name`, message: "field.name is required.", severity: "error" });
@@ -83,36 +70,77 @@ function normalizeField(raw: unknown, path: string, issues: ValidationIssue[]): 
 
   if (typeof name !== "string" || typeof type !== "string") return null;
 
-  const rules = isPlainObject(raw.rules)
-    ? {
-        visibleWhen: isPlainObject(raw.rules.visibleWhen) ? raw.rules.visibleWhen : undefined,
-        requiredWhen: isPlainObject(raw.rules.requiredWhen) ? raw.rules.requiredWhen : undefined,
-      }
-    : undefined;
+  const rules = normalizeFieldRules(raw);
+  if (
+    (raw.visibleWhen !== undefined || (isPlainObject(raw.rules) && raw.rules.visibleWhen !== undefined)) &&
+    !rules?.visibleWhen
+  ) {
+    issues.push({
+      path: `${path}.visibleWhen`,
+      message: 'visibleWhen must be { field, operator, value } or shorthand { field, equals: "OTHER" }.',
+      severity: "warning",
+    });
+  }
 
-  const mask = isPlainObject(raw.mask) ? raw.mask : undefined;
+  const upload = parseUploadConfig(raw.upload);
+  const validation = mergeFieldValidation(raw);
+  const minFiles =
+    typeof raw.minFiles === "number"
+      ? raw.minFiles
+      : upload.minFiles;
+  const requiredMinFiles =
+    validation?.required && (minFiles === undefined || minFiles < 1) ? 1 : minFiles;
+
+  const rawMask = isPlainObject(raw.mask) ? raw.mask : undefined;
+  const transform =
+    rawMask?.transform === "uppercase" ||
+    rawMask?.transform === "lowercase" ||
+    rawMask?.transform === "numeric"
+      ? rawMask.transform
+      : undefined;
+  const mask: MaskConfig | undefined =
+    rawMask && typeof rawMask.pattern === "string" && rawMask.pattern.length > 0
+      ? {
+          pattern: rawMask.pattern,
+          separator: typeof rawMask.separator === "string" ? rawMask.separator : undefined,
+          transform,
+        }
+      : undefined;
 
   return {
     name,
     type: type as FormField["type"],
-    label: typeof label === "string" ? label : name,
+    label: typeof label === "string" ? label : String(name),
     placeholder: typeof raw.placeholder === "string" ? raw.placeholder : undefined,
-    helpText: typeof raw.helpText === "string" ? raw.helpText : undefined,
+    helpText: typeof coerced.helpText === "string" ? coerced.helpText : undefined,
     info: typeof raw.info === "string" ? raw.info : undefined,
     path: typeof raw.path === "string" ? raw.path : undefined,
     prefix: typeof raw.prefix === "string" ? raw.prefix : undefined,
     suffix: typeof raw.suffix === "string" ? raw.suffix : undefined,
-    mask: mask as FormField["mask"],
-    rules: rules as FormField["rules"],
+    mask,
+    inputFormat: parseInputFormat(raw.input),
+    rules,
     defaultValue: raw.defaultValue,
     options: normalizeOptions(raw.options),
-    validation: normalizeValidation(raw),
+    validation,
     span: typeof raw.span === "number" ? (raw.span as FormField["span"]) : undefined,
     disabled: typeof raw.disabled === "boolean" ? raw.disabled : undefined,
     readonly: typeof raw.readonly === "boolean" ? raw.readonly : undefined,
-    accept: typeof raw.accept === "string" ? raw.accept : undefined,
-    maxFiles: typeof raw.maxFiles === "number" ? raw.maxFiles : undefined,
-    maxSize: typeof raw.maxSize === "number" ? raw.maxSize : undefined,
+    accept:
+      typeof raw.accept === "string"
+        ? raw.accept
+        : upload.accept,
+    maxFiles:
+      typeof raw.maxFiles === "number"
+        ? raw.maxFiles
+        : upload.maxFiles,
+    minFiles: requiredMinFiles,
+    maxSize:
+      typeof raw.maxSize === "number"
+        ? raw.maxSize
+        : upload.maxSize,
+    documentType: typeof raw.documentType === "string" ? raw.documentType : undefined,
+    currencyFormat: type === "currency" ? parseCurrencyFormat(raw) : undefined,
   };
 }
 
@@ -191,21 +219,47 @@ function normalizeTemplate(raw: unknown, path: string, issues: ValidationIssue[]
  * an array root, a `{ templates: [...] }` / `{ forms: [...] }` wrapper (e.g. a
  * `LoanProduct`-shaped API response), or a single template object.
  */
+function wrapDocumentSlots(slots: unknown[]): unknown {
+  return {
+    formCode: "documents",
+    title: "Documents",
+    sections: [
+      {
+        code: "uploads",
+        title: "Document Uploads",
+        columns: 1,
+        fields: slots,
+      },
+    ],
+  };
+}
+
 function extractTemplateCandidates(root: unknown, issues: ValidationIssue[]): unknown[] {
-  if (Array.isArray(root)) return root;
+  if (Array.isArray(root)) {
+    if (root.length > 0 && root.every(isDocumentSlot)) {
+      return [wrapDocumentSlots(root)];
+    }
+    return root;
+  }
 
   if (isPlainObject(root)) {
+    if (Array.isArray(root.documents) && root.documents.every(isDocumentSlot)) {
+      return [wrapDocumentSlots(root.documents)];
+    }
     if (Array.isArray(root.templates)) return root.templates;
     if (Array.isArray(root.forms)) return root.forms;
     if (typeof root.formCode === "string" || typeof root.code === "string" || Array.isArray(root.sections)) {
       return [root];
+    }
+    if (isDocumentSlot(root)) {
+      return [wrapDocumentSlots([root])];
     }
   }
 
   issues.push({
     path: "$",
     message:
-      'Root JSON must be an array of form templates, an object with a "templates" array, or a single template object.',
+      'Root JSON must be an array of form templates, an array of document slots, an object with a "templates" array, or a single template object.',
     severity: "error",
   });
   return [];

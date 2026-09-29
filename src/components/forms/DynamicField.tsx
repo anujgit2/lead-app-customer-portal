@@ -21,11 +21,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileUploadField } from "./FileUploadField";
+import { CurrencyInput } from "./CurrencyInput";
+import { MultiSelectField } from "./MultiSelectField";
 import { Info, Percent } from "lucide-react";
 import { useFormDebug } from "./form-debug-context";
 import { ruleMatches } from "@/utils/rule-engine";
 import { applyMask } from "@/utils/mask";
+import { applyInputFormat } from "@/utils/field-config";
 import { isKnownFieldType } from "@/utils/field-types";
+import { getAddressSubfields } from "@/utils/address-field";
 
 // ─── Pattern → human-readable example map ────────────────────────────────────
 // Exported for reuse by the dev Form Playground's sample-data generator.
@@ -333,6 +337,31 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
         <FieldError message={error} />
       </>
     );
+  } else if (field.type === "multiselect") {
+    content = (
+      <>
+        {labelEl}
+        <Controller
+          name={fieldName}
+          control={control}
+          render={({ field: f }) => (
+            <MultiSelectField
+              id={fieldName}
+              options={field.options ?? []}
+              value={f.value}
+              onChange={f.onChange}
+              onBlur={f.onBlur}
+              placeholder={field.placeholder ?? `Select ${field.label}`}
+              disabled={field.disabled}
+              readOnly={field.readonly}
+              error={!!error}
+            />
+          )}
+        />
+        <FieldHint text={field.helpText} />
+        <FieldError message={error} />
+      </>
+    );
   } else if (field.type === "file" || field.type === "document") {
     content = (
       <>
@@ -346,6 +375,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
               onChange={f.onChange}
               accept={field.accept}
               maxFiles={field.maxFiles}
+              minFiles={field.minFiles}
               maxSizeMB={field.maxSize}
               error={!!error}
             />
@@ -376,19 +406,23 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
     content = (
       <>
         {labelEl}
-        <Input
-          id={fieldName}
-          type="number"
-          className="rounded-sm"
-          placeholder={field.placeholder}
-          error={!!error}
-          disabled={field.disabled}
-          readOnly={field.readonly}
-          min={v?.min}
-          max={v?.max}
-          step={v?.integer ? 1 : undefined}
-          startAdornment={<span className="text-xs font-medium">₹</span>}
-          {...register(fieldName)}
+        <Controller
+          name={fieldName}
+          control={control}
+          render={({ field: f }) => (
+            <CurrencyInput
+              field={field}
+              id={fieldName}
+              value={f.value}
+              onChange={f.onChange}
+              onBlur={f.onBlur}
+              inputRef={f.ref}
+              error={!!error}
+              disabled={field.disabled}
+              readOnly={field.readonly}
+              placeholder={field.placeholder}
+            />
+          )}
         />
         <FieldHint text={field.helpText} />
         <FieldError message={error} />
@@ -416,6 +450,24 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
         <FieldError message={error} />
       </>
     );
+  } else if (field.type === "address") {
+    const subfields = getAddressSubfields({
+      disabled: field.disabled,
+      readonly: field.readonly,
+    });
+    content = (
+      <>
+        {labelEl}
+        <div className="grid grid-cols-1 items-start gap-x-6 gap-y-5 sm:grid-cols-2">
+          {subfields.map((sub) => (
+            <div key={sub.name}>
+              <DynamicField field={sub} namePrefix={fieldName} />
+            </div>
+          ))}
+        </div>
+        <FieldHint text={field.helpText} />
+      </>
+    );
   } else if (!isKnownFieldType(field.type)) {
     content = (
       <>
@@ -434,13 +486,32 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
       "text";
 
     const registration = register(fieldName);
-    const mask = field.mask;
-    const handleChange = mask
-      ? (e: React.ChangeEvent<HTMLInputElement>) => {
-          e.target.value = applyMask(e.target.value, mask.pattern, mask.transform);
-          registration.onChange(e);
-        }
-      : undefined;
+    const mask = field.mask?.pattern ? field.mask : undefined;
+    const inputFormat = field.inputFormat;
+    const isTextual = inputType === "text" || inputType === "tel" || inputType === "email";
+
+    const handleChange =
+      isTextual && (mask || inputFormat)
+        ? (e: React.ChangeEvent<HTMLInputElement>) => {
+            let next = e.target.value;
+            if (inputFormat) next = applyInputFormat(next, inputFormat, v);
+            if (mask) next = applyMask(next, mask.pattern, mask.transform);
+            e.target.value = next;
+            registration.onChange(e);
+          }
+        : undefined;
+
+    const handleBlur =
+      isTextual && inputFormat?.trim
+        ? (e: React.FocusEvent<HTMLInputElement>) => {
+            const trimmed = e.target.value.trim();
+            if (trimmed !== e.target.value) {
+              e.target.value = trimmed;
+              registration.onChange(e);
+            }
+            registration.onBlur(e);
+          }
+        : undefined;
 
     content = (
       <>
@@ -468,6 +539,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
           }
           {...registration}
           {...(handleChange ? { onChange: handleChange } : {})}
+          {...(handleBlur ? { onBlur: handleBlur } : {})}
         />
         {mask && <p className="text-[11px] font-mono text-slate-400">{mask.pattern}</p>}
         <FieldHint text={field.helpText} />

@@ -9,7 +9,13 @@ import type { MaskConfig } from "@/types";
 /** Reformats raw user input to match a mask pattern, applying an optional case transform first. */
 export function applyMask(rawValue: string, pattern: string, transform?: MaskConfig["transform"]): string {
   const transformed =
-    transform === "uppercase" ? rawValue.toUpperCase() : transform === "lowercase" ? rawValue.toLowerCase() : rawValue;
+    transform === "uppercase"
+      ? rawValue.toUpperCase()
+      : transform === "lowercase"
+        ? rawValue.toLowerCase()
+        : transform === "numeric"
+          ? rawValue.replace(/[^0-9]/g, "")
+          : rawValue;
   const chars = transformed.replace(/[^A-Za-z0-9]/g, "").split("");
 
   let result = "";
@@ -31,6 +37,16 @@ export function applyMask(rawValue: string, pattern: string, transform?: MaskCon
     }
   }
   return result;
+}
+
+/**
+ * Strips mask literal characters (separators like `-`, `/`, `(`, `)`, spaces…), returning
+ * the raw alphanumeric characters the user actually typed. Mirrors the char-extraction step
+ * inside `applyMask` — use this to validate a masked field's *content* (e.g. `validation.pattern`)
+ * against the unformatted value instead of the separator-injected display string.
+ */
+export function unmask(value: unknown): string {
+  return String(value ?? "").replace(/[^A-Za-z0-9]/g, "");
 }
 
 /** Generates a value that fully satisfies a mask pattern — used by the sample-data generator. */

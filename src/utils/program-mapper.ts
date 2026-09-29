@@ -6,26 +6,59 @@ import type {
   FormTemplate,
   LoanProduct,
 } from "@/types";
+import { normalizeFieldRules } from "@/utils/rule-engine";
+import { parseCurrencyFormat } from "@/utils/currency-format";
+import { mergeFieldValidation, parseInputFormat } from "@/utils/field-config";
+import { parseUploadConfig } from "@/utils/upload-config";
 interface BackendFieldSchema {
-  name: string;
+  name?: string;
   label: string;
-  type: string;
+  type?: string;
   column?: string;
   placeholder?: string;
   helpText?: string;
+  description?: string;
   info?: string;
   required?: boolean;
   maxLength?: number;
   minLength?: number;
   precision?: number;
   scale?: number;
+  min?: number;
+  max?: number;
+  decimalScale?: number;
+  fixedDecimalScale?: boolean;
+  thousandSeparator?: string | boolean;
+  decimalSeparator?: string;
+  allowNegative?: boolean;
+  allowLeadingZeros?: boolean;
+  useGrouping?: boolean;
   defaultValue?: unknown;
   options?: string[] | FieldOption[];
   validation?: FieldValidation;
   span?: number;
   accept?: string;
   maxFiles?: number;
+  minFiles?: number;
   maxSize?: number;
+  documentType?: string;
+  upload?: {
+    allowedExtensions?: string[];
+    maxFileSizeMB?: number;
+    minFiles?: number;
+    maxFiles?: number;
+  };
+  visibleWhen?: unknown;
+  requiredWhen?: unknown;
+  rules?: unknown;
+  constraints?: FieldValidation;
+  input?: {
+    trim?: boolean;
+    uppercase?: boolean;
+    lowercase?: boolean;
+    allowSpaces?: boolean;
+    allowSpecialCharacters?: boolean;
+  };
 }
 
 interface BackendSectionSchema {
@@ -107,28 +140,56 @@ const SPANS = [1, 2, 3, 4, 6, 12] as const;
 const COLUMNS = [1, 2, 3, 4] as const;
 
 function mapField(field: BackendFieldSchema): FormField {
-  const validation: FieldValidation = {
-    ...(field.validation ?? {}),
-  };
+  const validation = mergeFieldValidation(field as unknown as Record<string, unknown>);
+  if (field.type === "currency" && validation) {
+    if (field.min !== undefined && validation.min === undefined) validation.min = field.min;
+    if (field.max !== undefined && validation.max === undefined) validation.max = field.max;
+  }
 
-  if (field.required) validation.required = true;
-  if (field.maxLength !== undefined) validation.maxLength = field.maxLength;
-  if (field.minLength !== undefined) validation.minLength = field.minLength;
+  const upload = parseUploadConfig(field.upload);
+  const name = field.name ?? field.documentType ?? humanize("field");
+  const type = (field.type ?? (field.documentType ? "document" : "text")) as FormField["type"];
+  const minFiles =
+    field.minFiles ??
+    upload.minFiles ??
+    (validation?.required ? 1 : undefined);
 
   return {
-    name: field.name,
-    label: field.label ?? humanize(field.name),
-    type: field.type as FormField["type"],
+    name,
+    label: field.label ?? humanize(name),
+    type,
     placeholder: field.placeholder,
-    helpText: field.helpText,
+    helpText: field.helpText ?? field.description,
     info: field.info,
     defaultValue: field.defaultValue,
     options: mapOptions(field.options),
-    validation: Object.keys(validation).length > 0 ? validation : undefined,
+    validation,
     span: SPANS.find((s) => s === field.span),
-    accept: field.accept,
-    maxFiles: field.maxFiles,
-    maxSize: field.maxSize,
+    accept: field.accept ?? upload.accept,
+    maxFiles: field.maxFiles ?? upload.maxFiles,
+    minFiles,
+    maxSize: field.maxSize ?? upload.maxSize,
+    documentType: field.documentType,
+    rules: normalizeFieldRules({
+      visibleWhen: field.visibleWhen,
+      requiredWhen: field.requiredWhen,
+      rules: field.rules,
+    }),
+    inputFormat: parseInputFormat(field.input),
+    currencyFormat:
+      type === "currency"
+        ? parseCurrencyFormat({
+            precision: field.precision,
+            scale: field.scale,
+            decimalScale: field.decimalScale,
+            fixedDecimalScale: field.fixedDecimalScale,
+            thousandSeparator: field.thousandSeparator,
+            decimalSeparator: field.decimalSeparator,
+            allowNegative: field.allowNegative,
+            allowLeadingZeros: field.allowLeadingZeros,
+            useGrouping: field.useGrouping,
+          })
+        : undefined,
   };
 }
 

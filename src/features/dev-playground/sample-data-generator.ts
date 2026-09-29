@@ -7,7 +7,7 @@
  */
 import type { FormField, FormSection, FormTemplate } from "@/types";
 import { isFieldVisible } from "@/utils/rule-engine";
-import { fillMaskPattern } from "@/utils/mask";
+import { fillMaskPattern, unmask } from "@/utils/mask";
 import { PATTERN_EXAMPLES } from "@/components/forms/DynamicField";
 
 function sampleForPattern(pattern: string | undefined): string | undefined {
@@ -26,6 +26,8 @@ function sampleValueForField(field: FormField): unknown {
     case "select":
     case "radio":
       return field.options?.[0]?.value ?? "";
+    case "multiselect":
+      return field.options?.slice(0, 2).map((opt) => opt.value) ?? [];
     case "number":
     case "currency":
     case "percentage": {
@@ -44,6 +46,15 @@ function sampleValueForField(field: FormField): unknown {
       return [];
     case "hidden":
       return "";
+    case "address":
+      return {
+        addressLine1: "42 MG Road",
+        addressLine2: "Near City Center",
+        city: "Mumbai",
+        state: "Maharashtra",
+        pincode: "400001",
+        country: "India",
+      };
     case "tel": {
       if (field.mask) return fillMaskPattern(field.mask.pattern);
       return sampleForPattern(v.pattern) ?? "9876543210";
@@ -58,7 +69,9 @@ function sampleValueForField(field: FormField): unknown {
               : field.mask.transform === "lowercase"
                 ? candidate.toLowerCase()
                 : candidate;
-          if (!v.pattern || new RegExp(v.pattern).test(transformed)) return transformed;
+          // `pattern` validates the raw unmasked characters (see schema-builder), not the
+          // separator-formatted display string — test against the unmasked form here too.
+          if (!v.pattern || new RegExp(v.pattern).test(unmask(transformed))) return transformed;
         }
         return fillMaskPattern(field.mask.pattern);
       }

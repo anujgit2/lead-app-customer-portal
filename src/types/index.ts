@@ -141,13 +141,15 @@ export type FieldType =
   | "tel"
   | "checkbox"
   | "select"
+  | "multiselect"
   | "radio"
   | "datetime"
   | "date"
   | "json"
   | "file"
   | "document"
-  | "hidden";
+  | "hidden"
+  | "address";
 
 export interface FieldOption {
   label: string;
@@ -199,10 +201,36 @@ export interface FieldRules {
 }
 
 /** Input mask config. `pattern` uses `A` for a letter slot, `0` for a digit slot; any other
- *  character is a literal that is auto-inserted (e.g. `AAAAA-0000-A`, `000-0000-000`). */
+ *  character is a literal that is auto-inserted (e.g. `AAAAA-0000-A`, `000-0000-000`).
+ *  `separator` is informational only — the literal characters actually inserted always come
+ *  from `pattern` itself; it's kept here so authored JSON that documents its separator
+ *  (e.g. `{ pattern: "0000-0000-0000-0000", separator: "-" }`) round-trips without being stripped. */
 export interface MaskConfig {
   pattern: string;
-  transform?: "uppercase" | "lowercase";
+  separator?: string;
+  transform?: "uppercase" | "lowercase" | "numeric";
+}
+
+/** Live input sanitizing, authored as a nested `input: { … }` object on the field JSON. */
+export interface InputFormatConfig {
+  trim?: boolean;
+  uppercase?: boolean;
+  lowercase?: boolean;
+  allowSpaces?: boolean;
+  allowSpecialCharacters?: boolean;
+}
+
+/** Formatting for `type: "currency"` fields. Authored as flat JSON keys on the field. */
+export interface CurrencyFormatConfig {
+  precision?: number;
+  scale?: number;
+  decimalScale?: number;
+  fixedDecimalScale?: boolean;
+  thousandSeparator?: string | boolean;
+  decimalSeparator?: string;
+  allowNegative?: boolean;
+  allowLeadingZeros?: boolean;
+  useGrouping?: boolean;
 }
 
 export interface FormField {
@@ -219,6 +247,8 @@ export interface FormField {
   /** Static text shown immediately after the input (e.g. "%", "Kg"). */
   suffix?: string;
   mask?: MaskConfig;
+  /** Live input sanitizing from authored `input: { trim, uppercase, allowSpaces, … }`. */
+  inputFormat?: InputFormatConfig;
   /** Conditional visibility/required rules. Absent = always visible, required only if `validation.required`. */
   rules?: FieldRules;
   defaultValue?: unknown;
@@ -230,7 +260,12 @@ export interface FormField {
   readonly?: boolean;
   accept?: string;
   maxFiles?: number;
+  minFiles?: number;
   maxSize?: number;
+  /** Backend document slot key (e.g. "OTHER"). Used as `name` when `name` is omitted. */
+  documentType?: string;
+  /** Display/input formatting. Only consumed when `type === "currency"`. */
+  currencyFormat?: CurrencyFormatConfig;
 }
 
 export interface FieldDependency {

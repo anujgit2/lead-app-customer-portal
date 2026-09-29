@@ -14,6 +14,7 @@ import type {
 } from "@/types";
 import { MOCK_APPLICATIONS, MOCK_SUMMARY, LOAN_FORM_TEMPLATES } from "./mock-data";
 import { programService } from "./program.service";
+import { normalizeAddressValue } from "@/utils/address-field";
 
 interface ApplicationProperty {
   /** Template `type` from the backend, e.g. "CompanyProperty". */
@@ -51,9 +52,22 @@ function normalizeFieldValue(field: FormField, value: unknown): unknown {
         return value;
       }
     case "file":
+    case "document":
       return undefined;
-    default:
+    case "multiselect": {
+      if (!Array.isArray(value)) return undefined;
+      const items = value.filter((item): item is string => typeof item === "string" && item.length > 0);
+      return items.length > 0 ? items : undefined;
+    }
+    case "address":
+      return normalizeAddressValue(value);
+    default: {
+      if (typeof value === "string") {
+        const trimmed = field.inputFormat?.trim ? value.trim() : value;
+        return trimmed === "" ? undefined : trimmed;
+      }
       return value;
+    }
   }
 }
 

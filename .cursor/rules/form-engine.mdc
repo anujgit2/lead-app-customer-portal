@@ -67,15 +67,43 @@ interface FormField {
 | `text` | `<Input type="text">` |
 | `textarea` | `<Textarea>` |
 | `number` | `<Input type="number">` |
-| `currency` | Input with ₹ prefix |
+| `currency` | Formatted amount input (₹ prefix, grouping, fixed decimals) |
 | `percentage` | Input with % suffix |
 | `email` | `<Input type="email">` |
 | `tel` | `<Input type="tel">` |
 | `checkbox` | `<Checkbox>` |
 | `select` | `<Select>` (Radix) |
+| `multiselect` | Dropdown with selected values as removable chips. Payload is a string array. |
 | `datetime` | `<Input type="date">` |
 | `file` | `<FileUploadField>` (drag-drop) |
+| `document` | Same as `file`. Also accepts a document-slot JSON shape (`documentType` + `upload`). |
 | `json` | `<Textarea>` (raw JSON) |
+| `address` | Composite group: Address Line 1, Address Line 2, City, State, PIN Code, Country. |
+
+Configure it as a single field — the renderer expands the subfields automatically, and submitted data is nested under the field `name`:
+
+```json
+{
+  "name": "address",
+  "type": "address",
+  "label": "Registered Address",
+  "validation": { "required": true }
+}
+```
+
+```ts
+// payload
+{
+  address: {
+    addressLine1: "42 MG Road",
+    addressLine2: "Near City Center",
+    city: "Mumbai",
+    state: "Maharashtra",
+    pincode: "400001",
+    country: "India",
+  }
+}
+```
 
 ## Validation Rules (Zod v3 generated dynamically)
 
@@ -95,6 +123,90 @@ interface FieldValidation {
   message?: string;       // custom error message
 }
 ```
+
+Length limits may also be authored under `constraints` (e.g. `{ "constraints": { "minLength": 11, "maxLength": 11 } }`) — they merge into `validation`.
+
+Live typing rules are authored as `input` and applied while the user types (trim runs on blur):
+
+```json
+{
+  "input": {
+    "trim": true,
+    "uppercase": true,
+    "allowSpaces": false,
+    "allowSpecialCharacters": false
+  },
+  "constraints": { "minLength": 11, "maxLength": 11 },
+  "validation": { "pattern": "^[A-Z]{4}0[A-Z0-9]{6}$" }
+}
+```
+
+`allowSpecialCharacters: false` keeps letters and digits, or digits only when `validation.pattern` is numeric (e.g. `^[0-9]+$`).
+
+## Conditional visibility
+
+A field can be shown only when a sibling field matches a condition. Both of these JSON shapes work:
+
+```json
+{ "visibleWhen": { "field": "loanPurpose", "equals": "OTHER" } }
+```
+
+```json
+{
+  "rules": {
+    "visibleWhen": { "field": "loanPurpose", "operator": "equals", "value": "OTHER" }
+  }
+}
+```
+
+`requiredWhen` uses the same shapes. Hidden fields are skipped during validation.
+
+## Currency formatting
+
+`type: "currency"` always uses grouped, fixed-decimal input. Extra JSON keys are optional overrides (other field types ignore them):
+
+```json
+{
+  "name": "loanAmount",
+  "type": "currency",
+  "label": "Loan Amount",
+  "required": true,
+  "min": 1,
+  "max": 9999999999999999.99,
+  "precision": 18,
+  "scale": 2,
+  "decimalScale": 2,
+  "fixedDecimalScale": true,
+  "thousandSeparator": ",",
+  "decimalSeparator": ".",
+  "allowNegative": false,
+  "allowLeadingZeros": false,
+  "useGrouping": true
+}
+```
+
+The form stores a number (e.g. `1500000.50`); separators are display-only.
+
+## Document uploads
+
+A document slot can be authored without `name`/`type`. `documentType` becomes the field name, `type` defaults to `document`, and `upload` maps onto the existing file control:
+
+```json
+{
+  "documentType": "OTHER",
+  "label": "Other Supporting Documents",
+  "description": "Upload any additional documents requested during the loan review process.",
+  "required": false,
+  "upload": {
+    "allowedExtensions": ["pdf", "jpg", "jpeg", "png", "doc", "docx"],
+    "maxFileSizeMB": 10,
+    "minFiles": 0,
+    "maxFiles": 10
+  }
+}
+```
+
+A JSON array of these slots renders as a Documents upload screen. Values are stored as `File[]` under `documentType`.
 
 Schema is built in `src/utils/schema-builder.ts`:
 - `buildFieldSchema(field)` → `z.ZodTypeAny`

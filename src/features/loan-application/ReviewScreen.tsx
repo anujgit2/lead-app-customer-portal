@@ -1,13 +1,14 @@
 "use client";
 
 import React from "react";
-import type { FormTemplate, FormData } from "@/types";
+import type { FormTemplate, FormData, FieldOption } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Edit2, CheckCircle2 } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
+import { getAddressSubfields, isPlainObject } from "@/utils/address-field";
 
 interface ReviewScreenProps {
   templates: FormTemplate[];
@@ -17,16 +18,56 @@ interface ReviewScreenProps {
   isSubmitting?: boolean;
 }
 
-function ReviewValue({ value, type }: { value: unknown; type?: string }) {
+function ReviewValue({
+  value,
+  type,
+  options,
+}: {
+  value: unknown;
+  type?: string;
+  options?: FieldOption[];
+}) {
   if (value === null || value === undefined || value === "") {
     return <span className="text-muted-foreground italic text-xs">Not provided</span>;
   }
   if (typeof value === "boolean") {
     return <span>{value ? "Yes" : "No"}</span>;
   }
-  if (type === "currency" && typeof value === "string") {
-    const num = parseFloat(value);
-    if (!isNaN(num)) return <span>{formatCurrency(num)}</span>;
+  if (type === "currency") {
+    const num = typeof value === "number" ? value : Number(value);
+    if (Number.isFinite(num)) {
+      return (
+        <span>
+          {new Intl.NumberFormat("en-IN", {
+            style: "currency",
+            currency: "INR",
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          }).format(num)}
+        </span>
+      );
+    }
+  }
+  if (type === "multiselect") {
+    const selected = Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
+    if (selected.length === 0) {
+      return <span className="text-muted-foreground italic text-xs">Not provided</span>;
+    }
+    const labels = selected.map(
+      (item) => options?.find((opt) => opt.value === item)?.label ?? item
+    );
+    return (
+      <span className="flex flex-wrap gap-1.5">
+        {labels.map((label) => (
+          <span
+            key={label}
+            className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700"
+          >
+            {label}
+          </span>
+        ))}
+      </span>
+    );
   }
   if (type === "datetime" && typeof value === "string" && value) {
     let formatted = String(value);
@@ -56,11 +97,31 @@ function ReviewSection({
       {section.fields.map((field) => {
         const value = data[field.name];
         if (value === undefined) return null;
+
+        if (field.type === "address") {
+          const addr = isPlainObject(value) ? value : {};
+          return (
+            <div key={field.name} className="sm:col-span-2">
+              <p className="text-xs text-muted-foreground mb-2">{field.label}</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                {getAddressSubfields().map((sub) => (
+                  <div key={sub.name}>
+                    <p className="text-xs text-muted-foreground mb-0.5">{sub.label}</p>
+                    <p className="text-sm font-medium">
+                      <ReviewValue value={addr[sub.name]} />
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
         return (
           <div key={field.name}>
             <p className="text-xs text-muted-foreground mb-0.5">{field.label}</p>
             <p className="text-sm font-medium">
-              <ReviewValue value={value} type={field.type} />
+              <ReviewValue value={value} type={field.type} options={field.options} />
             </p>
           </div>
         );

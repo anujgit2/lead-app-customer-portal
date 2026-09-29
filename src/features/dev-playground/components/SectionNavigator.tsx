@@ -24,9 +24,9 @@ export function SectionNavigator() {
   const currentTemplate = findSelectedTemplate(templates, selectedTemplateCode) ?? templates[0];
 
   return (
-    <div className="space-y-2.5 rounded-lg border border-slate-100 p-3.5 dark:border-zinc-800">
+    <div className="space-y-2.5">
       <div className="flex items-center justify-between">
-        <Label className="text-xs text-slate-500">Section navigation</Label>
+        <Label className="text-sm font-medium text-slate-700">Section navigation</Label>
         <Button
           type="button"
           variant={renderEntireForm ? "secondary" : "outline"}

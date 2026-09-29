@@ -1,6 +1,12 @@
 import { z } from "zod";
 import type { FormField, FormSection, FormTemplate, FieldValidation } from "@/types";
 import { isFieldRequired, isFieldVisible, isEmptyValue } from "@/utils/rule-engine";
+import { unmask } from "@/utils/mask";
+import {
+  emptyAddressValue,
+  getAddressSubfields,
+  isPlainObject,
+} from "@/utils/address-field";
 
 function buildFieldSchema(field: FormField): z.ZodTypeAny {
   const v: FieldValidation = field.validation ?? {};
@@ -21,17 +27,31 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
   }
 
   if (field.type === "file" || field.type === "document") {
-    const fileSchema = z.any();
-    if (v.required && !deferToRules) {
-      return fileSchema.refine(
-        (val) => val && (Array.isArray(val) ? val.length > 0 : true),
-        { message: v.message ?? `${field.label} is required` }
-      );
+    const min = field.minFiles ?? (v.required && !deferToRules ? 1 : 0);
+    const max = field.maxFiles;
+    let files = z.array(z.any());
+    if (min > 0) {
+      files = files.min(min, {
+        message: v.message ?? `Upload at least ${min} file${min === 1 ? "" : "s"} for ${field.label}`,
+      });
     }
-    return fileSchema.optional();
+    if (max !== undefined) {
+      files = files.max(max, {
+        message: `You can upload up to ${max} file${max === 1 ? "" : "s"}`,
+      });
+    }
+    return min > 0 ? files : files.optional();
   }
 
-  if (field.type === "number" || field.type === "currency" || field.type === "percentage") {
+  if (field.type === "multiselect") {
+    let arr = z.array(z.string());
+    if (v.required && !deferToRules) {
+      arr = arr.min(1, { message: v.message ?? `${field.label} is required` });
+    }
+    return arr;
+  }
+
+  if (field.type === "number" || field.type === "percentage") {
     let num = z.coerce.number();
     if (v.min !== undefined) num = num.min(v.min, { message: `Minimum value is ${v.min}` });
     if (v.max !== undefined) num = num.max(v.max, { message: `Maximum value is ${v.max}` });
@@ -42,9 +62,35 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
     return num;
   }
 
+  if (field.type === "currency") {
+    let num = z.number({
+      required_error: v.message ?? `${field.label} is required`,
+      invalid_type_error: `Enter a valid amount`,
+    });
+    if (v.min !== undefined) num = num.min(v.min, { message: `Minimum value is ${v.min}` });
+    if (v.max !== undefined) num = num.max(v.max, { message: `Maximum value is ${v.max}` });
+    if (v.minExclusive !== undefined) num = num.gt(v.minExclusive);
+    if (v.maxExclusive !== undefined) num = num.lt(v.maxExclusive);
+    const core = !v.required || deferToRules ? num.optional() : num;
+    return z.preprocess((val) => {
+      if (val === "" || val === null || val === undefined) return undefined;
+      return val;
+    }, core);
+  }
+
   // "hidden" fields carry a raw value (often not a display string) — accept anything.
   if (field.type === "hidden") {
     return z.any().optional();
+  }
+
+  if (field.type === "address") {
+    const required = !deferToRules;
+    const shape: z.ZodRawShape = {};
+    for (const sub of getAddressSubfields({ required })) {
+      shape[sub.name] = buildFieldSchema(sub);
+    }
+    const obj = z.object(shape);
+    return required ? obj : obj.optional();
   }
 
   let s: z.ZodString = z.string({ required_error: v.message ?? `${field.label} is required` });
@@ -62,16 +108,39 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
     s = s.regex(/^[+]?[\d\s\-().]{7,15}$/, { message: "Enter a valid phone number" });
   }
 
+  // Masked fields store the separator-formatted display value (e.g. "1234-5678-9012-3456"),
+  // but `pattern` is authored against the raw, unformatted characters (e.g. digits only) —
+  // strip the mask literals before testing so a correctly-typed value actually passes.
+  // `.refine()` moves the schema out of `ZodString` into `ZodEffects`, so from here on we
+  // track the result in a separately-typed variable rather than reassigning `s`.
+  let result: z.ZodTypeAny = s;
   if (v.pattern) {
-    s = s.regex(new RegExp(v.pattern), { message: v.message ?? "Invalid format" });
+    let patternRegex: RegExp | null = null;
+    try {
+      patternRegex = new RegExp(v.pattern);
+    } catch {
+      patternRegex = null;
+    }
+
+    if (!patternRegex) {
+      result = s.refine(() => false, {
+        message: v.message ?? "Invalid format",
+      });
+    } else if (field.mask) {
+      result = s.refine((val) => patternRegex.test(unmask(val)), {
+        message: v.message ?? "Invalid format",
+      });
+    } else {
+      result = s.regex(patternRegex, { message: v.message ?? "Invalid format" });
+    }
   }
 
   if (field.type === "json") {
-    const jsonSchema = s.refine(
+    const jsonSchema = result.refine(
       (val) => {
         if (!val) return true;
         try {
-          JSON.parse(val);
+          JSON.parse(val as string);
           return true;
         } catch {
           return false;
@@ -83,10 +152,10 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
   }
 
   if (!v.required || deferToRules) {
-    return s.optional().or(z.literal(""));
+    return result.optional().or(z.literal(""));
   }
 
-  return s;
+  return result;
 }
 
 export function buildSectionSchema(section: FormSection): z.ZodObject<z.ZodRawShape> {
@@ -132,6 +201,24 @@ function withConditionalRuleValidation(
         for (const field of fieldsWithRules) {
           if (!isFieldVisible(field, scope)) continue;
           if (!isFieldRequired(field, scope)) continue;
+
+          if (field.type === "address") {
+            const rawAddr = scope[field.name];
+            const addr: Record<string, unknown> = isPlainObject(rawAddr) ? rawAddr : {};
+            for (const sub of getAddressSubfields({ required: true })) {
+              if (!sub.validation?.required) continue;
+              if (!isEmptyValue(addr[sub.name])) continue;
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: sub.validation?.message ?? `${sub.label} is required`,
+                path: section.repeatable
+                  ? [section.code, index, field.name, sub.name]
+                  : [section.code, field.name, sub.name],
+              });
+            }
+            continue;
+          }
+
           if (!isEmptyValue(scope[field.name])) continue;
 
           ctx.addIssue({
@@ -170,8 +257,10 @@ export function buildSectionDefaults(section: FormSection): Record<string, unkno
       defaults[f.name] = f.defaultValue;
     } else if (f.type === "checkbox") {
       defaults[f.name] = false;
-    } else if (f.type === "file" || f.type === "document") {
+    } else if (f.type === "file" || f.type === "document" || f.type === "multiselect") {
       defaults[f.name] = [];
+    } else if (f.type === "address") {
+      defaults[f.name] = emptyAddressValue();
     } else {
       defaults[f.name] = "";
     }
@@ -194,6 +283,21 @@ export function buildTemplateDefaults(template: FormTemplate): Record<string, un
 }
 
 /** Fills in template defaults for any section missing from previously saved data. */
+function mergePlainObjects(
+  base: Record<string, unknown>,
+  saved: Record<string, unknown>
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...base, ...saved };
+  for (const key of Object.keys(base)) {
+    const defaultValue = base[key];
+    const savedValue = saved[key];
+    if (isPlainObject(defaultValue) && isPlainObject(savedValue)) {
+      merged[key] = { ...defaultValue, ...savedValue };
+    }
+  }
+  return merged;
+}
+
 export function mergeTemplateDefaults(
   template: FormTemplate,
   values: unknown
@@ -204,13 +308,17 @@ export function mergeTemplateDefaults(
   const merged: Record<string, unknown> = { ...defaults };
   for (const [key, value] of Object.entries(saved)) {
     const base = defaults[key];
-    if (
-      base && !Array.isArray(base) && typeof base === "object" &&
-      value && !Array.isArray(value) && typeof value === "object"
-    ) {
-      merged[key] = { ...base, ...(value as Record<string, unknown>) };
-    } else if (Array.isArray(value) && value.length === 0 && Array.isArray(base)) {
-      merged[key] = base;
+    if (isPlainObject(base) && isPlainObject(value)) {
+      merged[key] = mergePlainObjects(base, value);
+    } else if (Array.isArray(value) && Array.isArray(base)) {
+      if (value.length === 0) {
+        merged[key] = base;
+      } else {
+        const itemDefault = isPlainObject(base[0]) ? base[0] : {};
+        merged[key] = value.map((item) =>
+          isPlainObject(item) ? mergePlainObjects(itemDefault, item) : item
+        );
+      }
     } else if (value !== undefined) {
       merged[key] = value;
     }

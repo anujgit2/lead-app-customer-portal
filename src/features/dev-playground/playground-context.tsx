@@ -29,6 +29,7 @@ import {
 } from "./storage";
 import { SAMPLE_TEMPLATE_JSON } from "./sample-template";
 import type { ApiLoadMeta, ApiSourceConfig, NormalizedTemplateResult, TemplateSourceMode } from "./types";
+import type { JsonEditorHandle } from "./components/JsonEditor";
 
 const DEFAULT_API_CONFIG: ApiSourceConfig = {
   templateId: "business_profile",
@@ -42,6 +43,10 @@ const EMPTY_RESULT: NormalizedTemplateResult = { templates: [], issues: [], vali
 type ApiStatus = "idle" | "loading" | "success" | "error";
 
 interface PlaygroundState {
+  // Shared so the toolbar (header) can trigger actions (format/copy/paste/clear)
+  // on the JSON editor instance that actually lives inside `SchemaPanel`.
+  editorRef: React.RefObject<JsonEditorHandle | null>;
+
   mode: TemplateSourceMode;
   setMode: (mode: TemplateSourceMode) => void;
 
@@ -97,6 +102,8 @@ const COMMIT_DEBOUNCE_MS = 500;
 const DEFAULT_JSON_TEXT = JSON.stringify(SAMPLE_TEMPLATE_JSON, null, 2);
 
 export function PlaygroundProvider({ children }: { children: React.ReactNode }) {
+  const editorRef = useRef<JsonEditorHandle>(null);
+
   // Initial state must be identical on the server and on the client's first
   // (hydration) render — reading localStorage here would make them diverge
   // (server has no `window`, but the client's very first render already does),
@@ -254,6 +261,7 @@ export function PlaygroundProvider({ children }: { children: React.ReactNode }) 
   }, [normalized.templates]);
 
   const value: PlaygroundState = {
+    editorRef,
     mode,
     setMode,
     jsonText,

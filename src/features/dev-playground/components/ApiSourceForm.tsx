@@ -12,7 +12,12 @@ import { usePlayground } from "../playground-context";
 
 const PARAM_SUGGESTIONS = ["formCode", "version", "productCode", "loanType", "applicationType"];
 
-export function ApiSourceForm() {
+interface ApiSourceFormProps {
+  /** Hide the Template ID + Load row — used when an inline loader is already shown elsewhere (e.g. the toolbar). */
+  showTemplateIdAndLoad?: boolean;
+}
+
+export function ApiSourceForm({ showTemplateIdAndLoad = true }: ApiSourceFormProps) {
   const { apiConfig, setApiConfig, apiStatus, apiMeta, apiErrorMessage, loadFromApi } = usePlayground();
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
@@ -32,31 +37,33 @@ export function ApiSourceForm() {
   };
 
   return (
-    <div className="space-y-3 rounded-lg border border-slate-100 bg-slate-50/60 p-3.5 dark:border-zinc-800 dark:bg-zinc-900/40">
-      <div className="space-y-1.5">
-        <Label htmlFor="pg-template-id" className="text-xs text-slate-500">
-          Template ID
-        </Label>
-        <div className="flex gap-2">
-          <Input
-            id="pg-template-id"
-            value={apiConfig.templateId}
-            onChange={(e) => setApiConfig({ ...apiConfig, templateId: e.target.value })}
-            placeholder="business_profile"
-            className="h-9 text-sm"
-          />
-          <Button
-            type="button"
-            size="sm"
-            className="h-9 shrink-0"
-            loading={apiStatus === "loading"}
-            onClick={loadFromApi}
-            disabled={!apiConfig.templateId}
-          >
-            Load
-          </Button>
+    <div className="space-y-3">
+      {showTemplateIdAndLoad && (
+        <div className="space-y-1.5">
+          <Label htmlFor="pg-template-id" className="text-xs text-slate-500">
+            Template ID
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="pg-template-id"
+              value={apiConfig.templateId}
+              onChange={(e) => setApiConfig({ ...apiConfig, templateId: e.target.value })}
+              placeholder="business_profile"
+              className="h-9 text-sm"
+            />
+            <Button
+              type="button"
+              size="sm"
+              className="h-9 shrink-0"
+              loading={apiStatus === "loading"}
+              onClick={loadFromApi}
+              disabled={!apiConfig.templateId}
+            >
+              Load
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       <button
         type="button"

@@ -4,8 +4,8 @@ import React, { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, X, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn, formatFileSize } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { formatAcceptLabel, toDropzoneAccept } from "@/utils/upload-config";
 
 interface FileItem {
   file: File;
@@ -19,6 +19,7 @@ interface FileUploadFieldProps {
   onChange?: (files: File[]) => void;
   accept?: string;
   maxFiles?: number;
+  minFiles?: number;
   maxSizeMB?: number;
   error?: boolean;
 }
@@ -28,16 +29,15 @@ export function FileUploadField({
   onChange,
   accept,
   maxFiles = 1,
+  minFiles = 0,
   maxSizeMB = 5,
   error,
 }: FileUploadFieldProps) {
-  // `value` may come from a dynamically-loaded/edited schema's `defaultValue` (e.g. in the
-  // dev form playground) which isn't guaranteed to be an array, so guard defensively here
-  // rather than assuming callers always pass File[] | undefined.
   const safeValue = Array.isArray(value) ? value : [];
   const [fileItems, setFileItems] = useState<FileItem[]>(
     safeValue.map((f) => ({ file: f, progress: 100, status: "success" as const }))
   );
+  const [rejectMessage, setRejectMessage] = useState<string | null>(null);
 
   const simulateUpload = (item: FileItem) => {
     let progress = 0;
@@ -65,8 +65,12 @@ export function FileUploadField({
     }, 200);
   };
 
+  const remaining = Math.max(maxFiles - fileItems.length, 0);
+
   const onDrop = useCallback(
     (accepted: File[]) => {
+      if (accepted.length === 0) return;
+      setRejectMessage(null);
       const newItems: FileItem[] = accepted.map((f) => ({
         file: f,
         progress: 0,
@@ -76,103 +80,106 @@ export function FileUploadField({
 
       setFileItems((prev) => {
         const combined = [...prev, ...newItems].slice(0, maxFiles);
+        onChange?.(combined.map((item) => item.file));
         return combined;
       });
 
       newItems.forEach((item) => simulateUpload(item));
-
-      const allFiles = [...fileItems, ...newItems]
-        .slice(0, maxFiles)
-        .map((i) => i.file);
-      onChange?.(allFiles);
     },
-    [fileItems, maxFiles, onChange]
+    [maxFiles, onChange]
   );
 
   const removeFile = (index: number) => {
     setFileItems((prev) => {
       const updated = prev.filter((_, i) => i !== index);
-      onChange?.(updated.map((i) => i.file));
+      onChange?.(updated.map((item) => item.file));
       return updated;
     });
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: accept
-      ? Object.fromEntries(
-          accept.split(",").map((ext) => {
-            const mime = ext.trim() === ".pdf" ? "application/pdf" :
-              ext.trim() === ".xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
-              ext.trim() === ".csv" ? "text/csv" :
-              "image/*";
-            return [mime, []];
-          })
-        )
-      : undefined,
+    onDropRejected: (rejections) => {
+      const code = rejections[0]?.errors[0]?.code;
+      if (code === "file-too-large") {
+        setRejectMessage(`Each file must be under ${maxSizeMB}MB`);
+      } else if (code === "file-invalid-type") {
+        setRejectMessage(`Allowed types: ${formatAcceptLabel(accept)}`);
+      } else if (code === "too-many-files") {
+        setRejectMessage(`You can upload up to ${maxFiles} file${maxFiles === 1 ? "" : "s"}`);
+      } else {
+        setRejectMessage(rejections[0]?.errors[0]?.message ?? "File could not be uploaded");
+      }
+    },
+    accept: toDropzoneAccept(accept),
     maxSize: maxSizeMB * 1024 * 1024,
-    maxFiles: maxFiles - fileItems.length,
-    disabled: fileItems.length >= maxFiles,
+    maxFiles: remaining,
+    disabled: remaining <= 0,
   });
 
   return (
     <div className="space-y-3">
-      {fileItems.length < maxFiles && (
+      {remaining > 0 && (
         <div
           {...getRootProps()}
           className={cn(
-            "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-200",
+            "cursor-pointer rounded-xl border border-dashed px-5 py-4 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]",
             isDragActive
-              ? "border-primary bg-primary/5 scale-[1.01]"
-              : "border-border hover:border-primary/50 hover:bg-muted/30",
+              ? "border-blue-500 bg-blue-50/60"
+              : "border-slate-200 hover:border-blue-400 hover:bg-slate-50/80",
             error && "border-destructive",
-            fileItems.length >= maxFiles && "opacity-50 cursor-not-allowed"
+            remaining <= 0 && "cursor-not-allowed opacity-50"
           )}
         >
           <input {...getInputProps()} />
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+          <div className="flex items-center gap-4 text-left">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
               <Upload className="h-5 w-5 text-primary" />
             </div>
             {isDragActive ? (
               <p className="text-sm font-medium text-primary">Drop files here</p>
             ) : (
-              <>
-                <p className="text-sm font-medium">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold tracking-tight text-slate-800">
                   Drag & drop or{" "}
                   <span className="text-primary underline">browse</span>
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {accept ?? "All files"} · Max {maxSizeMB}MB
+                <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  {formatAcceptLabel(accept)} · Max {maxSizeMB}MB
                   {maxFiles > 1 && ` · Up to ${maxFiles} files`}
+                  {minFiles > 0 && ` · At least ${minFiles} required`}
                 </p>
-              </>
+              </div>
             )}
           </div>
         </div>
+      )}
+
+      {rejectMessage && (
+        <p className="text-xs text-destructive">{rejectMessage}</p>
       )}
 
       {fileItems.length > 0 && (
         <div className="space-y-2">
           {fileItems.map((item, index) => (
             <div
-              key={index}
-              className="flex items-center gap-3 p-3 rounded-lg border bg-card"
+              key={`${item.file.name}-${index}`}
+              className="flex items-center gap-3 rounded-lg border border-slate-100 bg-card p-3 shadow-sm"
             >
               {item.preview ? (
                 <img
                   src={item.preview}
                   alt={item.file.name}
-                  className="h-10 w-10 rounded object-cover flex-shrink-0"
+                  className="h-10 w-10 flex-shrink-0 rounded object-cover"
                 />
               ) : (
-                <div className="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded bg-muted">
                   <FileText className="h-5 w-5 text-muted-foreground" />
                 </div>
               )}
 
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{item.file.name}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{item.file.name}</p>
                 <p className="text-xs text-muted-foreground">
                   {formatFileSize(item.file.size)}
                 </p>
@@ -181,7 +188,7 @@ export function FileUploadField({
                 )}
               </div>
 
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex flex-shrink-0 items-center gap-2">
                 {item.status === "success" && (
                   <CheckCircle2 className="h-4 w-4 text-green-600" />
                 )}
@@ -191,7 +198,7 @@ export function FileUploadField({
                 <button
                   type="button"
                   onClick={() => removeFile(index)}
-                  className="h-6 w-6 rounded-md hover:bg-muted flex items-center justify-center transition-colors"
+                  className="flex h-6 w-6 items-center justify-center rounded-md transition-all duration-200 ease-out hover:bg-muted active:scale-[0.98]"
                 >
                   <X className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>

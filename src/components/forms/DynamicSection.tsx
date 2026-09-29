@@ -32,7 +32,7 @@ function FieldGrid({ section, namePrefix }: { section: FormSection; namePrefix?:
           className={cn(
             field.span === 2 && "sm:col-span-2",
             field.span === 3 && "sm:col-span-2 lg:col-span-3",
-            (field.span === 4 || field.type === "json" || field.type === "textarea") && "col-span-full"
+            (field.span === 4 || field.type === "json" || field.type === "textarea" || field.type === "address" || field.type === "file" || field.type === "document") && "col-span-full"
           )}
         >
           <DynamicField field={field} namePrefix={namePrefix} />
