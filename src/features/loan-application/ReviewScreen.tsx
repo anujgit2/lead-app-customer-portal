@@ -9,6 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { Edit2, CheckCircle2 } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import { getAddressSubfields, isPlainObject } from "@/utils/address-field";
+import { StoredFileList } from "@/components/forms/StoredFileList";
+import { isStoredFileReference } from "@/services/file-storage.service";
 
 interface ReviewScreenProps {
   templates: FormTemplate[];
@@ -75,6 +77,10 @@ function ReviewValue({
     return <span>{formatted}</span>;
   }
   if (Array.isArray(value)) {
+    const files = value.filter(isStoredFileReference);
+    if (type === "file" || type === "document" || (files.length > 0 && files.length === value.length)) {
+      return <StoredFileList files={files} />;
+    }
     return <span className="text-muted-foreground italic text-xs">{value.length} file(s)</span>;
   }
   return <span>{String(value)}</span>;
@@ -120,9 +126,9 @@ function ReviewSection({
         return (
           <div key={field.name}>
             <p className="text-xs text-muted-foreground mb-0.5">{field.label}</p>
-            <p className="text-sm font-medium">
+            <div className="text-sm font-medium">
               <ReviewValue value={value} type={field.type} options={field.options} />
-            </p>
+            </div>
           </div>
         );
       })}

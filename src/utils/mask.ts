@@ -6,6 +6,29 @@
  */
 import type { MaskConfig } from "@/types";
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+/** Parses authored `{ pattern, separator?, transform? }` JSON into a `MaskConfig`, or undefined if invalid. */
+export function parseMaskConfig(raw: unknown): MaskConfig | undefined {
+  if (!isPlainObject(raw)) return undefined;
+  if (typeof raw.pattern !== "string" || raw.pattern.length === 0) return undefined;
+
+  const transform =
+    raw.transform === "uppercase" ||
+    raw.transform === "lowercase" ||
+    raw.transform === "numeric"
+      ? raw.transform
+      : undefined;
+
+  return {
+    pattern: raw.pattern,
+    separator: typeof raw.separator === "string" ? raw.separator : undefined,
+    transform,
+  };
+}
+
 /** Reformats raw user input to match a mask pattern, applying an optional case transform first. */
 export function applyMask(rawValue: string, pattern: string, transform?: MaskConfig["transform"]): string {
   const transformed =

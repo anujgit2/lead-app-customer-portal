@@ -1,9 +1,10 @@
 /**
  * FormTemplateSource — ApiTemplateSource + JsonTemplateSource.
  *
- * Both sources only ever produce a raw JSON value; normalization/validation
- * (TemplateValidator) and rendering (the real DynamicField/DynamicSection/
- * WizardStep renderer) live in separate modules and are never duplicated here.
+ * Both sources only ever produce a raw JSON value; mapping
+ * (`normalizeTemplateJson` / `mapProgramToLoanProduct` in program-mapper)
+ * and rendering (DynamicField / WizardStep) live in shared modules and are
+ * never duplicated here.
  */
 import { apiClient } from "@/lib/axios";
 import { parseApiError } from "@/lib/api-error";
@@ -11,19 +12,38 @@ import { programService } from "@/services/program.service";
 import type { ApiError } from "@/types";
 import type { ApiLoadResult, ApiSourceConfig } from "./types";
 
+function firstFormCode(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== "object") return undefined;
+  const mappings = (payload as Record<string, unknown>).formTemplates;
+  if (!Array.isArray(mappings) || mappings.length === 0) return undefined;
+  const mapping = mappings[0];
+  if (!mapping || typeof mapping !== "object") return undefined;
+  const template = (mapping as Record<string, unknown>).template;
+  if (!template || typeof template !== "object") return undefined;
+  const nested = template as Record<string, unknown>;
+  const schemaPayload = nested.schema ?? nested.templateSchema;
+  const schema = Array.isArray(schemaPayload) ? schemaPayload[0] : schemaPayload;
+  if (!schema || typeof schema !== "object") return undefined;
+  const form = schema as Record<string, unknown>;
+  return typeof form.formCode === "string"
+    ? form.formCode
+    : typeof form.code === "string"
+      ? form.code
+      : undefined;
+}
+
 /** ApiTemplateSource — fetches a raw template payload from the backend. */
 export async function fetchTemplateFromApi(config: ApiSourceConfig): Promise<ApiLoadResult> {
   const loadedAt = new Date().toISOString();
 
   try {
     if (config.useProgramService) {
-      const product = await programService.getProgramWithTemplates(config.templateId);
-      const firstTemplate = product.templates?.[0];
+      const payload = await programService.getProgramPayload(config.templateId);
       return {
-        raw: product,
+        raw: payload,
         meta: {
           templateId: config.templateId,
-          formCode: firstTemplate?.code,
+          formCode: firstFormCode(payload),
           version: undefined,
           loadedAt,
           statusCode: 200,

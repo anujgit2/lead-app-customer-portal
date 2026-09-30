@@ -26,15 +26,19 @@ export const programService = {
     }
   },
 
-  async getProgramWithTemplates(programId: string): Promise<LoanProduct> {
+  async getProgramPayload(programId: string): Promise<BackendProgramWithTemplates> {
     try {
       const { data } = await apiClient.get<BackendProgramWithTemplates>(
         `/api/programs/${programId}/with-form-templates`
       );
-      return mapProgramToLoanProduct(data);
+      return data;
     } catch (error) {
       throw parseApiError(error);
     }
+  },
+
+  async getProgramWithTemplates(programId: string): Promise<LoanProduct> {
+    return mapProgramToLoanProduct(await this.getProgramPayload(programId));
   },
 
   async getDefaultProgramWithTemplates(): Promise<LoanProduct> {

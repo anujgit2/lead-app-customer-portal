@@ -1,0 +1,1679 @@
+{
+    "id": "2daa91ba-3331-4179-beea-d305b6c410a9",
+    "programCode": "business_loan",
+    "name": "Business Loan",
+    "description": "Default business loan program backed by normalized loan application form templates.",
+    "programType": "BUSINESS_LOAN",
+    "status": "PUBLISHED",
+    "createdAt": "2026-07-10T10:38:46.681212Z",
+    "updatedAt": "2026-07-10T11:22:14.372885Z",
+    "createdBy": null,
+    "updatedBy": null,
+    "formTemplates": [
+      {
+        "id": "a8d0bf72-9b88-4f76-8859-6b079b94053b",
+        "tenantId": "leads",
+        "programId": "2daa91ba-3331-4179-beea-d305b6c410a9",
+        "template": {
+          "id": "e379e4c1-a786-4614-ac9e-c12b1a15cc54",
+          "tenantId": "leads",
+          "type": "CompanyProperty",
+          "name": "company",
+          "version": 2,
+          "status": "PUBLISHED",
+          "schema": [
+            {
+              "table": "leads.business_profile",
+              "formCode": "business_profile",
+              "sections": [
+                {
+                  "code": "business_details",
+                  "table": "leads.business_profile",
+                  "title": "Business Details",
+                  "fields": [
+                    {
+                      "info": "Enter the legal name of the business as registered with the relevant authority.",
+                      "name": "companyName",
+                      "path": "business.legalName",
+                      "type": "text",
+                      "label": "Company Name",
+                      "column": "company_name",
+                      "required": true,
+                      "maxLength": 255,
+                      "placeholder": "Enter legal company name"
+                    },
+                    {
+                      "info": "Select the legal structure of the business.",
+                      "name": "companyType",
+                      "path": "business.entityType",
+                      "type": "select",
+                      "label": "Company Type",
+                      "column": "company_type",
+                      "options": [
+                        {
+                          "label": "Proprietorship",
+                          "value": "PROPRIETORSHIP"
+                        },
+                        {
+                          "label": "Partnership",
+                          "value": "PARTNERSHIP"
+                        },
+                        {
+                          "label": "LLP",
+                          "value": "LLP"
+                        },
+                        {
+                          "label": "Private Limited",
+                          "value": "PRIVATE_LIMITED"
+                        },
+                        {
+                          "label": "Public Limited",
+                          "value": "PUBLIC_LIMITED"
+                        },
+                        {
+                          "label": "Trust",
+                          "value": "TRUST"
+                        },
+                        {
+                          "label": "Society",
+                          "value": "SOCIETY"
+                        },
+                        {
+                          "label": "Other",
+                          "value": "OTHER"
+                        }
+                      ],
+                      "required": false,
+                      "maxLength": 50,
+                      "placeholder": "Select company type"
+                    },
+                    {
+                      "info": "Enter the trade name or brand name if different from the legal company name.",
+                      "name": "doingBusinessAs",
+                      "path": "business.tradeName",
+                      "type": "text",
+                      "label": "Doing Business As",
+                      "column": "doing_business_as",
+                      "required": false,
+                      "maxLength": 255,
+                      "placeholder": "Enter trade or brand name"
+                    },
+                    {
+                      "info": "Enter the 10-character PAN of the business.",
+                      "name": "businessPan",
+                      "path": "business.pan",
+                      "type": "text",
+                      "label": "Business PAN",
+                      "column": "business_pan",
+                      "required": false,
+                      "maxLength": 10,
+                      "validation": {
+                        "pattern": "^[A-Z]{5}[0-9]{4}[A-Z]{1}$"
+                      },
+                      "placeholder": "ABCDE1234F"
+                    },
+                    {
+                      "info": "Select whether the business is registered under GST.",
+                      "name": "gstRegistered",
+                      "path": "business.gstRegistered",
+                      "type": "select",
+                      "label": "GST Registered",
+                      "column": "gst_registered",
+                      "options": [
+                        {
+                          "label": "Yes",
+                          "value": "YES"
+                        },
+                        {
+                          "label": "No",
+                          "value": "NO"
+                        }
+                      ],
+                      "required": false,
+                      "placeholder": "Select GST registration status"
+                    },
+                    {
+                      "info": "Enter the 15-character GST Identification Number.",
+                      "name": "gstin",
+                      "path": "business.gstin",
+                      "type": "text",
+                      "label": "GSTIN",
+                      "rules": {
+                        "visibleWhen": {
+                          "field": "gstRegistered",
+                          "value": "YES",
+                          "operator": "equals"
+                        },
+                        "requiredWhen": {
+                          "field": "gstRegistered",
+                          "value": "YES",
+                          "operator": "equals"
+                        }
+                      },
+                      "column": "gstin",
+                      "required": false,
+                      "maxLength": 15,
+                      "validation": {
+                        "pattern": "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$"
+                      },
+                      "placeholder": "09ABCDE1234F1Z5"
+                    },
+                    {
+                      "info": "Select the Indian state in which the business was formed or incorporated.",
+                      "name": "stateOfFormation",
+                      "path": "business.stateOfFormation",
+                      "type": "select",
+                      "label": "State of Formation",
+                      "column": "state_of_formation",
+                      "options": [
+                        {
+                          "label": "Andhra Pradesh",
+                          "value": "ANDHRA_PRADESH"
+                        },
+                        {
+                          "label": "Arunachal Pradesh",
+                          "value": "ARUNACHAL_PRADESH"
+                        },
+                        {
+                          "label": "Assam",
+                          "value": "ASSAM"
+                        },
+                        {
+                          "label": "Bihar",
+                          "value": "BIHAR"
+                        },
+                        {
+                          "label": "Chhattisgarh",
+                          "value": "CHHATTISGARH"
+                        },
+                        {
+                          "label": "Goa",
+                          "value": "GOA"
+                        },
+                        {
+                          "label": "Gujarat",
+                          "value": "GUJARAT"
+                        },
+                        {
+                          "label": "Haryana",
+                          "value": "HARYANA"
+                        },
+                        {
+                          "label": "Himachal Pradesh",
+                          "value": "HIMACHAL_PRADESH"
+                        },
+                        {
+                          "label": "Jharkhand",
+                          "value": "JHARKHAND"
+                        },
+                        {
+                          "label": "Karnataka",
+                          "value": "KARNATAKA"
+                        },
+                        {
+                          "label": "Kerala",
+                          "value": "KERALA"
+                        },
+                        {
+                          "label": "Madhya Pradesh",
+                          "value": "MADHYA_PRADESH"
+                        },
+                        {
+                          "label": "Maharashtra",
+                          "value": "MAHARASHTRA"
+                        },
+                        {
+                          "label": "Manipur",
+                          "value": "MANIPUR"
+                        },
+                        {
+                          "label": "Meghalaya",
+                          "value": "MEGHALAYA"
+                        },
+                        {
+                          "label": "Mizoram",
+                          "value": "MIZORAM"
+                        },
+                        {
+                          "label": "Nagaland",
+                          "value": "NAGALAND"
+                        },
+                        {
+                          "label": "Odisha",
+                          "value": "ODISHA"
+                        },
+                        {
+                          "label": "Punjab",
+                          "value": "PUNJAB"
+                        },
+                        {
+                          "label": "Rajasthan",
+                          "value": "RAJASTHAN"
+                        },
+                        {
+                          "label": "Sikkim",
+                          "value": "SIKKIM"
+                        },
+                        {
+                          "label": "Tamil Nadu",
+                          "value": "TAMIL_NADU"
+                        },
+                        {
+                          "label": "Telangana",
+                          "value": "TELANGANA"
+                        },
+                        {
+                          "label": "Tripura",
+                          "value": "TRIPURA"
+                        },
+                        {
+                          "label": "Uttar Pradesh",
+                          "value": "UTTAR_PRADESH"
+                        },
+                        {
+                          "label": "Uttarakhand",
+                          "value": "UTTARAKHAND"
+                        },
+                        {
+                          "label": "West Bengal",
+                          "value": "WEST_BENGAL"
+                        }
+                      ],
+                      "required": false,
+                      "placeholder": "Select state of formation"
+                    },
+                    {
+                      "info": "Enter the date on which the business was incorporated.",
+                      "name": "incorporationDate",
+                      "path": "business.incorporationDate",
+                      "type": "date",
+                      "label": "Date of Incorporation",
+                      "rules": {
+                        "visibleWhen": {
+                          "field": "companyType",
+                          "value": [
+                            "PARTNERSHIP",
+                            "LLP",
+                            "PRIVATE_LIMITED",
+                            "PUBLIC_LIMITED"
+                          ],
+                          "operator": "in"
+                        }
+                      },
+                      "column": "incorporation_date",
+                      "required": false,
+                      "placeholder": "DD/MM/YYYY"
+                    },
+                    {
+                      "info": "Enter the year in which the business started operations.",
+                      "name": "yearEstablished",
+                      "path": "business.establishmentYear",
+                      "type": "number",
+                      "label": "Year Established",
+                      "column": "year_established",
+                      "required": false,
+                      "validation": {
+                        "max": 2100,
+                        "min": 1800,
+                        "integer": true
+                      },
+                      "placeholder": "YYYY"
+                    },
+                    {
+                      "info": "Select the primary industry in which the business operates.",
+                      "name": "industryType",
+                      "path": "business.industryType",
+                      "type": "select",
+                      "label": "Industry Type",
+                      "column": "industry_type",
+                      "options": [
+                        {
+                          "label": "Agriculture",
+                          "value": "AGRICULTURE"
+                        },
+                        {
+                          "label": "Automobile",
+                          "value": "AUTOMOBILE"
+                        },
+                        {
+                          "label": "Construction",
+                          "value": "CONSTRUCTION"
+                        },
+                        {
+                          "label": "Education",
+                          "value": "EDUCATION"
+                        },
+                        {
+                          "label": "Financial Services",
+                          "value": "FINANCIAL_SERVICES"
+                        },
+                        {
+                          "label": "Healthcare",
+                          "value": "HEALTHCARE"
+                        },
+                        {
+                          "label": "Hospitality",
+                          "value": "HOSPITALITY"
+                        },
+                        {
+                          "label": "Information Technology",
+                          "value": "INFORMATION_TECHNOLOGY"
+                        },
+                        {
+                          "label": "Manufacturing",
+                          "value": "MANUFACTURING"
+                        },
+                        {
+                          "label": "Professional Services",
+                          "value": "PROFESSIONAL_SERVICES"
+                        },
+                        {
+                          "label": "Real Estate",
+                          "value": "REAL_ESTATE"
+                        },
+                        {
+                          "label": "Retail",
+                          "value": "RETAIL"
+                        },
+                        {
+                          "label": "Trading",
+                          "value": "TRADING"
+                        },
+                        {
+                          "label": "Transportation & Logistics",
+                          "value": "TRANSPORTATION_LOGISTICS"
+                        },
+                        {
+                          "label": "Wholesale",
+                          "value": "WHOLESALE"
+                        },
+                        {
+                          "label": "Other",
+                          "value": "OTHER"
+                        }
+                      ],
+                      "required": false,
+                      "placeholder": "Select industry"
+                    },
+                    {
+                      "info": "Select the primary nature of the business activity.",
+                      "name": "natureOfBusiness",
+                      "path": "business.natureOfBusiness",
+                      "type": "select",
+                      "label": "Nature of Business",
+                      "column": "nature_of_business",
+                      "options": [
+                        {
+                          "label": "Agriculture & Allied",
+                          "value": "AGRICULTURE_AND_ALLIED"
+                        },
+                        {
+                          "label": "Manufacturing",
+                          "value": "MANUFACTURING"
+                        },
+                        {
+                          "label": "Retail Trading",
+                          "value": "RETAIL_TRADING"
+                        },
+                        {
+                          "label": "Wholesale Trading",
+                          "value": "WHOLESALE_TRADING"
+                        },
+                        {
+                          "label": "Service",
+                          "value": "SERVICE"
+                        },
+                        {
+                          "label": "Other",
+                          "value": "OTHER"
+                        }
+                      ],
+                      "required": false,
+                      "placeholder": "Select nature of business"
+                    },
+                    {
+                      "info": "Enter the annual revenue or turnover of the business.",
+                      "name": "annualRevenue",
+                      "path": "business.financials.annualTurnover",
+                      "type": "currency",
+                      "label": "Annual Revenue",
+                      "scale": 2,
+                      "column": "annual_revenue",
+                      "required": false,
+                      "precision": 18,
+                      "validation": {
+                        "min": 0
+                      },
+                      "placeholder": "Enter annual revenue"
+                    },
+                    {
+                      "info": "Enter the net income of the business.",
+                      "name": "netIncome",
+                      "path": "business.financials.netIncome",
+                      "type": "currency",
+                      "label": "Net Income",
+                      "scale": 2,
+                      "column": "net_income",
+                      "required": false,
+                      "precision": 18,
+                      "validation": {
+                        "min": 0
+                      },
+                      "placeholder": "Enter net income"
+                    }
+                  ],
+                  "displayOrder": 1
+                },
+                {
+                  "code": "business_address",
+                  "table": "leads.business_address",
+                  "title": "Business Address",
+                  "fields": [
+                    {
+                      "name": "addressLine1",
+                      "path": "business.addresses[].addressLine1",
+                      "type": "text",
+                      "label": "Address Line 1",
+                      "column": "address_line1",
+                      "required": false,
+                      "maxLength": 255,
+                      "placeholder": "Enter building, house or street address"
+                    },
+                    {
+                      "name": "addressLine2",
+                      "path": "business.addresses[].addressLine2",
+                      "type": "text",
+                      "label": "Address Line 2",
+                      "column": "address_line2",
+                      "required": false,
+                      "maxLength": 255,
+                      "placeholder": "Apartment, suite, landmark, etc."
+                    },
+                    {
+                      "name": "city",
+                      "path": "business.addresses[].city",
+                      "type": "text",
+                      "label": "City",
+                      "column": "city",
+                      "required": false,
+                      "maxLength": 100,
+                      "placeholder": "Enter city"
+                    },
+                    {
+                      "name": "state",
+                      "path": "business.addresses[].state",
+                      "type": "select",
+                      "label": "State",
+                      "column": "state",
+                      "options": [
+                        {
+                          "label": "Andhra Pradesh",
+                          "value": "ANDHRA_PRADESH"
+                        },
+                        {
+                          "label": "Arunachal Pradesh",
+                          "value": "ARUNACHAL_PRADESH"
+                        },
+                        {
+                          "label": "Assam",
+                          "value": "ASSAM"
+                        },
+                        {
+                          "label": "Bihar",
+                          "value": "BIHAR"
+                        },
+                        {
+                          "label": "Chhattisgarh",
+                          "value": "CHHATTISGARH"
+                        },
+                        {
+                          "label": "Goa",
+                          "value": "GOA"
+                        },
+                        {
+                          "label": "Gujarat",
+                          "value": "GUJARAT"
+                        },
+                        {
+                          "label": "Haryana",
+                          "value": "HARYANA"
+                        },
+                        {
+                          "label": "Himachal Pradesh",
+                          "value": "HIMACHAL_PRADESH"
+                        },
+                        {
+                          "label": "Jharkhand",
+                          "value": "JHARKHAND"
+                        },
+                        {
+                          "label": "Karnataka",
+                          "value": "KARNATAKA"
+                        },
+                        {
+                          "label": "Kerala",
+                          "value": "KERALA"
+                        },
+                        {
+                          "label": "Madhya Pradesh",
+                          "value": "MADHYA_PRADESH"
+                        },
+                        {
+                          "label": "Maharashtra",
+                          "value": "MAHARASHTRA"
+                        },
+                        {
+                          "label": "Manipur",
+                          "value": "MANIPUR"
+                        },
+                        {
+                          "label": "Meghalaya",
+                          "value": "MEGHALAYA"
+                        },
+                        {
+                          "label": "Mizoram",
+                          "value": "MIZORAM"
+                        },
+                        {
+                          "label": "Nagaland",
+                          "value": "NAGALAND"
+                        },
+                        {
+                          "label": "Odisha",
+                          "value": "ODISHA"
+                        },
+                        {
+                          "label": "Punjab",
+                          "value": "PUNJAB"
+                        },
+                        {
+                          "label": "Rajasthan",
+                          "value": "RAJASTHAN"
+                        },
+                        {
+                          "label": "Sikkim",
+                          "value": "SIKKIM"
+                        },
+                        {
+                          "label": "Tamil Nadu",
+                          "value": "TAMIL_NADU"
+                        },
+                        {
+                          "label": "Telangana",
+                          "value": "TELANGANA"
+                        },
+                        {
+                          "label": "Tripura",
+                          "value": "TRIPURA"
+                        },
+                        {
+                          "label": "Uttar Pradesh",
+                          "value": "UTTAR_PRADESH"
+                        },
+                        {
+                          "label": "Uttarakhand",
+                          "value": "UTTARAKHAND"
+                        },
+                        {
+                          "label": "West Bengal",
+                          "value": "WEST_BENGAL"
+                        }
+                      ],
+                      "required": false,
+                      "placeholder": "Select state"
+                    },
+                    {
+                      "name": "pincode",
+                      "path": "business.addresses[].pincode",
+                      "type": "text",
+                      "label": "Pincode",
+                      "column": "pincode",
+                      "required": false,
+                      "maxLength": 6,
+                      "validation": {
+                        "pattern": "^[0-9]{6}$"
+                      },
+                      "placeholder": "201301"
+                    },
+                    {
+                      "name": "country",
+                      "path": "business.addresses[].country",
+                      "type": "hidden",
+                      "label": "Country",
+                      "column": "country",
+                      "required": false,
+                      "defaultValue": "India"
+                    }
+                  ],
+                  "repeatable": true,
+                  "displayOrder": 2
+                }
+              ],
+              "repeatable": false
+            }
+          ],
+          "createdAt": "2026-09-28T20:23:54.733858Z",
+          "updatedAt": "2026-09-28T20:23:54.733858Z",
+          "createdBy": null,
+          "updatedBy": null
+        },
+        "displayOrder": 1,
+        "required": true,
+        "visible": true,
+        "createdAt": "2026-07-10T10:38:46.681212Z",
+        "updatedAt": "2026-07-10T11:22:14.372885Z"
+      },
+      {
+        "id": "04c16dc1-86a0-4f3a-a9c9-7194fc80e5eb",
+        "tenantId": "leads",
+        "programId": "2daa91ba-3331-4179-beea-d305b6c410a9",
+        "template": {
+          "id": "821d356d-bd56-45b2-a64e-09f79b30c2ab",
+          "tenantId": "leads",
+          "type": "OwnersProperty",
+          "name": "owners",
+          "version": 2,
+          "status": "PUBLISHED",
+          "schema": [
+            {
+              "table": "leads.owner_profile",
+              "formCode": "owner_profile",
+              "sections": [
+                {
+                  "code": "owner_details",
+                  "table": "leads.owner_profile",
+                  "title": "Owners Details",
+                  "fields": [
+                    {
+                      "name": "title",
+                      "path": "business.owners[].title",
+                      "type": "select",
+                      "label": "Title",
+                      "column": "title",
+                      "options": [
+                        {
+                          "label": "Mr.",
+                          "value": "MR"
+                        },
+                        {
+                          "label": "Mrs.",
+                          "value": "MRS"
+                        },
+                        {
+                          "label": "Ms.",
+                          "value": "MS"
+                        },
+                        {
+                          "label": "Dr.",
+                          "value": "DR"
+                        }
+                      ],
+                      "required": false,
+                      "placeholder": "Select title"
+                    },
+                    {
+                      "info": "Enter the owner's First name as it appears on their PAN or official identity document.",
+                      "name": "firstName",
+                      "path": "business.owners[].firstName",
+                      "type": "text",
+                      "label": "First Name",
+                      "column": "first_name",
+                      "required": true,
+                      "maxLength": 100,
+                      "placeholder": "Enter First name"
+                    },
+                    {
+                      "info": "Enter the owner's middle name as it appears on their PAN or official identity document.",
+                      "name": "middleName",
+                      "path": "business.owners[].middleName",
+                      "type": "text",
+                      "label": "Middle Name",
+                      "column": "middle_name",
+                      "required": false,
+                      "maxLength": 100,
+                      "placeholder": "Enter middle name"
+                    },
+                    {
+                      "info": "Enter the owner's last name as it appears on their PAN or official identity document.",
+                      "name": "lastName",
+                      "path": "business.owners[].lastName",
+                      "type": "text",
+                      "label": "Last Name",
+                      "column": "last_name",
+                      "required": true,
+                      "maxLength": 255,
+                      "placeholder": "Enter last name"
+                    },
+                    {
+                      "name": "fatherOrSpouseName",
+                      "path": "business.owners[].fatherOrSpouseName",
+                      "type": "text",
+                      "label": "Father / Spouse Name",
+                      "column": "father_or_spouse_name",
+                      "required": false,
+                      "maxLength": 255,
+                      "placeholder": "Enter father or spouse name"
+                    },
+                    {
+                      "info": "Enter the owner's 10-character PAN.",
+                      "mask": {
+                        "pattern": "AAAAA-0000-A",
+                        "separator": "-",
+                        "transform": "uppercase"
+                      },
+                      "name": "pan",
+                      "path": "business.owners[].pan",
+                      "type": "text",
+                      "label": "PAN",
+                      "column": "pan",
+                      "required": true,
+                      "maxLength": 10,
+                      "validation": {
+                        "pattern": "^[A-Z]{5}[0-9]{4}[A-Z]{1}$"
+                      },
+                      "placeholder": "ABCDE1234F"
+                    },
+                    {
+                      "mask": {
+                        "pattern": "0000-0000-0000-0000",
+                        "separator": "-",
+                        "transform": "numeric"
+                      },
+                      "name": "aadhaar",
+                      "path": "business.owners[].aadhaar",
+                      "type": "text",
+                      "label": "Aadhaar",
+                      "column": "aadhaar",
+                      "required": false,
+                      "maxLength": 12,
+                      "validation": {
+                        "pattern": "^[0-9]{12}$"
+                      },
+                      "placeholder": "123456789012"
+                    },
+                    {
+                      "name": "dateOfBirth",
+                      "path": "business.owners[].dateOfBirth",
+                      "type": "date",
+                      "label": "Date of Birth",
+                      "column": "date_of_birth",
+                      "required": false,
+                      "placeholder": "DD/MM/YYYY"
+                    },
+                    {
+                      "name": "gender",
+                      "path": "business.owners[].gender",
+                      "type": "select",
+                      "label": "Gender",
+                      "column": "gender",
+                      "options": [
+                        {
+                          "label": "Male",
+                          "value": "MALE"
+                        },
+                        {
+                          "label": "Female",
+                          "value": "FEMALE"
+                        },
+                        {
+                          "label": "Other",
+                          "value": "OTHER"
+                        }
+                      ],
+                      "required": false,
+                      "placeholder": "Select gender"
+                    },
+                    {
+                      "name": "maritalStatus",
+                      "path": "business.owners[].maritalStatus",
+                      "type": "select",
+                      "label": "Marital Status",
+                      "column": "marital_status",
+                      "options": [
+                        {
+                          "label": "Married",
+                          "value": "MARRIED"
+                        },
+                        {
+                          "label": "Unmarried",
+                          "value": "UNMARRIED"
+                        },
+                        {
+                          "label": "Other",
+                          "value": "OTHER"
+                        }
+                      ],
+                      "required": false,
+                      "placeholder": "Select marital status"
+                    },
+                    {
+                      "name": "qualification",
+                      "path": "business.owners[].qualification",
+                      "type": "select",
+                      "label": "Qualification",
+                      "column": "qualification",
+                      "options": [
+                        {
+                          "label": "Below 10th",
+                          "value": "BELOW_10TH"
+                        },
+                        {
+                          "label": "10th",
+                          "value": "10TH"
+                        },
+                        {
+                          "label": "12th",
+                          "value": "12TH"
+                        },
+                        {
+                          "label": "Graduate",
+                          "value": "GRADUATE"
+                        },
+                        {
+                          "label": "Post Graduate",
+                          "value": "POST_GRADUATE"
+                        },
+                        {
+                          "label": "Professional",
+                          "value": "PROFESSIONAL"
+                        },
+                        {
+                          "label": "Other",
+                          "value": "OTHER"
+                        }
+                      ],
+                      "required": false,
+                      "placeholder": "Select qualification"
+                    },
+                    {
+                      "name": "email",
+                      "path": "business.owners[].email",
+                      "type": "email",
+                      "label": "Email",
+                      "column": "email",
+                      "required": false,
+                      "maxLength": 255,
+                      "validation": {
+                        "pattern": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+                      },
+                      "placeholder": "name@example.com"
+                    },
+                    {
+                      "mask": {
+                        "pattern": "000-0000-000",
+                        "separator": "-",
+                        "transform": "numeric"
+                      },
+                      "name": "mobileNumber",
+                      "path": "business.owners[].mobileNumber",
+                      "type": "tel",
+                      "label": "Mobile Number",
+                      "column": "mobile_number",
+                      "prefix": "+91",
+                      "required": false,
+                      "maxLength": 10,
+                      "validation": {
+                        "pattern": "^[6-9][0-9]{9}$"
+                      },
+                      "placeholder": "987-9876-098"
+                    },
+                    {
+                      "name": "designation",
+                      "path": "business.owners[].designation",
+                      "type": "text",
+                      "label": "Designation / Relation with Business",
+                      "column": "designation",
+                      "required": false,
+                      "maxLength": 100,
+                      "placeholder": "e.g. Proprietor, Partner, Director"
+                    },
+                    {
+                      "name": "workExperienceYears",
+                      "path": "business.owners[].workExperience.years",
+                      "type": "number",
+                      "label": "Work Experience (Years)",
+                      "column": "work_experience_years",
+                      "required": false,
+                      "validation": {
+                        "max": 100,
+                        "min": 0,
+                        "integer": true
+                      },
+                      "placeholder": "e.g. 5"
+                    },
+                    {
+                      "name": "residenceType",
+                      "path": "business.owners[].residenceType",
+                      "type": "select",
+                      "label": "Residence Type",
+                      "column": "residence_type",
+                      "options": [
+                        {
+                          "label": "Self Owned",
+                          "value": "SELF_OWNED"
+                        },
+                        {
+                          "label": "Rented",
+                          "value": "RENTED"
+                        },
+                        {
+                          "label": "Parental",
+                          "value": "PARENTAL"
+                        },
+                        {
+                          "label": "Company Provided",
+                          "value": "COMPANY_PROVIDED"
+                        },
+                        {
+                          "label": "Other",
+                          "value": "OTHER"
+                        }
+                      ],
+                      "required": false,
+                      "placeholder": "Select residence type"
+                    },
+                    {
+                      "info": "Enter the owner's current residential address.",
+                      "name": "address",
+                      "path": "business.owners[].currentAddress",
+                      "type": "address",
+                      "label": "Current Residence Address",
+                      "column": "current_address",
+                      "required": false
+                    }
+                  ],
+                  "repeatable": true
+                }
+              ]
+            }
+          ],
+          "createdAt": "2026-09-28T22:14:29.931286Z",
+          "updatedAt": "2026-09-28T22:14:29.931286Z",
+          "createdBy": null,
+          "updatedBy": null
+        },
+        "displayOrder": 2,
+        "required": true,
+        "visible": true,
+        "createdAt": "2026-07-10T10:38:46.681212Z",
+        "updatedAt": "2026-07-10T11:22:14.372885Z"
+      },
+      {
+        "id": "534f1529-96c6-46c9-b7e0-f16ef174d81c",
+        "tenantId": "leads",
+        "programId": "2daa91ba-3331-4179-beea-d305b6c410a9",
+        "template": {
+          "id": "76bac508-a8d3-44a9-b702-a1f312d87da5",
+          "tenantId": "leads",
+          "type": "LoanPurposeProperty",
+          "name": "loanPurpose",
+          "version": 1,
+          "status": "PUBLISHED",
+          "schema": [
+            {
+              "table": "leads.loan_request",
+              "formCode": "loan_request",
+              "sections": [
+                {
+                  "code": "loan_terms",
+                  "table": "leads.loan_request",
+                  "title": "Loan Terms",
+                  "fields": [
+                    {
+                      "name": "loanAmount",
+                      "type": "currency",
+                      "label": "Loan Amount",
+                      "scale": 2,
+                      "column": "loan_amount",
+                      "required": true,
+                      "precision": 18,
+                      "validation": {
+                        "pattern": "^\\d+(\\.\\d{1,2})?$",
+                        "minExclusive": 0
+                      }
+                    },
+                    {
+                      "max": 1000,
+                      "min": 1,
+                      "name": "loanTerm",
+                      "type": "number",
+                      "label": "Loan Term",
+                      "column": "loan_term",
+                      "required": true,
+                      "maxlength": 4
+                    },
+                    {
+                      "name": "loanPurpose",
+                      "type": "multiselect",
+                      "label": "Primary Loan Purpose",
+                      "column": "loan_purpose",
+                      "options": [
+                        {
+                          "label": "Working Capital",
+                          "value": "WORKING_CAPITAL"
+                        },
+                        {
+                          "label": "Equipment Purchase",
+                          "value": "EQUIPMENT"
+                        },
+                        {
+                          "label": "Inventory Purchase",
+                          "value": "INVENTORY"
+                        },
+                        {
+                          "label": "Business Expansion",
+                          "value": "EXPANSION"
+                        },
+                        {
+                          "label": "Commercial Real Estate",
+                          "value": "REAL_ESTATE"
+                        },
+                        {
+                          "label": "Refinance Existing Debt",
+                          "value": "DEBT_REFINANCE"
+                        },
+                        {
+                          "label": "Purchase Existing Business",
+                          "value": "BUSINESS_ACQUISITION"
+                        },
+                        {
+                          "label": "Startup Costs",
+                          "value": "STARTUP"
+                        },
+                        {
+                          "label": "Marketing & Advertising",
+                          "value": "MARKETING"
+                        },
+                        {
+                          "label": "Payroll",
+                          "value": "PAYROLL"
+                        },
+                        {
+                          "label": "Other",
+                          "value": "OTHER"
+                        }
+                      ],
+                      "required": true
+                    },
+                    {
+                      "name": "requestedRate",
+                      "type": "percentage",
+                      "label": "Requested Interest Rate (%)",
+                      "scale": 2,
+                      "column": "requested_rate",
+                      "required": false,
+                      "precision": 5,
+                      "validation": {
+                        "min": 0
+                      }
+                    },
+                    {
+                      "name": "loanPurposeOther",
+                      "type": "textarea",
+                      "label": "Please describe the loan purpose",
+                      "column": "loan_purpose_other",
+                      "required": false,
+                      "maxLength": 255,
+                      "visibleWhen": {
+                        "field": "loanPurpose",
+                        "equals": "OTHER"
+                      }
+                    }
+                  ],
+                  "displayOrder": 1
+                }
+              ],
+              "repeatable": false
+            }
+          ],
+          "createdAt": "2026-07-04T01:57:28.179889Z",
+          "updatedAt": "2026-07-04T01:57:28.179889Z",
+          "createdBy": null,
+          "updatedBy": null
+        },
+        "displayOrder": 3,
+        "required": true,
+        "visible": true,
+        "createdAt": "2026-07-10T10:38:46.681212Z",
+        "updatedAt": "2026-07-10T11:22:14.372885Z"
+      },
+      {
+        "id": "3f83ef12-3a89-4ba4-bdb9-3d52e50e969c",
+        "tenantId": "leads",
+        "programId": "2daa91ba-3331-4179-beea-d305b6c410a9",
+        "template": {
+          "id": "ca38766d-216d-4a82-9528-e3ee6e2da991",
+          "tenantId": "leads",
+          "type": "DebtObligationProperty",
+          "name": "debtObligation",
+          "version": 1,
+          "status": "PUBLISHED",
+          "schema": [
+            {
+              "table": "leads.debt_obligation",
+              "formCode": "debt_obligation",
+              "sections": [
+                {
+                  "code": "debt_details",
+                  "table": "leads.debt_obligation",
+                  "title": "Debt Details",
+                  "fields": [
+                    {
+                      "info": "Name of lender who gave you the loan",
+                      "name": "lenderName",
+                      "type": "text",
+                      "label": "Lender Name",
+                      "column": "lender_name",
+                      "required": true,
+                      "maxLength": 255
+                    },
+                    {
+                      "name": "debtType",
+                      "type": "select",
+                      "label": "Debt Type",
+                      "column": "debt_type",
+                      "options": [
+                        "TERM_LOAN",
+                        "WORKING_CAPITAL",
+                        "OVERDRAFT",
+                        "CREDIT_CARD",
+                        "EQUIPMENT_LOAN",
+                        "OTHER"
+                      ],
+                      "required": true,
+                      "maxLength": 50
+                    },
+                    {
+                      "max": 99999999.99,
+                      "min": 1,
+                      "name": "outstandingBalance",
+                      "type": "currency",
+                      "label": "Outstanding Balance",
+                      "scale": 2,
+                      "column": "outstanding_balance",
+                      "required": true,
+                      "precision": 18,
+                      "useGrouping": true,
+                      "decimalScale": 2,
+                      "allowNegative": false,
+                      "decimalSeparator": ".",
+                      "allowLeadingZeros": false,
+                      "fixedDecimalScale": true,
+                      "thousandSeparator": ","
+                    },
+                    {
+                      "max": 999999999.99,
+                      "min": 1,
+                      "name": "monthlyPayment",
+                      "type": "currency",
+                      "label": "Monthly Payment",
+                      "scale": 2,
+                      "column": "monthly_payment",
+                      "required": true,
+                      "precision": 18,
+                      "useGrouping": true,
+                      "decimalScale": 2,
+                      "allowNegative": false,
+                      "decimalSeparator": ".",
+                      "allowLeadingZeros": false,
+                      "fixedDecimalScale": true,
+                      "thousandSeparator": ","
+                    },
+                    {
+                      "name": "remainingTermMonths",
+                      "type": "number",
+                      "label": "Remaining Term Months",
+                      "column": "remaining_term_months",
+                      "required": true,
+                      "validation": {
+                        "min": 0,
+                        "integer": true
+                      }
+                    }
+                  ],
+                  "displayOrder": 1
+                }
+              ],
+              "repeatable": true
+            }
+          ],
+          "createdAt": "2026-07-04T01:57:28.179889Z",
+          "updatedAt": "2026-07-04T01:57:28.179889Z",
+          "createdBy": null,
+          "updatedBy": null
+        },
+        "displayOrder": 4,
+        "required": false,
+        "visible": true,
+        "createdAt": "2026-07-10T10:38:46.681212Z",
+        "updatedAt": "2026-07-10T11:22:14.372885Z"
+      },
+      {
+        "id": "6b06dfa0-a638-47ec-8d84-34eff8dbe8ad",
+        "tenantId": "leads",
+        "programId": "2daa91ba-3331-4179-beea-d305b6c410a9",
+        "template": {
+          "id": "6c3d7d6e-dedc-4d28-ba26-2f00ae5ca5df",
+          "tenantId": "leads",
+          "type": "BankInfoProperty",
+          "name": "bankInfo",
+          "version": 1,
+          "status": "PUBLISHED",
+          "schema": [
+            {
+              "table": "leads.bank_account",
+              "title": "Bank Account Details",
+              "formCode": "bank_account",
+              "sections": [
+                {
+                  "code": "bank_account_details",
+                  "table": "leads.bank_account",
+                  "title": "Bank Account Details",
+                  "fields": [
+                    {
+                      "name": "bankName",
+                      "type": "text",
+                      "input": {
+                        "trim": true
+                      },
+                      "label": "Bank Name",
+                      "column": "bank_name",
+                      "required": false,
+                      "constraints": {
+                        "maxLength": 255
+                      }
+                    },
+                    {
+                      "name": "accountNumber",
+                      "type": "text",
+                      "input": {
+                        "trim": true,
+                        "allowSpaces": false,
+                        "allowSpecialCharacters": false
+                      },
+                      "label": "Account Number",
+                      "column": "account_number",
+                      "required": false,
+                      "validation": {
+                        "pattern": "^[0-9]+$"
+                      },
+                      "constraints": {
+                        "maxLength": 100,
+                        "minLength": 6
+                      }
+                    },
+                    {
+                      "name": "ifscCode",
+                      "type": "text",
+                      "input": {
+                        "trim": true,
+                        "uppercase": true,
+                        "allowSpaces": false
+                      },
+                      "label": "IFSC Code",
+                      "column": "ifsc_code",
+                      "required": false,
+                      "validation": {
+                        "pattern": "^[A-Z]{4}0[A-Z0-9]{6}$"
+                      },
+                      "constraints": {
+                        "maxLength": 11,
+                        "minLength": 11
+                      }
+                    },
+                    {
+                      "name": "accountType",
+                      "type": "select",
+                      "label": "Account Type",
+                      "column": "account_type",
+                      "options": [
+                        {
+                          "label": "Current Account",
+                          "value": "CURRENT"
+                        },
+                        {
+                          "label": "Savings Account",
+                          "value": "SAVINGS"
+                        },
+                        {
+                          "label": "Cash Credit",
+                          "value": "CASH_CREDIT"
+                        },
+                        {
+                          "label": "Overdraft",
+                          "value": "OVERDRAFT"
+                        },
+                        {
+                          "label": "Other",
+                          "value": "OTHER"
+                        }
+                      ],
+                      "required": false
+                    }
+                  ],
+                  "displayOrder": 1
+                }
+              ],
+              "subtitle": "You can enter multiple bank account details here",
+              "repeatable": true
+            }
+          ],
+          "createdAt": "2026-07-04T01:57:28.179889Z",
+          "updatedAt": "2026-07-04T01:57:28.179889Z",
+          "createdBy": null,
+          "updatedBy": null
+        },
+        "displayOrder": 5,
+        "required": true,
+        "visible": true,
+        "createdAt": "2026-07-10T10:38:46.681212Z",
+        "updatedAt": "2026-07-10T11:22:14.372885Z"
+      },
+      {
+        "id": "3a4cd4fe-2dbf-4c31-92e0-92d78262f01d",
+        "tenantId": "leads",
+        "programId": "2daa91ba-3331-4179-beea-d305b6c410a9",
+        "template": {
+          "id": "0ba98be1-6ada-4609-9848-fdc6ec7045d0",
+          "tenantId": "leads",
+          "type": "DocumentProperty",
+          "name": "documents",
+          "version": 1,
+          "status": "PUBLISHED",
+          "schema": [
+            {
+              "table": "leads.document",
+              "formCode": "document",
+              "sections": [
+                {
+                  "code": "document_details",
+                  "table": "leads.document",
+                  "title": "Document Details",
+                  "fields": [
+                    {
+                      "label": "Business PAN Card",
+                      "upload": {
+                        "maxFiles": 1,
+                        "minFiles": 1,
+                        "maxFileSizeMB": 5,
+                        "allowedExtensions": [
+                          "pdf",
+                          "jpg",
+                          "jpeg",
+                          "png"
+                        ]
+                      },
+                      "required": true,
+                      "description": "Upload a clear copy of the business PAN card.",
+                      "documentType": "BUSINESS_PAN"
+                    },
+                    {
+                      "label": "GST Registration Certificate",
+                      "upload": {
+                        "maxFiles": 1,
+                        "minFiles": 0,
+                        "maxFileSizeMB": 5,
+                        "allowedExtensions": [
+                          "pdf",
+                          "jpg",
+                          "jpeg",
+                          "png"
+                        ]
+                      },
+                      "required": false,
+                      "description": "Upload the GST registration certificate issued by the tax authority.",
+                      "documentType": "GST_CERTIFICATE"
+                    },
+                    {
+                      "label": "Bank Statements",
+                      "upload": {
+                        "maxFiles": 6,
+                        "minFiles": 6,
+                        "maxFileSizeMB": 10,
+                        "allowedExtensions": [
+                          "pdf"
+                        ]
+                      },
+                      "required": true,
+                      "description": "Upload the last 6 months of business bank statements.",
+                      "documentType": "BANK_STATEMENT"
+                    },
+                    {
+                      "label": "Financial Statements",
+                      "upload": {
+                        "maxFiles": 3,
+                        "minFiles": 0,
+                        "maxFileSizeMB": 10,
+                        "allowedExtensions": [
+                          "pdf"
+                        ]
+                      },
+                      "required": false,
+                      "description": "Upload audited or management-prepared financial statements for the latest financial year.",
+                      "documentType": "FINANCIAL_STATEMENT"
+                    },
+                    {
+                      "label": "Income Tax Returns",
+                      "upload": {
+                        "maxFiles": 2,
+                        "minFiles": 0,
+                        "maxFileSizeMB": 10,
+                        "allowedExtensions": [
+                          "pdf"
+                        ]
+                      },
+                      "required": false,
+                      "description": "Upload the business Income Tax Returns for the last 2 financial years.",
+                      "documentType": "ITR"
+                    },
+                    {
+                      "label": "Owner PAN Card",
+                      "upload": {
+                        "maxFiles": 1,
+                        "minFiles": 1,
+                        "maxFileSizeMB": 5,
+                        "allowedExtensions": [
+                          "pdf",
+                          "jpg",
+                          "jpeg",
+                          "png"
+                        ]
+                      },
+                      "required": true,
+                      "description": "Upload the PAN card of the proprietor, partner, or director.",
+                      "documentType": "OWNER_PAN"
+                    },
+                    {
+                      "label": "Aadhaar Card",
+                      "upload": {
+                        "maxFiles": 2,
+                        "minFiles": 1,
+                        "maxFileSizeMB": 5,
+                        "allowedExtensions": [
+                          "pdf",
+                          "jpg",
+                          "jpeg",
+                          "png"
+                        ]
+                      },
+                      "required": true,
+                      "description": "Upload the front and back of the Aadhaar card.",
+                      "documentType": "AADHAAR"
+                    },
+                    {
+                      "label": "Passport",
+                      "upload": {
+                        "maxFiles": 1,
+                        "minFiles": 0,
+                        "maxFileSizeMB": 5,
+                        "allowedExtensions": [
+                          "pdf",
+                          "jpg",
+                          "jpeg",
+                          "png"
+                        ]
+                      },
+                      "required": false,
+                      "description": "Upload the passport photo page.",
+                      "documentType": "PASSPORT"
+                    },
+                    {
+                      "label": "Driving License",
+                      "upload": {
+                        "maxFiles": 2,
+                        "minFiles": 0,
+                        "maxFileSizeMB": 5,
+                        "allowedExtensions": [
+                          "pdf",
+                          "jpg",
+                          "jpeg",
+                          "png"
+                        ]
+                      },
+                      "required": false,
+                      "description": "Upload the front and back of the driving license.",
+                      "documentType": "DRIVING_LICENSE"
+                    },
+                    {
+                      "label": "Business Address Proof",
+                      "upload": {
+                        "maxFiles": 2,
+                        "minFiles": 1,
+                        "maxFileSizeMB": 5,
+                        "allowedExtensions": [
+                          "pdf",
+                          "jpg",
+                          "jpeg",
+                          "png"
+                        ]
+                      },
+                      "required": true,
+                      "description": "Upload a utility bill, lease agreement, or other valid business address proof.",
+                      "documentType": "ADDRESS_PROOF"
+                    },
+                    {
+                      "label": "Certificate of Incorporation",
+                      "upload": {
+                        "maxFiles": 1,
+                        "minFiles": 0,
+                        "maxFileSizeMB": 5,
+                        "allowedExtensions": [
+                          "pdf"
+                        ]
+                      },
+                      "required": false,
+                      "description": "Upload the Certificate of Incorporation or business registration certificate.",
+                      "documentType": "INCORPORATION_CERTIFICATE"
+                    },
+                    {
+                      "label": "Partnership Deed",
+                      "upload": {
+                        "maxFiles": 1,
+                        "minFiles": 0,
+                        "maxFileSizeMB": 10,
+                        "allowedExtensions": [
+                          "pdf"
+                        ]
+                      },
+                      "required": false,
+                      "description": "Upload the registered partnership deed.",
+                      "documentType": "PARTNERSHIP_DEED"
+                    },
+                    {
+                      "label": "MOA & AOA",
+                      "upload": {
+                        "maxFiles": 2,
+                        "minFiles": 0,
+                        "maxFileSizeMB": 10,
+                        "allowedExtensions": [
+                          "pdf"
+                        ]
+                      },
+                      "required": false,
+                      "description": "Upload the Memorandum and Articles of Association.",
+                      "documentType": "MOA_AOA"
+                    },
+                    {
+                      "label": "Cancelled Cheque",
+                      "upload": {
+                        "maxFiles": 1,
+                        "minFiles": 1,
+                        "maxFileSizeMB": 5,
+                        "allowedExtensions": [
+                          "pdf",
+                          "jpg",
+                          "jpeg",
+                          "png"
+                        ]
+                      },
+                      "required": true,
+                      "description": "Upload a cancelled cheque for the primary business bank account.",
+                      "documentType": "CANCELLED_CHEQUE"
+                    },
+                    {
+                      "label": "Udyam Registration Certificate",
+                      "upload": {
+                        "maxFiles": 1,
+                        "minFiles": 0,
+                        "maxFileSizeMB": 5,
+                        "allowedExtensions": [
+                          "pdf"
+                        ]
+                      },
+                      "required": false,
+                      "description": "Upload the Udyam/MSME registration certificate if applicable.",
+                      "documentType": "UDYAM_CERTIFICATE"
+                    },
+                    {
+                      "label": "Business License",
+                      "upload": {
+                        "maxFiles": 2,
+                        "minFiles": 0,
+                        "maxFileSizeMB": 5,
+                        "allowedExtensions": [
+                          "pdf"
+                        ]
+                      },
+                      "required": false,
+                      "description": "Upload any applicable trade or business license.",
+                      "documentType": "BUSINESS_LICENSE"
+                    },
+                    {
+                      "label": "Other Supporting Documents",
+                      "upload": {
+                        "maxFiles": 10,
+                        "minFiles": 0,
+                        "maxFileSizeMB": 10,
+                        "allowedExtensions": [
+                          "pdf",
+                          "jpg",
+                          "jpeg",
+                          "png",
+                          "doc",
+                          "docx"
+                        ]
+                      },
+                      "required": false,
+                      "description": "Upload any additional documents requested during the loan review process.",
+                      "documentType": "OTHER"
+                    }
+                  ],
+                  "displayOrder": 1
+                }
+              ],
+              "repeatable": true
+            }
+          ],
+          "createdAt": "2026-07-04T01:57:28.179889Z",
+          "updatedAt": "2026-07-04T01:57:28.179889Z",
+          "createdBy": null,
+          "updatedBy": null
+        },
+        "displayOrder": 6,
+        "required": true,
+        "visible": true,
+        "createdAt": "2026-07-10T10:38:46.681212Z",
+        "updatedAt": "2026-07-10T11:22:14.372885Z"
+      }
+    ]
+  }

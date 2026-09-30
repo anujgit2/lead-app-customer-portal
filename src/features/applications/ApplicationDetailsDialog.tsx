@@ -1,12 +1,15 @@
 "use client";
 
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, CalendarDays, FileText, X } from "lucide-react";
 import { ApplicationFormSummary } from "@/features/loan-application/ReviewScreen";
-import { applicationService } from "@/services/application.service";
+import {
+  applicationService,
+  resolveApplicationFormData,
+} from "@/services/application.service";
 import { parseApiError } from "@/lib/api-error";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { normalizeApplicationFormData } from "@/utils/prefill-mapper";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -78,6 +81,10 @@ export function ApplicationDetailsDialog({
 
   const displayedApplication = details ?? application;
   const error = detailsError ?? productError;
+  const formData = useMemo(
+    () => (details && product ? resolveApplicationFormData(details, product) : null),
+    [details, product]
+  );
   const isLoading = isLoadingDetails || (Boolean(details) && isLoadingProduct);
   const status = displayedApplication
     ? statusConfig[displayedApplication.status]
@@ -170,13 +177,10 @@ export function ApplicationDetailsDialog({
 
           {!isLoading && !error && details && product && (
             <>
-              {details.formData && Object.keys(details.formData).length > 0 ? (
+              {formData && Object.keys(formData).length > 0 ? (
                 <ApplicationFormSummary
                   templates={product.templates}
-                  formData={normalizeApplicationFormData(
-                    details.formData,
-                    product
-                  )}
+                  formData={formData}
                 />
               ) : (
                 <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-8 text-center">

@@ -4,7 +4,7 @@
  * Central state orchestration for the dev Form Playground.
  *
  * Architecture (see ARCHITECTURE in the task spec):
- *   FormTemplateSource (Api/Json) → TemplateValidator → FormRenderer → FormState/RuleEngine → Preview/Inspector
+ *   FormTemplateSource (Api/Json) → shared program-mapper → FormRenderer → FormState/RuleEngine → Preview/Inspector
  *
  * This context owns everything to the left of "FormRenderer" (source + validation
  * + editor/test-data/debug state) and the live values reported back by the
@@ -14,7 +14,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { FieldErrors } from "react-hook-form";
 import type { FormTemplate } from "@/types";
-import { normalizeTemplateJson } from "./template-normalizer";
+import { normalizeTemplateJson } from "@/utils/program-mapper";
 import { fetchTemplateFromApi, parseJsonTemplateText } from "./template-sources";
 import { generateTemplatesSample } from "./sample-data-generator";
 import {

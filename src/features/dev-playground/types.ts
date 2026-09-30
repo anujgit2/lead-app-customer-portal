@@ -1,19 +1,10 @@
-import type { FormTemplate } from "@/types";
+import type { MappingIssue, NormalizedTemplateResult as MappedTemplates } from "@/utils/program-mapper";
 
 export type TemplateSourceMode = "api" | "json";
 
-export interface ValidationIssue {
-  path: string;
-  message: string;
-  severity: "error" | "warning";
-}
-
-export interface NormalizedTemplateResult {
-  templates: FormTemplate[];
-  issues: ValidationIssue[];
-  /** False when any `error`-severity issue was found — the caller must not render. */
-  valid: boolean;
-}
+/** Alias of the shared mapper's issue type — playground and the live form share one mapper. */
+export type ValidationIssue = MappingIssue;
+export type NormalizedTemplateResult = MappedTemplates;
 
 export interface ApiSourceConfig {
   /** Value substituted into `{id}` in the endpoint template. */

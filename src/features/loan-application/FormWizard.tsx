@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+import { ApplicationIdProvider, PersistDocumentStepProvider } from "@/components/forms/application-context";
 import { buildWizardSchema } from "@/utils/schema-builder";
 import { parseApiError } from "@/lib/api-error";
 import type { ApiError } from "@/types";
@@ -54,6 +55,7 @@ export function FormWizard({
   const { initDraft, setCurrentStep, updateFormData, setStepStatus, getDraft } =
     useWizardStore();
   const stepRef = useRef<WizardStepHandle>(null);
+  const stepDataRef = useRef<Record<string, unknown>>({});
 
   const templates = product.templates;
   const totalSteps = templates.length;
@@ -72,6 +74,10 @@ export function FormWizard({
       (draft?.formData as Record<string, unknown>) ??
       {}
   );
+
+  useEffect(() => {
+    stepDataRef.current = stepData;
+  }, [stepData]);
   const [stepStatuses, setStepStatuses] = useState<WizardStepStatus[]>(
     draft?.stepStatuses ??
       templates.map((t) => ({
@@ -103,13 +109,55 @@ export function FormWizard({
     (data: unknown) => {
       if (currentStep >= totalSteps) return;
       const template = templates[currentStep];
-      const updated = { ...stepData, [template.code]: data };
+      const updated = { ...stepDataRef.current, [template.code]: data };
+      stepDataRef.current = updated;
       setStepData(updated);
       updateFormData(draftId, template.code, data);
       setStepError(null);
     },
-    [currentStep, totalSteps, templates, stepData, draftId, updateFormData]
+    [currentStep, totalSteps, templates, draftId, updateFormData]
   );
+
+  const persistDocumentStep = useCallback(() => {
+    const template = templates[currentStep];
+    
+    if (!template || template.propertyType !== "DocumentProperty") {
+      return;
+    }
+    
+    const stepData = stepDataRef.current[template.code];
+    
+    if (stepData === undefined) {
+      return;
+    }
+
+    void applicationService
+      .saveDraft(
+        {
+          applicationId: draftId,
+          productCode: product.code,
+          programId,
+          currentStep,
+          formData: stepDataRef.current as FormData,
+          stepStatuses,
+        },
+        [template]
+      )
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["applications"] });
+      })
+      .catch((err: unknown) => {
+        toast.error(parseApiError(err).message);
+      });
+  }, [
+    templates,
+    currentStep,
+    draftId,
+    product.code,
+    programId,
+    stepStatuses,
+    queryClient,
+  ]);
 
   const handleValidChange = useCallback(
     (valid: boolean) => {
@@ -280,6 +328,8 @@ export function FormWizard({
     : undefined;
 
   return (
+    <ApplicationIdProvider applicationId={draftId}>
+    <PersistDocumentStepProvider onPersist={persistDocumentStep}>
     <div className="min-h-screen bg-slate-50/70">
       {/* ── Sticky header ── */}
       <div className="bg-white/90 backdrop-blur-sm border-b border-slate-100 sticky top-0 z-30 shadow-[0_2px_12px_rgb(0,0,0,0.04)]">
@@ -423,5 +473,7 @@ export function FormWizard({
         )}
       </div>
     </div>
+    </PersistDocumentStepProvider>
+    </ApplicationIdProvider>
   );
 }

@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { FormTemplate } from "@/types";
 import { buildTemplateSchema, mergeTemplateDefaults } from "@/utils/schema-builder";
+import { SyncFormToWizardProvider } from "@/components/forms/application-context";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DynamicSection } from "@/components/forms/DynamicSection";
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,10 @@ function RepeatableInstance({
     onValidateRef?.(index, () => methods.trigger());
   }, [methods, index, onValidateRef]);
 
+  const syncForm = React.useCallback(() => {
+    onChange(index, methods.getValues());
+  }, [index, onChange, methods]);
+
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
       <div
@@ -122,13 +127,15 @@ function RepeatableInstance({
           {schemaError ? (
             <SchemaBuildError error={schemaError} />
           ) : (
-            <FormProvider {...methods}>
-              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                {template.sections.map((section) => (
-                  <DynamicSection key={section.code} section={section} />
-                ))}
-              </form>
-            </FormProvider>
+            <SyncFormToWizardProvider onSync={syncForm}>
+              <FormProvider {...methods}>
+                <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                  {template.sections.map((section) => (
+                    <DynamicSection key={section.code} section={section} />
+                  ))}
+                </form>
+              </FormProvider>
+            </SyncFormToWizardProvider>
           )}
         </div>
       )}
@@ -155,8 +162,13 @@ function RepeatableTemplateInstances({
       : [{}];
 
   const [instances, setInstances] = useState<unknown[]>(initData);
+  const instancesRef = React.useRef(instances);
   const validatorsRef = React.useRef<Map<number, () => Promise<boolean>>>(new Map());
   const errorsRef = React.useRef<Map<number, FieldErrors>>(new Map());
+
+  React.useEffect(() => {
+    instancesRef.current = instances;
+  }, [instances]);
 
   const handleValidateRef = useCallback(
     (index: number, validate: () => Promise<boolean>) => {
@@ -184,64 +196,67 @@ function RepeatableTemplateInstances({
 
   const handleChange = useCallback(
     (index: number, data: unknown) => {
-      setInstances((prev) => {
-        const updated = [...prev];
-        updated[index] = data;
-        onDataChange?.(updated);
-        return updated;
-      });
+      const updated = [...instancesRef.current];
+      updated[index] = data;
+      instancesRef.current = updated;
+      setInstances(updated);
+      onDataChange?.(updated);
     },
     [onDataChange]
   );
 
   const addInstance = () => {
-    setInstances((prev) => {
-      const updated = [...prev, {}];
-      onDataChange?.(updated);
-      return updated;
-    });
+    const updated = [...instancesRef.current, {}];
+    instancesRef.current = updated;
+    setInstances(updated);
+    onDataChange?.(updated);
   };
 
   const removeInstance = (index: number) => {
     validatorsRef.current.delete(index);
-    setInstances((prev) => {
-      const updated = prev.filter((_, i) => i !== index);
-      onDataChange?.(updated);
-      return updated;
-    });
+    const updated = instancesRef.current.filter((_, i) => i !== index);
+    instancesRef.current = updated;
+    setInstances(updated);
+    onDataChange?.(updated);
   };
 
   const minInstances = template.minInstances ?? 1;
   const maxInstances = template.maxInstances;
 
-  return (
-    <div className="space-y-4">
-      {instances.map((inst, index) => (
-        <RepeatableInstance
-          key={index}
-          template={template}
-          index={index}
-          defaultValues={inst}
-          canRemove={instances.length > minInstances}
-          onRemove={() => removeInstance(index)}
-          onChange={handleChange}
-          onValidateRef={handleValidateRef}
-          onErrors={handleInstanceErrors}
-        />
-      ))}
+  const syncAllInstances = React.useCallback(() => {
+    onDataChange?.(instancesRef.current);
+  }, [onDataChange]);
 
-      {(!maxInstances || instances.length < maxInstances) && (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={addInstance}
-          className="gap-2 w-full border-dashed"
-        >
-          <Plus className="h-4 w-4" />
-          Add Another {template.title}
-        </Button>
-      )}
-    </div>
+  return (
+    <SyncFormToWizardProvider onSync={syncAllInstances}>
+      <div className="space-y-4">
+        {instances.map((inst, index) => (
+          <RepeatableInstance
+            key={index}
+            template={template}
+            index={index}
+            defaultValues={inst}
+            canRemove={instances.length > minInstances}
+            onRemove={() => removeInstance(index)}
+            onChange={handleChange}
+            onValidateRef={handleValidateRef}
+            onErrors={handleInstanceErrors}
+          />
+        ))}
+
+        {(!maxInstances || instances.length < maxInstances) && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addInstance}
+            className="gap-2 w-full border-dashed"
+          >
+            <Plus className="h-4 w-4" />
+            Add Another {template.title}
+          </Button>
+        )}
+      </div>
+    </SyncFormToWizardProvider>
   );
 }
 
@@ -261,6 +276,10 @@ const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
       validate: () => methods.trigger(),
     }));
 
+    const syncForm = React.useCallback(() => {
+      onDataChange?.(methods.getValues());
+    }, [onDataChange, methods]);
+
     React.useEffect(() => {
       const subscription = methods.watch((data) => {
         onDataChange?.(data);
@@ -279,18 +298,20 @@ const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
     }
 
     return (
-      <FormProvider {...methods}>
-        <form
-          ref={formRef}
-          className="space-y-6"
-          noValidate
-          onSubmit={(e) => e.preventDefault()}
-        >
-          {template.sections.map((section) => (
-            <DynamicSection key={section.code} section={section} />
-          ))}
-        </form>
-      </FormProvider>
+      <SyncFormToWizardProvider onSync={syncForm}>
+        <FormProvider {...methods}>
+          <form
+            ref={formRef}
+            className="space-y-6"
+            noValidate
+            onSubmit={(e) => e.preventDefault()}
+          >
+            {template.sections.map((section) => (
+              <DynamicSection key={section.code} section={section} />
+            ))}
+          </form>
+        </FormProvider>
+      </SyncFormToWizardProvider>
     );
   }
 );

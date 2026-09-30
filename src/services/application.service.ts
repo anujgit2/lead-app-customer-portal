@@ -4,6 +4,7 @@ import { sleep } from "@/lib/utils";
 import type {
   LoanApplication,
   ApplicationSummary,
+  ApplicationProperty,
   LoanProduct,
   DraftApplication,
   ApplicationStatus,
@@ -11,18 +12,13 @@ import type {
   FormField,
   FormSection,
   FormTemplate,
+  StoredFileReference,
 } from "@/types";
 import { MOCK_APPLICATIONS, MOCK_SUMMARY, LOAN_FORM_TEMPLATES } from "./mock-data";
 import { programService } from "./program.service";
+import { isStoredFileReference } from "./file-storage.service";
 import { normalizeAddressValue } from "@/utils/address-field";
-
-interface ApplicationProperty {
-  /** Template `type` from the backend, e.g. "CompanyProperty". */
-  type: string;
-  name: string;
-  access?: Record<string, unknown>;
-  value: unknown;
-}
+import { normalizeApplicationFormData } from "@/utils/prefill-mapper";
 
 function toCamelCase(value: string): string {
   return value.toLowerCase().replace(/[_-]+([a-z0-9])/g, (_, c: string) => c.toUpperCase());
@@ -52,8 +48,14 @@ function normalizeFieldValue(field: FormField, value: unknown): unknown {
         return value;
       }
     case "file":
-    case "document":
-      return undefined;
+    case "document": {
+      if (!Array.isArray(value)) return undefined;
+      const documentType = field.documentType ?? field.name;
+      const files = value
+        .map((item) => (isPlainObject(item) ? { ...item, type: documentType } : item))
+        .filter(isStoredFileReference);
+      return files.length > 0 ? files : undefined;
+    }
     case "multiselect": {
       if (!Array.isArray(value)) return undefined;
       const items = value.filter((item): item is string => typeof item === "string" && item.length > 0);
@@ -71,7 +73,6 @@ function normalizeFieldValue(field: FormField, value: unknown): unknown {
   }
 }
 
-/** Picks only the fields declared in the section, keyed by field `name`. */
 function buildSectionValue(
   section: FormSection,
   data: unknown
@@ -83,6 +84,104 @@ function buildSectionValue(
     if (value !== undefined) result[field.name] = value;
   }
   return result;
+}
+
+function isDocumentTemplate(template: FormTemplate): boolean {
+  return template.propertyType === "DocumentProperty";
+}
+
+function forEachDocumentField(
+  template: FormTemplate,
+  data: unknown,
+  visit: (field: FormField, value: unknown) => void
+) {
+  const instances = template.repeatable
+    ? Array.isArray(data)
+      ? data
+      : data == null
+        ? []
+        : [data]
+    : [data];
+
+  for (const instance of instances) {
+    if (!isPlainObject(instance)) continue;
+    for (const section of template.sections) {
+      const sectionData = instance[section.code];
+      const rows = section.repeatable
+        ? Array.isArray(sectionData)
+          ? sectionData
+          : []
+        : [sectionData];
+      for (const row of rows) {
+        if (!isPlainObject(row)) continue;
+        for (const field of section.fields) {
+          if (field.type !== "file" && field.type !== "document") continue;
+          visit(field, row[field.name]);
+        }
+      }
+    }
+  }
+}
+
+function toDocumentFile(file: StoredFileReference): StoredFileReference {
+  return {
+    id: file.id,
+    fileName: file.fileName,
+    contentType: file.contentType,
+    status: "AVAILABLE",
+    // `DocumentValue.uploadedAt` is a backend `LocalDate`; storage returns an
+    // ISO timestamp in `createdAt`, so pass only the calendar-date portion.
+    uploadedAt: file.uploadedAt.slice(0, 10),
+    meta: {
+      folderId: file.meta.folderId,
+      sizeBytes: file.meta.sizeBytes,
+      checksum: file.meta.checksum,
+      ownerId: file.meta.ownerId,
+    },
+    type: file.type,
+  };
+}
+
+/** Flattens every uploaded slot into the DocumentProperty `value` array. */
+function collectDocumentFiles(template: FormTemplate, data: unknown): StoredFileReference[] {
+  const files: StoredFileReference[] = [];
+  forEachDocumentField(template, data, (field, value) => {
+    if (!Array.isArray(value)) return;
+    const documentType = field.documentType ?? field.name;
+    for (const item of value) {
+      const stamped = isPlainObject(item) ? { ...item, type: documentType } : item;
+      if (isStoredFileReference(stamped)) files.push(toDocumentFile(stamped));
+    }
+  });
+  return files;
+}
+
+function documentFilesToFormData(template: FormTemplate, files: StoredFileReference[]): unknown {
+  const byType = new Map<string, StoredFileReference[]>();
+  for (const file of files) {
+    const list = byType.get(file.type) ?? [];
+    list.push(file);
+    byType.set(file.type, list);
+  }
+
+  const instance: Record<string, unknown> = {};
+  for (const section of template.sections) {
+    const fields: Record<string, StoredFileReference[]> = {};
+    for (const field of section.fields) {
+      if (field.type !== "file" && field.type !== "document") continue;
+      const matched = byType.get(field.documentType ?? field.name);
+      if (matched && matched.length > 0) fields[field.name] = matched;
+    }
+    if (Object.keys(fields).length === 0) continue;
+    instance[section.code] = section.repeatable ? [fields] : fields;
+  }
+
+  if (Object.keys(instance).length === 0) return undefined;
+  return template.repeatable ? [instance] : instance;
+}
+
+function sectionPayloadKey(section: FormSection): string {
+  return section.payloadKey ?? toCamelCase(section.code);
 }
 
 /**
@@ -104,13 +203,144 @@ function buildTemplateValue(
         .map((item) => buildSectionValue(section, item))
         .filter((item) => Object.keys(item).length > 0);
       if (items.length === 0) continue;
-      const key = section.payloadKey ?? toCamelCase(section.code);
+      const key = sectionPayloadKey(section);
       result[key] = section.maxInstances === 1 ? items[0] : items;
     } else {
       Object.assign(result, buildSectionValue(section, sectionData));
     }
   }
   return result;
+}
+
+function findTemplateProperty(
+  properties: ApplicationProperty[],
+  template: FormTemplate,
+  used: Set<number>
+): number {
+  return properties.findIndex((property, index) => {
+    if (used.has(index)) return false;
+    if (template.propertyType && template.propertyName) {
+      return property.type === template.propertyType && property.name === template.propertyName;
+    }
+    if (template.propertyType) return property.type === template.propertyType;
+    if (template.propertyName) return property.name === template.propertyName;
+    return false;
+  });
+}
+
+/** Inverse of `buildTemplateValue`: splits a property value back into section-keyed form state. */
+function propertyValueToTemplateData(
+  template: FormTemplate,
+  value: unknown
+): Record<string, unknown> {
+  if (!isPlainObject(value)) return {};
+  const result: Record<string, unknown> = {};
+
+  for (const section of template.sections) {
+    if (section.repeatable) {
+      const raw = value[sectionPayloadKey(section)];
+      const items = Array.isArray(raw) ? raw : raw == null ? [] : [raw];
+      const mapped = items
+        .map((item) => buildSectionValue(section, item))
+        .filter((item) => Object.keys(item).length > 0);
+      if (mapped.length > 0) result[section.code] = mapped;
+    } else {
+      const fields = buildSectionValue(section, value);
+      if (Object.keys(fields).length > 0) result[section.code] = fields;
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Rebuilds wizard form state from the `properties` array returned by GET /api/applications/:id.
+ * This is the inverse of `formDataToApplicationProperties`.
+ */
+export function propertiesToFormData(
+  properties: ApplicationProperty[] | undefined,
+  templates: FormTemplate[]
+): FormData {
+  const formData: Record<string, unknown> = {};
+  if (!properties?.length) return formData as FormData;
+
+  const used = new Set<number>();
+  for (const template of templates) {
+    const index = findTemplateProperty(properties, template, used);
+    if (index < 0) continue;
+    used.add(index);
+
+    const value = properties[index].value;
+    if (value == null) continue;
+
+    if (isDocumentTemplate(template)) {
+      const files = (Array.isArray(value) ? value : [value]).filter(isStoredFileReference);
+      const mapped = documentFilesToFormData(template, files);
+      if (mapped !== undefined) formData[template.code] = mapped;
+      continue;
+    }
+
+    if (template.repeatable) {
+      const instances = (Array.isArray(value) ? value : [value])
+        .map((instance) => propertyValueToTemplateData(template, instance))
+        .filter((instance) => Object.keys(instance).length > 0);
+      if (instances.length > 0) formData[template.code] = instances;
+    } else {
+      const source = Array.isArray(value) ? value[0] : value;
+      const mapped = propertyValueToTemplateData(template, source);
+      if (Object.keys(mapped).length > 0) formData[template.code] = mapped;
+    }
+  }
+
+  return formData as FormData;
+}
+
+/** Prefers API `properties` (the saved draft) and falls back to any nested `formData`. */
+export function resolveApplicationFormData(
+  application: Pick<LoanApplication, "formData" | "properties">,
+  product?: Pick<LoanProduct, "templates">
+): FormData {
+  const fromProperties = propertiesToFormData(
+    application.properties,
+    product?.templates ?? []
+  );
+  const saved = application.formData;
+  const hasSaved = !!saved && Object.keys(saved).length > 0;
+  const savedIsTemplateShaped =
+    hasSaved && !!product?.templates.some((template) => template.code in saved);
+
+  if (savedIsTemplateShaped) {
+    return { ...fromProperties, ...saved } as FormData;
+  }
+  if (Object.keys(fromProperties).length > 0) {
+    return fromProperties;
+  }
+  return normalizeApplicationFormData(saved, product);
+}
+
+function readLoanAmount(
+  formData: Record<string, unknown>,
+  properties?: ApplicationProperty[]
+): number {
+  const loanRequest = formData.loan_request;
+  const loanTerms =
+    isPlainObject(loanRequest) && isPlainObject(loanRequest.loan_terms)
+      ? loanRequest.loan_terms
+      : undefined;
+  if (loanTerms && "loanAmount" in loanTerms) {
+    const amount = Number(loanTerms.loanAmount);
+    if (Number.isFinite(amount) && amount > 0) return amount;
+  }
+
+  for (const property of properties ?? []) {
+    const values = Array.isArray(property.value) ? property.value : [property.value];
+    for (const value of values) {
+      if (!isPlainObject(value) || !("loanAmount" in value)) continue;
+      const amount = Number(value.loanAmount);
+      if (Number.isFinite(amount) && amount > 0) return amount;
+    }
+  }
+  return 0;
 }
 
 function formDataToApplicationProperties(
@@ -124,6 +354,16 @@ function formDataToApplicationProperties(
     if (data === undefined) continue;
     if (!template.propertyType || !template.propertyName) {
       console.warn(`[applicationService] Template "${template.code}" has no backend property type; skipped.`);
+      continue;
+    }
+
+    if (isDocumentTemplate(template)) {
+      properties.push({
+        type: template.propertyType,
+        name: template.propertyName,
+        access: {},
+        value: collectDocumentFiles(template, data),
+      });
       continue;
     }
 
@@ -183,31 +423,19 @@ function mapStatus(status: string): ApplicationStatus {
 
 function mapApplication(app: BackendApplication, loanType = "Business Loan"): LoanApplication {
   const formData = app.formData ?? {};
-  const loanAmount =
-    typeof formData.loan_request === "object" &&
-    formData.loan_request !== null &&
-    !Array.isArray(formData.loan_request)
-      ? (formData.loan_request as Record<string, unknown>).loan_terms
-      : undefined;
-  const amount =
-    loanAmount &&
-    typeof loanAmount === "object" &&
-    loanAmount !== null &&
-    "loanAmount" in loanAmount
-      ? Number((loanAmount as Record<string, unknown>).loanAmount) || 0
-      : 0;
 
   return {
     id: app.id,
     applicationNumber: app.applicationNumber,
     loanType,
-    loanAmount: amount,
+    loanAmount: readLoanAmount(formData, app.properties),
     status: mapStatus(app.status),
     createdAt: app.createdAt,
     updatedAt: app.updatedAt,
     submittedAt: app.submittedAt,
     userId: "",
     formData,
+    properties: app.properties,
     programId: app.programId,
   };
 }
@@ -385,7 +613,7 @@ export const applicationService = {
         applicationId: app.id,
         productCode: product.code,
         currentStep: 0,
-        formData: (app.formData ?? {}) as FormData,
+        formData: resolveApplicationFormData(app, product),
         stepStatuses: product.templates.map((t) => ({
           templateCode: t.code,
           completed: false,

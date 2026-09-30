@@ -371,8 +371,9 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
           control={control}
           render={({ field: f }) => (
             <FileUploadField
-              value={f.value as File[]}
+              value={f.value}
               onChange={f.onChange}
+              documentType={field.documentType ?? field.name}
               accept={field.accept}
               maxFiles={field.maxFiles}
               minFiles={field.minFiles}
@@ -494,7 +495,10 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
       isTextual && (mask || inputFormat)
         ? (e: React.ChangeEvent<HTMLInputElement>) => {
             let next = e.target.value;
-            if (inputFormat) next = applyInputFormat(next, inputFormat, v);
+            // Length limits on masked fields apply to the raw characters, not the
+            // separator-formatted display string — skip maxLength slicing here and
+            // let `applyMask` cap input at the pattern length instead.
+            if (inputFormat) next = applyInputFormat(next, inputFormat, mask ? { ...v, maxLength: undefined } : v);
             if (mask) next = applyMask(next, mask.pattern, mask.transform);
             e.target.value = next;
             registration.onChange(e);
@@ -525,7 +529,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
           disabled={field.disabled}
           readOnly={field.readonly}
           autoComplete={field.type === "email" ? "email" : undefined}
-          maxLength={v?.maxLength ?? (mask ? mask.pattern.length : undefined)}
+          maxLength={mask ? mask.pattern.length : v?.maxLength}
           min={inputType === "number" ? v?.min : undefined}
           max={inputType === "number" ? v?.max : undefined}
           step={inputType === "number" && v?.integer ? 1 : undefined}

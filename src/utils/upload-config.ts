@@ -37,6 +37,49 @@ function normalizeExt(value: string): string {
   return value.trim().replace(/^\./, "").toLowerCase();
 }
 
+/** Hard limits enforced by POST /api/files. Templates may be stricter. */
+export const API_UPLOAD_MAX_MB = 50;
+
+const API_UPLOAD_EXTENSIONS = ["pdf", "jpg", "jpeg", "png", "docx"] as const;
+
+const API_UPLOAD_MIMES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/octet-stream",
+]);
+
+export function clampUploadMaxMb(maxSizeMb?: number): number {
+  if (typeof maxSizeMb !== "number" || !Number.isFinite(maxSizeMb) || maxSizeMb <= 0) {
+    return API_UPLOAD_MAX_MB;
+  }
+  return Math.min(maxSizeMb, API_UPLOAD_MAX_MB);
+}
+
+export function restrictUploadAccept(accept?: string): string {
+  const requested = (accept ?? "")
+    .split(",")
+    .map(normalizeExt)
+    .filter((ext): ext is (typeof API_UPLOAD_EXTENSIONS)[number] =>
+      (API_UPLOAD_EXTENSIONS as readonly string[]).includes(ext)
+    );
+  const extensions = requested.length > 0 ? requested : [...API_UPLOAD_EXTENSIONS];
+  return extensionsToAccept(extensions);
+}
+
+export function isAllowedUploadType(file: { name: string; type: string }): boolean {
+  const ext = normalizeExt(file.name.split(".").pop() ?? "");
+  if (!(API_UPLOAD_EXTENSIONS as readonly string[]).includes(ext)) return false;
+  if (!file.type) return true;
+  return API_UPLOAD_MIMES.has(file.type);
+}
+
+export function isAllowedUploadFile(file: { name: string; type: string; size: number }): boolean {
+  return file.size <= API_UPLOAD_MAX_MB * 1024 * 1024 && isAllowedUploadType(file);
+}
+
 export function extensionsToAccept(extensions: string[]): string {
   return extensions
     .map((ext) => `.${normalizeExt(ext)}`)

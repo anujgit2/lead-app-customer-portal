@@ -80,8 +80,8 @@ export function ApiSourceForm({ showTemplateIdAndLoad = true }: ApiSourceFormPro
             <div>
               <p className="text-xs font-medium text-slate-700">Use programService</p>
               <p className="text-[11px] text-muted-foreground">
-                Calls the app&apos;s real <code className="font-mono">programService.getProgramWithTemplates()</code>{" "}
-                instead of a raw endpoint.
+                Loads the same program JSON the live application form uses, then
+                maps it with the shared mapper.
               </p>
             </div>
             <Switch

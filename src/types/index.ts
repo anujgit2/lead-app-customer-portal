@@ -108,6 +108,14 @@ export type ApplicationStatus =
   | "rejected"
   | "disbursed";
 
+/** One saved block on an application, keyed by the form template's backend type and name. */
+export interface ApplicationProperty {
+  type: string;
+  name: string;
+  access?: Record<string, unknown>;
+  value: unknown;
+}
+
 export interface LoanApplication {
   id: string;
   applicationNumber: string;
@@ -120,6 +128,8 @@ export interface LoanApplication {
   userId: string;
   programId?: string;
   formData?: Record<string, unknown>;
+  /** Raw property values returned by the applications API. */
+  properties?: ApplicationProperty[];
 }
 
 export interface ApplicationSummary {
@@ -368,6 +378,24 @@ export interface UploadedFile {
   type: string;
   url: string;
   uploadedAt: string;
+}
+
+export interface StoredFileMeta {
+  folderId: string | null;
+  sizeBytes: number;
+  checksum: string;
+  ownerId: string;
+}
+
+export interface StoredFileReference {
+  id: string;
+  /** Document slot key, e.g. BUSINESS_PAN. */
+  type: string;
+  fileName: string;
+  contentType: string;
+  status: "AVAILABLE";
+  uploadedAt: string;
+  meta: StoredFileMeta;
 }
 
 export interface FileUploadProgress {

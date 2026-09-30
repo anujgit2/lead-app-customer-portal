@@ -16,12 +16,6 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 console.log("NEXT_PUBLIC_API_URL =", process.env.NEXT_PUBLIC_API_URL);
 console.log("BASE_URL =", BASE_URL);
 
-export const apiClient = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 30000,
-});
-
 function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
   return (
@@ -30,17 +24,31 @@ function getAccessToken(): string | null {
   );
 }
 
+export function getApiBaseUrl(): string {
+  return BASE_URL;
+}
+
+export function getApiAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  const token = getAccessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const tenantId = getTenantId();
+  if (tenantId) headers["X-Tenant-ID"] = tenantId;
+  return headers;
+}
+
+export const apiClient = axios.create({
+  baseURL: BASE_URL,
+  headers: { "Content-Type": "application/json" },
+  timeout: 30000,
+});
+
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = getAccessToken();
     if (config.headers) {
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      const tenantId = getTenantId();
-      if (tenantId) {
-        config.headers["X-Tenant-ID"] = tenantId;
-      }
+      Object.entries(getApiAuthHeaders()).forEach(([name, value]) => {
+        config.headers[name] = value;
+      });
     }
     return config;
   },

@@ -1,15 +1,17 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { FormWizard } from "@/features/loan-application/FormWizard";
-import { applicationService } from "@/services/application.service";
+import {
+  applicationService,
+  resolveApplicationFormData,
+} from "@/services/application.service";
 import { Building2 } from "lucide-react";
 import { ErrorState } from "@/components/ErrorState";
 import { parseApiError } from "@/lib/api-error";
 import type { FormData } from "@/types";
-import { normalizeApplicationFormData } from "@/utils/prefill-mapper";
 
 function LoadingState() {
   return (
@@ -48,6 +50,14 @@ function ResumeContent() {
         : applicationService.getLoanProducts().then((p) => p[0]),
     enabled: !!application,
   });
+
+  const initialFormData = useMemo(
+    () =>
+      application && product
+        ? resolveApplicationFormData(application, product)
+        : ({} as FormData),
+    [application, product]
+  );
 
   if (!applicationId) {
     return (
@@ -95,7 +105,7 @@ function ResumeContent() {
     <FormWizard
       product={product}
       draftId={applicationId}
-      initialFormData={normalizeApplicationFormData(application.formData, product)}
+      initialFormData={initialFormData}
       programId={application.programId}
     />
   );

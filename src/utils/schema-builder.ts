@@ -97,8 +97,13 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
 
   if (v.required && !deferToRules) s = s.min(1, { message: v.message ?? `${field.label} is required` });
 
-  if (v.minLength) s = s.min(v.minLength, { message: `Minimum ${v.minLength} characters` });
-  if (v.maxLength) s = s.max(v.maxLength, { message: `Maximum ${v.maxLength} characters` });
+  // Masked fields store separator-formatted display values (e.g. "987-9876-098"),
+  // while authored min/maxLength describe the raw characters (10 digits). Apply
+  // those limits to the unmasked content below, not the display string.
+  if (!field.mask) {
+    if (v.minLength) s = s.min(v.minLength, { message: `Minimum ${v.minLength} characters` });
+    if (v.maxLength) s = s.max(v.maxLength, { message: `Maximum ${v.maxLength} characters` });
+  }
 
   if (v.email || field.type === "email") {
     s = s.email({ message: "Enter a valid email address" });
@@ -132,6 +137,19 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
       });
     } else {
       result = s.regex(patternRegex, { message: v.message ?? "Invalid format" });
+    }
+  }
+
+  if (field.mask) {
+    if (v.minLength) {
+      result = result.refine((val) => unmask(val).length >= v.minLength!, {
+        message: `Minimum ${v.minLength} characters`,
+      });
+    }
+    if (v.maxLength) {
+      result = result.refine((val) => unmask(val).length <= v.maxLength!, {
+        message: `Maximum ${v.maxLength} characters`,
+      });
     }
   }
 
