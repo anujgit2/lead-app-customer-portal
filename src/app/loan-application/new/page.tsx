@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { applicationService } from "@/services/application.service";
@@ -10,11 +10,13 @@ import { parseApiError } from "@/lib/api-error";
 
 export default function NewLoanApplicationPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const programCode = searchParams?.get("programCode");
 
   const { isError, error } = useQuery({
-    queryKey: ["create-application"],
+    queryKey: ["create-application", programCode],
     queryFn: async () => {
-      const app = await applicationService.createApplication();
+      const app = await applicationService.createApplication(programCode ?? undefined);
       router.replace(`/loan-application/resume?id=${app.id}`);
       return app;
     },

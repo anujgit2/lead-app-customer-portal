@@ -524,9 +524,9 @@ export const applicationService = {
     }
   },
 
-  async createApplication(programId?: string): Promise<LoanApplication> {
+  async createApplication(programCodeOrId?: string): Promise<LoanApplication> {
     try {
-      let resolvedProgramId = programId;
+      let resolvedProgramId = programCodeOrId;
 
       if (!resolvedProgramId) {
         const programs = await programService.getPrograms();
