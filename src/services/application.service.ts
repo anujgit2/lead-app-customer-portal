@@ -534,7 +534,7 @@ export const applicationService = {
         if (programs.length === 0) {
           throw { message: "No loan programs available", status: 404 };
         }
-        resolvedProgramId = programs[0].id;
+        resolvedProgramId = programs[0].programCode;
       }
 
       // Use the new endpoint for program configuration
@@ -543,13 +543,26 @@ export const applicationService = {
       );
 
       programName = programConfig.data.name || "";
+      const templates = programConfig.data.formTemplates || programConfig.data.templates || [];
       
-      if (!programConfig.data.formTemplates?.length) {
-        throw { message: "Program has no form templates", status: 400 };
+      if (!templates || templates.length === 0) {
+        console.error("Program config response:", programConfig.data);
+        throw { 
+          message: "Program has no form templates. Check API response structure.", 
+          status: 400 
+        };
       }
 
-      const formDefinitionId =
-        programConfig.data.formTemplates[0].template.id;
+      // Handle both possible template structure formats
+      const formDefinitionId = templates[0].template?.id || templates[0].id;
+      
+      if (!formDefinitionId) {
+        console.error("Cannot extract form definition ID from:", templates[0]);
+        throw { 
+          message: "Could not extract form template ID from program config", 
+          status: 400 
+        };
+      }
 
       const { data } = await apiClient.post<BackendApplication>(
         "/api/applications",

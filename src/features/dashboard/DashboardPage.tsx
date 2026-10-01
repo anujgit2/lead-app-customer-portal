@@ -12,7 +12,6 @@ import {
   PenLine,
   Send,
   CheckCircle2,
-  Loader,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,6 @@ import { useAuthStore } from "@/store/auth.store";
 import { ErrorState } from "@/components/ErrorState";
 import { parseApiError } from "@/lib/api-error";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { toast } from "sonner";
 import type { ApplicationStatus } from "@/types";
 
 function StatusBadge({ status }: { status: ApplicationStatus }) {
@@ -68,7 +66,6 @@ function SummaryCard({
 export function DashboardPage() {
   const { user } = useAuthStore();
   const router = useRouter();
-  const [applyingProgramCode, setApplyingProgramCode] = useState<string | null>(null);
 
   const {
     data: applications,
@@ -96,14 +93,9 @@ export function DashboardPage() {
 
   const handleApplyProgram = async (programCode: string) => {
     setApplyingProgramCode(programCode);
-    try {
-      await programService.getProgramConfig(programCode);
-      router.push(`/loan-application/new?programCode=${programCode}`);
-    } catch (err) {
-      const apiError = parseApiError(err);
-      toast.error(`Failed to load program: ${apiError.message}`);
-      setApplyingProgramCode(null);
-    }
+    // Navigate directly - the /new page will load the program config
+    // This avoids duplicate API calls
+    router.push(`/loan-application/new?programCode=${programCode}`);
   };
 
   const summary = useMemo(() => {
@@ -170,20 +162,11 @@ export function DashboardPage() {
               <Button
                 key={program.id}
                 onClick={() => handleApplyProgram(program.programCode)}
-                disabled={applyingProgramCode !== null}
-                loading={applyingProgramCode === program.programCode}
                 variant="outline"
                 className="h-auto flex flex-col items-start justify-start p-4 gap-2 border-slate-200 text-left transition-all duration-200 ease-out hover:shadow-md hover:border-slate-300 active:scale-[0.98]"
               >
                 <span className="font-semibold text-slate-900 text-sm">
-                  {applyingProgramCode === program.programCode ? (
-                    <span className="flex items-center gap-2">
-                      <Loader className="h-3.5 w-3.5 animate-spin" />
-                      Loading...
-                    </span>
-                  ) : (
-                    `Apply ${program.displayName || program.name}`
-                  )}
+                  Apply {program.displayName || program.name}
                 </span>
                 {program.description && (
                   <span className="text-xs text-slate-500 line-clamp-2">{program.description}</span>
