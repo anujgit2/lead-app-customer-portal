@@ -26,6 +26,7 @@ export function DynamicForm({
     resolver: zodResolver(schema),
     defaultValues: defaultValues ?? {},
     mode: "onBlur",
+    shouldUnregister: true,
   });
 
   return (
