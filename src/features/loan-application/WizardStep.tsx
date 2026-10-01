@@ -72,7 +72,7 @@ function RepeatableInstance({
   const methods = useForm({
     resolver: zodResolver(schema),
     defaultValues: mergeTemplateDefaults(template, defaultValues),
-    mode: "onChange",
+    mode: "onBlur",
   });
 
   React.useEffect(() => {
@@ -269,7 +269,7 @@ const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
     const methods = useForm({
       resolver: zodResolver(schema),
       defaultValues: mergeTemplateDefaults(template, defaultValues),
-      mode: "onChange",
+      mode: "onBlur",
     });
 
     useImperativeHandle(ref, () => ({

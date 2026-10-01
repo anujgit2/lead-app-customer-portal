@@ -25,7 +25,7 @@ export function DynamicForm({
   const methods = useForm({
     resolver: zodResolver(schema),
     defaultValues: defaultValues ?? {},
-    mode: "onChange",
+    mode: "onBlur",
   });
 
   return (
