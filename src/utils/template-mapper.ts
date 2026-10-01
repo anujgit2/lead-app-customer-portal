@@ -38,11 +38,11 @@ function mapNewFieldToOld(
 ): FormField {
   const baseField: FormField = {
     name: newField.key,
-    label: newField.ui.label,
+    label: newField.ui?.label || newField.key,
     type: newField.type,
-    placeholder: newField.ui.placeholder,
-    info: newField.ui.tooltip,
-    helpText: newField.ui.helperText,
+    placeholder: newField.ui?.placeholder,
+    info: newField.ui?.tooltip,
+    helpText: newField.ui?.helperText,
   };
 
   // Copy primitive properties
@@ -196,11 +196,11 @@ function mapNewSectionToOld(
 ): FormSection {
   const section: FormSection = {
     code: newSection.code,
-    title: newSection.ui.title,
-    description: newSection.ui.subtitle,
+    title: newSection.ui?.title || "Section",
+    description: newSection.ui?.subtitle,
     repeatable: newSection.repeatable || false,
     columns: 2, // Default to 2-column layout
-    fields: newSection.fields.map((f) => mapNewFieldToOld(f, program)),
+    fields: (newSection.fields || []).map((f) => mapNewFieldToOld(f, program)),
   };
 
   if (newSection.minItems !== undefined) {
@@ -219,10 +219,10 @@ function mapNewSectionToOld(
 function mapNewFormToOld(newForm: NewFormatForm, program: NewLoanProduct): FormTemplate {
   const template: FormTemplate = {
     code: newForm.formCode,
-    title: newForm.ui.title,
-    description: newForm.ui.subtitle,
+    title: newForm.ui?.title || "Form",
+    description: newForm.ui?.subtitle,
     repeatable: newForm.repeatable || false,
-    sections: newForm.sections.map((s) => mapNewSectionToOld(s, program)),
+    sections: (newForm.sections || []).map((s) => mapNewSectionToOld(s, program)),
   };
 
   if (newForm.minItems !== undefined) {
@@ -240,7 +240,7 @@ function mapNewFormToOld(newForm: NewFormatForm, program: NewLoanProduct): FormT
  * This allows documents to be rendered as a regular wizard step using existing form logic.
  */
 function mapDocumentsToTemplate(program: NewLoanProduct): FormTemplate | null {
-  const appDocs = program.documents.filter((d) => d.scope === "APPLICATION");
+  const appDocs = (program.documents || []).filter((d) => d.scope === "APPLICATION");
 
   if (appDocs.length === 0) {
     return null;
@@ -284,7 +284,8 @@ function mapDocumentsToTemplate(program: NewLoanProduct): FormTemplate | null {
  */
 export function mapNewTemplateToOld(program: NewLoanProduct): LoanProduct {
   // Map all forms to old format templates
-  const templates = program.forms.map((form) => mapNewFormToOld(form, program));
+  const forms = program.forms || [];
+  const templates = forms.map((form) => mapNewFormToOld(form, program));
 
   // Add virtual DOCUMENTS template if APPLICATION docs exist
   const docTemplate = mapDocumentsToTemplate(program);
@@ -295,8 +296,8 @@ export function mapNewTemplateToOld(program: NewLoanProduct): LoanProduct {
   return {
     id: program.programCode || "mapped",
     code: program.programCode,
-    name: program.name,
-    description: program.name,
+    name: program.name || "Loan Product",
+    description: program.name || "Loan Product",
     templates,
   };
 }
