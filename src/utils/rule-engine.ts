@@ -9,10 +9,50 @@
  * Rules are always evaluated against a "scope" object: the sibling field
  * values of the section/section-instance the field belongs to (not the
  * whole form), since `rules.*.field` refers to a sibling field name.
+ *
+ * Supports both old format (operator, field, value) and new format (op, when, left, right).
+ * New format is automatically converted to old format for compatibility.
  */
 import type { ConditionOperator, ConditionRule, FieldRules, FormField } from "@/types";
 
 type Scope = Record<string, unknown> | null | undefined;
+
+/**
+ * Convert new format rule (op, when, left, right) to old format (operator, field, value).
+ * This enables the new v1.0 template format to work with existing rule evaluation logic.
+ */
+function convertNewRuleToOld(rule: any): ConditionRule | null {
+  if (!rule.op || !rule.field) return null;
+
+  // Map new operators to old operators
+  const operatorMap: Record<string, ConditionOperator> = {
+    eq: "equals",
+    notEq: "notEquals",
+    in: "in",
+    notIn: "notIn",
+    contains: "contains",
+    gt: "gt",
+    gte: "gte",
+    lt: "lt",
+    lte: "lte",
+    notEmpty: "exists",
+    empty: "notExists",
+  };
+
+  const operator = (operatorMap[rule.op] || rule.op) as ConditionOperator;
+
+  // Extract value from right side if using new format operators
+  let value: unknown = rule.value;
+  if (rule.right !== undefined) {
+    value = rule.right;
+  }
+
+  return {
+    field: rule.field,
+    operator,
+    value,
+  };
+}
 
 function isEmptyValue(value: unknown): boolean {
   return (
@@ -29,24 +69,34 @@ function toComparable(value: unknown): string {
 }
 
 /** Evaluates a single condition rule against a scope object. No rule = always non-matching by default of caller. */
-export function ruleMatches(rule: ConditionRule, scope: Scope): boolean {
-  const actual = scope ? scope[rule.field] : undefined;
+export function ruleMatches(rule: ConditionRule | any, scope: Scope): boolean {
+  // Support both old format (operator, field, value) and new format (op, when, left, right)
+  let normalizedRule = rule;
+  
+  // If this looks like the new format, convert it first
+  if (rule.op && !rule.operator) {
+    const converted = convertNewRuleToOld(rule);
+    if (!converted) return false;
+    normalizedRule = converted;
+  }
+  
+  const actual = scope ? scope[normalizedRule.field] : undefined;
 
-  switch (rule.operator) {
+  switch (normalizedRule.operator) {
     case "equals":
       if (Array.isArray(actual)) {
-        return actual.some((item) => item === rule.value || toComparable(item) === toComparable(rule.value));
+        return actual.some((item) => item === normalizedRule.value || toComparable(item) === toComparable(normalizedRule.value));
       }
-      return actual === rule.value || toComparable(actual) === toComparable(rule.value);
+      return actual === normalizedRule.value || toComparable(actual) === toComparable(normalizedRule.value);
     case "notEquals":
       if (Array.isArray(actual)) {
-        return !actual.some((item) => item === rule.value || toComparable(item) === toComparable(rule.value));
+        return !actual.some((item) => item === normalizedRule.value || toComparable(item) === toComparable(normalizedRule.value));
       }
-      return !(actual === rule.value) && toComparable(actual) !== toComparable(rule.value);
+      return !(actual === normalizedRule.value) && toComparable(actual) !== toComparable(normalizedRule.value);
     case "in":
-      return Array.isArray(rule.value) && rule.value.some((v) => toComparable(v) === toComparable(actual));
+      return Array.isArray(normalizedRule.value) && normalizedRule.value.some((v) => toComparable(v) === toComparable(actual));
     case "notIn":
-      return !(Array.isArray(rule.value) && rule.value.some((v) => toComparable(v) === toComparable(actual)));
+      return !(Array.isArray(normalizedRule.value) && normalizedRule.value.some((v) => toComparable(v) === toComparable(actual)));
     case "exists":
       return !isEmptyValue(actual);
     case "notExists":
@@ -57,16 +107,16 @@ export function ruleMatches(rule: ConditionRule, scope: Scope): boolean {
       return !actual || actual === "false" || actual === "0";
     case "contains":
       return Array.isArray(actual)
-        ? actual.some((v) => toComparable(v) === toComparable(rule.value))
-        : toComparable(actual).includes(toComparable(rule.value));
+        ? actual.some((v) => toComparable(v) === toComparable(normalizedRule.value))
+        : toComparable(actual).includes(toComparable(normalizedRule.value));
     case "gt":
-      return Number(actual) > Number(rule.value);
+      return Number(actual) > Number(normalizedRule.value);
     case "gte":
-      return Number(actual) >= Number(rule.value);
+      return Number(actual) >= Number(normalizedRule.value);
     case "lt":
-      return Number(actual) < Number(rule.value);
+      return Number(actual) < Number(normalizedRule.value);
     case "lte":
-      return Number(actual) <= Number(rule.value);
+      return Number(actual) <= Number(normalizedRule.value);
     default:
       return false;
   }

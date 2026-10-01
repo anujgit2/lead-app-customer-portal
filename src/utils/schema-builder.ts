@@ -8,6 +8,28 @@ import {
   isPlainObject,
 } from "@/utils/address-field";
 
+/**
+ * Mock async validators for the new template format.
+ * These simulate backend validation providers. In a real system, these would make actual API calls.
+ * Currently, we mock them to always pass validation.
+ *
+ * Supported providers:
+ * - PAN_VERIFY: Verify PAN number format (mocked as pass)
+ * - GSTIN_VERIFY: Verify GSTIN format (mocked as pass)
+ * - IFSC_LOOKUP: Lookup IFSC code and autofill bank name (mocked as pass)
+ * - PINCODE_LOOKUP: Lookup pincode and autofill city/state (mocked as pass)
+ */
+function createAsyncValidator(provider: string) {
+  return z.string().refine(
+    async () => {
+      // Mock: Always pass. In production, these would call backend services.
+      // Example: if (provider === 'PAN_VERIFY') { return await verifyPAN(value); }
+      return true;
+    },
+    { message: `Verification via ${provider} failed` }
+  );
+}
+
 function buildFieldSchema(field: FormField): z.ZodTypeAny {
   const v: FieldValidation = field.validation ?? {};
   // Fields with conditional rules defer their required-ness (and, for visibleWhen,
@@ -15,6 +37,19 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
   // since that's the only place with access to sibling field values. Fields without
   // `rules` are completely unaffected — same schema as before.
   const deferToRules = !!(field.rules?.visibleWhen || field.rules?.requiredWhen);
+
+  // Support new validation format: validation arrays from v1.0 templates.
+  // Extract pattern from validation rules if present (old format uses single validation object).
+  let patternFromNewFormat: string | undefined;
+  if (Array.isArray((field as any).validation)) {
+    const validationArray = (field as any).validation as any[];
+    for (const rule of validationArray) {
+      if (rule.regex) {
+        patternFromNewFormat = rule.regex;
+        break; // Use first regex rule found
+      }
+    }
+  }
 
   if (field.type === "checkbox") {
     const boolSchema = z.boolean();
@@ -119,10 +154,14 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
   // `.refine()` moves the schema out of `ZodString` into `ZodEffects`, so from here on we
   // track the result in a separately-typed variable rather than reassigning `s`.
   let result: z.ZodTypeAny = s;
-  if (v.pattern) {
+  
+  // Use pattern from new format if available, otherwise use old format pattern
+  const patternToUse = patternFromNewFormat || v.pattern;
+  
+  if (patternToUse) {
     let patternRegex: RegExp | null = null;
     try {
-      patternRegex = new RegExp(v.pattern);
+      patternRegex = new RegExp(patternToUse);
     } catch {
       patternRegex = null;
     }

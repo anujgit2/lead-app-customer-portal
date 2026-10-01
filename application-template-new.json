@@ -891,7 +891,7 @@
     "forms": [
       {
         "formCode": "company",
-        "formName": "CompanyProperty"
+        "formName": "CompanyProperty",
         "templateVersion": 2,
         "displayOrder": 1,
         "required": true,
@@ -1333,7 +1333,7 @@
       },
       {
         "formCode": "owners",
-        "formName": "OwnersProperty"
+        "formName": "OwnersProperty",
         "templateVersion": 2,
         "displayOrder": 2,
         "required": true,
@@ -1744,7 +1744,7 @@
       },
       {
         "formCode": "loanPurpose",
-        "formName": "LoanPurposeProperty"
+        "formName": "LoanPurposeProperty",
         "templateVersion": 1,
         "displayOrder": 3,
         "required": true,
@@ -2054,7 +2054,7 @@
       },
       {
         "formCode": "bankInfo",
-        "formName":"BankInfoProperty"
+        "formName":"BankInfoProperty",
         "templateVersion": 1,
         "displayOrder": 5,
         "required": true,
