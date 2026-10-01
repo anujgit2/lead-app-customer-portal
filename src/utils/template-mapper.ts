@@ -55,7 +55,10 @@ function mapNewFieldToOld(
 
   // Handle input formatting
   if (newField.input) {
-    baseField.inputFormat = convertInputConfig(newField.input);
+    const inputFormat = convertInputConfig(newField.input);
+    if (inputFormat) {
+      baseField.inputFormat = inputFormat;
+    }
     // Extract prefix from input if present
     if (newField.input.prefix) {
       baseField.prefix = newField.input.prefix;

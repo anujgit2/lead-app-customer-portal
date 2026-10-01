@@ -187,15 +187,15 @@ export function PlaygroundProvider({ children }: { children: React.ReactNode }) 
 
   const { jsonParseError, normalized } = useMemo(() => {
     try {
-      const root = parseJsonTemplateText(committedJson);
+      const root = parseJsonTemplateText(committedJson) as Record<string, unknown>;
       
       // Auto-detect format: if it's the new format (v1.0), convert it first
       const format = detectTemplateFormat(root);
-      let normalizeInput = root;
+      let normalizeInput: Record<string, unknown> = root;
       
       if (format === "new") {
         // Silently convert new format to old format
-        normalizeInput = mapNewTemplateToOld(root);
+        normalizeInput = mapNewTemplateToOld(root as any) as Record<string, unknown>;
       }
       
       return { jsonParseError: null, normalized: normalizeTemplateJson(normalizeInput) };

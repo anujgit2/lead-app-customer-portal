@@ -134,12 +134,12 @@ export function isDocumentSlot(value: unknown): value is Raw {
  * Supports {coverageMonths}, {maxFileSizeMB}, etc. in description/hint text.
  */
 export function parseDocumentConfigNew(
-  doc: any,
+  doc: Record<string, unknown>,
   coverageMonths?: Record<string, number>
 ): ParsedUploadConfig {
   if (!isPlainObject(doc)) return {};
 
-  const upload = doc.upload as any;
+  const upload = doc.upload as Record<string, unknown> | undefined;
   if (!upload || typeof upload !== "object") return {};
 
   const extensions = Array.isArray(upload.allowedExtensions)
@@ -147,7 +147,8 @@ export function parseDocumentConfigNew(
     : [];
 
   // Interpolate variables in description
-  let description = doc.ui?.description || "";
+  const ui = doc.ui as Record<string, unknown> | undefined;
+  let description = (ui?.description as string) || "";
   if (coverageMonths) {
     for (const [key, value] of Object.entries(coverageMonths)) {
       description = description.replace(`{${key}}`, String(value));

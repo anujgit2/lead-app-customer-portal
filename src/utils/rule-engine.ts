@@ -21,7 +21,7 @@ type Scope = Record<string, unknown> | null | undefined;
  * Convert new format rule (op, when, left, right) to old format (operator, field, value).
  * This enables the new v1.0 template format to work with existing rule evaluation logic.
  */
-function convertNewRuleToOld(rule: any): ConditionRule | null {
+function convertNewRuleToOld(rule: Record<string, unknown>): ConditionRule | null {
   if (!rule.op || !rule.field) return null;
 
   // Map new operators to old operators
@@ -69,9 +69,9 @@ function toComparable(value: unknown): string {
 }
 
 /** Evaluates a single condition rule against a scope object. No rule = always non-matching by default of caller. */
-export function ruleMatches(rule: ConditionRule | any, scope: Scope): boolean {
+export function ruleMatches(rule: ConditionRule | Record<string, unknown>, scope: Scope): boolean {
   // Support both old format (operator, field, value) and new format (op, when, left, right)
-  let normalizedRule = rule;
+  let normalizedRule: ConditionRule = rule as ConditionRule;
   
   // If this looks like the new format, convert it first
   if (rule.op && !rule.operator) {
