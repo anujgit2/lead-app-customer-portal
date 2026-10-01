@@ -280,18 +280,29 @@ function buildValidationFromNewField(
 
 /**
  * Convert new section format to old section format.
+ * Handles both regular fields and component-based sections (e.g., ADDRESS).
  */
 function mapNewSectionToOld(
   newSection: NewFormatSection,
   program: NewLoanProduct
 ): FormSection {
+  let fields = (newSection.fields || []).map((f) => mapNewFieldToOld(f, program));
+  
+  // If section has a component reference but no fields, expand it from the component definition
+  if (newSection.component && fields.length === 0) {
+    const componentDef = program.components[newSection.component];
+    if (componentDef?.fields) {
+      fields = componentDef.fields.map((f) => mapNewFieldToOld(f, program));
+    }
+  }
+
   const section: FormSection = {
     code: newSection.code,
     title: newSection.ui?.title || "Section",
     description: newSection.ui?.subtitle,
     repeatable: newSection.repeatable || false,
     columns: 2, // Default to 2-column layout
-    fields: (newSection.fields || []).map((f) => mapNewFieldToOld(f, program)),
+    fields,
   };
 
   if (newSection.minItems !== undefined) {
