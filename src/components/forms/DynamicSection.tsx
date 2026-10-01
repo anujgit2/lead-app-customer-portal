@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
-import type { FormSection } from "@/types";
+import type { FormSection, FormField } from "@/types";
 import { DynamicField } from "./DynamicField";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,49 @@ import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buildSectionDefaults } from "@/utils/schema-builder";
+import { ruleMatches } from "@/utils/rule-engine";
 
 interface DynamicSectionProps {
   section: FormSection;
   namePrefix?: string;
+}
+
+/**
+ * Wrapper that checks if field should render based on visibility rules.
+ * Uses form context to properly resolve field dependencies.
+ */
+function FieldWrapper({
+  field,
+  namePrefix,
+}: {
+  field: FormField;
+  namePrefix?: string;
+}) {
+  const fieldName = namePrefix ? `${namePrefix}.${field.name}` : field.name;
+  const { watch } = useFormContext();
+  const visibleRule = field.rules?.visibleWhen;
+
+  // Watch the dependency field if this field has a visibleWhen rule
+  const depFieldName = visibleRule ? visibleRule.field : fieldName;
+  const depValue = watch(depFieldName);
+
+  // Check if field is visible
+  const visible = visibleRule ? ruleMatches(visibleRule, { [visibleRule.field]: depValue }) : true;
+
+  // Don't render wrapper if not visible
+  if (!visible) return null;
+
+  return (
+    <div
+      className={cn(
+        field.span === 2 && "sm:col-span-2",
+        field.span === 3 && "sm:col-span-2 lg:col-span-3",
+        (field.span === 4 || field.type === "json" || field.type === "textarea" || field.type === "address" || field.type === "file" || field.type === "document") && "col-span-full"
+      )}
+    >
+      <DynamicField field={field} namePrefix={namePrefix} />
+    </div>
+  );
 }
 
 function FieldGrid({ section, namePrefix }: { section: FormSection; namePrefix?: string }) {
@@ -27,16 +66,11 @@ function FieldGrid({ section, namePrefix }: { section: FormSection; namePrefix?:
   return (
     <div className={cn("grid items-start gap-x-6 gap-y-5", gridClass)}>
       {section.fields.map((field) => (
-        <div
+        <FieldWrapper
           key={field.name}
-          className={cn(
-            field.span === 2 && "sm:col-span-2",
-            field.span === 3 && "sm:col-span-2 lg:col-span-3",
-            (field.span === 4 || field.type === "json" || field.type === "textarea" || field.type === "address" || field.type === "file" || field.type === "document") && "col-span-full"
-          )}
-        >
-          <DynamicField field={field} namePrefix={namePrefix} />
-        </div>
+          field={field}
+          namePrefix={namePrefix}
+        />
       ))}
     </div>
   );
