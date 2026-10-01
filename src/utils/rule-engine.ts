@@ -22,7 +22,10 @@ type Scope = Record<string, unknown> | null | undefined;
  * This enables the new v1.0 template format to work with existing rule evaluation logic.
  */
 function convertNewRuleToOld(rule: Record<string, unknown>): ConditionRule | null {
-  if (!rule.op || !rule.field) return null;
+  const op = rule.op as string | undefined;
+  const field = rule.field as string | undefined;
+  
+  if (!op || !field) return null;
 
   // Map new operators to old operators
   const operatorMap: Record<string, ConditionOperator> = {
@@ -39,7 +42,7 @@ function convertNewRuleToOld(rule: Record<string, unknown>): ConditionRule | nul
     empty: "notExists",
   };
 
-  const operator = (operatorMap[rule.op] || rule.op) as ConditionOperator;
+  const operator = (operatorMap[op] || op) as ConditionOperator;
 
   // Extract value from right side if using new format operators
   let value: unknown = rule.value;
@@ -48,7 +51,7 @@ function convertNewRuleToOld(rule: Record<string, unknown>): ConditionRule | nul
   }
 
   return {
-    field: rule.field,
+    field,
     operator,
     value,
   };
@@ -71,13 +74,16 @@ function toComparable(value: unknown): string {
 /** Evaluates a single condition rule against a scope object. No rule = always non-matching by default of caller. */
 export function ruleMatches(rule: ConditionRule | Record<string, unknown>, scope: Scope): boolean {
   // Support both old format (operator, field, value) and new format (op, when, left, right)
-  let normalizedRule: ConditionRule = rule as ConditionRule;
+  let normalizedRule: ConditionRule;
   
   // If this looks like the new format, convert it first
-  if (rule.op && !rule.operator) {
-    const converted = convertNewRuleToOld(rule);
+  const ruleRecord = rule as Record<string, unknown>;
+  if (ruleRecord.op && !ruleRecord.operator) {
+    const converted = convertNewRuleToOld(ruleRecord);
     if (!converted) return false;
     normalizedRule = converted;
+  } else {
+    normalizedRule = rule as ConditionRule;
   }
   
   const actual = scope ? scope[normalizedRule.field] : undefined;

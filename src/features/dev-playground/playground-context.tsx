@@ -195,7 +195,8 @@ export function PlaygroundProvider({ children }: { children: React.ReactNode }) 
       
       if (format === "new") {
         // Silently convert new format to old format
-        normalizeInput = mapNewTemplateToOld(root as any) as Record<string, unknown>;
+        const mapped = mapNewTemplateToOld(root as any) as unknown as Record<string, unknown>;
+        normalizeInput = mapped;
       }
       
       return { jsonParseError: null, normalized: normalizeTemplateJson(normalizeInput) };

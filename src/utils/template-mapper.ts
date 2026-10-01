@@ -113,7 +113,7 @@ function mapNewFieldToOld(
 /**
  * Convert new InputConfig to old InputFormatConfig.
  */
-function convertInputConfig(input: any): InputFormatConfig {
+function convertInputConfig(input: any): InputFormatConfig | undefined {
   const config: InputFormatConfig = {};
 
   if (input.trim) config.trim = true;
@@ -194,31 +194,45 @@ function mapNewSectionToOld(
   newSection: NewFormatSection,
   program: NewLoanProduct
 ): FormSection {
-  return {
+  const section: FormSection = {
     code: newSection.code,
     title: newSection.ui.title,
     description: newSection.ui.subtitle,
     repeatable: newSection.repeatable || false,
-    minInstances: newSection.minItems,
-    maxInstances: newSection.maxItems,
     columns: 2, // Default to 2-column layout
     fields: newSection.fields.map((f) => mapNewFieldToOld(f, program)),
   };
+
+  if (newSection.minItems !== undefined) {
+    section.minInstances = newSection.minItems;
+  }
+  if (newSection.maxItems !== undefined) {
+    section.maxInstances = newSection.maxItems;
+  }
+
+  return section;
 }
 
 /**
  * Convert new form format to old template format.
  */
 function mapNewFormToOld(newForm: NewFormatForm, program: NewLoanProduct): FormTemplate {
-  return {
+  const template: FormTemplate = {
     code: newForm.formCode,
     title: newForm.ui.title,
     description: newForm.ui.subtitle,
     repeatable: newForm.repeatable || false,
-    minInstances: newForm.minItems,
-    maxInstances: newForm.maxItems,
     sections: newForm.sections.map((s) => mapNewSectionToOld(s, program)),
   };
+
+  if (newForm.minItems !== undefined) {
+    template.minInstances = newForm.minItems;
+  }
+  if (newForm.maxItems !== undefined) {
+    template.maxInstances = newForm.maxItems;
+  }
+
+  return template;
 }
 
 /**
