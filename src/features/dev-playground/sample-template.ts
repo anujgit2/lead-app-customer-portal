@@ -241,3 +241,18 @@ export const SAMPLE_TEMPLATE_JSON = [
     ],
   },
 ];
+
+/**
+ * Sample new format template (v1.0) for testing.
+ * This is dynamically imported from the application-template-new.json file.
+ * When pasted into the playground, it is automatically detected and converted
+ * to the old format by the mapper.
+ */
+export async function getSampleNewFormatTemplate() {
+  try {
+    const module = await import("../../../application-template-new.json");
+    return module.default;
+  } catch {
+    return null;
+  }
+}

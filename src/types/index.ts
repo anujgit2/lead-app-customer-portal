@@ -404,3 +404,229 @@ export interface FileUploadProgress {
   status: "pending" | "uploading" | "success" | "error";
   error?: string;
 }
+
+// ─── New Template Format Types (v1.0) ───────────────────────────────────────
+export type SensitivityLevel = "PUBLIC" | "INTERNAL" | "CONFIDENTIAL" | "RESTRICTED";
+
+export type DocumentScope = "APPLICATION" | "BANK_ACCOUNT" | "OWNER";
+
+/** Option definition in optionSets. */
+export interface OptionSetItem {
+  value: string;
+  ui: {
+    label: string;
+  };
+}
+
+/** UI configuration for new format fields. */
+export interface FieldUIConfig {
+  label: string;
+  placeholder?: string;
+  tooltip?: string;
+  helperText?: string;
+  errors?: Record<string, string>;
+  sameAsOption?: {
+    source: string;
+    label: string;
+  };
+}
+
+/** Input transformation and constraint configuration. */
+export interface InputConfig {
+  trim?: boolean;
+  uppercase?: boolean;
+  lowercase?: boolean;
+  transform?: "numeric" | "uppercase" | "lowercase";
+  allowSpaces?: boolean;
+  allowSpecialCharacters?: boolean;
+  displayFormat?: string;
+  wireFormat?: string;
+  thousandSeparator?: string;
+  decimalSeparator?: string;
+  fixedDecimalScale?: boolean;
+  useGrouping?: boolean;
+  prefix?: string;
+  pattern?: string;
+  separator?: string;
+  storeUnmasked?: boolean;
+}
+
+/** Constraints on field values. */
+export interface ConstraintsConfig {
+  minLength?: number;
+  maxLength?: number;
+  min?: number | { $ref: string };
+  max?: number | { $ref: string };
+  integer?: boolean;
+  precision?: number;
+  scale?: number;
+  minSelected?: number;
+  maxSelected?: number;
+  allowNegative?: boolean;
+}
+
+/** Single validation rule with async support and complex operators. */
+export interface ValidationRuleItem {
+  code: string;
+  regex?: string;
+  severity?: "error" | "warning";
+  op?: string;
+  when?: {
+    op: string;
+    field: string;
+  };
+  left?: {
+    fn?: string;
+    field?: string;
+    index?: number;
+  };
+  right?: unknown;
+  async?: {
+    provider: string;
+    trigger: string;
+    autofill?: Record<string, string>;
+    mustMatch?: string[];
+  };
+  skipIfRightNull?: boolean;
+}
+
+/** Mask/display configuration. */
+export interface MaskConfigNew {
+  pattern: string;
+  storeUnmasked?: boolean;
+  separator?: string;
+  transform?: "uppercase" | "lowercase" | "numeric";
+}
+
+/** Display masking after entry. */
+export interface DisplayMaskConfig {
+  maskAfterEntry?: {
+    showLast: number;
+    char: string;
+  };
+}
+
+/** New format field structure. */
+export interface NewFormatField {
+  key: string;
+  type: FieldType;
+  required: boolean;
+  ui: FieldUIConfig;
+  optionsRef?: string;
+  component?: string;
+  componentRef?: string;
+  input?: InputConfig;
+  mask?: MaskConfigNew;
+  display?: DisplayMaskConfig;
+  constraints?: ConstraintsConfig;
+  validation?: ValidationRuleItem[];
+  rules?: FieldRules;
+  sensitivity?: SensitivityLevel;
+  defaultValue?: unknown;
+  unit?: string;
+  currency?: string;
+}
+
+/** New format section structure. */
+export interface NewFormatSection {
+  code: string;
+  displayOrder: number;
+  ui: {
+    title: string;
+    subtitle?: string;
+    itemLabel?: string;
+  };
+  fields: NewFormatField[];
+  repeatable?: boolean;
+  minItems?: number;
+  maxItems?: number;
+  component?: string;
+}
+
+/** New format form structure. */
+export interface NewFormatForm {
+  formCode: string;
+  formName: string;
+  templateVersion: number;
+  displayOrder: number;
+  required: boolean;
+  visible: boolean;
+  repeatable: boolean;
+  minItems?: number;
+  maxItems?: number;
+  ui: {
+    title: string;
+    subtitle: string;
+    itemLabel?: string;
+    addButtonLabel?: string;
+    emptyState?: string;
+  };
+  sections: NewFormatSection[];
+}
+
+/** Document upload configuration. */
+export interface DocumentUploadConfig {
+  minFiles?: number;
+  maxFiles?: number;
+  maxFileSizeMB?: number;
+  allowedExtensions?: string[];
+}
+
+/** Document definition in new format. */
+export interface DocumentDefinition {
+  documentType: string;
+  scope: DocumentScope;
+  required: boolean;
+  upload: DocumentUploadConfig;
+  ui: {
+    label: string;
+    description?: string;
+    uploadHint?: string;
+    errors?: Record<string, string>;
+    tooltip?: string;
+  };
+  sensitivity?: SensitivityLevel;
+  rules?: FieldRules;
+}
+
+/** Document policy configuration. */
+export interface DocumentPolicyConfig {
+  coverageMonths?: Record<string, number>;
+  contentSniffing?: boolean;
+  malwareScan?: boolean;
+  passwordProtectedPdf?: string;
+  upload?: string;
+  encryption?: string;
+}
+
+/** Component definition (e.g., ADDRESS). */
+export interface ComponentDefinition {
+  fields: NewFormatField[];
+}
+
+/** New format LoanProduct (v1.0). */
+export interface NewLoanProduct {
+  schemaVersion: string;
+  programCode: string;
+  name: string;
+  programType?: string;
+  status?: string;
+  version?: number;
+  currency?: string;
+  ui?: {
+    title: string;
+    subtitle: string;
+  };
+  limits?: {
+    loanAmount?: { min: number; max: number };
+    loanTermMonths?: { min: number; max: number };
+    interestRate?: { max: number };
+  };
+  documentPolicy?: DocumentPolicyConfig;
+  sensitivityLevels?: SensitivityLevel[];
+  optionSets: Record<string, OptionSetItem[]>;
+  lookups?: Record<string, Record<string, unknown>>;
+  components: Record<string, ComponentDefinition>;
+  forms: NewFormatForm[];
+  documents: DocumentDefinition[];
+}

@@ -128,3 +128,40 @@ export function formatAcceptLabel(accept?: string): string {
 export function isDocumentSlot(value: unknown): value is Raw {
   return isPlainObject(value) && typeof value.documentType === "string";
 }
+
+/**
+ * Parse document configuration from new format, with variable interpolation.
+ * Supports {coverageMonths}, {maxFileSizeMB}, etc. in description/hint text.
+ */
+export function parseDocumentConfigNew(
+  doc: any,
+  coverageMonths?: Record<string, number>
+): ParsedUploadConfig {
+  if (!isPlainObject(doc)) return {};
+
+  const upload = doc.upload as any;
+  if (!upload || typeof upload !== "object") return {};
+
+  const extensions = Array.isArray(upload.allowedExtensions)
+    ? upload.allowedExtensions.filter((item: unknown): item is string => typeof item === "string")
+    : [];
+
+  // Interpolate variables in description
+  let description = doc.ui?.description || "";
+  if (coverageMonths) {
+    for (const [key, value] of Object.entries(coverageMonths)) {
+      description = description.replace(`{${key}}`, String(value));
+    }
+  }
+  // Also interpolate maxFileSizeMB if present
+  if (upload.maxFileSizeMB) {
+    description = description.replace(`{maxFileSizeMB}`, String(upload.maxFileSizeMB));
+  }
+
+  return {
+    accept: extensions.length > 0 ? extensionsToAccept(extensions) : undefined,
+    maxFiles: typeof upload.maxFiles === "number" ? upload.maxFiles : undefined,
+    maxSize: typeof upload.maxFileSizeMB === "number" ? upload.maxFileSizeMB : undefined,
+    minFiles: typeof upload.minFiles === "number" ? upload.minFiles : undefined,
+  };
+}

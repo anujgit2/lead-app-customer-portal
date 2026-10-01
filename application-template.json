@@ -678,6 +678,7 @@
             {
               "table": "leads.owner_profile",
               "formCode": "owner_profile",
+              "repeatable": true,
               "sections": [
                 {
                   "code": "owner_details",
@@ -981,8 +982,8 @@
                       "column": "current_address",
                       "required": false
                     }
-                  ],
-                  "repeatable": true
+                  ]
+                  
                 }
               ]
             }

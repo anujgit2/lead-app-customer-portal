@@ -1,0 +1,2726 @@
+{
+    "schemaVersion": "1.0",
+    "programCode": "business_loan",
+    "name": "Business Loan",
+    "programType": "BUSINESS_LOAN",
+    "status": "PUBLISHED",
+    "version": 1,
+    "currency": "INR",
+    "ui": {
+      "title": "Business Loan Application",
+      "subtitle": "Complete the sections below to apply. You can save a draft and return at any time."
+    },
+    "limits": {
+      "loanAmount": {
+        "min": 100000,
+        "max": 50000000
+      },
+      "loanTermMonths": {
+        "min": 6,
+        "max": 120
+      },
+      "interestRate": {
+        "max": 36
+      }
+    },
+    "documentPolicy": {
+      "coverageMonths": {
+        "BANK_STATEMENT": 6
+      },
+      "contentSniffing": true,
+      "malwareScan": true,
+      "passwordProtectedPdf": "PROMPT_FOR_PASSWORD",
+      "upload": "PRESIGNED",
+      "encryption": "KMS"
+    },
+    "sensitivityLevels": [
+      "PUBLIC",
+      "INTERNAL",
+      "CONFIDENTIAL",
+      "RESTRICTED"
+    ],
+    "optionSets": {
+      "YES_NO": [
+        {
+          "value": "YES",
+          "ui": {
+            "label": "Yes"
+          }
+        },
+        {
+          "value": "NO",
+          "ui": {
+            "label": "No"
+          }
+        }
+      ],
+      "IN_STATES_UT": [
+        {
+          "value": "ANDHRA_PRADESH",
+          "ui": {
+            "label": "Andhra Pradesh"
+          }
+        },
+        {
+          "value": "ARUNACHAL_PRADESH",
+          "ui": {
+            "label": "Arunachal Pradesh"
+          }
+        },
+        {
+          "value": "ASSAM",
+          "ui": {
+            "label": "Assam"
+          }
+        },
+        {
+          "value": "BIHAR",
+          "ui": {
+            "label": "Bihar"
+          }
+        },
+        {
+          "value": "CHHATTISGARH",
+          "ui": {
+            "label": "Chhattisgarh"
+          }
+        },
+        {
+          "value": "GOA",
+          "ui": {
+            "label": "Goa"
+          }
+        },
+        {
+          "value": "GUJARAT",
+          "ui": {
+            "label": "Gujarat"
+          }
+        },
+        {
+          "value": "HARYANA",
+          "ui": {
+            "label": "Haryana"
+          }
+        },
+        {
+          "value": "HIMACHAL_PRADESH",
+          "ui": {
+            "label": "Himachal Pradesh"
+          }
+        },
+        {
+          "value": "JHARKHAND",
+          "ui": {
+            "label": "Jharkhand"
+          }
+        },
+        {
+          "value": "KARNATAKA",
+          "ui": {
+            "label": "Karnataka"
+          }
+        },
+        {
+          "value": "KERALA",
+          "ui": {
+            "label": "Kerala"
+          }
+        },
+        {
+          "value": "MADHYA_PRADESH",
+          "ui": {
+            "label": "Madhya Pradesh"
+          }
+        },
+        {
+          "value": "MAHARASHTRA",
+          "ui": {
+            "label": "Maharashtra"
+          }
+        },
+        {
+          "value": "MANIPUR",
+          "ui": {
+            "label": "Manipur"
+          }
+        },
+        {
+          "value": "MEGHALAYA",
+          "ui": {
+            "label": "Meghalaya"
+          }
+        },
+        {
+          "value": "MIZORAM",
+          "ui": {
+            "label": "Mizoram"
+          }
+        },
+        {
+          "value": "NAGALAND",
+          "ui": {
+            "label": "Nagaland"
+          }
+        },
+        {
+          "value": "ODISHA",
+          "ui": {
+            "label": "Odisha"
+          }
+        },
+        {
+          "value": "PUNJAB",
+          "ui": {
+            "label": "Punjab"
+          }
+        },
+        {
+          "value": "RAJASTHAN",
+          "ui": {
+            "label": "Rajasthan"
+          }
+        },
+        {
+          "value": "SIKKIM",
+          "ui": {
+            "label": "Sikkim"
+          }
+        },
+        {
+          "value": "TAMIL_NADU",
+          "ui": {
+            "label": "Tamil Nadu"
+          }
+        },
+        {
+          "value": "TELANGANA",
+          "ui": {
+            "label": "Telangana"
+          }
+        },
+        {
+          "value": "TRIPURA",
+          "ui": {
+            "label": "Tripura"
+          }
+        },
+        {
+          "value": "UTTAR_PRADESH",
+          "ui": {
+            "label": "Uttar Pradesh"
+          }
+        },
+        {
+          "value": "UTTARAKHAND",
+          "ui": {
+            "label": "Uttarakhand"
+          }
+        },
+        {
+          "value": "WEST_BENGAL",
+          "ui": {
+            "label": "West Bengal"
+          }
+        },
+        {
+          "value": "ANDAMAN_AND_NICOBAR_ISLANDS",
+          "ui": {
+            "label": "Andaman and Nicobar Islands"
+          }
+        },
+        {
+          "value": "CHANDIGARH",
+          "ui": {
+            "label": "Chandigarh"
+          }
+        },
+        {
+          "value": "DADRA_AND_NAGAR_HAVELI_AND_DAMAN_AND_DIU",
+          "ui": {
+            "label": "Dadra and Nagar Haveli and Daman and Diu"
+          }
+        },
+        {
+          "value": "DELHI",
+          "ui": {
+            "label": "Delhi"
+          }
+        },
+        {
+          "value": "JAMMU_AND_KASHMIR",
+          "ui": {
+            "label": "Jammu and Kashmir"
+          }
+        },
+        {
+          "value": "LADAKH",
+          "ui": {
+            "label": "Ladakh"
+          }
+        },
+        {
+          "value": "LAKSHADWEEP",
+          "ui": {
+            "label": "Lakshadweep"
+          }
+        },
+        {
+          "value": "PUDUCHERRY",
+          "ui": {
+            "label": "Puducherry"
+          }
+        }
+      ],
+      "COMPANY_TYPE": [
+        {
+          "value": "PROPRIETORSHIP",
+          "ui": {
+            "label": "Proprietorship"
+          }
+        },
+        {
+          "value": "PARTNERSHIP",
+          "ui": {
+            "label": "Partnership"
+          }
+        },
+        {
+          "value": "LLP",
+          "ui": {
+            "label": "LLP"
+          }
+        },
+        {
+          "value": "PRIVATE_LIMITED",
+          "ui": {
+            "label": "Private Limited"
+          }
+        },
+        {
+          "value": "PUBLIC_LIMITED",
+          "ui": {
+            "label": "Public Limited"
+          }
+        },
+        {
+          "value": "TRUST",
+          "ui": {
+            "label": "Trust"
+          }
+        },
+        {
+          "value": "SOCIETY",
+          "ui": {
+            "label": "Society"
+          }
+        },
+        {
+          "value": "OTHER",
+          "ui": {
+            "label": "Other"
+          }
+        }
+      ],
+      "INDUSTRY_TYPE": [
+        {
+          "value": "AGRICULTURE",
+          "ui": {
+            "label": "Agriculture"
+          }
+        },
+        {
+          "value": "AUTOMOBILE",
+          "ui": {
+            "label": "Automobile"
+          }
+        },
+        {
+          "value": "CONSTRUCTION",
+          "ui": {
+            "label": "Construction"
+          }
+        },
+        {
+          "value": "EDUCATION",
+          "ui": {
+            "label": "Education"
+          }
+        },
+        {
+          "value": "FINANCIAL_SERVICES",
+          "ui": {
+            "label": "Financial Services"
+          }
+        },
+        {
+          "value": "HEALTHCARE",
+          "ui": {
+            "label": "Healthcare"
+          }
+        },
+        {
+          "value": "HOSPITALITY",
+          "ui": {
+            "label": "Hospitality"
+          }
+        },
+        {
+          "value": "INFORMATION_TECHNOLOGY",
+          "ui": {
+            "label": "Information Technology"
+          }
+        },
+        {
+          "value": "MANUFACTURING",
+          "ui": {
+            "label": "Manufacturing"
+          }
+        },
+        {
+          "value": "PROFESSIONAL_SERVICES",
+          "ui": {
+            "label": "Professional Services"
+          }
+        },
+        {
+          "value": "REAL_ESTATE",
+          "ui": {
+            "label": "Real Estate"
+          }
+        },
+        {
+          "value": "RETAIL",
+          "ui": {
+            "label": "Retail"
+          }
+        },
+        {
+          "value": "TRADING",
+          "ui": {
+            "label": "Trading"
+          }
+        },
+        {
+          "value": "TRANSPORTATION_LOGISTICS",
+          "ui": {
+            "label": "Transportation & Logistics"
+          }
+        },
+        {
+          "value": "WHOLESALE",
+          "ui": {
+            "label": "Wholesale"
+          }
+        },
+        {
+          "value": "OTHER",
+          "ui": {
+            "label": "Other"
+          }
+        }
+      ],
+      "NATURE_OF_BUSINESS": [
+        {
+          "value": "AGRICULTURE_AND_ALLIED",
+          "ui": {
+            "label": "Agriculture & Allied"
+          }
+        },
+        {
+          "value": "MANUFACTURING",
+          "ui": {
+            "label": "Manufacturing"
+          }
+        },
+        {
+          "value": "RETAIL_TRADING",
+          "ui": {
+            "label": "Retail Trading"
+          }
+        },
+        {
+          "value": "WHOLESALE_TRADING",
+          "ui": {
+            "label": "Wholesale Trading"
+          }
+        },
+        {
+          "value": "SERVICE",
+          "ui": {
+            "label": "Service"
+          }
+        },
+        {
+          "value": "OTHER",
+          "ui": {
+            "label": "Other"
+          }
+        }
+      ],
+      "TITLE": [
+        {
+          "value": "MR",
+          "ui": {
+            "label": "Mr."
+          }
+        },
+        {
+          "value": "MRS",
+          "ui": {
+            "label": "Mrs."
+          }
+        },
+        {
+          "value": "MS",
+          "ui": {
+            "label": "Ms."
+          }
+        },
+        {
+          "value": "DR",
+          "ui": {
+            "label": "Dr."
+          }
+        }
+      ],
+      "GENDER": [
+        {
+          "value": "MALE",
+          "ui": {
+            "label": "Male"
+          }
+        },
+        {
+          "value": "FEMALE",
+          "ui": {
+            "label": "Female"
+          }
+        },
+        {
+          "value": "OTHER",
+          "ui": {
+            "label": "Other"
+          }
+        }
+      ],
+      "MARITAL_STATUS": [
+        {
+          "value": "MARRIED",
+          "ui": {
+            "label": "Married"
+          }
+        },
+        {
+          "value": "UNMARRIED",
+          "ui": {
+            "label": "Unmarried"
+          }
+        },
+        {
+          "value": "OTHER",
+          "ui": {
+            "label": "Other"
+          }
+        }
+      ],
+      "QUALIFICATION": [
+        {
+          "value": "BELOW_10TH",
+          "ui": {
+            "label": "Below 10th"
+          }
+        },
+        {
+          "value": "10TH",
+          "ui": {
+            "label": "10th"
+          }
+        },
+        {
+          "value": "12TH",
+          "ui": {
+            "label": "12th"
+          }
+        },
+        {
+          "value": "GRADUATE",
+          "ui": {
+            "label": "Graduate"
+          }
+        },
+        {
+          "value": "POST_GRADUATE",
+          "ui": {
+            "label": "Post Graduate"
+          }
+        },
+        {
+          "value": "PROFESSIONAL",
+          "ui": {
+            "label": "Professional"
+          }
+        },
+        {
+          "value": "OTHER",
+          "ui": {
+            "label": "Other"
+          }
+        }
+      ],
+      "RESIDENCE_TYPE": [
+        {
+          "value": "SELF_OWNED",
+          "ui": {
+            "label": "Self Owned"
+          }
+        },
+        {
+          "value": "RENTED",
+          "ui": {
+            "label": "Rented"
+          }
+        },
+        {
+          "value": "PARENTAL",
+          "ui": {
+            "label": "Parental"
+          }
+        },
+        {
+          "value": "COMPANY_PROVIDED",
+          "ui": {
+            "label": "Company Provided"
+          }
+        },
+        {
+          "value": "OTHER",
+          "ui": {
+            "label": "Other"
+          }
+        }
+      ],
+      "LOAN_PURPOSE": [
+        {
+          "value": "WORKING_CAPITAL",
+          "ui": {
+            "label": "Working Capital"
+          }
+        },
+        {
+          "value": "EQUIPMENT",
+          "ui": {
+            "label": "Equipment Purchase"
+          }
+        },
+        {
+          "value": "INVENTORY",
+          "ui": {
+            "label": "Inventory Purchase"
+          }
+        },
+        {
+          "value": "EXPANSION",
+          "ui": {
+            "label": "Business Expansion"
+          }
+        },
+        {
+          "value": "REAL_ESTATE",
+          "ui": {
+            "label": "Commercial Real Estate"
+          }
+        },
+        {
+          "value": "DEBT_REFINANCE",
+          "ui": {
+            "label": "Refinance Existing Debt"
+          }
+        },
+        {
+          "value": "BUSINESS_ACQUISITION",
+          "ui": {
+            "label": "Purchase Existing Business"
+          }
+        },
+        {
+          "value": "STARTUP",
+          "ui": {
+            "label": "Startup Costs"
+          }
+        },
+        {
+          "value": "MARKETING",
+          "ui": {
+            "label": "Marketing & Advertising"
+          }
+        },
+        {
+          "value": "PAYROLL",
+          "ui": {
+            "label": "Payroll"
+          }
+        },
+        {
+          "value": "OTHER",
+          "ui": {
+            "label": "Other"
+          }
+        }
+      ],
+      "DEBT_TYPE": [
+        {
+          "value": "TERM_LOAN",
+          "ui": {
+            "label": "Term Loan"
+          }
+        },
+        {
+          "value": "WORKING_CAPITAL",
+          "ui": {
+            "label": "Working Capital"
+          }
+        },
+        {
+          "value": "OVERDRAFT",
+          "ui": {
+            "label": "Overdraft"
+          }
+        },
+        {
+          "value": "CREDIT_CARD",
+          "ui": {
+            "label": "Credit Card"
+          }
+        },
+        {
+          "value": "EQUIPMENT_LOAN",
+          "ui": {
+            "label": "Equipment Loan"
+          }
+        },
+        {
+          "value": "OTHER",
+          "ui": {
+            "label": "Other"
+          }
+        }
+      ],
+      "ACCOUNT_TYPE": [
+        {
+          "value": "CURRENT",
+          "ui": {
+            "label": "Current Account"
+          }
+        },
+        {
+          "value": "SAVINGS",
+          "ui": {
+            "label": "Savings Account"
+          }
+        },
+        {
+          "value": "CASH_CREDIT",
+          "ui": {
+            "label": "Cash Credit"
+          }
+        },
+        {
+          "value": "OVERDRAFT",
+          "ui": {
+            "label": "Overdraft"
+          }
+        },
+        {
+          "value": "OTHER",
+          "ui": {
+            "label": "Other"
+          }
+        }
+      ]
+    },
+    "lookups": {
+      "PAN_4TH_CHAR_BY_ENTITY": {
+        "PROPRIETORSHIP": [
+          "P"
+        ],
+        "PARTNERSHIP": [
+          "F"
+        ],
+        "LLP": [
+          "F"
+        ],
+        "PRIVATE_LIMITED": [
+          "C"
+        ],
+        "PUBLIC_LIMITED": [
+          "C"
+        ],
+        "TRUST": [
+          "T"
+        ],
+        "SOCIETY": [
+          "A",
+          "T"
+        ]
+      }
+    },
+    "components": {
+      "ADDRESS": {
+        "fields": [
+          {
+            "key": "addressLine1",
+            "type": "text",
+            "required": true,
+            "ui": {
+              "label": "Address Line 1",
+              "placeholder": "Building, house or street address",
+              "errors": {
+                "required": "Address Line 1 is required"
+              }
+            },
+            "input": {
+              "trim": true
+            },
+            "constraints": {
+              "maxLength": 255
+            }
+          },
+          {
+            "key": "addressLine2",
+            "type": "text",
+            "required": false,
+            "ui": {
+              "label": "Address Line 2",
+              "placeholder": "Apartment, suite, landmark, etc."
+            },
+            "input": {
+              "trim": true
+            },
+            "constraints": {
+              "maxLength": 255
+            }
+          },
+          {
+            "key": "city",
+            "type": "text",
+            "required": true,
+            "ui": {
+              "label": "City",
+              "placeholder": "Enter city",
+              "errors": {
+                "required": "City is required"
+              }
+            },
+            "input": {
+              "trim": true
+            },
+            "constraints": {
+              "maxLength": 100
+            }
+          },
+          {
+            "key": "state",
+            "type": "select",
+            "required": true,
+            "ui": {
+              "label": "State / UT",
+              "placeholder": "Select state or UT",
+              "errors": {
+                "required": "State / UT is required"
+              }
+            },
+            "optionsRef": "IN_STATES_UT"
+          },
+          {
+            "key": "pincode",
+            "type": "text",
+            "required": true,
+            "ui": {
+              "label": "Pincode",
+              "placeholder": "201301",
+              "errors": {
+                "required": "Pincode is required",
+                "pattern": "Enter a valid 6-digit pincode",
+                "stateMismatch": "Pincode does not belong to the selected state"
+              }
+            },
+            "input": {
+              "trim": true,
+              "allowSpaces": false,
+              "transform": "numeric"
+            },
+            "constraints": {
+              "minLength": 6,
+              "maxLength": 6
+            },
+            "validation": [
+              {
+                "code": "pattern",
+                "regex": "^[1-9][0-9]{5}$"
+              },
+              {
+                "code": "stateMismatch",
+                "async": {
+                  "provider": "PINCODE_LOOKUP",
+                  "trigger": "onBlur",
+                  "autofill": {
+                    "city": "city",
+                    "state": "state"
+                  },
+                  "mustMatch": [
+                    "state"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "key": "country",
+            "type": "hidden",
+            "required": false,
+            "defaultValue": "India",
+            "serverSet": true,
+            "ui": {
+              "label": "Country"
+            }
+          }
+        ]
+      }
+    },
+    "forms": [
+      {
+        "formCode": "company",
+        "formName": "CompanyProperty"
+        "templateVersion": 2,
+        "displayOrder": 1,
+        "required": true,
+        "visible": true,
+        "repeatable": false,
+        "ui": {
+          "title": "Business Information",
+          "subtitle": "Tell us about your business. Details must match your registration documents."
+        },
+        "sections": [
+          {
+            "code": "business_details",
+            "displayOrder": 1,
+            "ui": {
+              "title": "Business Details",
+              "subtitle": "Legal and registration information about your business"
+            },
+            "fields": [
+              {
+                "key": "companyName",
+                "type": "text",
+                "required": true,
+                "ui": {
+                  "label": "Company Name",
+                  "placeholder": "Enter legal company name",
+                  "tooltip": "Enter the legal name of the business as registered with the relevant authority.",
+                  "errors": {
+                    "required": "Company Name is required"
+                  }
+                },
+                "input": {
+                  "trim": true
+                },
+                "constraints": {
+                  "minLength": 2,
+                  "maxLength": 255
+                }
+              },
+              {
+                "key": "companyType",
+                "type": "select",
+                "required": true,
+                "ui": {
+                  "label": "Company Type",
+                  "placeholder": "Select company type",
+                  "tooltip": "Select the legal structure of the business.",
+                  "errors": {
+                    "required": "Company Type is required"
+                  }
+                },
+                "optionsRef": "COMPANY_TYPE"
+              },
+              {
+                "key": "doingBusinessAs",
+                "type": "text",
+                "required": false,
+                "ui": {
+                  "label": "Doing Business As",
+                  "placeholder": "Enter trade or brand name",
+                  "tooltip": "Trade or brand name, if different from the legal company name."
+                },
+                "input": {
+                  "trim": true
+                },
+                "constraints": {
+                  "maxLength": 255
+                }
+              },
+              {
+                "key": "businessPan",
+                "type": "text",
+                "required": true,
+                "ui": {
+                  "label": "Business PAN",
+                  "placeholder": "ABCDE1234F",
+                  "tooltip": "10-character PAN of the business. For a proprietorship, use the proprietor's PAN.",
+                  "errors": {
+                    "required": "Business PAN is required",
+                    "pattern": "Enter a valid 10-character PAN, e.g. ABCDE1234F",
+                    "panEntityMismatch": "PAN type does not match the selected company type",
+                    "verify": "PAN could not be verified"
+                  }
+                },
+                "sensitivity": "CONFIDENTIAL",
+                "input": {
+                  "trim": true,
+                  "transform": "uppercase",
+                  "allowSpaces": false
+                },
+                "mask": {
+                  "pattern": "AAAAA0000A",
+                  "storeUnmasked": true
+                },
+                "constraints": {
+                  "minLength": 10,
+                  "maxLength": 10
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[A-Z]{5}[0-9]{4}[A-Z]{1}$"
+                  },
+                  {
+                    "code": "panEntityMismatch",
+                    "op": "in",
+                    "when": {
+                      "op": "notEmpty",
+                      "field": "company.companyType"
+                    },
+                    "left": {
+                      "fn": "charAt",
+                      "field": "self",
+                      "index": 3
+                    },
+                    "right": {
+                      "fn": "lookup",
+                      "table": "PAN_4TH_CHAR_BY_ENTITY",
+                      "key": {
+                        "field": "company.companyType"
+                      }
+                    },
+                    "skipIfRightNull": true
+                  },
+                  {
+                    "code": "verify",
+                    "async": {
+                      "provider": "PAN_VERIFY",
+                      "trigger": "onBlur"
+                    }
+                  }
+                ]
+              },
+              {
+                "key": "gstRegistered",
+                "type": "select",
+                "required": true,
+                "ui": {
+                  "label": "GST Registered",
+                  "placeholder": "Select GST registration status",
+                  "tooltip": "Select whether the business is registered under GST.",
+                  "errors": {
+                    "required": "GST Registered is required"
+                  }
+                },
+                "optionsRef": "YES_NO"
+              },
+              {
+                "key": "gstin",
+                "type": "text",
+                "required": false,
+                "ui": {
+                  "label": "GSTIN",
+                  "placeholder": "09ABCDE1234F1Z5",
+                  "helperText": "15-character GST Identification Number",
+                  "tooltip": "Find this on your GST registration certificate.",
+                  "errors": {
+                    "required": "GSTIN is required for GST-registered businesses",
+                    "pattern": "Enter a valid 15-character GSTIN",
+                    "panMismatch": "GSTIN does not match the business PAN",
+                    "verify": "GSTIN could not be verified"
+                  }
+                },
+                "sensitivity": "CONFIDENTIAL",
+                "input": {
+                  "trim": true,
+                  "transform": "uppercase",
+                  "allowSpaces": false
+                },
+                "mask": {
+                  "pattern": "00AAAAA0000A***",
+                  "storeUnmasked": true
+                },
+                "constraints": {
+                  "minLength": 15,
+                  "maxLength": 15
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$"
+                  },
+                  {
+                    "code": "panMismatch",
+                    "op": "eq",
+                    "when": {
+                      "op": "notEmpty",
+                      "field": "company.businessPan"
+                    },
+                    "left": {
+                      "fn": "substr",
+                      "field": "self",
+                      "from": 2,
+                      "len": 10
+                    },
+                    "right": {
+                      "field": "company.businessPan"
+                    }
+                  },
+                  {
+                    "code": "verify",
+                    "async": {
+                      "provider": "GSTIN_VERIFY",
+                      "trigger": "onBlur"
+                    }
+                  }
+                ],
+                "rules": {
+                  "visibleWhen": {
+                    "op": "eq",
+                    "field": "company.gstRegistered",
+                    "value": "YES"
+                  },
+                  "requiredWhen": {
+                    "op": "eq",
+                    "field": "company.gstRegistered",
+                    "value": "YES"
+                  }
+                }
+              },
+              {
+                "key": "stateOfFormation",
+                "type": "select",
+                "required": false,
+                "ui": {
+                  "label": "State of Formation",
+                  "placeholder": "Select state or UT",
+                  "tooltip": "State or UT in which the business was formed or incorporated.",
+                  "errors": {
+                    "required": "State of Formation is required"
+                  }
+                },
+                "optionsRef": "IN_STATES_UT",
+                "rules": {
+                  "requiredWhen": {
+                    "op": "in",
+                    "field": "company.companyType",
+                    "value": [
+                      "LLP",
+                      "PRIVATE_LIMITED",
+                      "PUBLIC_LIMITED"
+                    ]
+                  }
+                }
+              },
+              {
+                "key": "incorporationDate",
+                "type": "date",
+                "required": false,
+                "ui": {
+                  "label": "Date of Incorporation",
+                  "placeholder": "DD/MM/YYYY",
+                  "tooltip": "Date on which the business was incorporated or registered.",
+                  "errors": {
+                    "required": "Date of Incorporation is required",
+                    "max": "Date of incorporation cannot be in the future"
+                  }
+                },
+                "input": {
+                  "displayFormat": "DD/MM/YYYY",
+                  "wireFormat": "YYYY-MM-DD"
+                },
+                "constraints": {
+                  "min": "1800-01-01",
+                  "max": "$today"
+                },
+                "rules": {
+                  "visibleWhen": {
+                    "op": "in",
+                    "field": "company.companyType",
+                    "value": [
+                      "PARTNERSHIP",
+                      "LLP",
+                      "PRIVATE_LIMITED",
+                      "PUBLIC_LIMITED"
+                    ]
+                  },
+                  "requiredWhen": {
+                    "op": "in",
+                    "field": "company.companyType",
+                    "value": [
+                      "LLP",
+                      "PRIVATE_LIMITED",
+                      "PUBLIC_LIMITED"
+                    ]
+                  }
+                }
+              },
+              {
+                "key": "yearEstablished",
+                "type": "number",
+                "required": false,
+                "ui": {
+                  "label": "Year Established",
+                  "placeholder": "YYYY",
+                  "tooltip": "Year in which the business started operations.",
+                  "errors": {
+                    "max": "Year cannot be in the future",
+                    "beforeIncorporation": "Year is earlier than the incorporation year. Please confirm."
+                  }
+                },
+                "input": {
+                  "transform": "numeric",
+                  "useGrouping": false
+                },
+                "constraints": {
+                  "min": 1800,
+                  "max": "$currentYear",
+                  "integer": true
+                },
+                "validation": [
+                  {
+                    "code": "beforeIncorporation",
+                    "severity": "warning",
+                    "op": "gte",
+                    "when": {
+                      "op": "notEmpty",
+                      "field": "company.incorporationDate"
+                    },
+                    "left": {
+                      "field": "self"
+                    },
+                    "right": {
+                      "fn": "year",
+                      "field": "company.incorporationDate"
+                    }
+                  }
+                ]
+              },
+              {
+                "key": "industryType",
+                "type": "select",
+                "required": true,
+                "ui": {
+                  "label": "Industry Type",
+                  "placeholder": "Select industry",
+                  "tooltip": "Primary industry in which the business operates.",
+                  "errors": {
+                    "required": "Industry Type is required"
+                  }
+                },
+                "optionsRef": "INDUSTRY_TYPE"
+              },
+              {
+                "key": "natureOfBusiness",
+                "type": "select",
+                "required": true,
+                "ui": {
+                  "label": "Nature of Business",
+                  "placeholder": "Select nature of business",
+                  "tooltip": "Primary nature of the business activity.",
+                  "errors": {
+                    "required": "Nature of Business is required"
+                  }
+                },
+                "optionsRef": "NATURE_OF_BUSINESS"
+              },
+              {
+                "key": "annualRevenue",
+                "type": "currency",
+                "required": false,
+                "ui": {
+                  "label": "Annual Revenue",
+                  "placeholder": "Enter annual revenue",
+                  "tooltip": "Annual revenue or turnover of the business."
+                },
+                "currency": "INR",
+                "sensitivity": "CONFIDENTIAL",
+                "input": {
+                  "thousandSeparator": ",",
+                  "decimalSeparator": ".",
+                  "fixedDecimalScale": true
+                },
+                "constraints": {
+                  "precision": 18,
+                  "scale": 2,
+                  "allowNegative": false,
+                  "min": 0
+                }
+              },
+              {
+                "key": "netIncome",
+                "type": "currency",
+                "required": false,
+                "ui": {
+                  "label": "Net Income",
+                  "placeholder": "Enter net income",
+                  "tooltip": "Net income of the business. Enter a negative value for a loss.",
+                  "errors": {
+                    "exceedsRevenue": "Net income is higher than annual revenue. Please confirm."
+                  }
+                },
+                "currency": "INR",
+                "sensitivity": "CONFIDENTIAL",
+                "input": {
+                  "thousandSeparator": ",",
+                  "decimalSeparator": ".",
+                  "fixedDecimalScale": true
+                },
+                "constraints": {
+                  "precision": 18,
+                  "scale": 2,
+                  "allowNegative": true
+                },
+                "validation": [
+                  {
+                    "code": "exceedsRevenue",
+                    "severity": "warning",
+                    "op": "lte",
+                    "when": {
+                      "op": "notEmpty",
+                      "field": "company.annualRevenue"
+                    },
+                    "left": {
+                      "field": "self"
+                    },
+                    "right": {
+                      "field": "company.annualRevenue"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "code": "business_address",
+            "displayOrder": 2,
+            "repeatable": true,
+            "minItems": 1,
+            "maxItems": 5,
+            "component": "ADDRESS",
+            "ui": {
+              "title": "Business Address",
+              "subtitle": "Where your business operates from",
+              "itemLabel": "Address {index}",
+              "addButtonLabel": "Add another address"
+            }
+          }
+        ]
+      },
+      {
+        "formCode": "owners",
+        "formName": "OwnersProperty"
+        "templateVersion": 2,
+        "displayOrder": 2,
+        "required": true,
+        "visible": true,
+        "repeatable": true,
+        "minItems": 1,
+        "maxItems": 10,
+        "ui": {
+          "title": "Owners / Partners / Directors",
+          "subtitle": "Add everyone who owns 10% or more, plus authorised signatories.",
+          "itemLabel": "Owner {index}",
+          "addButtonLabel": "Add another owner",
+          "emptyState": "No owners added yet."
+        },
+        "sections": [
+          {
+            "code": "owner_details",
+            "displayOrder": 1,
+            "ui": {
+              "title": "Owner Details",
+              "subtitle": "Details must match the owner's PAN and identity documents"
+            },
+            "fields": [
+              {
+                "key": "title",
+                "type": "select",
+                "required": false,
+                "ui": {
+                  "label": "Title",
+                  "placeholder": "Select title"
+                },
+                "optionsRef": "TITLE"
+              },
+              {
+                "key": "firstName",
+                "type": "text",
+                "required": true,
+                "ui": {
+                  "label": "First Name",
+                  "placeholder": "Enter first name",
+                  "tooltip": "First name as it appears on the PAN or official identity document.",
+                  "errors": {
+                    "required": "First Name is required",
+                    "pattern": "Use letters only"
+                  }
+                },
+                "input": {
+                  "trim": true
+                },
+                "constraints": {
+                  "maxLength": 100
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[A-Za-z .'-]+$"
+                  }
+                ]
+              },
+              {
+                "key": "middleName",
+                "type": "text",
+                "required": false,
+                "ui": {
+                  "label": "Middle Name",
+                  "placeholder": "Enter middle name",
+                  "tooltip": "Middle name as it appears on the PAN or official identity document.",
+                  "errors": {
+                    "pattern": "Use letters only"
+                  }
+                },
+                "input": {
+                  "trim": true
+                },
+                "constraints": {
+                  "maxLength": 100
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[A-Za-z .'-]+$"
+                  }
+                ]
+              },
+              {
+                "key": "lastName",
+                "type": "text",
+                "required": true,
+                "ui": {
+                  "label": "Last Name",
+                  "placeholder": "Enter last name",
+                  "tooltip": "Last name as it appears on the PAN or official identity document.",
+                  "errors": {
+                    "required": "Last Name is required",
+                    "pattern": "Use letters only"
+                  }
+                },
+                "input": {
+                  "trim": true
+                },
+                "constraints": {
+                  "maxLength": 255
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[A-Za-z .'-]+$"
+                  }
+                ]
+              },
+              {
+                "key": "fatherOrSpouseName",
+                "type": "text",
+                "required": false,
+                "ui": {
+                  "label": "Father / Spouse Name",
+                  "placeholder": "Enter father or spouse name"
+                },
+                "input": {
+                  "trim": true
+                },
+                "constraints": {
+                  "maxLength": 255
+                }
+              },
+              {
+                "key": "pan",
+                "type": "text",
+                "required": true,
+                "ui": {
+                  "label": "PAN",
+                  "placeholder": "ABCDE1234F",
+                  "tooltip": "10-character PAN of the owner.",
+                  "errors": {
+                    "required": "PAN is required",
+                    "pattern": "Enter a valid 10-character PAN, e.g. ABCDE1234F",
+                    "panNotIndividual": "Owner PAN must be an individual PAN",
+                    "verify": "PAN could not be verified"
+                  }
+                },
+                "sensitivity": "RESTRICTED",
+                "input": {
+                  "trim": true,
+                  "transform": "uppercase",
+                  "allowSpaces": false
+                },
+                "mask": {
+                  "pattern": "AAAAA0000A",
+                  "storeUnmasked": true
+                },
+                "display": {
+                  "maskAfterEntry": {
+                    "showLast": 4,
+                    "char": "X"
+                  }
+                },
+                "constraints": {
+                  "minLength": 10,
+                  "maxLength": 10
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[A-Z]{5}[0-9]{4}[A-Z]{1}$"
+                  },
+                  {
+                    "code": "panNotIndividual",
+                    "op": "eq",
+                    "left": {
+                      "fn": "charAt",
+                      "field": "self",
+                      "index": 3
+                    },
+                    "right": "P"
+                  },
+                  {
+                    "code": "verify",
+                    "async": {
+                      "provider": "PAN_VERIFY",
+                      "trigger": "onBlur"
+                    }
+                  }
+                ]
+              },
+              {
+                "key": "aadhaar",
+                "type": "text",
+                "required": true,
+                "ui": {
+                  "label": "Aadhaar",
+                  "placeholder": "1234-5678-9012",
+                  "tooltip": "12-digit Aadhaar number. It is stored securely and shown masked.",
+                  "errors": {
+                    "required": "Aadhaar is required",
+                    "pattern": "Enter a valid 12-digit Aadhaar number",
+                    "checksum": "Aadhaar number is not valid"
+                  }
+                },
+                "sensitivity": "RESTRICTED",
+                "input": {
+                  "trim": true,
+                  "allowSpaces": false,
+                  "transform": "numeric"
+                },
+                "mask": {
+                  "pattern": "0000-0000-0000",
+                  "storeUnmasked": true
+                },
+                "display": {
+                  "maskAfterEntry": {
+                    "showLast": 4,
+                    "char": "X"
+                  }
+                },
+                "constraints": {
+                  "minLength": 12,
+                  "maxLength": 12
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[2-9][0-9]{11}$"
+                  },
+                  {
+                    "code": "checksum",
+                    "algo": "VERHOEFF"
+                  }
+                ]
+              },
+              {
+                "key": "dateOfBirth",
+                "type": "date",
+                "required": true,
+                "ui": {
+                  "label": "Date of Birth",
+                  "placeholder": "DD/MM/YYYY",
+                  "errors": {
+                    "required": "Date of Birth is required",
+                    "max": "Owner must be at least 18 years old",
+                    "min": "Enter a valid date of birth"
+                  }
+                },
+                "sensitivity": "RESTRICTED",
+                "input": {
+                  "displayFormat": "DD/MM/YYYY",
+                  "wireFormat": "YYYY-MM-DD"
+                },
+                "constraints": {
+                  "min": "$today-100y",
+                  "max": "$today-18y"
+                }
+              },
+              {
+                "key": "gender",
+                "type": "select",
+                "required": false,
+                "ui": {
+                  "label": "Gender",
+                  "placeholder": "Select gender"
+                },
+                "optionsRef": "GENDER"
+              },
+              {
+                "key": "maritalStatus",
+                "type": "select",
+                "required": false,
+                "ui": {
+                  "label": "Marital Status",
+                  "placeholder": "Select marital status"
+                },
+                "optionsRef": "MARITAL_STATUS"
+              },
+              {
+                "key": "qualification",
+                "type": "select",
+                "required": false,
+                "ui": {
+                  "label": "Qualification",
+                  "placeholder": "Select qualification"
+                },
+                "optionsRef": "QUALIFICATION"
+              },
+              {
+                "key": "email",
+                "type": "email",
+                "required": true,
+                "ui": {
+                  "label": "Email",
+                  "placeholder": "name@example.com",
+                  "errors": {
+                    "required": "Email is required",
+                    "pattern": "Enter a valid email address"
+                  }
+                },
+                "sensitivity": "CONFIDENTIAL",
+                "input": {
+                  "trim": true,
+                  "transform": "lowercase",
+                  "allowSpaces": false
+                },
+                "constraints": {
+                  "maxLength": 255
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+                  }
+                ]
+              },
+              {
+                "key": "mobileNumber",
+                "type": "tel",
+                "required": true,
+                "ui": {
+                  "label": "Mobile Number",
+                  "placeholder": "987-9876-098",
+                  "errors": {
+                    "required": "Mobile Number is required",
+                    "pattern": "Enter a valid 10-digit Indian mobile number"
+                  }
+                },
+                "sensitivity": "CONFIDENTIAL",
+                "input": {
+                  "prefix": "+91",
+                  "trim": true,
+                  "allowSpaces": false,
+                  "transform": "numeric"
+                },
+                "mask": {
+                  "pattern": "000-0000-000",
+                  "storeUnmasked": true
+                },
+                "constraints": {
+                  "minLength": 10,
+                  "maxLength": 10
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[6-9][0-9]{9}$"
+                  }
+                ]
+              },
+              {
+                "key": "designation",
+                "type": "text",
+                "required": true,
+                "ui": {
+                  "label": "Designation / Relation with Business",
+                  "placeholder": "e.g. Proprietor, Partner, Director",
+                  "errors": {
+                    "required": "Designation / Relation with Business is required"
+                  }
+                },
+                "input": {
+                  "trim": true
+                },
+                "constraints": {
+                  "maxLength": 100
+                }
+              },
+              {
+                "key": "workExperienceYears",
+                "type": "number",
+                "required": false,
+                "ui": {
+                  "label": "Work Experience (Years)",
+                  "placeholder": "e.g. 5"
+                },
+                "input": {
+                  "transform": "numeric"
+                },
+                "constraints": {
+                  "min": 0,
+                  "max": 100,
+                  "integer": true
+                }
+              },
+              {
+                "key": "residenceType",
+                "type": "select",
+                "required": false,
+                "ui": {
+                  "label": "Residence Type",
+                  "placeholder": "Select residence type"
+                },
+                "optionsRef": "RESIDENCE_TYPE"
+              },
+              {
+                "key": "address",
+                "type": "address",
+                "required": false,
+                "component": "ADDRESS",
+                "sensitivity": "CONFIDENTIAL",
+                "ui": {
+                  "label": "Current Residence Address",
+                  "tooltip": "Owner's current residential address.",
+                  "sameAsOption": {
+                    "source": "company.business_address[0]",
+                    "label": "Same as business address"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "formCode": "loanPurpose",
+        "formName": "LoanPurposeProperty"
+        "templateVersion": 1,
+        "displayOrder": 3,
+        "required": true,
+        "visible": true,
+        "repeatable": false,
+        "ui": {
+          "title": "Loan Requirement",
+          "subtitle": "Amount, tenure and purpose of the loan"
+        },
+        "sections": [
+          {
+            "code": "loan_terms",
+            "displayOrder": 1,
+            "ui": {
+              "title": "Loan Terms",
+              "subtitle": "Tell us how much you need and what it is for"
+            },
+            "fields": [
+              {
+                "key": "loanAmount",
+                "type": "currency",
+                "required": true,
+                "ui": {
+                  "label": "Loan Amount",
+                  "placeholder": "Enter loan amount",
+                  "errors": {
+                    "required": "Loan Amount is required",
+                    "min": "Minimum loan amount is {min}",
+                    "max": "Maximum loan amount is {max}"
+                  }
+                },
+                "currency": "INR",
+                "input": {
+                  "thousandSeparator": ",",
+                  "decimalSeparator": ".",
+                  "fixedDecimalScale": true
+                },
+                "constraints": {
+                  "precision": 18,
+                  "scale": 2,
+                  "allowNegative": false,
+                  "minExclusive": 0,
+                  "min": {
+                    "$ref": "program.limits.loanAmount.min"
+                  },
+                  "max": {
+                    "$ref": "program.limits.loanAmount.max"
+                  }
+                }
+              },
+              {
+                "key": "loanTerm",
+                "type": "number",
+                "required": true,
+                "ui": {
+                  "label": "Loan Term (months)",
+                  "placeholder": "e.g. 36",
+                  "errors": {
+                    "required": "Loan Term (months) is required",
+                    "min": "Minimum term is {min} months",
+                    "max": "Maximum term is {max} months"
+                  }
+                },
+                "unit": "MONTHS",
+                "input": {
+                  "transform": "numeric"
+                },
+                "constraints": {
+                  "integer": true,
+                  "min": {
+                    "$ref": "program.limits.loanTermMonths.min"
+                  },
+                  "max": {
+                    "$ref": "program.limits.loanTermMonths.max"
+                  }
+                }
+              },
+              {
+                "key": "loanPurpose",
+                "type": "multiselect",
+                "required": true,
+                "ui": {
+                  "label": "Loan Purpose",
+                  "placeholder": "Select one or more purposes",
+                  "helperText": "You can select up to {maxSelected}.",
+                  "errors": {
+                    "required": "Loan Purpose is required",
+                    "minSelected": "Select at least one purpose",
+                    "maxSelected": "Select at most {maxSelected} purposes"
+                  }
+                },
+                "optionsRef": "LOAN_PURPOSE",
+                "constraints": {
+                  "minSelected": 1,
+                  "maxSelected": 3
+                }
+              },
+              {
+                "key": "requestedRate",
+                "type": "percentage",
+                "required": false,
+                "ui": {
+                  "label": "Requested Interest Rate (%)",
+                  "placeholder": "e.g. 12.50",
+                  "errors": {
+                    "max": "Rate cannot exceed {max}%"
+                  }
+                },
+                "input": {
+                  "decimalSeparator": ".",
+                  "fixedDecimalScale": true
+                },
+                "constraints": {
+                  "precision": 5,
+                  "scale": 2,
+                  "min": 0,
+                  "max": {
+                    "$ref": "program.limits.interestRate.max"
+                  }
+                }
+              },
+              {
+                "key": "loanPurposeOther",
+                "type": "textarea",
+                "required": false,
+                "ui": {
+                  "label": "Please describe the loan purpose",
+                  "placeholder": "Describe how you plan to use the loan",
+                  "errors": {
+                    "required": "Please describe the loan purpose is required"
+                  }
+                },
+                "input": {
+                  "trim": true
+                },
+                "constraints": {
+                  "maxLength": 255
+                },
+                "rules": {
+                  "visibleWhen": {
+                    "op": "contains",
+                    "field": "loanPurpose.loanPurpose",
+                    "value": "OTHER"
+                  },
+                  "requiredWhen": {
+                    "op": "contains",
+                    "field": "loanPurpose.loanPurpose",
+                    "value": "OTHER"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "formCode": "debtObligation",
+        "formName": "DebtObligationProperty",
+        "templateVersion": 1,
+        "displayOrder": 4,
+        "required": false,
+        "visible": true,
+        "repeatable": true,
+        "minItems": 0,
+        "maxItems": 20,
+        "ui": {
+          "title": "Existing Debt",
+          "subtitle": "List any loans or credit facilities your business currently has.",
+          "itemLabel": "Loan {index}",
+          "addButtonLabel": "Add another loan",
+          "emptyState": "No existing loans added."
+        },
+        "sections": [
+          {
+            "code": "debt_details",
+            "displayOrder": 1,
+            "ui": {
+              "title": "Debt Details",
+              "subtitle": "Existing loans and credit facilities of the business",
+              "itemLabel": "Loan {index}"
+            },
+            "fields": [
+              {
+                "key": "lenderName",
+                "type": "text",
+                "required": true,
+                "ui": {
+                  "label": "Lender Name",
+                  "placeholder": "Enter lender name",
+                  "tooltip": "Name of the lender who gave you the loan.",
+                  "errors": {
+                    "required": "Lender Name is required"
+                  }
+                },
+                "input": {
+                  "trim": true
+                },
+                "constraints": {
+                  "maxLength": 255
+                }
+              },
+              {
+                "key": "debtType",
+                "type": "select",
+                "required": true,
+                "ui": {
+                  "label": "Debt Type",
+                  "placeholder": "Select debt type",
+                  "errors": {
+                    "required": "Debt Type is required"
+                  }
+                },
+                "optionsRef": "DEBT_TYPE"
+              },
+              {
+                "key": "outstandingBalance",
+                "type": "currency",
+                "required": true,
+                "ui": {
+                  "label": "Outstanding Balance",
+                  "placeholder": "Enter outstanding balance",
+                  "errors": {
+                    "required": "Outstanding Balance is required"
+                  }
+                },
+                "currency": "INR",
+                "input": {
+                  "thousandSeparator": ",",
+                  "decimalSeparator": ".",
+                  "fixedDecimalScale": true
+                },
+                "constraints": {
+                  "precision": 18,
+                  "scale": 2,
+                  "allowNegative": false,
+                  "min": 1,
+                  "max": 999999999.99
+                }
+              },
+              {
+                "key": "monthlyPayment",
+                "type": "currency",
+                "required": true,
+                "ui": {
+                  "label": "Monthly Payment",
+                  "placeholder": "Enter monthly payment",
+                  "errors": {
+                    "required": "Monthly Payment is required",
+                    "exceedsBalance": "Monthly payment is higher than the outstanding balance. Please confirm."
+                  }
+                },
+                "currency": "INR",
+                "input": {
+                  "thousandSeparator": ",",
+                  "decimalSeparator": ".",
+                  "fixedDecimalScale": true
+                },
+                "constraints": {
+                  "precision": 18,
+                  "scale": 2,
+                  "allowNegative": false,
+                  "min": 1,
+                  "max": 999999999.99
+                },
+                "validation": [
+                  {
+                    "code": "exceedsBalance",
+                    "severity": "warning",
+                    "op": "lte",
+                    "when": {
+                      "op": "notEmpty",
+                      "field": "debtObligation.outstandingBalance"
+                    },
+                    "left": {
+                      "field": "self"
+                    },
+                    "right": {
+                      "field": "outstandingBalance"
+                    }
+                  }
+                ]
+              },
+              {
+                "key": "remainingTermMonths",
+                "type": "number",
+                "required": true,
+                "ui": {
+                  "label": "Remaining Term (months)",
+                  "placeholder": "e.g. 24",
+                  "errors": {
+                    "required": "Remaining Term (months) is required"
+                  }
+                },
+                "unit": "MONTHS",
+                "input": {
+                  "transform": "numeric"
+                },
+                "constraints": {
+                  "min": 0,
+                  "max": 600,
+                  "integer": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "formCode": "bankInfo",
+        "formName":"BankInfoProperty"
+        "templateVersion": 1,
+        "displayOrder": 5,
+        "required": true,
+        "visible": true,
+        "repeatable": true,
+        "minItems": 1,
+        "maxItems": 5,
+        "ui": {
+          "title": "Bank Account Details",
+          "subtitle": "You can enter multiple bank account details here",
+          "itemLabel": "Account {index}",
+          "addButtonLabel": "Add another account"
+        },
+        "sections": [
+          {
+            "code": "bank_account_details",
+            "displayOrder": 1,
+            "ui": {
+              "title": "Bank Account Details",
+              "subtitle": "You can enter multiple bank account details here",
+              "itemLabel": "Account {index}"
+            },
+            "fields": [
+              {
+                "key": "bankName",
+                "type": "text",
+                "required": true,
+                "ui": {
+                  "label": "Bank Name",
+                  "placeholder": "Enter bank name",
+                  "errors": {
+                    "required": "Bank Name is required"
+                  }
+                },
+                "input": {
+                  "trim": true
+                },
+                "constraints": {
+                  "maxLength": 255
+                }
+              },
+              {
+                "key": "accountNumber",
+                "type": "text",
+                "required": true,
+                "ui": {
+                  "label": "Account Number",
+                  "placeholder": "Enter account number",
+                  "errors": {
+                    "required": "Account Number is required",
+                    "pattern": "Account number must be 9 to 18 digits"
+                  }
+                },
+                "sensitivity": "RESTRICTED",
+                "input": {
+                  "trim": true,
+                  "allowSpaces": false,
+                  "allowSpecialCharacters": false,
+                  "transform": "numeric"
+                },
+                "display": {
+                  "maskAfterEntry": {
+                    "showLast": 4,
+                    "char": "X"
+                  }
+                },
+                "constraints": {
+                  "minLength": 9,
+                  "maxLength": 18
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[0-9]{9,18}$"
+                  }
+                ]
+              },
+              {
+                "key": "ifscCode",
+                "type": "text",
+                "required": true,
+                "ui": {
+                  "label": "IFSC Code",
+                  "placeholder": "HDFC0001234",
+                  "errors": {
+                    "required": "IFSC Code is required",
+                    "pattern": "Enter a valid 11-character IFSC code",
+                    "verify": "IFSC code not found"
+                  }
+                },
+                "input": {
+                  "trim": true,
+                  "transform": "uppercase",
+                  "allowSpaces": false
+                },
+                "mask": {
+                  "pattern": "AAAA0******",
+                  "storeUnmasked": true
+                },
+                "constraints": {
+                  "minLength": 11,
+                  "maxLength": 11
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[A-Z]{4}0[A-Z0-9]{6}$"
+                  },
+                  {
+                    "code": "verify",
+                    "async": {
+                      "provider": "IFSC_LOOKUP",
+                      "trigger": "onBlur",
+                      "autofill": {
+                        "bankName": "bankName"
+                      }
+                    }
+                  }
+                ]
+              },
+              {
+                "key": "accountType",
+                "type": "select",
+                "required": true,
+                "ui": {
+                  "label": "Account Type",
+                  "placeholder": "Select account type",
+                  "errors": {
+                    "required": "Account Type is required"
+                  }
+                },
+                "optionsRef": "ACCOUNT_TYPE"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "documents": [
+      {
+        "documentType": "BUSINESS_PAN",
+        "scope": "APPLICATION",
+        "required": true,
+        "upload": {
+          "minFiles": 1,
+          "maxFiles": 1,
+          "maxFileSizeMB": 5,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "ui": {
+          "label": "Business PAN Card",
+          "description": "Upload a clear copy of the business PAN card.",
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Business PAN Card is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        },
+        "sensitivity": "CONFIDENTIAL"
+      },
+      {
+        "documentType": "GST_CERTIFICATE",
+        "scope": "APPLICATION",
+        "required": false,
+        "rules": {
+          "visibleWhen": {
+            "op": "eq",
+            "field": "company.gstRegistered",
+            "value": "YES"
+          },
+          "requiredWhen": {
+            "op": "eq",
+            "field": "company.gstRegistered",
+            "value": "YES"
+          }
+        },
+        "upload": {
+          "minFiles": 0,
+          "maxFiles": 1,
+          "maxFileSizeMB": 5,
+          "allowedExtensions": [
+            "pdf"
+          ]
+        },
+        "ui": {
+          "label": "GST Registration Certificate",
+          "description": "Upload the GST registration certificate issued by the tax authority.",
+          "uploadHint": "PDF, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "GST Registration Certificate is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        }
+      },
+      {
+        "documentType": "BANK_STATEMENT",
+        "scope": "BANK_ACCOUNT",
+        "required": true,
+        "upload": {
+          "minFiles": 1,
+          "maxFiles": 12,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf"
+          ]
+        },
+        "ui": {
+          "label": "Bank Statements",
+          "description": "Upload the last {coverageMonths} months of statements for this account.",
+          "uploadHint": "PDF, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Bank Statements is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          },
+          "tooltip": "Statements must be consecutive and cover the full period. Password-protected PDFs are accepted."
+        }
+      },
+      {
+        "documentType": "FINANCIAL_STATEMENT",
+        "scope": "APPLICATION",
+        "required": false,
+        "upload": {
+          "minFiles": 0,
+          "maxFiles": 3,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf"
+          ]
+        },
+        "ui": {
+          "label": "Financial Statements",
+          "description": "Upload audited or management-prepared financial statements for the latest financial year.",
+          "uploadHint": "PDF, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Financial Statements is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        }
+      },
+      {
+        "documentType": "ITR",
+        "scope": "APPLICATION",
+        "required": false,
+        "upload": {
+          "minFiles": 0,
+          "maxFiles": 2,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf"
+          ]
+        },
+        "ui": {
+          "label": "Income Tax Returns",
+          "description": "Upload the business Income Tax Returns for the last 2 financial years.",
+          "uploadHint": "PDF, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Income Tax Returns is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        }
+      },
+      {
+        "documentType": "OWNER_PAN",
+        "scope": "OWNER",
+        "required": true,
+        "upload": {
+          "minFiles": 1,
+          "maxFiles": 1,
+          "maxFileSizeMB": 5,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "ui": {
+          "label": "Owner PAN Card",
+          "description": "Upload the PAN card of this owner.",
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Owner PAN Card is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        },
+        "sensitivity": "RESTRICTED"
+      },
+      {
+        "documentType": "AADHAAR",
+        "scope": "OWNER",
+        "required": true,
+        "upload": {
+          "minFiles": 1,
+          "maxFiles": 2,
+          "maxFileSizeMB": 5,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "ui": {
+          "label": "Aadhaar Card",
+          "description": "Upload the front and back of this owner's Aadhaar card.",
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Aadhaar Card is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          },
+          "tooltip": "You may upload a masked Aadhaar showing only the last 4 digits."
+        },
+        "sensitivity": "RESTRICTED"
+      },
+      {
+        "documentType": "PASSPORT",
+        "scope": "OWNER",
+        "required": false,
+        "upload": {
+          "minFiles": 0,
+          "maxFiles": 1,
+          "maxFileSizeMB": 5,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "ui": {
+          "label": "Passport",
+          "description": "Upload the passport photo page.",
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Passport is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        },
+        "sensitivity": "RESTRICTED"
+      },
+      {
+        "documentType": "DRIVING_LICENSE",
+        "scope": "OWNER",
+        "required": false,
+        "upload": {
+          "minFiles": 0,
+          "maxFiles": 2,
+          "maxFileSizeMB": 5,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "ui": {
+          "label": "Driving License",
+          "description": "Upload the front and back of the driving license.",
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Driving License is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        },
+        "sensitivity": "RESTRICTED"
+      },
+      {
+        "documentType": "ADDRESS_PROOF",
+        "scope": "APPLICATION",
+        "required": true,
+        "upload": {
+          "minFiles": 1,
+          "maxFiles": 2,
+          "maxFileSizeMB": 5,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "ui": {
+          "label": "Business Address Proof",
+          "description": "Upload a utility bill, lease agreement, or other valid business address proof.",
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Business Address Proof is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        }
+      },
+      {
+        "documentType": "INCORPORATION_CERTIFICATE",
+        "scope": "APPLICATION",
+        "required": false,
+        "rules": {
+          "visibleWhen": {
+            "op": "in",
+            "field": "company.companyType",
+            "value": [
+              "LLP",
+              "PRIVATE_LIMITED",
+              "PUBLIC_LIMITED",
+              "TRUST",
+              "SOCIETY"
+            ]
+          },
+          "requiredWhen": {
+            "op": "in",
+            "field": "company.companyType",
+            "value": [
+              "LLP",
+              "PRIVATE_LIMITED",
+              "PUBLIC_LIMITED"
+            ]
+          }
+        },
+        "upload": {
+          "minFiles": 0,
+          "maxFiles": 1,
+          "maxFileSizeMB": 5,
+          "allowedExtensions": [
+            "pdf"
+          ]
+        },
+        "ui": {
+          "label": "Certificate of Incorporation",
+          "description": "Upload the Certificate of Incorporation or business registration certificate.",
+          "uploadHint": "PDF, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Certificate of Incorporation is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        }
+      },
+      {
+        "documentType": "PARTNERSHIP_DEED",
+        "scope": "APPLICATION",
+        "required": false,
+        "rules": {
+          "visibleWhen": {
+            "op": "in",
+            "field": "company.companyType",
+            "value": [
+              "PARTNERSHIP",
+              "LLP"
+            ]
+          },
+          "requiredWhen": {
+            "op": "in",
+            "field": "company.companyType",
+            "value": [
+              "PARTNERSHIP",
+              "LLP"
+            ]
+          }
+        },
+        "upload": {
+          "minFiles": 0,
+          "maxFiles": 1,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf"
+          ]
+        },
+        "ui": {
+          "label": "Partnership Deed / LLP Agreement",
+          "description": "Upload the registered partnership deed or LLP agreement.",
+          "uploadHint": "PDF, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Partnership Deed / LLP Agreement is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        }
+      },
+      {
+        "documentType": "MOA_AOA",
+        "scope": "APPLICATION",
+        "required": false,
+        "rules": {
+          "visibleWhen": {
+            "op": "in",
+            "field": "company.companyType",
+            "value": [
+              "PRIVATE_LIMITED",
+              "PUBLIC_LIMITED"
+            ]
+          },
+          "requiredWhen": {
+            "op": "in",
+            "field": "company.companyType",
+            "value": [
+              "PRIVATE_LIMITED",
+              "PUBLIC_LIMITED"
+            ]
+          }
+        },
+        "upload": {
+          "minFiles": 0,
+          "maxFiles": 2,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf"
+          ]
+        },
+        "ui": {
+          "label": "MOA & AOA",
+          "description": "Upload the Memorandum and Articles of Association.",
+          "uploadHint": "PDF, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "MOA & AOA is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        }
+      },
+      {
+        "documentType": "CANCELLED_CHEQUE",
+        "scope": "BANK_ACCOUNT",
+        "required": true,
+        "upload": {
+          "minFiles": 1,
+          "maxFiles": 1,
+          "maxFileSizeMB": 5,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "ui": {
+          "label": "Cancelled Cheque",
+          "description": "Upload a cancelled cheque for this bank account.",
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Cancelled Cheque is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        }
+      },
+      {
+        "documentType": "UDYAM_CERTIFICATE",
+        "scope": "APPLICATION",
+        "required": false,
+        "upload": {
+          "minFiles": 0,
+          "maxFiles": 1,
+          "maxFileSizeMB": 5,
+          "allowedExtensions": [
+            "pdf"
+          ]
+        },
+        "ui": {
+          "label": "Udyam Registration Certificate",
+          "description": "Upload the Udyam/MSME registration certificate if applicable.",
+          "uploadHint": "PDF, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Udyam Registration Certificate is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        }
+      },
+      {
+        "documentType": "BUSINESS_LICENSE",
+        "scope": "APPLICATION",
+        "required": false,
+        "upload": {
+          "minFiles": 0,
+          "maxFiles": 2,
+          "maxFileSizeMB": 5,
+          "allowedExtensions": [
+            "pdf"
+          ]
+        },
+        "ui": {
+          "label": "Business License",
+          "description": "Upload any applicable trade or business license.",
+          "uploadHint": "PDF, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Business License is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        }
+      },
+      {
+        "documentType": "OTHER",
+        "scope": "APPLICATION",
+        "required": false,
+        "upload": {
+          "minFiles": 0,
+          "maxFiles": 10,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png",
+            "doc",
+            "docx"
+          ]
+        },
+        "ui": {
+          "label": "Other Supporting Documents",
+          "description": "Upload any additional documents requested during the loan review process.",
+          "uploadHint": "PDF, JPG, PNG, DOC, DOCX, up to {maxFileSizeMB} MB per file",
+          "errors": {
+            "required": "Other Supporting Documents is required",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type"
+          }
+        }
+      }
+    ]
+  }

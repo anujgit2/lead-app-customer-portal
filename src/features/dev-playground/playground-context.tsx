@@ -15,6 +15,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import type { FieldErrors } from "react-hook-form";
 import type { FormTemplate } from "@/types";
 import { normalizeTemplateJson } from "@/utils/program-mapper";
+import { detectTemplateFormat, mapNewTemplateToOld } from "@/utils/template-mapper";
 import { fetchTemplateFromApi, parseJsonTemplateText } from "./template-sources";
 import { generateTemplatesSample } from "./sample-data-generator";
 import {
@@ -187,7 +188,17 @@ export function PlaygroundProvider({ children }: { children: React.ReactNode }) 
   const { jsonParseError, normalized } = useMemo(() => {
     try {
       const root = parseJsonTemplateText(committedJson);
-      return { jsonParseError: null, normalized: normalizeTemplateJson(root) };
+      
+      // Auto-detect format: if it's the new format (v1.0), convert it first
+      const format = detectTemplateFormat(root);
+      let normalizeInput = root;
+      
+      if (format === "new") {
+        // Silently convert new format to old format
+        normalizeInput = mapNewTemplateToOld(root);
+      }
+      
+      return { jsonParseError: null, normalized: normalizeTemplateJson(normalizeInput) };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Invalid JSON";
       return { jsonParseError: message, normalized: EMPTY_RESULT };
