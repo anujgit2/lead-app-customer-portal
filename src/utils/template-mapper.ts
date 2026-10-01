@@ -26,6 +26,9 @@ import type {
   InputFormatConfig,
   FieldOption,
   MaskConfig,
+  FieldRules,
+  ConditionRule,
+  ConditionOperator,
 } from "@/types";
 
 /**
@@ -93,7 +96,7 @@ function mapNewFieldToOld(
 
   // Handle rules (conditional visibility/required)
   if (newField.rules) {
-    baseField.rules = newField.rules;
+    baseField.rules = convertNewRulesToOld(newField.rules);
   }
 
   // Handle component reference (e.g., ADDRESS)
@@ -123,6 +126,94 @@ function convertInputConfig(input: any): InputFormatConfig | undefined {
   if (input.allowSpecialCharacters === false) config.allowSpecialCharacters = false;
 
   return Object.keys(config).length > 0 ? config : undefined;
+}
+
+/**
+ * Convert new format rules to old format.
+ * New format: { visibleWhen: { op, field, value }, requiredWhen: { op, field, value } }
+ * Old format: { visibleWhen: { field, operator, value }, requiredWhen: { field, operator, value } }
+ */
+function convertNewRulesToOld(newRules: any): FieldRules | undefined {
+  if (!newRules || typeof newRules !== "object") {
+    return undefined;
+  }
+
+  const rules: FieldRules = {};
+
+  // Convert visibleWhen
+  if (newRules.visibleWhen) {
+    const converted = convertNewRuleToCondition(newRules.visibleWhen);
+    if (converted) {
+      rules.visibleWhen = converted;
+    }
+  }
+
+  // Convert requiredWhen
+  if (newRules.requiredWhen) {
+    const converted = convertNewRuleToCondition(newRules.requiredWhen);
+    if (converted) {
+      rules.requiredWhen = converted;
+    }
+  }
+
+  return Object.keys(rules).length > 0 ? rules : undefined;
+}
+
+/**
+ * Convert a single new format rule to old ConditionRule format.
+ * Handles:
+ * - op → operator (e.g., "eq" → "equals")
+ * - field path normalization (e.g., "company.gstRegistered" → "gstRegistered")
+ * - value extraction from simple rules
+ */
+function convertNewRuleToCondition(rule: any): ConditionRule | undefined {
+  if (!rule || typeof rule !== "object") {
+    return undefined;
+  }
+
+  const op = rule.op as string | undefined;
+  let field = rule.field as string | undefined;
+  let value = rule.value;
+
+  // Operator mapping
+  const operatorMap: Record<string, ConditionOperator> = {
+    eq: "equals",
+    notEq: "notEquals",
+    in: "in",
+    notIn: "notIn",
+    contains: "contains",
+    gt: "gt",
+    gte: "gte",
+    lt: "lt",
+    lte: "lte",
+    notEmpty: "exists",
+    empty: "notExists",
+  };
+
+  if (!op || !field) {
+    return undefined;
+  }
+
+  // Strip property prefix from field path
+  // e.g., "company.gstRegistered" → "gstRegistered"
+  if (field.includes(".")) {
+    const parts = field.split(".");
+    field = parts[parts.length - 1];
+  }
+
+  // Get the operator, defaulting to the op value if not in map
+  const operator = (operatorMap[op] || op) as ConditionOperator;
+
+  // For complex rules, try to extract value from right side
+  if (value === undefined && rule.right !== undefined) {
+    value = rule.right;
+  }
+
+  return {
+    field,
+    operator,
+    value,
+  };
 }
 
 /**
