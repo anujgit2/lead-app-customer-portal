@@ -182,11 +182,11 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
   }
 
   if (!visible) {
-    return debug ? (
-      <div className="rounded-md border border-dashed border-violet-200 bg-violet-50/60 px-2.5 py-1.5 font-mono text-[11px] text-violet-400">
-        Hidden: {fieldName} (visibleWhen not met)
-      </div>
-    ) : null;
+    // Hidden fields never render to DOM (release space), but debug can note them to console/inspector
+    if (debug) {
+      console.debug(`Field hidden: ${fieldName} (visibleWhen not met)`);
+    }
+    return null;
   }
 
   const labelEl = (
