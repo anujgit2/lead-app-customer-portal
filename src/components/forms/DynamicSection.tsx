@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
-import { useFormContext, useFieldArray } from "react-hook-form";
-import type { FormSection } from "@/types";
+import React, { useState, useMemo } from "react";
+import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
+import type { FormSection, FormField } from "@/types";
 import { DynamicField } from "./DynamicField";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,13 +10,66 @@ import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buildSectionDefaults } from "@/utils/schema-builder";
+import { ruleMatches } from "@/utils/rule-engine";
 
 interface DynamicSectionProps {
   section: FormSection;
   namePrefix?: string;
 }
 
+/**
+ * Determines if a field is visible based on its visibleWhen rule.
+ * Returns true if no rule exists (field is always visible) or rule matches.
+ */
+function isFieldVisible(field: FormField, formData: Record<string, unknown>): boolean {
+  if (!field.rules?.visibleWhen) return true;
+  
+  const visibleRule = field.rules.visibleWhen;
+  const resolveSibling = (fieldName: string) => fieldName; // No prefix needed here
+  const depValue = formData[resolveSibling(visibleRule.field)];
+  
+  return ruleMatches(visibleRule, { [visibleRule.field]: depValue });
+}
+
+/**
+ * FieldGridItem renders a single field with visibility checking.
+ * Only renders the wrapper div if the field is visible, avoiding layout gaps.
+ */
+function FieldGridItem({
+  field,
+  namePrefix,
+  visible,
+}: {
+  field: FormField;
+  namePrefix?: string;
+  visible: boolean;
+}) {
+  if (!visible) return null;
+  
+  return (
+    <div
+      key={field.name}
+      className={cn(
+        field.span === 2 && "sm:col-span-2",
+        field.span === 3 && "sm:col-span-2 lg:col-span-3",
+        (field.span === 4 || field.type === "json" || field.type === "textarea" || field.type === "address" || field.type === "file" || field.type === "document") && "col-span-full"
+      )}
+    >
+      <DynamicField field={field} namePrefix={namePrefix} />
+    </div>
+  );
+}
+
 function FieldGrid({ section, namePrefix }: { section: FormSection; namePrefix?: string }) {
+  // Watch form values to re-evaluate visibility on changes
+  const formData = useWatch({ defaultValue: {} }) as Record<string, unknown>;
+  
+  const visibleFields = useMemo(() => {
+    return section.fields.map((field) => ({
+      field,
+      visible: isFieldVisible(field, formData),
+    }));
+  }, [section.fields, formData]);
   const cols = section.columns ?? 2;
   const gridClass =
     cols === 1 ? "grid-cols-1" :
@@ -26,17 +79,13 @@ function FieldGrid({ section, namePrefix }: { section: FormSection; namePrefix?:
 
   return (
     <div className={cn("grid items-start gap-x-6 gap-y-5", gridClass)}>
-      {section.fields.map((field) => (
-        <div
+      {visibleFields.map(({ field, visible }) => (
+        <FieldGridItem
           key={field.name}
-          className={cn(
-            field.span === 2 && "sm:col-span-2",
-            field.span === 3 && "sm:col-span-2 lg:col-span-3",
-            (field.span === 4 || field.type === "json" || field.type === "textarea" || field.type === "address" || field.type === "file" || field.type === "document") && "col-span-full"
-          )}
-        >
-          <DynamicField field={field} namePrefix={namePrefix} />
-        </div>
+          field={field}
+          namePrefix={namePrefix}
+          visible={visible}
+        />
       ))}
     </div>
   );
