@@ -527,6 +527,7 @@ export const applicationService = {
   async createApplication(programCodeOrId?: string): Promise<LoanApplication> {
     try {
       let resolvedProgramId = programCodeOrId;
+      let programName = "";
 
       if (!resolvedProgramId) {
         const programs = await programService.getPrograms();
@@ -536,17 +537,19 @@ export const applicationService = {
         resolvedProgramId = programs[0].id;
       }
 
-      const programDetails = await apiClient.get<{
-        name: string;
-        formTemplates: { template: { id: string } }[];
-      }>(`/api/programs/${resolvedProgramId}/with-form-templates`);
+      // Use the new endpoint for program configuration
+      const programConfig = await apiClient.get<BackendProgramWithTemplates>(
+        `/api/programs/by-code/${resolvedProgramId}/latest-published`
+      );
 
-      if (!programDetails.data.formTemplates?.length) {
+      programName = programConfig.data.name || "";
+      
+      if (!programConfig.data.formTemplates?.length) {
         throw { message: "Program has no form templates", status: 400 };
       }
 
       const formDefinitionId =
-        programDetails.data.formTemplates[0].template.id;
+        programConfig.data.formTemplates[0].template.id;
 
       const { data } = await apiClient.post<BackendApplication>(
         "/api/applications",
@@ -558,7 +561,7 @@ export const applicationService = {
           },
         }
       );
-      return mapApplication(data, programDetails.data.name);
+      return mapApplication(data, programName);
     } catch (error) {
       throw parseApiError(error);
     }

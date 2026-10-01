@@ -64,10 +64,10 @@ export const programService = {
     }
   },
 
-  async getProgramPayload(programId: string): Promise<BackendProgramWithTemplates> {
+  async getProgramPayload(programCodeOrId: string): Promise<BackendProgramWithTemplates> {
     try {
       const { data } = await apiClient.get<BackendProgramWithTemplates>(
-        `/api/programs/${programId}/with-form-templates`
+        `/api/programs/by-code/${programCodeOrId}/latest-published`
       );
       return data;
     } catch (error) {
@@ -75,8 +75,8 @@ export const programService = {
     }
   },
 
-  async getProgramWithTemplates(programId: string): Promise<LoanProduct> {
-    return mapProgramToLoanProduct(await this.getProgramPayload(programId));
+  async getProgramWithTemplates(programCodeOrId: string): Promise<LoanProduct> {
+    return mapProgramToLoanProduct(await this.getProgramPayload(programCodeOrId));
   },
 
   async getDefaultProgramWithTemplates(): Promise<LoanProduct> {
@@ -84,6 +84,7 @@ export const programService = {
     if (programs.length === 0) {
       throw { message: "No loan programs available", status: 404 };
     }
-    return this.getProgramWithTemplates(programs[0].id);
+    // Use programCode for the new endpoint
+    return this.getProgramWithTemplates(programs[0].programCode);
   },
 };
