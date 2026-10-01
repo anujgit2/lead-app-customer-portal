@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useImperativeHandle, forwardRef } from "react";
-import { FormProvider, useForm, type FieldErrors } from "react-hook-form";
+import { FormProvider, useForm, type FieldErrors, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { FormTemplate } from "@/types";
@@ -48,6 +48,39 @@ function buildSchemaSafe(template: FormTemplate): { schema: z.ZodTypeAny; error:
   }
 }
 
+/**
+ * Custom resolver that validates only the changed field(s) during blur,
+ * but validates the entire form on submit.
+ */
+function createFieldLevelResolver(schema: z.ZodTypeAny): Resolver {
+  const zodResolverFn = zodResolver(schema);
+  
+  return async (values: any, context: any, options: any) => {
+    // On submit (names is empty), validate entire form
+    if (!options.names || options.names.length === 0) {
+      return zodResolverFn(values, context, options);
+    }
+
+    // During blur, validate only the changed fields
+    const result = await zodResolverFn(values, context, options);
+    
+    // Filter errors to only include the fields being validated
+    const fieldNames = new Set(options.names);
+    const filteredErrors: Record<string, any> = {};
+    
+    for (const [key, error] of Object.entries(result.errors ?? {})) {
+      if (fieldNames.has(key)) {
+        filteredErrors[key] = error;
+      }
+    }
+    
+    return {
+      ...result,
+      errors: filteredErrors,
+    };
+  };
+}
+
 function RepeatableInstance({
   template,
   index,
@@ -69,8 +102,9 @@ function RepeatableInstance({
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const { schema, error: schemaError } = React.useMemo(() => buildSchemaSafe(template), [template]);
+  const resolver = React.useMemo(() => createFieldLevelResolver(schema), [schema]);
   const methods = useForm({
-    resolver: zodResolver(schema),
+    resolver,
     defaultValues: mergeTemplateDefaults(template, defaultValues),
     mode: "onBlur",
     shouldUnregister: true,
@@ -267,8 +301,9 @@ const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
     ref
   ) {
     const { schema, error: schemaError } = React.useMemo(() => buildSchemaSafe(template), [template]);
+    const resolver = React.useMemo(() => createFieldLevelResolver(schema), [schema]);
     const methods = useForm({
-      resolver: zodResolver(schema),
+      resolver,
       defaultValues: mergeTemplateDefaults(template, defaultValues),
       mode: "onBlur",
       shouldUnregister: true,
