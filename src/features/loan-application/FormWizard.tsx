@@ -30,17 +30,37 @@ interface FormWizardProps {
   programId?: string;
 }
 
+function isEmptyFormValue(value: unknown): boolean {
+  if (value == null || value === "") return true;
+  if (Array.isArray(value)) return value.length === 0 || value.every(isEmptyFormValue);
+  if (typeof value === "object") {
+    const entries = Object.values(value as Record<string, unknown>);
+    return entries.length === 0 || entries.every(isEmptyFormValue);
+  }
+  return false;
+}
+
+function mergeWizardFormData(
+  local: Record<string, unknown>,
+  incoming: Record<string, unknown>
+): Record<string, unknown> {
+  if (Object.keys(local).length === 0) return { ...incoming };
+  const merged: Record<string, unknown> = { ...incoming, ...local };
+  for (const [key, incomingValue] of Object.entries(incoming)) {
+    if (isEmptyFormValue(local[key]) && !isEmptyFormValue(incomingValue)) {
+      merged[key] = incomingValue;
+    }
+  }
+  return merged;
+}
+
 function formatValidationErrors(result: {
   success: false;
   error: { issues: { path: (string | number)[]; message: string }[] };
 }): string {
-  const messages = result.error.issues
-    .slice(0, 3)
-    .map((issue) => issue.message);
-  const suffix =
-    result.error.issues.length > 3
-      ? ` (+${result.error.issues.length - 3} more)`
-      : "";
+  const unique = [...new Set(result.error.issues.map((issue) => issue.message))];
+  const messages = unique.slice(0, 3);
+  const suffix = unique.length > 3 ? ` (+${unique.length - 3} more)` : "";
   return messages.join(". ") + suffix;
 }
 
@@ -92,11 +112,10 @@ export function FormWizard({
   const [stepError, setStepError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (initialFormData && Object.keys(initialFormData).length > 0) {
-      // Keep the wizard state aligned when an existing application loads after mount.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setStepData(initialFormData as Record<string, unknown>);
-    }
+    if (!initialFormData || Object.keys(initialFormData).length === 0) return;
+    // Fill in server data without wiping values the user already entered in this session.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setStepData((prev) => mergeWizardFormData(prev, initialFormData as Record<string, unknown>));
   }, [initialFormData]);
 
   const navigateToStep = (step: number) => {
@@ -181,7 +200,7 @@ export function FormWizard({
     if (isReviewStep(currentStep)) return true;
 
     const template = templates[currentStep];
-    const data = stepData[template.code];
+    const data = stepDataRef.current[template.code];
 
     if (stepRef.current) {
       const valid = await stepRef.current.validate();
@@ -227,7 +246,7 @@ export function FormWizard({
           productCode: product.code,
           programId,
           currentStep,
-          formData: stepData as FormData,
+          formData: stepDataRef.current as FormData,
           stepStatuses: updatedStatuses,
         }, [templates[currentStep]]);
         queryClient.invalidateQueries({ queryKey: ["applications"] });
@@ -266,7 +285,7 @@ export function FormWizard({
         productCode: product.code,
         programId,
         currentStep,
-        formData: stepData as FormData,
+        formData: stepDataRef.current as FormData,
         stepStatuses,
       }, isReviewStep(currentStep) ? [] : [templates[currentStep]]);
       // Refresh the dashboard and applications lists so the saved draft is current.
@@ -292,7 +311,7 @@ export function FormWizard({
         const template = templates[i];
         const schema = buildWizardSchema(template, template.repeatable ?? false);
         const result = schema.safeParse(
-          stepData[template.code] ?? (template.repeatable ? [] : {})
+          stepDataRef.current[template.code] ?? (template.repeatable ? [] : {})
         );
         if (!result.success) {
           navigateToStep(i);
@@ -308,7 +327,7 @@ export function FormWizard({
         productCode: product.code,
         programId,
         currentStep,
-        formData: stepData as FormData,
+        formData: stepDataRef.current as FormData,
         stepStatuses,
         lastSavedAt: new Date().toISOString(),
       });
@@ -323,8 +342,9 @@ export function FormWizard({
   };
 
   const currentTemplate = !isReviewStep(currentStep) ? templates[currentStep] : null;
-  const currentDefaultValues = currentTemplate
-    ? (stepData[currentTemplate.code] as Record<string, unknown>)
+  const mountedTemplate = currentTemplate ?? templates[totalSteps - 1] ?? null;
+  const currentDefaultValues = mountedTemplate
+    ? (stepData[mountedTemplate.code] as Record<string, unknown>)
     : undefined;
 
   return (
@@ -403,25 +423,28 @@ export function FormWizard({
         )}
 
         <div className="animate-fade-in">
-          {isReviewStep(currentStep) ? (
+          {mountedTemplate && (
+            <div className={isReviewStep(currentStep) ? "hidden" : undefined}>
+              <WizardStep
+                key={mountedTemplate.code}
+                ref={stepRef}
+                template={mountedTemplate}
+                defaultValues={currentDefaultValues}
+                onValidChange={handleValidChange}
+                onDataChange={handleDataChange}
+              />
+            </div>
+          )}
+          {isReviewStep(currentStep) && (
             <ReviewScreen
               templates={templates}
               formData={stepData as FormData}
               onEditStep={navigateToStep}
               onSubmit={handleSubmit}
+              onSaveClose={() => handleSaveDraft(true)}
               isSubmitting={isSubmitting}
+              isSaving={savingMode === "close"}
             />
-          ) : (
-            currentTemplate && (
-              <WizardStep
-                key={currentTemplate.code}
-                ref={stepRef}
-                template={currentTemplate}
-                defaultValues={currentDefaultValues}
-                onValidChange={handleValidChange}
-                onDataChange={handleDataChange}
-              />
-            )
           )}
         </div>
 

@@ -1,14 +1,18 @@
 "use client";
 
 import React, { useState, useCallback, useImperativeHandle, forwardRef } from "react";
-import { FormProvider, useForm, type FieldErrors, type Resolver } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { FormProvider, useForm, type FieldErrors } from "react-hook-form";
 import { z } from "zod";
 import type { FormTemplate } from "@/types";
 import { buildTemplateSchema, mergeTemplateDefaults } from "@/utils/schema-builder";
+import { createFieldLevelResolver } from "@/utils/form-resolver";
 import { SyncFormToWizardProvider } from "@/components/forms/application-context";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DynamicSection } from "@/components/forms/DynamicSection";
+import {
+  DocumentUploadProgress,
+  isDocumentTemplate,
+} from "@/components/forms/DocumentUploadProgress";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2, ChevronDown, ChevronUp, FileWarning } from "lucide-react";
@@ -48,39 +52,6 @@ function buildSchemaSafe(template: FormTemplate): { schema: z.ZodTypeAny; error:
   }
 }
 
-/**
- * Custom resolver that validates only the changed field(s) during blur,
- * but validates the entire form on submit.
- */
-function createFieldLevelResolver(schema: z.ZodTypeAny): Resolver {
-  const zodResolverFn = zodResolver(schema);
-  
-  return async (values: any, context: any, options: any) => {
-    // On submit (names is empty), validate entire form
-    if (!options.names || options.names.length === 0) {
-      return zodResolverFn(values, context, options);
-    }
-
-    // During blur, validate only the changed fields
-    const result = await zodResolverFn(values, context, options);
-    
-    // Filter errors to only include the fields being validated
-    const fieldNames = new Set(options.names);
-    const filteredErrors: Record<string, any> = {};
-    
-    for (const [key, error] of Object.entries(result.errors ?? {})) {
-      if (fieldNames.has(key)) {
-        filteredErrors[key] = error;
-      }
-    }
-    
-    return {
-      ...result,
-      errors: filteredErrors,
-    };
-  };
-}
-
 function RepeatableInstance({
   template,
   index,
@@ -107,7 +78,7 @@ function RepeatableInstance({
     resolver,
     defaultValues: mergeTemplateDefaults(template, defaultValues),
     mode: "onBlur",
-    shouldUnregister: true,
+    shouldUnregister: false,
   });
 
   React.useEffect(() => {
@@ -115,11 +86,14 @@ function RepeatableInstance({
       onChange(index, data);
       onErrors?.(index, methods.formState.errors);
     });
-    return () => sub.unsubscribe();
+    return () => {
+      onChange(index, methods.getValues());
+      sub.unsubscribe();
+    };
   }, [methods, index, onChange, onErrors]);
 
   React.useEffect(() => {
-    onValidateRef?.(index, () => methods.trigger());
+    onValidateRef?.(index, () => methods.trigger(undefined, { shouldFocus: true }));
   }, [methods, index, onValidateRef]);
 
   const syncForm = React.useCallback(() => {
@@ -306,29 +280,33 @@ const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
       resolver,
       defaultValues: mergeTemplateDefaults(template, defaultValues),
       mode: "onBlur",
-      shouldUnregister: true,
+      shouldUnregister: false,
     });
 
     useImperativeHandle(ref, () => ({
-      validate: () => methods.trigger(),
+      validate: () => methods.trigger(undefined, { shouldFocus: true }),
     }));
 
     const syncForm = React.useCallback(() => {
       onDataChange?.(methods.getValues());
     }, [onDataChange, methods]);
 
+    const { isValid, errors } = methods.formState;
+
     React.useEffect(() => {
       const subscription = methods.watch((data) => {
         onDataChange?.(data);
-        methods.trigger().then((valid) => {
-          onValidChange?.(valid);
-          onErrorsChange?.(methods.formState.errors);
-        }).catch(() => {
-          // Invalid authored regex/mask configs must not unhandled-reject and crash the playground.
-        });
       });
-      return () => subscription.unsubscribe();
-    }, [methods, onDataChange, onValidChange, onErrorsChange]);
+      return () => {
+        onDataChange?.(methods.getValues());
+        subscription.unsubscribe();
+      };
+    }, [methods, onDataChange]);
+
+    React.useEffect(() => {
+      onValidChange?.(isValid);
+      onErrorsChange?.(errors);
+    }, [isValid, errors, onValidChange, onErrorsChange]);
 
     if (schemaError) {
       return <SchemaBuildError error={schemaError} />;
@@ -339,10 +317,11 @@ const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
         <FormProvider {...methods}>
           <form
             ref={formRef}
-            className="space-y-6"
+            className={isDocumentTemplate(template) ? "space-y-8" : "space-y-6"}
             noValidate
             onSubmit={(e) => e.preventDefault()}
           >
+            {isDocumentTemplate(template) && <DocumentUploadProgress template={template} />}
             {template.sections.map((section) => (
               <DynamicSection key={section.code} section={section} />
             ))}

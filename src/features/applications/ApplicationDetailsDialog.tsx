@@ -65,16 +65,16 @@ export function ApplicationDetailsDialog({
     enabled: Boolean(applicationId),
   });
 
-  const programId = details?.programId;
+  const programLookup = details?.programCode || details?.programId;
   const {
     data: product,
     isLoading: isLoadingProduct,
     error: productError,
   } = useQuery({
-    queryKey: ["application-product", applicationId, programId],
+    queryKey: ["application-product", applicationId, programLookup],
     queryFn: () =>
-      programId
-        ? applicationService.getLoanProductByProgramId(programId)
+      programLookup
+        ? applicationService.getLoanProductByProgramId(programLookup)
         : applicationService.getLoanProducts().then((products) => products[0]),
     enabled: Boolean(details),
   });

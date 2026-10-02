@@ -30,6 +30,36 @@ function createAsyncValidator(provider: string) {
   );
 }
 
+function isRawAlphanumericPattern(pattern?: string): boolean {
+  if (!pattern) return false;
+  const withoutClasses = pattern.replace(/\[[^\]]*\]/g, "A");
+  return !/[- ()/+.]/.test(withoutClasses.replace(/\\\./g, ""));
+}
+
+function contentForValidation(value: unknown, unmasked: boolean): string {
+  const str = String(value ?? "");
+  return unmasked ? unmask(str) : str;
+}
+
+/** Empty number inputs stay empty — they must not coerce to 0. */
+function normalizeEmptyNumber(value: unknown): unknown {
+  if (value === "" || value === null || value === undefined) return undefined;
+  if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (trimmed === "") return undefined;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : value;
+  }
+  return value;
+}
+
+/** API drafts often store empty text/select values as `null`. Zod rejects that. */
+function normalizeEmptyString(value: unknown): unknown {
+  if (value === null || value === undefined) return "";
+  return value;
+}
+
 function buildFieldSchema(field: FormField): z.ZodTypeAny {
   const v: FieldValidation = field.validation ?? {};
   // Fields with conditional rules defer their required-ness (and, for visibleWhen,
@@ -53,12 +83,13 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
 
   if (field.type === "checkbox") {
     const boolSchema = z.boolean();
-    if (v.required && !deferToRules) {
-      return boolSchema.refine((val) => val === true, {
-        message: v.message ?? `${field.label} must be accepted`,
-      });
-    }
-    return boolSchema.optional();
+    const core =
+      v.required && !deferToRules
+        ? boolSchema.refine((val) => val === true, {
+            message: v.message ?? `${field.label} must be accepted`,
+          })
+        : boolSchema.optional();
+    return z.preprocess((val) => (val == null ? false : val), core);
   }
 
   if (field.type === "file" || field.type === "document") {
@@ -75,7 +106,13 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
         message: `You can upload up to ${max} file${max === 1 ? "" : "s"}`,
       });
     }
-    return min > 0 ? files : files.optional();
+    const core = min > 0 ? files : files.optional();
+    return z.preprocess((val) => {
+      if (val == null || val === "") return [];
+      if (Array.isArray(val)) return val.filter((item) => item != null && item !== "");
+      if (typeof val === "object") return [val];
+      return [];
+    }, core);
   }
 
   if (field.type === "multiselect") {
@@ -83,18 +120,27 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
     if (v.required && !deferToRules) {
       arr = arr.min(1, { message: v.message ?? `${field.label} is required` });
     }
-    return arr;
+    return z.preprocess((val) => (val == null ? [] : val), arr);
   }
 
   if (field.type === "number" || field.type === "percentage") {
-    let num = z.coerce.number();
-    if (v.min !== undefined) num = num.min(v.min, { message: `Minimum value is ${v.min}` });
-    if (v.max !== undefined) num = num.max(v.max, { message: `Maximum value is ${v.max}` });
-    if (v.minExclusive !== undefined) num = num.gt(v.minExclusive);
-    if (v.maxExclusive !== undefined) num = num.lt(v.maxExclusive);
+    // Do not use z.coerce.number() here: Number("") === 0, so an empty required
+    // field (default "") would silently pass as a valid zero.
+    let num = z.number({
+      required_error: v.message ?? `${field.label} is required`,
+      invalid_type_error: "Enter a valid number",
+    });
+    if (typeof v.min === "number") {
+      num = num.min(v.min, { message: v.minMessage ?? `Minimum value is ${v.min}` });
+    }
+    if (typeof v.max === "number") {
+      num = num.max(v.max, { message: v.maxMessage ?? `Maximum value is ${v.max}` });
+    }
+    if (typeof v.minExclusive === "number") num = num.gt(v.minExclusive);
+    if (typeof v.maxExclusive === "number") num = num.lt(v.maxExclusive);
     if (v.integer) num = num.int({ message: "Must be a whole number" });
-    if (!v.required || deferToRules) return num.optional();
-    return num;
+    const core = !v.required || deferToRules ? num.optional() : num;
+    return z.preprocess(normalizeEmptyNumber, core);
   }
 
   if (field.type === "currency") {
@@ -119,76 +165,90 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
   }
 
   if (field.type === "address") {
-    const required = !deferToRules;
+    const required = !!(v.required && !deferToRules);
     const shape: z.ZodRawShape = {};
     for (const sub of getAddressSubfields({ required })) {
       shape[sub.name] = buildFieldSchema(sub);
     }
     const obj = z.object(shape);
-    return required ? obj : obj.optional();
+    const core = required ? obj : obj.optional();
+    return z.preprocess((val) => (val == null ? emptyAddressValue() : val), core);
   }
 
-  let s: z.ZodString = z.string({ required_error: v.message ?? `${field.label} is required` });
+  const patternToUse = patternFromNewFormat || v.pattern;
+  const validateUnmasked =
+    Boolean(field.mask?.pattern) || isRawAlphanumericPattern(patternToUse);
 
-  if (v.required && !deferToRules) s = s.min(1, { message: v.message ?? `${field.label} is required` });
+  let patternRegex: RegExp | null = null;
+  if (patternToUse) {
+    try {
+      patternRegex = new RegExp(patternToUse);
+    } catch {
+      patternRegex = null;
+    }
+  }
 
-  // Masked fields store separator-formatted display values (e.g. "987-9876-098"),
-  // while authored min/maxLength describe the raw characters (10 digits). Apply
-  // those limits to the unmasked content below, not the display string.
-  if (!field.mask) {
-    if (v.minLength) s = s.min(v.minLength, { message: `Minimum ${v.minLength} characters` });
-    if (v.maxLength) s = s.max(v.maxLength, { message: `Maximum ${v.maxLength} characters` });
+  let s: z.ZodString = z.string({
+    required_error: v.message ?? `${field.label} is required`,
+    invalid_type_error: v.message ?? `${field.label} is required`,
+  });
+
+  if (v.required && !deferToRules) {
+    s = s.min(1, { message: `${field.label} is required` });
+  }
+
+  // Display values include mask literals (1234-5678-9012). Apply min/maxLength
+  // on the Zod string only when we are NOT going to count unmasked content.
+  if (!validateUnmasked) {
+    if (v.minLength) {
+      s = s.min(v.minLength, { message: `Minimum ${v.minLength} characters` });
+    }
+    if (v.maxLength) {
+      s = s.max(v.maxLength, { message: `Maximum ${v.maxLength} characters` });
+    }
   }
 
   if (v.email || field.type === "email") {
     s = s.email({ message: "Enter a valid email address" });
   }
 
-  if (v.phone || field.type === "tel") {
+  // Custom pattern (e.g. 10-digit Indian mobile) replaces the generic tel regex.
+  if ((v.phone || field.type === "tel") && !patternToUse) {
     s = s.regex(/^[+]?[\d\s\-().]{7,15}$/, { message: "Enter a valid phone number" });
   }
 
-  // Masked fields store the separator-formatted display value (e.g. "1234-5678-9012-3456"),
-  // but `pattern` is authored against the raw, unformatted characters (e.g. digits only) —
-  // strip the mask literals before testing so a correctly-typed value actually passes.
-  // `.refine()` moves the schema out of `ZodString` into `ZodEffects`, so from here on we
-  // track the result in a separately-typed variable rather than reassigning `s`.
   let result: z.ZodTypeAny = s;
-  
-  // Use pattern from new format if available, otherwise use old format pattern
-  const patternToUse = patternFromNewFormat || v.pattern;
-  
-  if (patternToUse) {
-    let patternRegex: RegExp | null = null;
-    try {
-      patternRegex = new RegExp(patternToUse);
-    } catch {
-      patternRegex = null;
-    }
 
-    if (!patternRegex) {
-      result = s.refine(() => false, {
-        message: v.message ?? "Invalid format",
-      });
-    } else if (field.mask) {
-      result = s.refine((val) => patternRegex.test(unmask(val)), {
-        message: v.message ?? "Invalid format",
-      });
-    } else {
-      result = s.regex(patternRegex, { message: v.message ?? "Invalid format" });
+  // When a pattern is present it already encodes length (e.g. 11-char IFSC).
+  // Skip extra min/maxLength refines so the same ui.errors.pattern message
+  // is not shown twice.
+  if (validateUnmasked && !patternToUse) {
+    if (v.minLength) {
+      result = result.refine(
+        (val) => !val || contentForValidation(val, true).length >= v.minLength!,
+        { message: `Minimum ${v.minLength} characters` }
+      );
+    }
+    if (v.maxLength) {
+      result = result.refine(
+        (val) => !val || contentForValidation(val, true).length <= v.maxLength!,
+        { message: `Maximum ${v.maxLength} characters` }
+      );
     }
   }
 
-  if (field.mask) {
-    if (v.minLength) {
-      result = result.refine((val) => unmask(val).length >= v.minLength!, {
-        message: `Minimum ${v.minLength} characters`,
+  if (patternToUse) {
+    if (!patternRegex) {
+      result = result.refine(() => false, {
+        message: v.message ?? "Invalid format",
       });
-    }
-    if (v.maxLength) {
-      result = result.refine((val) => unmask(val).length <= v.maxLength!, {
-        message: `Maximum ${v.maxLength} characters`,
-      });
+    } else {
+      result = result.refine(
+        (val) =>
+          !val ||
+          patternRegex.test(contentForValidation(val, validateUnmasked)),
+        { message: v.message ?? "Invalid format" }
+      );
     }
   }
 
@@ -205,14 +265,13 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
       },
       { message: "Enter valid JSON" }
     );
-    return v.required && !deferToRules ? jsonSchema : jsonSchema.optional().or(z.literal(""));
+    const core =
+      v.required && !deferToRules ? jsonSchema : jsonSchema.optional().or(z.literal(""));
+    return z.preprocess(normalizeEmptyString, core);
   }
 
-  if (!v.required || deferToRules) {
-    return result.optional().or(z.literal(""));
-  }
-
-  return result;
+  const core = !v.required || deferToRules ? result.optional().or(z.literal("")) : result;
+  return z.preprocess(normalizeEmptyString, core);
 }
 
 export function buildSectionSchema(section: FormSection): z.ZodObject<z.ZodRawShape> {
@@ -256,8 +315,8 @@ function withConditionalRuleValidation(
 
       instances.forEach((scope, index) => {
         for (const field of fieldsWithRules) {
-          if (!isFieldVisible(field, scope)) continue;
-          if (!isFieldRequired(field, scope)) continue;
+          if (!isFieldVisible(field, scope, templateData)) continue;
+          if (!isFieldRequired(field, scope, templateData)) continue;
 
           if (field.type === "address") {
             const rawAddr = scope[field.name];
@@ -344,12 +403,14 @@ function mergePlainObjects(
   base: Record<string, unknown>,
   saved: Record<string, unknown>
 ): Record<string, unknown> {
-  const merged: Record<string, unknown> = { ...base, ...saved };
-  for (const key of Object.keys(base)) {
+  const merged: Record<string, unknown> = { ...base };
+  for (const [key, savedValue] of Object.entries(saved)) {
+    if (savedValue === null || savedValue === undefined) continue;
     const defaultValue = base[key];
-    const savedValue = saved[key];
     if (isPlainObject(defaultValue) && isPlainObject(savedValue)) {
-      merged[key] = { ...defaultValue, ...savedValue };
+      merged[key] = mergePlainObjects(defaultValue, savedValue);
+    } else {
+      merged[key] = savedValue;
     }
   }
   return merged;
@@ -376,7 +437,7 @@ export function mergeTemplateDefaults(
           isPlainObject(item) ? mergePlainObjects(itemDefault, item) : item
         );
       }
-    } else if (value !== undefined) {
+    } else if (value != null) {
       merged[key] = value;
     }
   }

@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { useFormContext, Controller } from "react-hook-form";
-import type { FormField, FieldValidation } from "@/types";
+import { useFormContext, Controller, get } from "react-hook-form";
+import type { FormField } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -25,7 +25,8 @@ import { CurrencyInput } from "./CurrencyInput";
 import { MultiSelectField } from "./MultiSelectField";
 import { Info, Percent } from "lucide-react";
 import { useFormDebug } from "./form-debug-context";
-import { ruleMatches } from "@/utils/rule-engine";
+import { useFieldRules } from "./use-field-rules";
+import { cn } from "@/lib/utils";
 import { applyMask } from "@/utils/mask";
 import { applyInputFormat } from "@/utils/field-config";
 import { isKnownFieldType } from "@/utils/field-types";
@@ -41,46 +42,23 @@ export const PATTERN_EXAMPLES: Record<string, string> = {
   "^[2-9]{1}[0-9]{11}$": "2XXXXXXXXXXX (12 digits)",
 };
 
-/**
- * Returns a format example string derived from validation metadata.
- * Only shows pattern/phone/email format templates — not constraints like
- * length or range (those are enforced silently via HTML attributes).
- */
-function getFormatHint(validation: FieldValidation | undefined, type: string): string | null {
-  if (!validation) return null;
-
-  if (validation.pattern) {
-    const example = PATTERN_EXAMPLES[validation.pattern];
-    if (example) return example;
-  }
-
-  if (validation.phone) return "+91 XXXXX XXXXX";
-  if (validation.email && type !== "email") return "name@domain.com";
-
-  return null;
-}
-
-/**
- * Inline format badge shown after the field label. Keeps the hint close to
- * the label so users see it before they start typing.
- */
-function FormatBadge({ hint }: { hint: string | null }) {
-  if (!hint) return null;
-  return (
-    <span className="shrink-0 select-none rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] font-normal leading-none tracking-wide text-slate-400">
-      {hint}
-    </span>
-  );
-}
-
 interface DynamicFieldProps {
   field: FormField;
   namePrefix?: string;
 }
 
 function FieldError({ message }: { message?: string }) {
-  if (!message) return null;
-  return <p className="mt-1 text-xs text-destructive">{message}</p>;
+  return (
+    <p
+      className={cn(
+        "absolute inset-x-0 top-full z-10 mt-0.5 h-4 truncate text-xs leading-4 text-destructive",
+        !message && "invisible"
+      )}
+      title={message}
+    >
+      {message}
+    </p>
+  );
 }
 
 function FieldHint({ text }: { text?: string }) {
@@ -129,39 +107,17 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
   } = useFormContext();
   const debug = useFormDebug();
 
-  const resolveSibling = (name: string) => (namePrefix ? `${namePrefix}.${name}` : name);
+  const { visible, conditionallyRequired } = useFieldRules(field, namePrefix);
 
-  const visibleRule = field.rules?.visibleWhen;
-  const requiredRule = field.rules?.requiredWhen;
-  // Only subscribe to the specific sibling field(s) a rule depends on — never the whole form —
-  // so fields without `rules` incur zero extra re-render cost versus before this feature existed.
-  const visibleDepValue = watch(visibleRule ? resolveSibling(visibleRule.field) : fieldName);
-  const requiredDepValue = watch(requiredRule ? resolveSibling(requiredRule.field) : fieldName);
-
-  const visible = visibleRule
-    ? ruleMatches(visibleRule, { [visibleRule.field]: visibleDepValue })
-    : true;
-
-  const getError = (): string | undefined => {
-    const parts = fieldName.split(".");
-    let cur: unknown = errors;
-    for (const part of parts) {
-      if (cur === null || typeof cur !== "object") return undefined;
-      cur = (cur as Record<string, unknown>)[part];
-    }
-    if (cur && typeof cur === "object" && "message" in cur) {
-      return (cur as { message?: string }).message;
-    }
-    return undefined;
-  };
-
-  const error = getError();
+  const errorNode = get(errors, fieldName) as
+    | { message?: string; root?: { message?: string } }
+    | undefined;
+  const error =
+    (typeof errorNode?.message === "string" && errorNode.message) ||
+    (typeof errorNode?.root?.message === "string" && errorNode.root.message) ||
+    undefined;
   const v = field.validation;
-  const conditionallyRequired = requiredRule
-    ? ruleMatches(requiredRule, { [requiredRule.field]: requiredDepValue })
-    : false;
   const isRequired = !!v?.required || conditionallyRequired;
-  const formatHint = getFormatHint(v, field.type);
 
   // Derive placeholder: use authored value first, fall back to pattern example
   const derivedPlaceholder =
@@ -190,38 +146,35 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
   }
 
   const labelEl = (
-    <div className="flex h-6 min-w-0 items-center justify-between gap-2">
-      <div className="flex min-w-0 items-center gap-1.5 pl-1">
-        <Label
-          htmlFor={fieldName}
-          className="flex min-w-0 items-center text-sm font-medium text-slate-600"
-        >
-          <span className="truncate">{field.label}</span>
-          {isRequired && (
-            <span className="ml-1 shrink-0 text-destructive">*</span>
-          )}
-        </Label>
-        {field.info && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                aria-label={`Information about ${field.label}`}
-                className="shrink-0 rounded-full text-slate-400 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98]"
-              >
-                <Info className="h-3.5 w-3.5" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent
-              side="top"
-              className="max-w-xs text-xs leading-relaxed"
-            >
-              {field.info}
-            </TooltipContent>
-          </Tooltip>
+    <div className="flex h-6 min-w-0 items-center gap-1.5 pl-1">
+      <Label
+        htmlFor={fieldName}
+        className="flex min-w-0 items-center text-sm font-medium text-slate-600"
+      >
+        <span className="truncate">{field.label}</span>
+        {isRequired && (
+          <span className="ml-1 shrink-0 text-destructive">*</span>
         )}
-      </div>
-      <FormatBadge hint={formatHint} />
+      </Label>
+      {field.info && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-label={`Information about ${field.label}`}
+              className="shrink-0 rounded-full text-slate-400 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98]"
+            >
+              <Info className="h-3.5 w-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent
+            side="top"
+            className="max-w-xs text-xs leading-relaxed"
+          >
+            {field.info}
+          </TooltipContent>
+        </Tooltip>
+      )}
     </div>
   );
 
@@ -363,37 +316,91 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
       </>
     );
   } else if (field.type === "file" || field.type === "document") {
+    const uploadedValue = watch(fieldName);
+    const uploadedCount = Array.isArray(uploadedValue)
+      ? uploadedValue.filter((item) => item != null && item !== "").length
+      : 0;
     content = (
-      <>
-        {labelEl}
-        <Controller
-          name={fieldName}
-          control={control}
-          render={({ field: f }) => (
-            <FileUploadField
-              value={f.value}
-              onChange={f.onChange}
-              documentType={field.documentType ?? field.name}
-              accept={field.accept}
-              maxFiles={field.maxFiles}
-              minFiles={field.minFiles}
-              maxSizeMB={field.maxSize}
-              error={!!error}
-            />
-          )}
-        />
-        <FieldHint text={field.helpText} />
+      <div className="rounded-xl border border-slate-100 bg-white p-[18px] shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <p className="text-[15px] font-semibold tracking-tight text-slate-900">
+                {field.label}
+              </p>
+              {field.info && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={`Information about ${field.label}`}
+                      className="shrink-0 rounded-full text-slate-400 transition-all duration-200 ease-out hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98]"
+                    >
+                      <Info className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
+                    {field.info}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+            {field.helpText && (
+              <p className="mt-0.5 text-[13px] leading-relaxed text-slate-500">{field.helpText}</p>
+            )}
+          </div>
+          <span
+            className={cn(
+              "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium",
+              uploadedCount > 0
+                ? "bg-emerald-50 text-emerald-700"
+                : isRequired
+                  ? "bg-primary/10 text-primary"
+                  : "bg-slate-50 text-slate-500"
+            )}
+          >
+            {uploadedCount > 0
+              ? `${uploadedCount} uploaded`
+              : isRequired
+                ? "Required"
+                : "Optional"}
+          </span>
+        </div>
+        <div className="mt-3.5">
+          <Controller
+            name={fieldName}
+            control={control}
+            render={({ field: f }) => (
+              <FileUploadField
+                value={f.value}
+                onChange={f.onChange}
+                documentType={field.documentType ?? field.name}
+                accept={field.accept}
+                maxFiles={field.maxFiles}
+                minFiles={field.minFiles}
+                maxSizeMB={field.maxSize}
+                error={!!error}
+              />
+            )}
+          />
+        </div>
         <FieldError message={error} />
-      </>
+      </div>
     );
   } else if (field.type === "datetime" || field.type === "date") {
+    const dateValue = watch(fieldName);
+    const isEmpty = dateValue == null || dateValue === "";
     content = (
       <>
         {labelEl}
         <Input
           id={fieldName}
           type="date"
-          className="rounded-sm"
+          className={cn(
+            "rounded-sm",
+            isEmpty &&
+              "text-muted-foreground [&::-webkit-datetime-edit]:text-muted-foreground [&::-webkit-datetime-edit-text]:text-muted-foreground [&::-webkit-datetime-edit-month-field]:text-muted-foreground [&::-webkit-datetime-edit-day-field]:text-muted-foreground [&::-webkit-datetime-edit-year-field]:text-muted-foreground"
+          )}
           error={!!error}
           disabled={field.disabled}
           readOnly={field.readonly}
@@ -441,8 +448,8 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
           error={!!error}
           disabled={field.disabled}
           readOnly={field.readonly}
-          min={v?.min}
-          max={v?.max}
+          min={typeof v?.min === "number" ? v.min : undefined}
+          max={typeof v?.max === "number" ? v.max : undefined}
           step={v?.integer ? 1 : 0.01}
           endAdornment={<Percent className="h-3.5 w-3.5 text-muted-foreground" />}
           {...register(fieldName)}
@@ -530,8 +537,8 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
           readOnly={field.readonly}
           autoComplete={field.type === "email" ? "email" : undefined}
           maxLength={mask ? mask.pattern.length : v?.maxLength}
-          min={inputType === "number" ? v?.min : undefined}
-          max={inputType === "number" ? v?.max : undefined}
+          min={inputType === "number" && typeof v?.min === "number" ? v.min : undefined}
+          max={inputType === "number" && typeof v?.max === "number" ? v.max : undefined}
           step={inputType === "number" && v?.integer ? 1 : undefined}
           startAdornment={
             field.prefix ? <span className="text-xs font-medium">{field.prefix}</span> : undefined
@@ -545,7 +552,6 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
           {...(handleChange ? { onChange: handleChange } : {})}
           {...(handleBlur ? { onBlur: handleBlur } : {})}
         />
-        {mask && <p className="text-[11px] font-mono text-slate-400">{mask.pattern}</p>}
         <FieldHint text={field.helpText} />
         <FieldError message={error} />
       </>
@@ -553,7 +559,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
   }
 
   return (
-    <div className="space-y-1.5">
+    <div className="relative space-y-1.5">
       {content}
       {debug && (
         <FieldDebugInfo field={field} fieldName={fieldName} visible={visible} required={isRequired} />

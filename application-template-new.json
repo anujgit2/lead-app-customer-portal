@@ -1036,7 +1036,10 @@
                     "required": "GST Registered is required"
                   }
                 },
-                "optionsRef": "YES_NO"
+                "optionsRef": "YES_NO",
+                "input": {
+                  "transform": "boolean"
+                }
               },
               {
                 "key": "gstin",

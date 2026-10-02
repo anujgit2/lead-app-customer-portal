@@ -4,6 +4,7 @@ import React, { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { FormWizard } from "@/features/loan-application/FormWizard";
+import { ApplicationViewScreen } from "@/features/loan-application/ApplicationViewScreen";
 import {
   applicationService,
   resolveApplicationFormData,
@@ -29,6 +30,8 @@ function LoadingState() {
 function ResumeContent() {
   const searchParams = useSearchParams();
   const applicationId = searchParams.get("id") ?? "";
+  const programIdParam = searchParams.get("programId") ?? "";
+  const programCode = searchParams.get("programCode") ?? "";
 
   const {
     data: application,
@@ -42,13 +45,13 @@ function ResumeContent() {
     retry: 1,
   });
 
+  const productLookup =
+    application?.programId || programIdParam || application?.programCode || programCode || "";
+
   const { data: product, isLoading: productLoading } = useQuery({
-    queryKey: ["loan-product", application?.programId],
-    queryFn: () =>
-      application?.programId
-        ? applicationService.getLoanProductByProgramId(application.programId)
-        : applicationService.getLoanProducts().then((p) => p[0]),
-    enabled: !!application,
+    queryKey: ["loan-product", applicationId, productLookup],
+    queryFn: () => applicationService.getLoanProductByProgramId(productLookup),
+    enabled: !!application && !!productLookup,
   });
 
   const initialFormData = useMemo(
@@ -91,13 +94,11 @@ function ResumeContent() {
 
   if (application.status !== "draft") {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <ErrorState
-          compact
-          title="Application is read-only"
-          message={`This application has been ${application.status.replace("_", " ")} and can no longer be edited.`}
-        />
-      </div>
+      <ApplicationViewScreen
+        application={application}
+        product={product}
+        formData={initialFormData}
+      />
     );
   }
 

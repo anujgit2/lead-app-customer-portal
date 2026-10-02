@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buildSectionDefaults } from "@/utils/schema-builder";
-import { ruleMatches } from "@/utils/rule-engine";
+import { useFieldRules } from "./use-field-rules";
 
 interface DynamicSectionProps {
   section: FormSection;
@@ -28,18 +28,8 @@ function FieldWrapper({
   field: FormField;
   namePrefix?: string;
 }) {
-  const fieldName = namePrefix ? `${namePrefix}.${field.name}` : field.name;
-  const { watch } = useFormContext();
-  const visibleRule = field.rules?.visibleWhen;
+  const { visible } = useFieldRules(field, namePrefix);
 
-  // Watch the dependency field if this field has a visibleWhen rule
-  const depFieldName = visibleRule ? visibleRule.field : fieldName;
-  const depValue = watch(depFieldName);
-
-  // Check if field is visible
-  const visible = visibleRule ? ruleMatches(visibleRule, { [visibleRule.field]: depValue }) : true;
-
-  // Don't render wrapper if not visible
   if (!visible) return null;
 
   return (
@@ -55,7 +45,24 @@ function FieldWrapper({
   );
 }
 
+function isDocumentSection(section: FormSection): boolean {
+  return (
+    section.fields.length > 0 &&
+    section.fields.every((field) => field.type === "document" || field.type === "file")
+  );
+}
+
 function FieldGrid({ section, namePrefix }: { section: FormSection; namePrefix?: string }) {
+  if (isDocumentSection(section)) {
+    return (
+      <div className="space-y-3">
+        {section.fields.map((field) => (
+          <FieldWrapper key={field.name} field={field} namePrefix={namePrefix} />
+        ))}
+      </div>
+    );
+  }
+
   const cols = section.columns ?? 2;
   const gridClass =
     cols === 1 ? "grid-cols-1" :
@@ -155,6 +162,17 @@ export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
   const sectionPrefix = namePrefix
     ? `${namePrefix}.${section.code}`
     : section.code;
+
+  if (isDocumentSection(section) && !section.repeatable) {
+    return (
+      <section className="space-y-3">
+        <h3 className="text-[13px] font-semibold tracking-tight text-slate-500">
+          {section.title}
+        </h3>
+        <FieldGrid section={section} namePrefix={sectionPrefix} />
+      </section>
+    );
+  }
 
   return (
     <Card>

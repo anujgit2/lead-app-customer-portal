@@ -19,7 +19,26 @@ const VALIDATION_KEYS = [
   "email",
   "phone",
   "message",
+  "minMessage",
+  "maxMessage",
 ] as const;
+
+const NUMERIC_VALIDATION_KEYS = new Set([
+  "maxLength",
+  "minLength",
+  "min",
+  "max",
+  "minExclusive",
+  "maxExclusive",
+]);
+
+function asValidationValue(key: string, value: unknown): unknown {
+  if (value === undefined) return undefined;
+  if (NUMERIC_VALIDATION_KEYS.has(key)) {
+    return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+  }
+  return value;
+}
 
 /**
  * Merges validation from nested `validation`, `constraints` (min/max length),
@@ -28,15 +47,37 @@ const VALIDATION_KEYS = [
 export function mergeFieldValidation(raw: Raw): FieldValidation | undefined {
   const nested = isPlainObject(raw.validation) ? raw.validation : {};
   const constraints = isPlainObject(raw.constraints) ? raw.constraints : {};
+  const ui = isPlainObject(raw.ui) ? raw.ui : {};
+  const uiErrors = isPlainObject(ui.errors) ? ui.errors : {};
   const merged: Raw = { ...nested };
 
   for (const key of VALIDATION_KEYS) {
-    if (merged[key] === undefined && constraints[key] !== undefined) {
-      merged[key] = constraints[key];
+    if (merged[key] === undefined) {
+      const fromConstraints = asValidationValue(key, constraints[key]);
+      if (fromConstraints !== undefined) merged[key] = fromConstraints;
     }
-    if (merged[key] === undefined && raw[key] !== undefined) {
-      merged[key] = raw[key];
+    if (merged[key] === undefined) {
+      const fromRaw = asValidationValue(key, raw[key]);
+      if (fromRaw !== undefined) merged[key] = fromRaw;
     }
+  }
+
+  if (merged.message === undefined && typeof uiErrors.required === "string") {
+    merged.message = uiErrors.required;
+  }
+  if (merged.minMessage === undefined && typeof uiErrors.min === "string") {
+    const min = merged.min;
+    merged.minMessage =
+      typeof min === "number"
+        ? uiErrors.min.replace(/\{min\}/g, String(min))
+        : uiErrors.min;
+  }
+  if (merged.maxMessage === undefined && typeof uiErrors.max === "string") {
+    const max = merged.max;
+    merged.maxMessage =
+      typeof max === "number"
+        ? uiErrors.max.replace(/\{max\}/g, String(max))
+        : uiErrors.max;
   }
 
   return Object.keys(merged).length > 0 ? (merged as FieldValidation) : undefined;
@@ -80,7 +121,10 @@ export function applyInputFormat(
   }
 
   if (validation?.maxLength !== undefined) {
-    next = next.slice(0, validation.maxLength);
+    const raw = next.replace(/[^A-Za-z0-9]/g, "");
+    if (raw.length > validation.maxLength) {
+      next = raw.slice(0, validation.maxLength);
+    }
   }
 
   return next;

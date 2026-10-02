@@ -120,6 +120,7 @@ export interface LoanApplication {
   id: string;
   applicationNumber: string;
   loanType: string;
+  programName?: string;
   loanAmount: number;
   status: ApplicationStatus;
   createdAt: string;
@@ -127,6 +128,7 @@ export interface LoanApplication {
   submittedAt?: string;
   userId: string;
   programId?: string;
+  programCode?: string;
   formData?: Record<string, unknown>;
   /** Raw property values returned by the applications API. */
   properties?: ApplicationProperty[];
@@ -179,6 +181,8 @@ export interface FieldValidation {
   email?: boolean;
   phone?: boolean;
   message?: string;
+  minMessage?: string;
+  maxMessage?: string;
 }
 
 /** Comparison operators supported by conditional field rules. */
@@ -210,8 +214,9 @@ export interface FieldRules {
   requiredWhen?: ConditionRule;
 }
 
-/** Input mask config. `pattern` uses `A` for a letter slot, `0` for a digit slot; any other
- *  character is a literal that is auto-inserted (e.g. `AAAAA-0000-A`, `000-0000-000`).
+/** Input mask config. `pattern` uses `A` for a letter slot, `0` for a digit slot,
+ *  and `*` for an alphanumeric slot; any other character is a literal that is
+ *  auto-inserted (e.g. `AAAAA-0000-A`, `AAAA0******`, `000-0000-000`).
  *  `separator` is informational only — the literal characters actually inserted always come
  *  from `pattern` itself; it's kept here so authored JSON that documents its separator
  *  (e.g. `{ pattern: "0000-0000-0000-0000", separator: "-" }`) round-trips without being stripped. */
@@ -250,7 +255,11 @@ export interface FormField {
   placeholder?: string;
   helpText?: string;
   info?: string;
-  /** Backend data path this field maps to (e.g. "business.legalName"). Informational — shown in Debug mode. */
+  /**
+   * Backend location inside the template's property value (e.g. `businessFinancial.annualRevenue`).
+   * The form still stores the value under `name`; save/load use `path` to nest or rename in the payload.
+   * Dots are object path segments; `addresses[]` marks an array already owned by a repeatable section.
+   */
   path?: string;
   /** Static text shown immediately before the input (e.g. "+91"). */
   prefix?: string;
@@ -259,6 +268,8 @@ export interface FormField {
   mask?: MaskConfig;
   /** Live input sanitizing from authored `input: { trim, uppercase, allowSpaces, … }`. */
   inputFormat?: InputFormatConfig;
+  /** Payload-only transform from `input.transform`. `boolean` maps YES/NO to `true`/`false` on save. */
+  wireTransform?: "boolean";
   /** Conditional visibility/required rules. Absent = always visible, required only if `validation.required`. */
   rules?: FieldRules;
   defaultValue?: unknown;
@@ -436,7 +447,7 @@ export interface InputConfig {
   trim?: boolean;
   uppercase?: boolean;
   lowercase?: boolean;
-  transform?: "numeric" | "uppercase" | "lowercase";
+  transform?: "numeric" | "uppercase" | "lowercase" | "boolean";
   allowSpaces?: boolean;
   allowSpecialCharacters?: boolean;
   displayFormat?: string;
@@ -511,6 +522,8 @@ export interface NewFormatField {
   key: string;
   type: FieldType;
   required: boolean;
+  /** Backend location inside the form property, e.g. `businessFinancial.annualRevenue`. */
+  path?: string;
   ui: FieldUIConfig;
   optionsRef?: string;
   component?: string;
@@ -578,7 +591,7 @@ export interface DocumentDefinition {
   scope: DocumentScope;
   required: boolean;
   upload: DocumentUploadConfig;
-  ui: {
+  ui?: {
     label: string;
     description?: string;
     uploadHint?: string;
@@ -606,7 +619,8 @@ export interface ComponentDefinition {
 
 /** New format LoanProduct (v1.0). */
 export interface NewLoanProduct {
-  schemaVersion: string;
+  id?: string;
+  schemaVersion?: string | null;
   programCode: string;
   name: string;
   programType?: string;
@@ -624,9 +638,9 @@ export interface NewLoanProduct {
   };
   documentPolicy?: DocumentPolicyConfig;
   sensitivityLevels?: SensitivityLevel[];
-  optionSets: Record<string, OptionSetItem[]>;
+  optionSets?: Record<string, OptionSetItem[]> | null;
   lookups?: Record<string, Record<string, unknown>>;
-  components: Record<string, ComponentDefinition>;
-  forms: NewFormatForm[];
-  documents: DocumentDefinition[];
+  components?: Record<string, ComponentDefinition> | null;
+  forms?: NewFormatForm[] | null;
+  documents?: DocumentDefinition[] | null;
 }

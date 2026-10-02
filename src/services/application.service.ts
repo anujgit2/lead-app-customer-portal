@@ -18,6 +18,16 @@ import { MOCK_APPLICATIONS, MOCK_SUMMARY, LOAN_FORM_TEMPLATES } from "./mock-dat
 import { programService } from "./program.service";
 import { isStoredFileReference } from "./file-storage.service";
 import { normalizeAddressValue } from "@/utils/address-field";
+import {
+  assignDeep,
+  fieldPayloadSegments,
+  getByPath,
+  setByPath,
+} from "@/utils/field-path";
+import {
+  applyWireTransformInbound,
+  applyWireTransformOutbound,
+} from "@/utils/field-transform";
 import { normalizeApplicationFormData } from "@/utils/prefill-mapper";
 
 function toCamelCase(value: string): string {
@@ -73,14 +83,48 @@ function normalizeFieldValue(field: FormField, value: unknown): unknown {
   }
 }
 
+function sectionPathContext(
+  template: FormTemplate,
+  section: FormSection
+) {
+  return {
+    propertyName: template.propertyName,
+    payloadKey: sectionPayloadKey(section),
+    insideRepeatableSection: !!section.repeatable,
+  };
+}
+
 function buildSectionValue(
+  template: FormTemplate,
   section: FormSection,
   data: unknown
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   if (!isPlainObject(data)) return result;
+  const context = sectionPathContext(template, section);
   for (const field of section.fields) {
-    const value = normalizeFieldValue(field, data[field.name]);
+    const value = applyWireTransformOutbound(
+      field,
+      normalizeFieldValue(field, data[field.name])
+    );
+    if (value === undefined) continue;
+    setByPath(result, fieldPayloadSegments(field, context), value);
+  }
+  return result;
+}
+
+function parseSectionValue(
+  template: FormTemplate,
+  section: FormSection,
+  data: unknown
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  if (!isPlainObject(data)) return result;
+  const context = sectionPathContext(template, section);
+  for (const field of section.fields) {
+    const fromPath = getByPath(data, fieldPayloadSegments(field, context));
+    const raw = fromPath !== undefined ? fromPath : data[field.name];
+    const value = normalizeFieldValue(field, applyWireTransformInbound(field, raw));
     if (value !== undefined) result[field.name] = value;
   }
   return result;
@@ -185,7 +229,8 @@ function sectionPayloadKey(section: FormSection): string {
 }
 
 /**
- * Non-repeatable section fields are merged flat into the property value.
+ * Non-repeatable section fields are merged into the property value.
+ * A field's template `path` nests or renames it (e.g. `businessFinancial.annualRevenue`).
  * Repeatable sections are nested under `payloadKey` (or the camelCased code):
  * as a single object when `maxInstances` is 1, otherwise as an array.
  */
@@ -200,13 +245,13 @@ function buildTemplateValue(
     const sectionData = data[section.code];
     if (section.repeatable) {
       const items = (Array.isArray(sectionData) ? sectionData : [])
-        .map((item) => buildSectionValue(section, item))
+        .map((item) => buildSectionValue(template, section, item))
         .filter((item) => Object.keys(item).length > 0);
       if (items.length === 0) continue;
       const key = sectionPayloadKey(section);
       result[key] = section.maxInstances === 1 ? items[0] : items;
     } else {
-      Object.assign(result, buildSectionValue(section, sectionData));
+      assignDeep(result, buildSectionValue(template, section, sectionData));
     }
   }
   return result;
@@ -241,11 +286,11 @@ function propertyValueToTemplateData(
       const raw = value[sectionPayloadKey(section)];
       const items = Array.isArray(raw) ? raw : raw == null ? [] : [raw];
       const mapped = items
-        .map((item) => buildSectionValue(section, item))
+        .map((item) => parseSectionValue(template, section, item))
         .filter((item) => Object.keys(item).length > 0);
       if (mapped.length > 0) result[section.code] = mapped;
     } else {
-      const fields = buildSectionValue(section, value);
+      const fields = parseSectionValue(template, section, value);
       if (Object.keys(fields).length > 0) result[section.code] = fields;
     }
   }
@@ -394,6 +439,17 @@ function formDataToApplicationProperties(
 interface BackendApplication {
   id: string;
   programId: string;
+  programCode?: string;
+  programName?: string;
+  displayName?: string;
+  name?: string;
+  program?: {
+    id?: string;
+    programCode?: string;
+    code?: string;
+    name?: string;
+    displayName?: string;
+  };
   formDefinitionId: string;
   applicationNumber: string;
   formData?: Record<string, unknown>;
@@ -421,13 +477,46 @@ function mapStatus(status: string): ApplicationStatus {
 }
 
 
-function mapApplication(app: BackendApplication, loanType = "Business Loan"): LoanApplication {
-  const formData = app.formData ?? {};
+function asProgramName(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
 
+function humanizeProgramCode(code?: string): string | undefined {
+  if (!code) return undefined;
+  const label = code
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .trim();
+  return label.length > 0 ? label : undefined;
+}
+
+function resolveLoanType(app: BackendApplication, fallback?: string): string {
+  return (
+    asProgramName(app.program?.displayName) ||
+    asProgramName(app.program?.name) ||
+    asProgramName(app.programName) ||
+    asProgramName(app.displayName) ||
+    asProgramName(fallback) ||
+    humanizeProgramCode(app.programCode ?? app.program?.programCode ?? app.program?.code) ||
+    "Loan"
+  );
+}
+
+function mapApplication(app: BackendApplication, loanType?: string): LoanApplication {
+  const formData = app.formData ?? {};
+  const programCode =
+    app.programCode ??
+    app.program?.programCode ??
+    app.program?.code;
+
+  const programName = resolveLoanType(app, loanType);
   return {
     id: app.id,
     applicationNumber: app.applicationNumber,
-    loanType,
+    loanType: programName,
+    programName,
     loanAmount: readLoanAmount(formData, app.properties),
     status: mapStatus(app.status),
     createdAt: app.createdAt,
@@ -436,8 +525,34 @@ function mapApplication(app: BackendApplication, loanType = "Business Loan"): Lo
     userId: "",
     formData,
     properties: app.properties,
-    programId: app.programId,
+    programId: app.programId ?? app.program?.id,
+    programCode,
   };
+}
+
+async function programNameCatalog(): Promise<Map<string, string>> {
+  try {
+    const programs = await programService.getTenantPrograms();
+    const catalog = new Map<string, string>();
+    for (const program of programs) {
+      const name = program.displayName || program.name;
+      if (!name) continue;
+      if (program.id) catalog.set(program.id, name);
+      if (program.programCode) catalog.set(program.programCode.toLowerCase(), name);
+    }
+    return catalog;
+  } catch {
+    return new Map();
+  }
+}
+
+function catalogLoanType(app: BackendApplication, catalog: Map<string, string>): string | undefined {
+  const code = app.programCode ?? app.program?.programCode ?? app.program?.code;
+  return (
+    (app.programId ? catalog.get(app.programId) : undefined) ||
+    (app.program?.id ? catalog.get(app.program.id) : undefined) ||
+    (code ? catalog.get(code.toLowerCase()) : undefined)
+  );
 }
 
 function shouldUseMockFallback(error: unknown): boolean {
@@ -448,8 +563,21 @@ function shouldUseMockFallback(error: unknown): boolean {
 export const applicationService = {
   async getApplications(): Promise<LoanApplication[]> {
     try {
-      const { data } = await apiClient.get<BackendApplication[]>("/api/applications");
-      return data.map((app) => mapApplication(app));
+      const { data } = await apiClient.get<
+        | BackendApplication[]
+        | { applications?: BackendApplication[]; items?: BackendApplication[]; content?: BackendApplication[] }
+      >("/api/applications");
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.applications)
+          ? data.applications
+          : Array.isArray(data?.items)
+            ? data.items
+            : Array.isArray(data?.content)
+              ? data.content
+              : [];
+      const catalog = await programNameCatalog();
+      return list.map((app) => mapApplication(app, catalogLoanType(app, catalog)));
     } catch (error) {
       if (shouldUseMockFallback(error)) {
         await sleep(300);
@@ -462,7 +590,8 @@ export const applicationService = {
   async getApplication(id: string): Promise<LoanApplication> {
     try {
       const { data } = await apiClient.get<BackendApplication>(`/api/applications/${id}`);
-      return mapApplication(data);
+      const catalog = await programNameCatalog();
+      return mapApplication(data, catalogLoanType(data, catalog));
     } catch (error) {
       if (shouldUseMockFallback(error)) {
         await sleep(300);
@@ -501,12 +630,7 @@ export const applicationService = {
   },
 
   async getLoanProductByProgramId(programId: string): Promise<LoanProduct> {
-    try {
-      return await programService.getProgramWithTemplates(programId);
-    } catch {
-      await sleep(300);
-      return LOAN_FORM_TEMPLATES;
-    }
+    return programService.getProgramConfig(programId);
   },
 
   async getLoanProduct(code: string): Promise<LoanProduct> {
@@ -526,55 +650,16 @@ export const applicationService = {
 
   async createApplication(programCodeOrId?: string): Promise<LoanApplication> {
     try {
-      let resolvedProgramId = programCodeOrId;
-      let programName = "";
-
-      if (!resolvedProgramId) {
-        const programs = await programService.getPrograms();
-        if (programs.length === 0) {
-          throw { message: "No loan programs available", status: 404 };
-        }
-        resolvedProgramId = programs[0].programCode;
-      }
-
-      // Use the new endpoint for program configuration
-      const programConfig = await apiClient.get<BackendProgramWithTemplates>(
-        `/api/programs/by-code/${resolvedProgramId}/latest-published`
-      );
-
-      programName = programConfig.data.name || "";
-      const templates = programConfig.data.formTemplates || programConfig.data.templates || [];
-      
-      if (!templates || templates.length === 0) {
-        console.error("Program config response:", programConfig.data);
-        throw { 
-          message: "Program has no form templates. Check API response structure.", 
-          status: 400 
-        };
-      }
-
-      // Handle both possible template structure formats
-      const formDefinitionId = templates[0].template?.id || templates[0].id;
-      
-      if (!formDefinitionId) {
-        console.error("Cannot extract form definition ID from:", templates[0]);
-        throw { 
-          message: "Could not extract form template ID from program config", 
-          status: 400 
-        };
-      }
-
+      const program = await programService.resolveProgram(programCodeOrId);
       const { data } = await apiClient.post<BackendApplication>(
-        "/api/applications",
-        {},
-        {
-          params: {
-            programId: resolvedProgramId,
-            formDefinitionId,
-          },
-        }
+        `/api/applications/${encodeURIComponent(program.id)}`
       );
-      return mapApplication(data, programName);
+      const mapped = mapApplication(data, program.displayName || program.name);
+      return {
+        ...mapped,
+        programId: mapped.programId || program.id,
+        programCode: mapped.programCode || program.programCode,
+      };
     } catch (error) {
       throw parseApiError(error);
     }
@@ -621,8 +706,8 @@ export const applicationService = {
       const app = await this.getApplication(applicationId);
       if (app.status !== "draft") return null;
 
-      const product = app.programId
-        ? await this.getLoanProductByProgramId(app.programId)
+      const product = app.programCode || app.programId
+        ? await this.getLoanProductByProgramId(app.programCode || app.programId!)
         : (await this.getLoanProducts())[0];
 
       return {

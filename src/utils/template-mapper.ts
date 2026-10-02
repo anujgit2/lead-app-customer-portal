@@ -29,7 +29,10 @@ import type {
   FieldRules,
   ConditionRule,
   ConditionOperator,
+  DocumentDefinition,
+  DocumentPolicyConfig,
 } from "@/types";
+import { extensionsToAccept } from "@/utils/upload-config";
 
 /**
  * Convert new field format to old field format.
@@ -47,6 +50,9 @@ function mapNewFieldToOld(
     info: newField.ui?.tooltip,
     helpText: newField.ui?.helperText,
   };
+  if (typeof newField.path === "string" && newField.path.trim()) {
+    baseField.path = newField.path.trim();
+  }
 
   // Copy primitive properties
   if (newField.defaultValue !== undefined) {
@@ -66,20 +72,30 @@ function mapNewFieldToOld(
     if (newField.input.prefix) {
       baseField.prefix = newField.input.prefix;
     }
+    if (newField.input.transform === "boolean") {
+      baseField.wireTransform = "boolean";
+    }
   }
 
   // Handle masking
-  if (newField.mask) {
+  if (newField.mask?.pattern) {
+    const transform =
+      newField.mask.transform ??
+      (newField.input?.transform === "numeric" ||
+      newField.input?.transform === "uppercase" ||
+      newField.input?.transform === "lowercase"
+        ? newField.input.transform
+        : undefined);
     baseField.mask = {
       pattern: newField.mask.pattern,
       separator: newField.mask.separator,
-      transform: newField.mask.transform,
+      transform,
     };
   }
 
   // Resolve optionSets reference → inline options
   if (newField.optionsRef) {
-    const optionSet = program.optionSets[newField.optionsRef];
+    const optionSet = program.optionSets?.[newField.optionsRef];
     if (optionSet) {
       baseField.options = optionSet.map((item) => ({
         label: item.ui.label,
@@ -101,7 +117,7 @@ function mapNewFieldToOld(
 
   // Handle component reference (e.g., ADDRESS)
   if (newField.component) {
-    const componentDef = program.components[newField.component];
+    const componentDef = program.components?.[newField.component];
     if (componentDef && newField.component === "ADDRESS") {
       // Special handling for ADDRESS component — expand to nested structure
       // The ADDRESS component gets rendered as a composite field with subfields
@@ -171,7 +187,7 @@ function convertNewRuleToCondition(rule: any): ConditionRule | undefined {
     return undefined;
   }
 
-  const op = rule.op as string | undefined;
+  const op = (rule.op ?? rule.operator) as string | undefined;
   let field = rule.field as string | undefined;
   let value = rule.value;
 
@@ -216,6 +232,40 @@ function convertNewRuleToCondition(rule: any): ConditionRule | undefined {
   };
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function interpolateError(
+  template: string | undefined,
+  vars: Record<string, string | number | undefined>
+): string | undefined {
+  if (!template) return undefined;
+  return template.replace(/\{(\w+)\}/g, (match, key: string) => {
+    const value = vars[key];
+    return value === undefined || value === null ? match : String(value);
+  });
+}
+
+/** Resolve `program.limits.loanTermMonths.min` style refs against the product JSON. */
+function resolveProgramRef(ref: string, program: NewLoanProduct): number | undefined {
+  const path = ref.startsWith("program.") ? ref.slice("program.".length) : ref;
+  let cursor: unknown = program;
+  for (const part of path.split(".")) {
+    if (!isPlainObject(cursor)) return undefined;
+    cursor = cursor[part];
+  }
+  return typeof cursor === "number" && Number.isFinite(cursor) ? cursor : undefined;
+}
+
+function resolveNumericConstraint(value: unknown, program: NewLoanProduct): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (isPlainObject(value) && typeof value.$ref === "string") {
+    return resolveProgramRef(value.$ref, program);
+  }
+  return undefined;
+}
+
 /**
  * Build validation object from new field (combines constraints + validation rules).
  */
@@ -225,11 +275,15 @@ function buildValidationFromNewField(
 ): FieldValidation | undefined {
   const validation: FieldValidation = {};
   let hasValidation = false;
+  const errorCopy = field.ui?.errors;
 
   // From required flag
   if (field.required) {
     validation.required = true;
     hasValidation = true;
+    if (errorCopy?.required) {
+      validation.message = errorCopy.required;
+    }
   }
 
   // From constraints
@@ -242,14 +296,16 @@ function buildValidationFromNewField(
       validation.maxLength = field.constraints.maxLength;
       hasValidation = true;
     }
-    if (field.constraints.min !== undefined) {
-      const minVal = typeof field.constraints.min === "number" ? field.constraints.min : 0;
+    const minVal = resolveNumericConstraint(field.constraints.min, program);
+    if (minVal !== undefined) {
       validation.min = minVal;
+      validation.minMessage = interpolateError(errorCopy?.min, { min: minVal });
       hasValidation = true;
     }
-    if (field.constraints.max !== undefined) {
-      const maxVal = typeof field.constraints.max === "number" ? field.constraints.max : 999999999;
+    const maxVal = resolveNumericConstraint(field.constraints.max, program);
+    if (maxVal !== undefined) {
       validation.max = maxVal;
+      validation.maxMessage = interpolateError(errorCopy?.max, { max: maxVal });
       hasValidation = true;
     }
     if (field.constraints.integer) {
@@ -290,7 +346,7 @@ function mapNewSectionToOld(
   
   // If section has a component reference but no fields, expand it from the component definition
   if (newSection.component && fields.length === 0) {
-    const componentDef = program.components[newSection.component];
+    const componentDef = program.components?.[newSection.component];
     if (componentDef?.fields) {
       fields = componentDef.fields.map((f) => mapNewFieldToOld(f, program));
     }
@@ -323,6 +379,8 @@ function mapNewFormToOld(newForm: NewFormatForm, program: NewLoanProduct): FormT
     code: newForm.formCode,
     title: newForm.ui?.title || "Form",
     description: newForm.ui?.subtitle,
+    propertyType: newForm.formName,
+    propertyName: newForm.formCode,
     repeatable: newForm.repeatable || false,
     sections: (newForm.sections || []).map((s) => mapNewSectionToOld(s, program)),
   };
@@ -337,46 +395,103 @@ function mapNewFormToOld(newForm: NewFormatForm, program: NewLoanProduct): FormT
   return template;
 }
 
+const DOCUMENT_SCOPE_TITLES: Record<string, string> = {
+  APPLICATION: "Application documents",
+  OWNER: "Owner documents",
+  BANK_ACCOUNT: "Bank account documents",
+};
+
+function interpolateDocumentCopy(
+  text: string | undefined,
+  doc: DocumentDefinition,
+  policy?: DocumentPolicyConfig
+): string | undefined {
+  if (!text) return undefined;
+  const vars: Record<string, string | number | undefined> = {
+    maxFileSizeMB: doc.upload?.maxFileSizeMB,
+    maxFiles: doc.upload?.maxFiles,
+    minFiles: doc.upload?.minFiles,
+    coverageMonths: policy?.coverageMonths?.[doc.documentType],
+  };
+  return text.replace(/\{(\w+)\}/g, (match, key: string) => {
+    const value = vars[key];
+    return value === undefined || value === null ? match : String(value);
+  });
+}
+
+function mapDocumentToField(
+  doc: DocumentDefinition,
+  program: NewLoanProduct,
+  includeVisibilityRules: boolean
+): FormField {
+  const requiredMin =
+    doc.required && (doc.upload?.minFiles === undefined || doc.upload.minFiles < 1)
+      ? 1
+      : doc.upload?.minFiles;
+  const rules = includeVisibilityRules
+    ? convertNewRulesToOld(doc.rules)
+    : convertNewRulesToOld(
+        doc.rules?.requiredWhen ? { requiredWhen: doc.rules.requiredWhen } : undefined
+      );
+
+  return {
+    name: doc.documentType,
+    label: doc.ui?.label || doc.documentType,
+    type: "document",
+    documentType: doc.documentType,
+    placeholder: interpolateDocumentCopy(doc.ui?.uploadHint, doc, program.documentPolicy),
+    helpText: interpolateDocumentCopy(doc.ui?.description, doc, program.documentPolicy),
+    info: interpolateDocumentCopy(doc.ui?.tooltip, doc, program.documentPolicy),
+    validation: {
+      required: doc.required,
+      message: interpolateDocumentCopy(doc.ui?.errors?.required, doc, program.documentPolicy),
+    },
+    rules,
+    maxFiles: doc.upload?.maxFiles,
+    minFiles: requiredMin,
+    maxSize: doc.upload?.maxFileSizeMB,
+    accept: doc.upload?.allowedExtensions
+      ? extensionsToAccept(doc.upload.allowedExtensions)
+      : undefined,
+  };
+}
+
 /**
- * Create a virtual "DOCUMENTS" FormTemplate from APPLICATION-scoped documents.
- * This allows documents to be rendered as a regular wizard step using existing form logic.
+ * Create a virtual "DOCUMENTS" FormTemplate from the program's documents list.
+ * When the program has no forms (file-upload programs), every scope is shown.
+ * When forms exist, APPLICATION-scoped documents become a dedicated wizard step.
  */
 function mapDocumentsToTemplate(program: NewLoanProduct): FormTemplate | null {
-  const appDocs = (program.documents || []).filter((d) => d.scope === "APPLICATION");
+  const hasForms =
+    Array.isArray(program.forms) && program.forms.some((form) => form.visible !== false);
+  const allDocs = Array.isArray(program.documents) ? program.documents : [];
+  const docs = hasForms ? allDocs.filter((d) => d.scope === "APPLICATION") : allDocs;
 
-  if (appDocs.length === 0) {
+  if (docs.length === 0) {
     return null;
   }
 
-  const fields: FormField[] = appDocs.map((doc) => ({
-    name: doc.documentType,
-    label: doc.ui.label,
-    type: "document",
-    documentType: doc.documentType,
-    placeholder: doc.ui.uploadHint,
-    helpText: doc.ui.description,
-    info: doc.ui.tooltip,
-    validation: {
-      required: doc.required,
-    },
-    maxFiles: doc.upload.maxFiles,
-    minFiles: doc.upload.minFiles,
-    maxSize: doc.upload.maxFileSizeMB,
-    accept: doc.upload.allowedExtensions?.join(","),
-  }));
+  const groups = new Map<string, DocumentDefinition[]>();
+  for (const doc of docs) {
+    const scope = doc.scope || "APPLICATION";
+    const list = groups.get(scope) ?? [];
+    list.push(doc);
+    groups.set(scope, list);
+  }
 
   return {
     code: "DOCUMENTS",
-    title: "Documents",
+    title: "Business documents",
+    description: "Upload what you have now. Only items marked required block submission.",
+    propertyType: "DocumentProperty",
+    propertyName: "documents",
     repeatable: false,
-    sections: [
-      {
-        code: "DOCUMENT_UPLOAD",
-        title: "Upload Documents",
-        fields,
-        columns: 1,
-      },
-    ],
+    sections: [...groups.entries()].map(([scope, scopeDocs]) => ({
+      code: `${scope}_DOCUMENTS`,
+      title: DOCUMENT_SCOPE_TITLES[scope] ?? "Documents",
+      fields: scopeDocs.map((doc) => mapDocumentToField(doc, program, hasForms)),
+      columns: 1,
+    })),
   };
 }
 
@@ -385,33 +500,41 @@ function mapDocumentsToTemplate(program: NewLoanProduct): FormTemplate | null {
  * This is the entry point used by mock-data and playground.
  */
 export function mapNewTemplateToOld(program: NewLoanProduct): LoanProduct {
-  // Map all forms to old format templates
-  const forms = program.forms || [];
+  const forms = (Array.isArray(program.forms) ? program.forms : []).filter(
+    (form) => form.visible !== false
+  );
   const templates = forms.map((form) => mapNewFormToOld(form, program));
 
-  // Add virtual DOCUMENTS template if APPLICATION docs exist
   const docTemplate = mapDocumentsToTemplate(program);
   if (docTemplate) {
     templates.push(docTemplate);
   }
 
+  const productId = program.id || program.programCode || "mapped";
+
   return {
-    id: program.programCode || "mapped",
-    code: program.programCode,
-    name: program.name || "Loan Product",
-    description: program.name || "Loan Product",
+    id: productId,
+    code: program.programCode || productId,
+    name: program.name || program.ui?.title || "Loan Product",
+    description: program.ui?.subtitle || program.name || "Loan Product",
     templates,
   };
 }
 
 /**
  * Detect which format a template JSON is in.
- * Returns "new" if it has schemaVersion, "old" otherwise.
+ * Returns "new" if it has schemaVersion, forms[], or documents[].
  */
 export function detectTemplateFormat(json: any): "old" | "new" {
   if (json && typeof json === "object") {
-    if (json.schemaVersion) return "new";
-    if (json.templates && !json.forms) return "old";
+    if (
+      (typeof json.schemaVersion === "string" && json.schemaVersion.length > 0) ||
+      Array.isArray(json.forms) ||
+      Array.isArray(json.documents)
+    ) {
+      return "new";
+    }
+    if (Array.isArray(json.formTemplates) || (json.templates && !json.forms)) return "old";
   }
   return "old";
 }

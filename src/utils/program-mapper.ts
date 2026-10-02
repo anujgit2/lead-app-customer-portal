@@ -79,6 +79,12 @@ function asBoolean(value: unknown): boolean | undefined {
   return typeof value === "boolean" ? value : undefined;
 }
 
+function parseWireTransform(raw: Raw): FormField["wireTransform"] {
+  const input = isPlainObject(raw.input) ? raw.input : undefined;
+  if (input?.transform === "boolean" || raw.wireTransform === "boolean") return "boolean";
+  return undefined;
+}
+
 function humanize(value: string): string {
   return value
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
@@ -118,14 +124,22 @@ function mapField(raw: unknown, path: string, issues: MappingIssue[]): FormField
     return null;
   }
 
+  const ui = isPlainObject(raw.ui) ? raw.ui : {};
   const coerced: Raw = isDocumentSlot(raw)
     ? {
         ...raw,
-        name: asString(raw.name) ?? raw.documentType,
+        name: asString(raw.name) ?? asString(raw.key) ?? raw.documentType,
         type: asString(raw.type) ?? "document",
-        helpText: raw.helpText ?? raw.description,
+        helpText: raw.helpText ?? raw.description ?? ui.helperText,
       }
-    : raw;
+    : {
+        ...raw,
+        name: asString(raw.name) ?? asString(raw.key),
+        label: asString(raw.label) ?? asString(ui.label),
+        placeholder: asString(raw.placeholder) ?? asString(ui.placeholder),
+        info: asString(raw.info) ?? asString(ui.tooltip),
+        helpText: raw.helpText ?? ui.helperText,
+      };
 
   const name = coerced.name;
   const type = coerced.type;
@@ -174,14 +188,15 @@ function mapField(raw: unknown, path: string, issues: MappingIssue[]): FormField
     name,
     type: type as FormField["type"],
     label: typeof label === "string" && label.length > 0 ? label : humanize(name),
-    placeholder: asString(raw.placeholder),
+    placeholder: asString(raw.placeholder) ?? asString(ui.placeholder),
     helpText: asString(coerced.helpText),
-    info: asString(raw.info),
+    info: asString(raw.info) ?? asString(ui.tooltip),
     path: asString(raw.path),
     prefix: asString(raw.prefix),
     suffix: asString(raw.suffix),
     mask: parseMaskConfig(raw.mask),
     inputFormat: parseInputFormat(raw.input) ?? parseInputFormat(raw.inputFormat),
+    wireTransform: parseWireTransform(raw),
     rules,
     defaultValue: raw.defaultValue,
     options: mapOptions(raw.options),

@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { ApplyLoanMenu } from "@/features/loan-application/ApplyLoanMenu";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
 import { getInitials } from "@/lib/utils";
@@ -77,7 +78,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+                      "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]",
                       active
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -88,6 +89,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   </Link>
                 );
               })}
+              <ApplyLoanMenu />
             </nav>
           </div>
 
@@ -183,7 +185,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]",
                       active
                         ? "bg-primary/10 text-primary"
                         : "text-muted-foreground hover:bg-muted"
@@ -194,6 +196,10 @@ export function AppLayout({ children }: AppLayoutProps) {
                   </Link>
                 );
               })}
+              <ApplyLoanMenu
+                onNavigate={() => setMobileOpen(false)}
+                className="w-full justify-start px-3 py-2.5 rounded-lg"
+              />
             </nav>
           </div>
         </>

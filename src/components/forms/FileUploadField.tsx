@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, X, FileText, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn, formatFileSize } from "@/lib/utils";
 import { FileDownloadButton } from "@/components/forms/FileDownloadButton";
 import {
@@ -51,7 +51,12 @@ export function FileUploadField({
 }: FileUploadFieldProps) {
   const sizeLimitMb = clampUploadMaxMb(maxSizeMB);
   const acceptList = restrictUploadAccept(accept);
-  const storedItems = toItems(Array.isArray(value) ? value.filter(isStoredFileReference) : []);
+  const storedItems = toItems(
+    (Array.isArray(value) ? value : []).flatMap((item) => {
+      const file = asStoredFile(item);
+      return file ? [file] : [];
+    })
+  );
   const storedKey = storedItems.map((item) => item.id).join("\0");
   const [transientItems, setTransientItems] = useState<FileItem[]>([]);
   const [syncedKey, setSyncedKey] = useState(storedKey);
@@ -126,9 +131,9 @@ export function FileUploadField({
         preview: f.type.startsWith("image/") ? URL.createObjectURL(f) : undefined,
       }));
 
-      // Store new items FIRST, then handle uploads
-      // This ensures items are in state before uploads complete
-      setTransientItems((prev) => [...prev, ...newItems]);
+      const nextTransient = [...transientItemsRef.current, ...newItems];
+      transientItemsRef.current = nextTransient;
+      setTransientItems(nextTransient);
 
       accepted.slice(0, remaining).forEach((file, index) => {
         const item = newItems[index];
@@ -141,35 +146,19 @@ export function FileUploadField({
               return;
             }
             const storedFile = { ...storageFile, type: documentType ?? "" };
-            
-            // Update state
-            setTransientItems((prev) => {
-              const found = prev.find((entry) => entry.id === item.id);
-              
-              if (!found) {
-                return prev;
-              }
-              
-              const nextItems = prev.map((entry) => entry.id === item.id
+            const prev = transientItemsRef.current;
+            const nextItems = prev.map((entry) =>
+              entry.id === item.id
                 ? { ...entry, status: "success" as const, storageFile: storedFile }
                 : entry
-              );
-              
-              return nextItems;
-            });
-            
-            // Publish only ONCE per upload (prevent double-call from React StrictMode)
-            // Use a unique key combining item ID + file ID to track what's been published
+            );
+            transientItemsRef.current = nextItems;
+            setTransientItems(nextItems);
+
             const publishKey = `${item.id}-${storageFile.id}`;
             if (!publishedItemsRef.current.has(publishKey)) {
               publishedItemsRef.current.add(publishKey);
-              
-              queueMicrotask(() => {
-                const current = transientItemsRef.current;
-                if (current) {
-                  publish(current);
-                }
-              });
+              publish(nextItems);
             }
           })
           .catch((uploadError: unknown) => {
@@ -228,102 +217,122 @@ export function FileUploadField({
   });
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {remaining > 0 && (
         <div
           {...getRootProps()}
           className={cn(
-            "cursor-pointer rounded-xl border border-dashed px-5 py-4 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]",
+            "flex cursor-pointer items-center gap-3 rounded-[10px] border-[1.5px] border-dashed px-3.5 py-3 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]",
             isDragActive
-              ? "border-blue-500 bg-blue-50/60"
-              : "border-slate-200 hover:border-blue-400 hover:bg-slate-50/80",
-            error && "border-destructive",
-            remaining <= 0 && "cursor-not-allowed opacity-50"
+              ? "border-primary bg-primary/5"
+              : "border-slate-200 hover:border-primary hover:bg-primary/5",
+            error && "border-destructive"
           )}
         >
           <input {...getInputProps()} />
-          <div className="flex items-center gap-4 text-left">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-              <Upload className="h-5 w-5 text-primary" />
-            </div>
-            {isDragActive ? (
-              <p className="text-sm font-medium text-primary">Drop files here</p>
-            ) : (
-              <div className="min-w-0">
-                <p className="text-sm font-semibold tracking-tight text-slate-800">
-                  Drag & drop or{" "}
-                  <span className="text-primary underline">browse</span>
-                </p>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  {formatAcceptLabel(acceptList)} · Max {sizeLimitMb}MB
-                  {maxFiles > 1 && ` · Up to ${maxFiles} files`}
-                  {minFiles > 0 && ` · At least ${minFiles} required`}
-                </p>
-              </div>
-            )}
+          <div className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[9px] bg-primary/10 text-primary">
+            <Upload className="h-4 w-4" />
           </div>
+          {isDragActive ? (
+            <p className="text-sm font-medium text-primary">Drop files here</p>
+          ) : (
+            <div className="min-w-0">
+              <p className="text-sm text-slate-800">
+                Drop files or <span className="font-medium text-primary">browse</span>
+              </p>
+              <p className="truncate text-xs text-slate-500">
+                {formatAcceptLabel(acceptList)} · up to {sizeLimitMb} MB
+                {maxFiles > 1 ? ` · up to ${maxFiles} files` : ""}
+                {minFiles > 0 ? ` · at least ${minFiles} required` : ""}
+              </p>
+            </div>
+          )}
         </div>
       )}
 
       {rejectMessage && (
-        <p className="text-xs text-destructive">{rejectMessage}</p>
+        <p className="text-[13px] text-destructive" role="alert">
+          {rejectMessage}
+        </p>
       )}
 
       {fileItems.length > 0 && (
-        <div className="space-y-2">
+        <ul className="space-y-2">
           {fileItems.map((item) => (
-            <div
+            <li
               key={item.id}
-              className="flex items-center gap-3 rounded-lg border border-slate-100 bg-card p-3 shadow-sm"
+              className="flex items-center gap-3 rounded-[10px] border border-slate-100 bg-white px-3 py-2.5"
             >
-              {item.preview ? (
+              {item.status === "success" ? (
+                <CheckCircle2 className="h-[18px] w-[18px] shrink-0 text-emerald-600" />
+              ) : item.status === "error" ? (
+                <AlertCircle className="h-[18px] w-[18px] shrink-0 text-destructive" />
+              ) : item.preview ? (
                 <img
                   src={item.preview}
-                  alt={item.fileName}
-                  className="h-10 w-10 flex-shrink-0 rounded object-cover"
+                  alt=""
+                  className="h-[18px] w-[18px] shrink-0 rounded object-cover"
                 />
               ) : (
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded bg-muted">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
-                </div>
+                <FileText className="h-[18px] w-[18px] shrink-0 text-slate-400" />
               )}
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{item.fileName}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="truncate text-sm font-medium text-slate-800">{item.fileName}</p>
+                <p className="text-xs text-slate-500">
                   {formatFileSize(item.sizeBytes)}
                   {item.status === "uploading" && " · Uploading…"}
                 </p>
                 {item.error && <p className="text-xs text-destructive">{item.error}</p>}
               </div>
 
-              <div className="flex flex-shrink-0 items-center gap-2">
+              <div className="flex shrink-0 items-center gap-1">
                 {item.status === "success" && item.storageFile && (
                   <FileDownloadButton
                     fileId={item.storageFile.id}
                     fileName={item.storageFile.fileName}
                   />
                 )}
-                {item.status === "success" && (
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                )}
-                {item.status === "error" && (
-                  <AlertCircle className="h-4 w-4 text-destructive" />
-                )}
                 <button
                   type="button"
                   onClick={() => removeFile(item)}
-                  className="flex h-6 w-6 items-center justify-center rounded-md transition-all duration-200 ease-out hover:bg-muted active:scale-[0.98]"
+                  aria-label={`Remove ${item.fileName}`}
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-lg leading-none text-slate-400 transition-all duration-200 ease-out hover:bg-slate-50 hover:text-slate-800 active:scale-[0.98]"
                 >
-                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+                  ×
                 </button>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );
+}
+
+function isPlainFileObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function asStoredFile(value: unknown): StoredFileReference | null {
+  if (isStoredFileReference(value)) return value;
+  if (!isPlainFileObject(value)) return null;
+  if (typeof value.id !== "string" || typeof value.fileName !== "string") return null;
+  const meta = isPlainFileObject(value.meta) ? value.meta : {};
+  return {
+    id: value.id,
+    fileName: value.fileName,
+    contentType: typeof value.contentType === "string" ? value.contentType : "application/octet-stream",
+    status: "AVAILABLE",
+    uploadedAt: typeof value.uploadedAt === "string" ? value.uploadedAt : new Date().toISOString(),
+    type: typeof value.type === "string" ? value.type : "",
+    meta: {
+      folderId: meta.folderId === null || typeof meta.folderId === "string" ? meta.folderId : null,
+      sizeBytes: typeof meta.sizeBytes === "number" ? meta.sizeBytes : 0,
+      checksum: typeof meta.checksum === "string" ? meta.checksum : "",
+      ownerId: typeof meta.ownerId === "string" ? meta.ownerId : "",
+    },
+  };
 }
 
 function toItems(files: StoredFileReference[]): FileItem[] {

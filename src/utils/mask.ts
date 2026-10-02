@@ -1,8 +1,12 @@
 /**
  * Lightweight input mask engine shared by `DynamicField` and the dev Form
- * Playground's sample-data generator. `pattern` uses `A` for a letter slot
- * and `0` for a digit slot; every other character is a literal that gets
- * auto-inserted (e.g. "AAAAA-0000-A" → "ABCDE-1234-F").
+ * Playground's sample-data generator.
+ *
+ * Pattern slots:
+ * - `A` — letter
+ * - `0` — digit
+ * - `*` — alphanumeric (letter or digit)
+ * Any other character is a literal that is auto-inserted (e.g. "AAAAA-0000-A").
  */
 import type { MaskConfig } from "@/types";
 
@@ -55,6 +59,11 @@ export function applyMask(rawValue: string, pattern: string, transform?: MaskCon
       if (ci >= chars.length) break;
       result += chars[ci];
       ci++;
+    } else if (slot === "*") {
+      while (ci < chars.length && !/[A-Za-z0-9]/.test(chars[ci])) ci++;
+      if (ci >= chars.length) break;
+      result += chars[ci];
+      ci++;
     } else {
       result += slot;
     }
@@ -80,6 +89,9 @@ export function fillMaskPattern(pattern: string): string {
       result += String.fromCharCode(65 + Math.floor(Math.random() * 26));
     } else if (slot === "0") {
       result += String(Math.floor(Math.random() * 10));
+    } else if (slot === "*") {
+      const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      result += alphabet[Math.floor(Math.random() * alphabet.length)];
     } else {
       result += slot;
     }
