@@ -24,8 +24,7 @@ import type {
   FormField,
   FieldValidation,
   InputFormatConfig,
-  FieldOption,
-  MaskConfig,
+  InputConfig,
   FieldRules,
   ConditionRule,
   ConditionOperator,
@@ -132,7 +131,7 @@ function mapNewFieldToOld(
 /**
  * Convert new InputConfig to old InputFormatConfig.
  */
-function convertInputConfig(input: any): InputFormatConfig | undefined {
+function convertInputConfig(input: InputConfig): InputFormatConfig | undefined {
   const config: InputFormatConfig = {};
 
   if (input.trim) config.trim = true;
@@ -149,27 +148,21 @@ function convertInputConfig(input: any): InputFormatConfig | undefined {
  * New format: { visibleWhen: { op, field, value }, requiredWhen: { op, field, value } }
  * Old format: { visibleWhen: { field, operator, value }, requiredWhen: { field, operator, value } }
  */
-function convertNewRulesToOld(newRules: any): FieldRules | undefined {
-  if (!newRules || typeof newRules !== "object") {
+function convertNewRulesToOld(newRules: unknown): FieldRules | undefined {
+  if (!isPlainObject(newRules)) {
     return undefined;
   }
 
   const rules: FieldRules = {};
 
-  // Convert visibleWhen
-  if (newRules.visibleWhen) {
-    const converted = convertNewRuleToCondition(newRules.visibleWhen);
-    if (converted) {
-      rules.visibleWhen = converted;
-    }
+  const visibleWhen = convertNewRuleToCondition(newRules.visibleWhen);
+  if (visibleWhen) {
+    rules.visibleWhen = visibleWhen;
   }
 
-  // Convert requiredWhen
-  if (newRules.requiredWhen) {
-    const converted = convertNewRuleToCondition(newRules.requiredWhen);
-    if (converted) {
-      rules.requiredWhen = converted;
-    }
+  const requiredWhen = convertNewRuleToCondition(newRules.requiredWhen);
+  if (requiredWhen) {
+    rules.requiredWhen = requiredWhen;
   }
 
   return Object.keys(rules).length > 0 ? rules : undefined;
@@ -182,13 +175,13 @@ function convertNewRulesToOld(newRules: any): FieldRules | undefined {
  * - field path normalization (e.g., "company.gstRegistered" → "gstRegistered")
  * - value extraction from simple rules
  */
-function convertNewRuleToCondition(rule: any): ConditionRule | undefined {
-  if (!rule || typeof rule !== "object") {
+function convertNewRuleToCondition(rule: unknown): ConditionRule | undefined {
+  if (!isPlainObject(rule)) {
     return undefined;
   }
 
-  const op = (rule.op ?? rule.operator) as string | undefined;
-  let field = rule.field as string | undefined;
+  const op = typeof rule.op === "string" ? rule.op : typeof rule.operator === "string" ? rule.operator : undefined;
+  let field = typeof rule.field === "string" ? rule.field : undefined;
   let value = rule.value;
 
   // Operator mapping
@@ -525,8 +518,8 @@ export function mapNewTemplateToOld(program: NewLoanProduct): LoanProduct {
  * Detect which format a template JSON is in.
  * Returns "new" if it has schemaVersion, forms[], or documents[].
  */
-export function detectTemplateFormat(json: any): "old" | "new" {
-  if (json && typeof json === "object") {
+export function detectTemplateFormat(json: unknown): "old" | "new" {
+  if (isPlainObject(json)) {
     if (
       (typeof json.schemaVersion === "string" && json.schemaVersion.length > 0) ||
       Array.isArray(json.forms) ||
@@ -542,7 +535,7 @@ export function detectTemplateFormat(json: any): "old" | "new" {
 /**
  * Parse and normalize template JSON, automatically converting new format to old.
  */
-export function normalizeTemplateAuto(json: any): LoanProduct {
+export function normalizeTemplateAuto(json: unknown): LoanProduct {
   const format = detectTemplateFormat(json);
 
   if (format === "new") {

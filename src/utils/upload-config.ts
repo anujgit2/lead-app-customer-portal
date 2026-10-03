@@ -125,7 +125,7 @@ export function formatAcceptLabel(accept?: string): string {
     .join(", ");
 }
 
-export function isDocumentSlot(value: unknown): value is Raw {
+export function isDocumentSlot(value: unknown): value is Raw & { documentType: string } {
   return isPlainObject(value) && typeof value.documentType === "string";
 }
 

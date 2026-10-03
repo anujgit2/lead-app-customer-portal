@@ -9,11 +9,13 @@ import { Button } from "@/components/ui/button";
 import { useWizardStore } from "@/store/wizard.store";
 import { applicationService } from "@/services/application.service";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft,
   ArrowRight,
+  LayoutDashboard,
   SaveAll,
   CheckCircle2,
   AlertCircle,
@@ -354,13 +356,25 @@ export function FormWizard({
       {/* ── Sticky header ── */}
       <div className="bg-white/90 backdrop-blur-sm border-b border-slate-100 sticky top-0 z-30 shadow-[0_2px_12px_rgb(0,0,0,0.04)]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
-          <div className="mb-4">
-            <div className="flex flex-col gap-0.5">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div className="flex min-w-0 flex-col gap-0.5">
               <h1 className="text-base font-semibold tracking-tight text-slate-900 leading-snug">
                 {product.name}
               </h1>
               <p className="text-xs text-slate-400 font-normal">{product.description}</p>
             </div>
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="shrink-0 gap-1.5 border-slate-200 text-slate-600 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 ease-out active:scale-[0.98] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+            >
+              <Link href="/dashboard">
+                <LayoutDashboard className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Back to dashboard</span>
+                <span className="sm:hidden">Dashboard</span>
+              </Link>
+            </Button>
           </div>
           <WizardProgress
             templates={templates}

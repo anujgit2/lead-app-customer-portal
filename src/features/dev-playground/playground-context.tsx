@@ -13,7 +13,7 @@
  */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { FieldErrors } from "react-hook-form";
-import type { FormTemplate } from "@/types";
+import type { FormTemplate, NewLoanProduct } from "@/types";
 import { normalizeTemplateJson } from "@/utils/program-mapper";
 import { detectTemplateFormat, mapNewTemplateToOld } from "@/utils/template-mapper";
 import { fetchTemplateFromApi, parseJsonTemplateText } from "./template-sources";
@@ -195,7 +195,7 @@ export function PlaygroundProvider({ children }: { children: React.ReactNode }) 
       
       if (format === "new") {
         // Silently convert new format to old format
-        const mapped = mapNewTemplateToOld(root as any) as unknown as Record<string, unknown>;
+        const mapped = mapNewTemplateToOld(root as unknown as NewLoanProduct) as unknown as Record<string, unknown>;
         normalizeInput = mapped;
       }
       

@@ -71,12 +71,12 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
   // Support new validation format: validation arrays from v1.0 templates.
   // Extract pattern from validation rules if present (old format uses single validation object).
   let patternFromNewFormat: string | undefined;
-  if (Array.isArray((field as any).validation)) {
-    const validationArray = (field as any).validation as any[];
-    for (const rule of validationArray) {
+  const authoredValidation = field.validation as FieldValidation | Array<{ regex?: string }> | undefined;
+  if (Array.isArray(authoredValidation)) {
+    for (const rule of authoredValidation) {
       if (rule.regex) {
         patternFromNewFormat = rule.regex;
-        break; // Use first regex rule found
+        break;
       }
     }
   }

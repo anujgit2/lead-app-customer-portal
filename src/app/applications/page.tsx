@@ -9,7 +9,7 @@ import { ApplicationsTable } from "@/features/applications/ApplicationsTable";
 import { FileText } from "lucide-react";
 
 export default function ApplicationsPage() {
-  const { data: applications, isLoading } = useQuery({
+  const { data: applications, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["applications"],
     queryFn: () => applicationService.getApplications(),
   });
@@ -31,6 +31,10 @@ export default function ApplicationsPage() {
             <ApplicationsTable
               applications={applications}
               isLoading={isLoading}
+              isRefreshing={isFetching && !isLoading}
+              onRefresh={() => {
+                void refetch();
+              }}
               emptyState={
                 <div className="py-16 text-center">
                   <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

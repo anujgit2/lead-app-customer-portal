@@ -35,6 +35,7 @@ export function MultiSelectField({
   error,
 }: MultiSelectFieldProps) {
   const [open, setOpen] = useState(false);
+  const [menuWidth, setMenuWidth] = useState<number>();
   const triggerRef = useRef<HTMLDivElement>(null);
   const selected = asStringArray(value);
   const selectedSet = new Set(selected);
@@ -58,7 +59,12 @@ export function MultiSelectField({
     <Popover
       open={open}
       onOpenChange={(next) => {
-        if (!locked) setOpen(next);
+        if (locked) return;
+        if (next) {
+          const width = triggerRef.current?.offsetWidth;
+          if (width) setMenuWidth(width);
+        }
+        setOpen(next);
       }}
     >
       <PopoverTrigger asChild>
@@ -129,7 +135,7 @@ export function MultiSelectField({
       <PopoverContent
         align="start"
         className="max-h-72 overflow-hidden p-1"
-        style={{ width: triggerRef.current?.offsetWidth }}
+        style={menuWidth ? { width: menuWidth } : undefined}
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <div role="listbox" aria-multiselectable="true" className="max-h-64 overflow-y-auto">

@@ -250,8 +250,8 @@ export const SAMPLE_TEMPLATE_JSON = [
  */
 export async function getSampleNewFormatTemplate() {
   try {
-    const module = await import("../../../application-template-new.json");
-    return module.default;
+    const imported = await import("../../../application-template-new.json");
+    return imported.default;
   } catch {
     return null;
   }

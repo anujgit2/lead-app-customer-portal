@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { applicationService } from "@/services/application.service";
@@ -7,7 +8,20 @@ import { Building2 } from "lucide-react";
 import { ErrorState } from "@/components/ErrorState";
 import { parseApiError } from "@/lib/api-error";
 
-export default function NewLoanApplicationPage() {
+function LoadingState() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3 text-muted-foreground">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center animate-pulse">
+          <Building2 className="h-5 w-5 text-primary" />
+        </div>
+        <p className="text-sm">Creating your application...</p>
+      </div>
+    </div>
+  );
+}
+
+function NewLoanApplicationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const programId = searchParams?.get("programId");
@@ -58,14 +72,13 @@ export default function NewLoanApplicationPage() {
     );
   }
 
+  return <LoadingState />;
+}
+
+export default function NewLoanApplicationPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3 text-muted-foreground">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center animate-pulse">
-          <Building2 className="h-5 w-5 text-primary" />
-        </div>
-        <p className="text-sm">Creating your application...</p>
-      </div>
-    </div>
+    <Suspense fallback={<LoadingState />}>
+      <NewLoanApplicationContent />
+    </Suspense>
   );
 }

@@ -9,7 +9,7 @@ import {
   Send,
   CheckCircle2,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { applicationService } from "@/services/application.service";
 import { useAuthStore } from "@/store/auth.store";
 import { ErrorState } from "@/components/ErrorState";
@@ -48,6 +48,7 @@ export function DashboardPage() {
   const {
     data: applications,
     isLoading: appsLoading,
+    isFetching: appsFetching,
     isError: appsError,
     error: appsQueryError,
     refetch: refetchApps,
@@ -146,18 +147,15 @@ export function DashboardPage() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Loan Applications</CardTitle>
-              <CardDescription>
-                {appsLoading
-                  ? "Loading your applications…"
-                  : summary.total === 1
-                    ? "1 application on your account"
-                    : `All ${summary.total} applications on your account`}
-              </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <ApplicationsTable
                 applications={applications}
                 isLoading={appsLoading}
+                isRefreshing={appsFetching && !appsLoading}
+                onRefresh={() => {
+                  void refetchApps();
+                }}
                 emptyState={
                   <div className="px-6 py-12 text-center">
                     <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />

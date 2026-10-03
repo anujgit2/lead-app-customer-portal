@@ -125,21 +125,22 @@ function mapField(raw: unknown, path: string, issues: MappingIssue[]): FormField
   }
 
   const ui = isPlainObject(raw.ui) ? raw.ui : {};
-  const documentSlot = isDocumentSlot(raw);
+  const field: Raw = raw;
+  const documentSlot = typeof field.documentType === "string";
   const overrides: Raw = documentSlot
     ? {
-        name: asString(raw.name) ?? asString(raw.key) ?? raw.documentType,
-        type: asString(raw.type) ?? "document",
-        helpText: raw.helpText ?? raw.description ?? ui.helperText,
+        name: asString(field.name) ?? asString(field.key) ?? field.documentType,
+        type: asString(field.type) ?? "document",
+        helpText: field.helpText ?? field.description ?? ui.helperText,
       }
     : {
-        name: asString(raw.name) ?? asString(raw.key),
-        label: asString(raw.label) ?? asString(ui.label),
-        placeholder: asString(raw.placeholder) ?? asString(ui.placeholder),
-        info: asString(raw.info) ?? asString(ui.tooltip),
-        helpText: raw.helpText ?? ui.helperText,
+        name: asString(field.name) ?? asString(field.key),
+        label: asString(field.label) ?? asString(ui.label),
+        placeholder: asString(field.placeholder) ?? asString(ui.placeholder),
+        info: asString(field.info) ?? asString(ui.tooltip),
+        helpText: field.helpText ?? ui.helperText,
       };
-  const coerced: Raw = { ...raw, ...overrides };
+  const coerced: Raw = { ...field, ...overrides };
 
   const name = coerced.name;
   const type = coerced.type;
