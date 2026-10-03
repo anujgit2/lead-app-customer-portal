@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useSearchParams } from "next/navigation";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { applicationService } from "@/services/application.service";
 import { Building2 } from "lucide-react";

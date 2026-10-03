@@ -430,11 +430,12 @@ function DocumentReviewCard({
       <CardContent className="space-y-5">
         <div className="space-y-5">
           {template.sections.map((section, sIdx) => {
+            const sectionData = isPlainObject(templateData)
+              ? templateData[section.code]
+              : undefined;
             const { documents } = collectReviewItems(
               section.fields,
-              isPlainObject(templateData) && isPlainObject(templateData[section.code])
-                ? templateData[section.code]
-                : {}
+              isPlainObject(sectionData) ? sectionData : {}
             );
             if (documents.length === 0) return null;
             return (

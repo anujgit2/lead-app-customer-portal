@@ -125,21 +125,21 @@ function mapField(raw: unknown, path: string, issues: MappingIssue[]): FormField
   }
 
   const ui = isPlainObject(raw.ui) ? raw.ui : {};
-  const coerced: Raw = isDocumentSlot(raw)
+  const documentSlot = isDocumentSlot(raw);
+  const overrides: Raw = documentSlot
     ? {
-        ...raw,
         name: asString(raw.name) ?? asString(raw.key) ?? raw.documentType,
         type: asString(raw.type) ?? "document",
         helpText: raw.helpText ?? raw.description ?? ui.helperText,
       }
     : {
-        ...raw,
         name: asString(raw.name) ?? asString(raw.key),
         label: asString(raw.label) ?? asString(ui.label),
         placeholder: asString(raw.placeholder) ?? asString(ui.placeholder),
         info: asString(raw.info) ?? asString(ui.tooltip),
         helpText: raw.helpText ?? ui.helperText,
       };
+  const coerced: Raw = { ...raw, ...overrides };
 
   const name = coerced.name;
   const type = coerced.type;
