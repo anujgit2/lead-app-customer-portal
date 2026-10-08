@@ -11,6 +11,8 @@ import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buildSectionDefaults } from "@/utils/schema-builder";
 import { useFieldRules } from "./use-field-rules";
+import { PanSearchDialog } from "@/features/loan-application/PanSearchDialog";
+import { findPanSearchField, getPanSearchVariant } from "@/utils/pan-search";
 
 interface DynamicSectionProps {
   section: FormSection;
@@ -174,13 +176,22 @@ export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
     );
   }
 
+  const panSearchField = findPanSearchField(section);
+
   return (
     <Card>
       <CardHeader className="pb-4">
-        <CardTitle className="text-base">{section.title}</CardTitle>
-        {section.description && (
-          <CardDescription>{section.description}</CardDescription>
-        )}
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 space-y-1.5">
+            <CardTitle className="text-base">{section.title}</CardTitle>
+            {section.description && (
+              <CardDescription>{section.description}</CardDescription>
+            )}
+          </div>
+          {panSearchField && (
+            <PanSearchDialog variant={getPanSearchVariant(panSearchField.name)} />
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {section.repeatable ? (

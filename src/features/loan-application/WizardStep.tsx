@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2, ChevronDown, ChevronUp, FileWarning } from "lucide-react";
+import { PanSearchScopeProvider, PanVerificationProvider } from "./pan-search-context";
 
 export interface WizardStepHandle {
   validate: () => Promise<boolean>;
@@ -136,15 +137,17 @@ function RepeatableInstance({
           {schemaError ? (
             <SchemaBuildError error={schemaError} />
           ) : (
-            <SyncFormToWizardProvider onSync={syncForm}>
-              <FormProvider {...methods}>
-                <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-                  {template.sections.map((section) => (
-                    <DynamicSection key={section.code} section={section} />
-                  ))}
-                </form>
-              </FormProvider>
-            </SyncFormToWizardProvider>
+            <PanSearchScopeProvider scopeId={`${template.code}:${index}`}>
+              <SyncFormToWizardProvider onSync={syncForm}>
+                <FormProvider {...methods}>
+                  <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                    {template.sections.map((section) => (
+                      <DynamicSection key={section.code} section={section} />
+                    ))}
+                  </form>
+                </FormProvider>
+              </SyncFormToWizardProvider>
+            </PanSearchScopeProvider>
           )}
         </div>
       )}
@@ -313,38 +316,41 @@ const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
     }
 
     return (
-      <SyncFormToWizardProvider onSync={syncForm}>
-        <FormProvider {...methods}>
-          <form
-            ref={formRef}
-            className={isDocumentTemplate(template) ? "space-y-8" : "space-y-6"}
-            noValidate
-            onSubmit={(e) => e.preventDefault()}
-          >
-            {isDocumentTemplate(template) && <DocumentUploadProgress template={template} />}
-            {template.sections.map((section) => (
-              <DynamicSection key={section.code} section={section} />
-            ))}
-          </form>
-        </FormProvider>
-      </SyncFormToWizardProvider>
+      <PanSearchScopeProvider scopeId={template.code}>
+        <SyncFormToWizardProvider onSync={syncForm}>
+          <FormProvider {...methods}>
+            <form
+              ref={formRef}
+              className={isDocumentTemplate(template) ? "space-y-8" : "space-y-6"}
+              noValidate
+              onSubmit={(e) => e.preventDefault()}
+            >
+              {isDocumentTemplate(template) && <DocumentUploadProgress template={template} />}
+              {template.sections.map((section) => (
+                <DynamicSection key={section.code} section={section} />
+              ))}
+            </form>
+          </FormProvider>
+        </SyncFormToWizardProvider>
+      </PanSearchScopeProvider>
     );
   }
 );
 
 export const WizardStep = forwardRef<WizardStepHandle, WizardStepProps>(
   function WizardStep(props, ref) {
-    if (props.template.repeatable) {
-      return (
-        <RepeatableTemplateInstances
-          template={props.template}
-          defaultValues={props.defaultValues}
-          onDataChange={props.onDataChange}
-          onErrorsChange={props.onErrorsChange}
-          validateRef={ref as React.RefObject<WizardStepHandle | null>}
-        />
-      );
-    }
-    return <SingleTemplateForm {...props} ref={ref} />;
+    const step = props.template.repeatable ? (
+      <RepeatableTemplateInstances
+        template={props.template}
+        defaultValues={props.defaultValues}
+        onDataChange={props.onDataChange}
+        onErrorsChange={props.onErrorsChange}
+        validateRef={ref as React.RefObject<WizardStepHandle | null>}
+      />
+    ) : (
+      <SingleTemplateForm {...props} ref={ref} />
+    );
+
+    return <PanVerificationProvider>{step}</PanVerificationProvider>;
   }
 );

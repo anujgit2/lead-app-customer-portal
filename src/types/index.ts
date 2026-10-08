@@ -381,6 +381,38 @@ export interface ApiError {
   errors?: Record<string, string[]>;
 }
 
+// ─── KYC / Integration Types ───────────────────────────────────────────────────
+export interface PanVerifyRequest {
+  pan: string;
+  nameAsPerPan: string;
+  dateOfBirth: string;
+  consent?: string;
+  reason?: string;
+}
+
+export interface PanVerifyResponse {
+  valid: boolean;
+  pan: string | null;
+  status: string | null;
+  nameMatch: boolean | null;
+  dobMatch: boolean | null;
+  category: string | null;
+  aadhaarSeedingStatus: string | null;
+  code: number | null;
+  message: string | null;
+}
+
+export interface PanSearchQuery {
+  pan: string;
+  nameAsPerPan: string;
+  dateOfBirth: string;
+}
+
+export interface PanVerificationRecord {
+  queried: PanSearchQuery;
+  result: PanVerifyResponse;
+}
+
 // ─── Upload Types ──────────────────────────────────────────────────────────────
 export interface UploadedFile {
   id: string;

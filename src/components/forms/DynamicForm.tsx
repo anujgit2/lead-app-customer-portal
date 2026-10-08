@@ -6,6 +6,7 @@ import type { FormTemplate } from "@/types";
 import { buildTemplateSchema } from "@/utils/schema-builder";
 import { createFieldLevelResolver } from "@/utils/form-resolver";
 import { DynamicSection } from "./DynamicSection";
+import { PanSearchScopeProvider, PanVerificationProvider } from "@/features/loan-application/pan-search-context";
 
 interface DynamicFormProps {
   template: FormTemplate;
@@ -31,17 +32,21 @@ export function DynamicForm({
   });
 
   return (
-    <FormProvider {...methods}>
-      <form
-        ref={formRef}
-        onSubmit={methods.handleSubmit(onSubmit)}
-        className="space-y-6"
-        noValidate
-      >
-        {template.sections.map((section) => (
-          <DynamicSection key={section.code} section={section} />
-        ))}
-      </form>
-    </FormProvider>
+    <PanVerificationProvider>
+      <PanSearchScopeProvider scopeId={template.code}>
+        <FormProvider {...methods}>
+          <form
+            ref={formRef}
+            onSubmit={methods.handleSubmit(onSubmit)}
+            className="space-y-6"
+            noValidate
+          >
+            {template.sections.map((section) => (
+              <DynamicSection key={section.code} section={section} />
+            ))}
+          </form>
+        </FormProvider>
+      </PanSearchScopeProvider>
+    </PanVerificationProvider>
   );
 }

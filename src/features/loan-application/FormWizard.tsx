@@ -21,6 +21,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { ApplicationIdProvider, PersistDocumentStepProvider } from "@/components/forms/application-context";
+import { PanVerificationProvider } from "./pan-search-context";
 import { buildWizardSchema } from "@/utils/schema-builder";
 import { parseApiError } from "@/lib/api-error";
 import type { ApiError } from "@/types";
@@ -350,6 +351,7 @@ export function FormWizard({
     : undefined;
 
   return (
+    <PanVerificationProvider>
     <ApplicationIdProvider applicationId={draftId}>
     <PersistDocumentStepProvider onPersist={persistDocumentStep}>
     <div className="min-h-screen bg-slate-50/70">
@@ -512,5 +514,6 @@ export function FormWizard({
     </div>
     </PersistDocumentStepProvider>
     </ApplicationIdProvider>
+    </PanVerificationProvider>
   );
 }

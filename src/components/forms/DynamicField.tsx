@@ -31,6 +31,8 @@ import { applyMask } from "@/utils/mask";
 import { applyInputFormat } from "@/utils/field-config";
 import { isKnownFieldType } from "@/utils/field-types";
 import { getAddressSubfields } from "@/utils/address-field";
+import { PanVerificationBadge } from "@/features/loan-application/PanVerificationBadge";
+import { isPanSearchField } from "@/utils/pan-search";
 
 // ─── Pattern → human-readable example map ────────────────────────────────────
 // Exported for reuse by the dev Form Playground's sample-data generator.
@@ -146,7 +148,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
   }
 
   const labelEl = (
-    <div className="flex h-6 min-w-0 items-center gap-1.5 pl-1">
+    <div className="flex min-h-6 min-w-0 items-center gap-1.5 pl-1">
       <Label
         htmlFor={fieldName}
         className="flex min-w-0 items-center text-sm font-medium text-slate-600"
@@ -156,6 +158,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
           <span className="ml-1 shrink-0 text-destructive">*</span>
         )}
       </Label>
+      {isPanSearchField(field) && <PanVerificationBadge currentPan={watch(fieldName)} />}
       {field.info && (
         <Tooltip>
           <TooltipTrigger asChild>
