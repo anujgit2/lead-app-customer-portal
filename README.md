@@ -23,6 +23,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 | Variable | Required | Purpose |
 |---|---|---|
 | `NEXT_PUBLIC_API_URL` | yes | Base URL for the backend API. |
+| `NEXT_PUBLIC_APP_PUBLIC_URL` | yes for shared links | Public portal origin used in copied share links (`https://portal.example.com`). Never the API host. |
 | `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | production | reCAPTCHA v2 ("I'm not a robot") site key used by the human check on self-serve signup. |
 
 This app builds as a static export (`output: "export"` in `next.config.ts`) — there is no Next.js server at runtime, so `NEXT_PUBLIC_*` vars are baked into the JS bundle at build time and the browser calls the backend directly. **Changing an environment's backend URL always requires a rebuild.**

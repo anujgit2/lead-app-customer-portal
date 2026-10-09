@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   FileText,
+  Files,
   User,
   LogOut,
   Menu,
@@ -33,6 +34,11 @@ const NAV_ITEMS = [
     label: "Applications",
     href: "/applications",
     icon: FileText,
+  },
+  {
+    label: "Documents",
+    href: "/documents",
+    icon: Files,
   },
 ];
 

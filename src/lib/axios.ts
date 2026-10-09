@@ -80,7 +80,9 @@ apiClient.interceptors.response.use(
           path.startsWith("/auth/login") ||
           path.startsWith("/auth/register") ||
           path.startsWith("/auth/session-expired") ||
-          path.startsWith("/apply");
+          path.startsWith("/apply") ||
+          path.startsWith("/s/") ||
+          path.startsWith("/shared");
 
         if (!isAuthPage) {
           handleSessionExpired(path);

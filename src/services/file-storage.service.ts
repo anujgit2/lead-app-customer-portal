@@ -204,7 +204,8 @@ function redirectIfSessionExpired(): void {
     path.startsWith("/auth/login") ||
     path.startsWith("/auth/register") ||
     path.startsWith("/auth/session-expired") ||
-    path.startsWith("/apply");
+    path.startsWith("/apply") ||
+    path.startsWith("/s/");
   if (!isAuthPage) {
     handleSessionExpired(path);
     window.location.href = "/auth/session-expired";

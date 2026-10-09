@@ -1,0 +1,10 @@
+{
+  "rewrites": [
+    { "source": "/s/:token", "destination": "/s/link/index.html" },
+    { "source": "/s/:token/", "destination": "/s/link/index.html" },
+    { "source": "/shared/:token", "destination": "/shared/link/index.html" },
+    { "source": "/shared/:token/", "destination": "/shared/link/index.html" },
+    { "source": "/documents/:id", "destination": "/documents/view/index.html" },
+    { "source": "/documents/:id/", "destination": "/documents/view/index.html" }
+  ]
+}
