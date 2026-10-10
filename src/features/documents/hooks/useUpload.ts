@@ -37,6 +37,8 @@ export function useUpload() {
       if (input.label.trim()) formData.append("label", input.label.trim());
       if (input.documentId && !input.asNewDocument) formData.append("documentId", input.documentId);
       if (input.asNewDocument) formData.append("asNewDocument", "true");
+      if (input.profileId) formData.append("profileId", input.profileId);
+      if (input.relation) formData.append("relation", input.relation);
       setProgress(0);
       return uploadDocument(formData, idemKey.current, setProgress);
     },

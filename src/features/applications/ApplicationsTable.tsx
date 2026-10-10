@@ -97,7 +97,7 @@ export function ApplicationsTable({
   };
 
   const footer = (
-    <div className="flex flex-col gap-3 border-t border-slate-100 bg-slate-50/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 border-t border-border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-wrap items-center gap-3">
         <Button
           type="button"
@@ -105,30 +105,30 @@ export function ApplicationsTable({
           size="sm"
           disabled={!onRefresh || isRefreshing || isLoading}
           onClick={() => onRefresh?.()}
-          className="h-8 gap-1.5 px-2.5 text-xs transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+          className="h-8 gap-1.5 px-2.5 text-xs"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
           Refresh
         </Button>
-        <p className="text-xs text-slate-500">
+        <p className="text-[13px] text-muted-foreground">
           Total records{" "}
-          <span className="font-medium text-slate-700">{isLoading ? "—" : total}</span>
+          <span className="font-medium text-foreground">{isLoading ? "—" : total}</span>
         </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
-        <p className="text-xs text-slate-500">
+        <p className="num text-[13px] text-muted-foreground">
           Showing{" "}
-          <span className="font-medium text-slate-700">
+          <span className="font-medium text-foreground">
             {rangeStart}–{rangeEnd}
           </span>{" "}
-          of <span className="font-medium text-slate-700">{total}</span>
+          of <span className="font-medium text-foreground">{total}</span>
         </p>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500">Rows</span>
+          <span className="text-[13px] text-muted-foreground">Rows</span>
           <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
-            <SelectTrigger className="h-8 w-[72px] px-2.5 text-xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
+            <SelectTrigger className="h-8 w-[72px] px-2.5 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -144,11 +144,11 @@ export function ApplicationsTable({
         <div className="flex items-center gap-1">
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="sm"
             disabled={currentPage <= 1}
             onClick={() => setPage(currentPage - 1)}
-            className="h-8 w-8 p-0 text-slate-500 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+            className="h-8 w-8 p-0"
             aria-label="Previous page"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -170,10 +170,8 @@ export function ApplicationsTable({
                 size="sm"
                 onClick={() => setPage(item)}
                 className={cn(
-                  "h-8 min-w-8 px-2 text-xs transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]",
-                  item === currentPage
-                    ? "bg-white text-slate-900 shadow-sm border border-slate-100 font-semibold"
-                    : "text-slate-500"
+                  "h-8 w-8 p-0",
+                  item === currentPage && "border-transparent bg-primary text-primary-foreground hover:bg-primary"
                 )}
                 aria-current={item === currentPage ? "page" : undefined}
               >
@@ -184,11 +182,11 @@ export function ApplicationsTable({
 
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             size="sm"
             disabled={currentPage >= totalPages}
             onClick={() => setPage(currentPage + 1)}
-            className="h-8 w-8 p-0 text-slate-500 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+            className="h-8 w-8 p-0"
             aria-label="Next page"
           >
             <ChevronRight className="h-4 w-4" />
@@ -239,7 +237,7 @@ export function ApplicationsTable({
     <div>
       <Table>
         <TableHeader>
-          <TableRow className="hover:bg-transparent bg-slate-50/60">
+          <TableRow className="hover:bg-transparent">
             <TableHead>ID</TableHead>
             <TableHead>Application Number</TableHead>
             <TableHead>Status</TableHead>
@@ -252,30 +250,30 @@ export function ApplicationsTable({
           {pageItems.map((app) => (
             <TableRow
               key={app.id}
-              className="even:bg-slate-50/80 odd:bg-white hover:bg-slate-100"
+              className="hover:bg-muted/50"
             >
               <TableCell className={cn(ROW_HEIGHT_CLASS, "whitespace-nowrap text-xs")}>
                 <Link
                   href={getApplicationHref(app)}
                   title={app.status === "draft" ? "Open application form" : "View application"}
-                  className="font-mono text-xs font-medium text-primary transition-all duration-200 ease-out hover:underline hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:rounded-sm"
+                  className="num font-semibold text-primary hover:underline"
                 >
                   {app.id}
                 </Link>
               </TableCell>
-              <TableCell className={cn(ROW_HEIGHT_CLASS, "font-medium text-xs text-slate-900 whitespace-nowrap")}>
+              <TableCell className={cn(ROW_HEIGHT_CLASS, "whitespace-nowrap font-medium")}>
                 {app.applicationNumber || "—"}
               </TableCell>
               <TableCell className={cn(ROW_HEIGHT_CLASS, "text-xs")}>
                 <ApplicationStatusBadge status={app.status} />
               </TableCell>
-              <TableCell className={cn(ROW_HEIGHT_CLASS, "whitespace-nowrap text-xs text-slate-500")}>
+              <TableCell className={cn(ROW_HEIGHT_CLASS, "whitespace-nowrap text-muted-foreground")}>
                 {displayDate(app.createdAt)}
               </TableCell>
-              <TableCell className={cn(ROW_HEIGHT_CLASS, "whitespace-nowrap text-xs text-slate-500")}>
+              <TableCell className={cn(ROW_HEIGHT_CLASS, "whitespace-nowrap text-muted-foreground")}>
                 {displayDate(app.submittedAt)}
               </TableCell>
-              <TableCell className={cn(ROW_HEIGHT_CLASS, "text-xs text-slate-700")}>
+              <TableCell className={cn(ROW_HEIGHT_CLASS)}>
                 {app.programName || app.loanType || "—"}
               </TableCell>
             </TableRow>
@@ -284,7 +282,7 @@ export function ApplicationsTable({
             <TableRow
               key={`empty-${i}`}
               aria-hidden
-              className="even:bg-slate-50/80 odd:bg-white pointer-events-none hover:bg-transparent"
+              className="pointer-events-none hover:bg-transparent"
             >
               {Array.from({ length: COLUMN_COUNT }).map((_, j) => (
                 <TableCell key={j} className={ROW_HEIGHT_CLASS} />

@@ -1,3 +1,5 @@
+import type { DocumentProfileRelation, LinkedDocumentProfile } from "@/types";
+
 export type DocumentSource = "UPLOADED" | "DIGILOCKER";
 
 export type ShareStatus = "ACTIVE" | "EXPIRED" | "REVOKED";
@@ -13,6 +15,8 @@ export type ShareEventType =
 export interface DocumentFilters {
   category?: string;
   q?: string;
+  profileId?: string;
+  relation?: DocumentProfileRelation;
 }
 
 export interface PortalDocument {
@@ -27,6 +31,7 @@ export interface PortalDocument {
   fileName?: string;
   contentType?: string;
   sizeBytes?: number;
+  linked?: LinkedDocumentProfile[];
 }
 
 export interface DocumentVersion {
@@ -69,6 +74,8 @@ export interface UploadSubmission {
   label: string;
   documentId?: string;
   asNewDocument?: boolean;
+  profileId?: string;
+  relation?: DocumentProfileRelation;
 }
 
 export interface ShareSummary {

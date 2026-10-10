@@ -1,8 +1,14 @@
 "use client";
 
+import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ShareActivity } from "../types";
+import { cn } from "@/lib/utils";
+import type { ShareActivity, ShareEventType } from "../types";
 import { activityEventLabel, formatDisplayDateTime, maskContact } from "../utils/format";
+
+function isCompleteEvent(eventType: ShareEventType): boolean {
+  return eventType === "SHARED" || eventType === "LINK_SENT" || eventType === "VIEWED" || eventType === "DOWNLOADED";
+}
 
 interface ActivityTimelineProps {
   events: ShareActivity[];
@@ -59,15 +65,21 @@ export function ActivityTimeline({
 
   return (
     <div className="space-y-4">
-      <ol className="relative space-y-5 border-l border-slate-100 pl-6">
+      <ol className="relative space-y-5 border-l border-success/40 pl-6">
         {ordered.map((event) => {
           const contact = maskContact(event.contactMasked);
+          const complete = isCompleteEvent(event.eventType);
           return (
             <li key={event.id} className="relative">
               <span
-                className="absolute -left-[1.7rem] top-1.5 h-2.5 w-2.5 rounded-full bg-slate-300 ring-4 ring-white"
+                className={cn(
+                  "absolute -left-[calc(1.5rem+10px)] top-0 grid h-5 w-5 place-items-center rounded-full text-white ring-4 ring-white",
+                  complete ? "bg-success" : "bg-danger"
+                )}
                 aria-hidden
-              />
+              >
+                {complete ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+              </span>
               <p className="text-sm font-semibold text-slate-900">{activityEventLabel(event)}</p>
               {contact ? <p className="mt-0.5 text-sm font-normal text-slate-500">{contact}</p> : null}
               <p className="mt-0.5 text-xs text-slate-500">{formatDisplayDateTime(event.occurredAt)}</p>

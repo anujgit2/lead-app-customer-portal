@@ -459,6 +459,8 @@ interface BackendApplication {
   updatedAt: string;
   submittedAt?: string;
   tenantId?: string;
+  customerProfileId?: string;
+  customerProfileVersionNo?: number;
 }
 
 function mapStatus(status: string): ApplicationStatus {
@@ -527,6 +529,12 @@ function mapApplication(app: BackendApplication, loanType?: string): LoanApplica
     properties: app.properties,
     programId: app.programId ?? app.program?.id,
     programCode,
+    ...(typeof app.customerProfileId === "string" && app.customerProfileId
+      ? { customerProfileId: app.customerProfileId }
+      : {}),
+    ...(typeof app.customerProfileVersionNo === "number" && Number.isFinite(app.customerProfileVersionNo)
+      ? { customerProfileVersionNo: app.customerProfileVersionNo }
+      : {}),
   };
 }
 
@@ -648,11 +656,23 @@ export const applicationService = {
     }
   },
 
-  async createApplication(programCodeOrId?: string): Promise<LoanApplication> {
+  async createApplication(
+    programCodeOrId?: string,
+    profile?: { customerProfileId: string; customerProfileVersionNo?: number }
+  ): Promise<LoanApplication> {
     try {
       const program = await programService.resolveProgram(programCodeOrId);
+      const body = profile?.customerProfileId
+        ? {
+            customerProfileId: profile.customerProfileId,
+            ...(typeof profile.customerProfileVersionNo === "number"
+              ? { customerProfileVersionNo: profile.customerProfileVersionNo }
+              : {}),
+          }
+        : undefined;
       const { data } = await apiClient.post<BackendApplication>(
-        `/api/applications/${encodeURIComponent(program.id)}`
+        `/api/applications/${encodeURIComponent(program.id)}`,
+        body
       );
       const mapped = mapApplication(data, program.displayName || program.name);
       return {

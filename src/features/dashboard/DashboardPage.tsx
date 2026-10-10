@@ -10,6 +10,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { applicationService } from "@/services/application.service";
 import { useAuthStore } from "@/store/auth.store";
 import { ErrorState } from "@/components/ErrorState";
@@ -28,16 +29,14 @@ function SummaryCard({
   tone: string;
 }) {
   return (
-    <Card className="transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md">
-      <CardContent className="p-5 flex items-center gap-4">
-        <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${tone}`}>
-          <Icon className="h-5 w-5" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-2xl font-semibold tracking-tight leading-none">{value}</p>
-          <p className="text-xs text-muted-foreground mt-1.5 truncate">{label}</p>
-        </div>
-      </CardContent>
+    <Card className="flex flex-col gap-3.5 p-5">
+      <span className={cn("grid h-9 w-9 place-items-center rounded-md", tone)}>
+        <Icon className="h-5 w-5" />
+      </span>
+      <div>
+        <p className="num text-[28px] font-[650] leading-8 tracking-[-0.02em]">{value}</p>
+        <p className="mt-0 text-[13px] leading-[18px] text-muted-foreground">{label}</p>
+      </div>
     </Card>
   );
 }
@@ -105,7 +104,7 @@ export function DashboardPage() {
     <div className="p-6 sm:p-8 max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold">
+        <h1 className="text-2xl font-[650] leading-8 tracking-[-0.02em]">
           {greeting}, {user?.firstName ?? "there"} 👋
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
@@ -119,25 +118,25 @@ export function DashboardPage() {
           icon={Layers}
           label="Total applications"
           value={summary.total}
-          tone="bg-primary/10 text-primary"
+          tone="tone-brand"
         />
         <SummaryCard
           icon={PenLine}
           label="Drafts in progress"
           value={summary.drafts}
-          tone="bg-amber-50 text-amber-600"
+          tone="tone-warning"
         />
         <SummaryCard
           icon={Send}
           label="Submitted / in review"
           value={summary.inReview}
-          tone="bg-blue-50 text-blue-600"
+          tone="tone-info"
         />
         <SummaryCard
           icon={CheckCircle2}
           label="Approved"
           value={summary.approved}
-          tone="bg-emerald-50 text-emerald-600"
+          tone="tone-success"
         />
       </div>
 

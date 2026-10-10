@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Eye, Upload } from "lucide-react";
+import { Download, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatFileSize } from "@/lib/utils";
 import type { DocumentDetail } from "../types";
@@ -11,14 +11,12 @@ import { SourceBadge } from "./SourceBadge";
 
 interface VersionsTabProps {
   document: DocumentDetail;
-  onUploadVersion: () => void;
   onDownload: (version: number, fileName: string) => void;
   pendingDownloadKey?: string | null;
 }
 
 export function VersionsTab({
   document,
-  onUploadVersion,
   onDownload,
   pendingDownloadKey,
 }: VersionsTabProps) {
@@ -28,13 +26,6 @@ export function VersionsTab({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button type="button" className="h-11 gap-2" onClick={onUploadVersion}>
-          <Upload className="h-4 w-4" />
-          Upload new version
-        </Button>
-      </div>
-
       {document.versions.length === 0 ? (
         <p className="text-sm text-slate-500">No versions yet.</p>
       ) : (

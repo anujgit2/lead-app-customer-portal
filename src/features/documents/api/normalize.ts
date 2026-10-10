@@ -1,3 +1,4 @@
+import type { LinkedDocumentProfile } from "@/types";
 import type {
   ActivityPage,
   CreateShareResult,
@@ -78,6 +79,44 @@ export function normalizeSource(value: string): DocumentSource {
   return "UPLOADED";
 }
 
+function fileNameFromRecord(raw: Record<string, unknown>, typeName: string): string | undefined {
+  const direct = pick(raw, ["fileName", "filename", "originalFileName", "originalFilename", "originalName"]);
+  if (direct) return direct;
+
+  const fromObject = (value: unknown): string => {
+    if (!isRecord(value)) return "";
+    return pick(value, ["fileName", "filename", "originalFileName", "originalFilename", "originalName"]);
+  };
+
+  for (const key of ["file", "latestFile", "currentFile"]) {
+    const name = fromObject(raw[key]);
+    if (name) return name;
+  }
+
+  const fromLatest = fromObject(raw.latestVersion ?? raw.currentVersion);
+  if (fromLatest) return fromLatest;
+
+  const versions = Array.isArray(raw.versions) ? raw.versions : Array.isArray(raw.history) ? raw.history : [];
+  let bestName = "";
+  let bestVersion = -1;
+  for (const item of versions) {
+    const name = fromObject(item);
+    if (!name || !isRecord(item)) continue;
+    const version = pickNumber(item, ["version", "versionNo", "versionNumber", "number"]) ?? 0;
+    const latest = pickBoolean(item, ["latest", "isLatest"]) === true;
+    const rank = latest ? Number.MAX_SAFE_INTEGER : version;
+    if (rank >= bestVersion) {
+      bestName = name;
+      bestVersion = rank;
+    }
+  }
+  if (bestName) return bestName;
+
+  const named = pick(raw, ["name"]);
+  if (named && named !== typeName) return named;
+  return undefined;
+}
+
 function typeInfo(raw: Record<string, unknown>): { typeId: string; typeName: string; category: string } {
   const nested = raw.type ?? raw.documentType;
   if (isRecord(nested)) {
@@ -112,10 +151,30 @@ export function normalizeDocument(raw: unknown): PortalDocument | null {
     latestVersion: pickNumber(raw, ["latestVersion", "currentVersion", "version"]) ?? 1,
     source: sourceText ? normalizeSource(sourceText) : "UPLOADED",
     updatedAt: pick(raw, ["updatedAt", "modifiedAt", "createdAt"]),
-    fileName: pick(raw, ["fileName", "filename"]) || undefined,
+    fileName: fileNameFromRecord(raw, info.typeName),
     contentType: pick(raw, ["contentType", "mimeType"]) || undefined,
     sizeBytes: pickNumber(raw, ["sizeBytes", "size"]),
+    linked: normalizeLinkedProfiles(raw.linked),
   };
+}
+
+function normalizeLinkedProfiles(value: unknown): LinkedDocumentProfile[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const linked: LinkedDocumentProfile[] = [];
+  for (const item of value) {
+    if (!isRecord(item)) continue;
+    const profileId = text(item.profileId);
+    const type = item.type === "INDIVIDUAL" || item.type === "BUSINESS" ? item.type : null;
+    const relation = item.relation === "RELATED_TO" || item.relation === "FOR" ? item.relation : null;
+    if (!profileId || !type || !relation) continue;
+    linked.push({
+      profileId,
+      displayName: text(item.displayName),
+      type,
+      relation,
+    });
+  }
+  return linked;
 }
 
 export function normalizeDocumentList(data: unknown): PortalDocument[] {

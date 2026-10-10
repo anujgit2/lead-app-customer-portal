@@ -4,23 +4,23 @@ import { useId, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { Check, Copy, FileText, Link2, Mail, ShieldCheck, X } from "lucide-react";
+import { Check, Copy, FileText, Link2, ShieldCheck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
-  DialogDescription,
+  DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { parseApiError } from "@/lib/api-error";
-import { cn } from "@/lib/utils";
 import { createShare } from "../api/documentsApi";
-import { EXPIRY_PRESETS } from "../utils/constants";
+import { DOCUMENT_DIALOG_CLASS, EXPIRY_PRESETS } from "../utils/constants";
 import { toPublicShareLink } from "../shared-recipient/links";
 import { shareBatchMessage } from "../utils/format";
 import { SHARE_FORM_DEFAULTS, shareFormSchema, toSharePayload, type ShareFormValues } from "../utils/validation";
@@ -29,6 +29,7 @@ export interface ShareDialogDocument {
   id: string;
   name: string;
   typeName: string;
+  fileName?: string;
   tag?: string;
 }
 
@@ -42,12 +43,18 @@ interface SharedLink {
   id: string;
   name: string;
   typeName: string;
+  fileName?: string;
   tag?: string;
   url: string;
 }
 
-const SHARE_DIALOG_CLASS =
-  "bottom-0 left-0 right-0 top-auto flex max-h-[92vh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none rounded-t-[20px] border-0 bg-white p-0 text-[#151a27] shadow-[0_24px_60px_rgba(21,26,39,0.28)] sm:bottom-auto sm:left-[50%] sm:right-auto sm:top-[50%] sm:max-h-[min(90vh,700px)] sm:w-[calc(100%-1.5rem)] sm:max-w-[520px] sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-[20px] [&>button]:hidden";
+function fileSubtitle(document: { name: string; typeName: string; fileName?: string }): string {
+  const fileName = document.fileName?.trim() ?? "";
+  if (fileName && fileName !== document.typeName) return fileName;
+  const name = document.name.trim();
+  if (name && name !== document.typeName) return name;
+  return fileName;
+}
 
 function documentCaption(document: ShareDialogDocument): string {
   const type = document.typeName ? `Type ${document.typeName}` : "";
@@ -73,7 +80,7 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
   const [allowDownload, setAllowDownload] = useState(true);
   const [advanced, setAdvanced] = useState(false);
   const [sharedLinks, setSharedLinks] = useState<SharedLink[] | null>(null);
-  const [sentTo, setSentTo] = useState("");
+  const [sharedWith, setSharedWith] = useState<{ name: string; email: string } | null>(null);
   const [sentMessage, setSentMessage] = useState("");
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const form = useForm<ShareFormValues>({
@@ -82,7 +89,6 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
   });
 
   const emailError = form.formState.errors.email?.message;
-  const countLabel = documents.length === 1 ? "1 document" : `${documents.length} documents`;
 
   const copyText = async (key: string, value: string) => {
     if (!value) return;
@@ -98,13 +104,11 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
   };
 
   const readyCount = sharedLinks?.filter((item) => item.url).length ?? 0;
-  const readyLabel =
-    readyCount === 1 ? "1 secure link is ready to send." : `${readyCount} secure links are ready to send.`;
 
   return (
     <Dialog open onOpenChange={(next) => !pending && onOpenChange(next)}>
       <DialogContent
-        className={SHARE_DIALOG_CLASS}
+        className={DOCUMENT_DIALOG_CLASS}
         onEscapeKeyDown={(event) => {
           if (pending) event.preventDefault();
         }}
@@ -112,68 +116,61 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
           if (pending) event.preventDefault();
         }}
       >
-        <div className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-[#cdd3df] sm:hidden" aria-hidden="true" />
         {sharedLinks ? (
           <>
-            <div className="flex shrink-0 items-start gap-3.5 px-6 pb-4 pt-6">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e3f5ec] text-[#0b7a47]">
-                <ShieldCheck className="h-[22px] w-[22px]" />
+            <DialogHeader>
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-success-soft text-success-strong">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <DialogTitle className="tracking-tight text-slate-900">Documents shared</DialogTitle>
               </div>
-              <div className="min-w-0 flex-1 pt-0.5">
-                <DialogTitle className="text-xl font-bold tracking-tight text-[#151a27]">Documents shared</DialogTitle>
-                <DialogDescription className="mt-1 text-sm font-normal text-[#556075]" role="status">
-                  {readyLabel}
-                </DialogDescription>
-                {sentMessage ? <p className="mt-1 text-sm text-[#a15c00]">{sentMessage}</p> : null}
-              </div>
-              <DialogClose className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-[#556075] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#f3f5f9] focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98]">
-                <X className="h-[18px] w-[18px]" />
-                <span className="sr-only">Close</span>
-              </DialogClose>
-            </div>
-            {sentTo ? (
-              <div className="mx-6 mb-4 flex items-center gap-2.5 rounded-xl bg-[#f3f5f9] px-3.5 py-3">
-                <Mail className="h-[18px] w-[18px] shrink-0 text-[#556075]" />
-                <span className="text-[13px] text-[#556075]">Sent to</span>
-                <span className="min-w-0 truncate text-sm font-medium text-[#151a27]">{sentTo}</span>
-              </div>
-            ) : null}
-            <ul className="min-h-0 flex-1 space-y-3 overflow-y-auto px-6 pb-1">
+              {sentMessage ? <p className="text-sm text-warning-strong">{sentMessage}</p> : null}
+            </DialogHeader>
+            <p className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-700" role="status">
+              Following document(s) has been shared with {sharedWith?.name} on email {sharedWith?.email}
+            </p>
+            <ul className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100">
               {sharedLinks.map((item) => (
-                <li key={item.id} className="rounded-[14px] border border-[#e0e4ec] p-3.5">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#e8eefc] text-[#2457d6]">
-                      <FileText className="h-[18px] w-[18px]" />
+                <li key={item.id} className="bg-card px-3 py-2">
+                  <div className="flex items-center gap-2.5">
+                    <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+                      <FileText className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-[15px] font-bold text-[#151a27]">{item.name}</p>
-                      <p className="mt-0.5 truncate text-[13px] font-normal text-[#556075]">Type: {item.typeName}</p>
+                      <p className="truncate text-sm font-semibold leading-4 tracking-tight text-slate-900">{item.typeName}</p>
+                      {fileSubtitle(item) ? (
+                        <p className="truncate text-xs font-normal leading-4 text-slate-500">{fileSubtitle(item)}</p>
+                      ) : null}
                     </div>
                     {item.tag ? (
-                      <span className="max-w-[7.5rem] shrink-0 truncate rounded-full bg-[#f3f5f9] px-2.5 py-1 text-xs font-medium text-[#3a4357]">
-                        Tag {item.tag}
-                      </span>
+                      <Badge variant="secondary" dot={false} className="max-w-[7.5rem]">
+                        <span className="truncate">Tag {item.tag}</span>
+                      </Badge>
                     ) : null}
                     {item.url ? (
-                      <button
+                      <Button
                         type="button"
-                        className="flex h-11 shrink-0 items-center gap-1.5 rounded-[10px] px-2.5 text-sm font-bold text-[#2457d6] transition-all duration-200 ease-out hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98]"
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0 text-primary"
+                        aria-label={copiedKey === item.id ? "Copied" : "Copy link"}
                         onClick={() => void copyText(item.id, item.url)}
                       >
-                        {copiedKey === item.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                        {copiedKey === item.id ? "Copied" : "Copy link"}
-                      </button>
+                        {copiedKey === item.id ? <Check /> : <Copy />}
+                      </Button>
                     ) : (
-                      <span className="text-xs text-[#556075]">Created</span>
+                      <span className="text-xs text-slate-500">Created</span>
                     )}
                   </div>
                 </li>
               ))}
             </ul>
-            <div className="mt-5 flex shrink-0 flex-col items-stretch justify-between gap-3 border-t border-[#e0e4ec] bg-[#fafbfd] px-6 py-4 sm:flex-row sm:items-center">
-              <button
+            <DialogFooter className="gap-2">
+              <Button
                 type="button"
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-[#cdd3df] bg-white px-4 text-sm font-medium text-[#151a27] transition-all duration-200 ease-out hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
+                variant="outline"
+                className="gap-2"
                 disabled={readyCount === 0}
                 onClick={() =>
                   void copyText(
@@ -187,36 +184,24 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
               >
                 {copiedKey === "all" ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
                 {copiedKey === "all" ? "Copied" : "Copy all links"}
-              </button>
-              <button
-                type="button"
-                className="h-11 w-full rounded-[10px] bg-transparent px-0 text-sm font-bold text-[#2457d6] transition-all duration-200 ease-out hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98] sm:w-auto sm:bg-[#2457d6] sm:px-7 sm:text-white sm:hover:bg-[#1d48b8]"
-                onClick={() => onOpenChange(false)}
-              >
+              </Button>
+              <Button type="button" onClick={() => onOpenChange(false)}>
                 Done
-              </button>
-            </div>
+              </Button>
+            </DialogFooter>
           </>
         ) : (
           <>
-        <div className="flex shrink-0 items-start gap-3.5 px-6 pb-4 pt-6">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#e8eefc] text-[#2457d6]">
-            <ShieldCheck className="h-[22px] w-[22px]" />
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <DialogTitle className="tracking-tight text-slate-900">Share securely</DialogTitle>
           </div>
-          <div className="min-w-0 flex-1 pt-0.5">
-            <DialogTitle className="text-xl font-bold tracking-tight text-[#151a27]">Share securely</DialogTitle>
-            <DialogDescription className="mt-1 text-sm font-normal text-[#556075]">{countLabel}</DialogDescription>
-          </div>
-          <DialogClose
-            disabled={pending}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] text-[#556075] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#f3f5f9] focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98] disabled:pointer-events-none"
-          >
-            <X className="h-[18px] w-[18px]" />
-            <span className="sr-only">Close</span>
-          </DialogClose>
-        </div>
+        </DialogHeader>
           <form
-            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            className="space-y-4"
             onSubmit={form.handleSubmit(async (values) => {
               const payload = toSharePayload({ ...values, expiresInDays, allowDownload });
               form.clearErrors("root");
@@ -242,6 +227,7 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                   id: string;
                   name: string;
                   typeName: string;
+                  fileName?: string;
                   tag?: string;
                   created: Awaited<ReturnType<typeof createShare>>;
                 }[] = [];
@@ -252,6 +238,7 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                       id: item.document.id,
                       name: item.document.name,
                       typeName: item.document.typeName,
+                      fileName: item.document.fileName,
                       tag: item.document.tag,
                       created: item.created,
                     });
@@ -271,7 +258,10 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                 await Promise.all(
                   succeeded.map((item) => queryClient.invalidateQueries({ queryKey: ["shares", item.id] }))
                 );
-                setSentTo(succeeded[0]?.created.sentTo || payload.email || "");
+                setSharedWith({
+                  name: payload.recipientName,
+                  email: payload.email ?? "",
+                });
                 setSentMessage(
                   failedNames.length > 0
                     ? shareBatchMessage(succeeded.length, failedNames, succeeded[0]?.created ?? {}, {
@@ -285,6 +275,7 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                     id: item.id,
                     name: item.name,
                     typeName: item.typeName,
+                    fileName: item.fileName,
                     tag: item.tag,
                     url: toPublicShareLink(item.created.url, item.created.token),
                   }))
@@ -294,24 +285,28 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
               }
             })}
           >
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 pb-4">
-              <ul className="space-y-3">
+            <div className="space-y-4">
+              <ul className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100">
                 {documents.map((document) => (
-                  <li key={document.id} className="rounded-[14px] border border-[#e0e4ec] p-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#e8eefc] text-[#2457d6]">
-                        <FileText className="h-[18px] w-[18px]" />
+                  <li key={document.id} className="bg-card px-3 py-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-primary/10 text-primary">
+                        <FileText className="h-3.5 w-3.5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[15px] font-bold text-[#151a27]">{document.name}</p>
-                        <p className="mt-0.5 truncate text-[13px] font-normal text-[#556075]">
-                          Type: {document.typeName}
+                        <p className="truncate text-sm font-semibold leading-4 tracking-tight text-slate-900">
+                          {document.typeName}
                         </p>
+                        {fileSubtitle(document) ? (
+                          <p className="truncate text-xs font-normal leading-4 text-slate-500">
+                            {fileSubtitle(document)}
+                          </p>
+                        ) : null}
                       </div>
                       {document.tag ? (
-                        <span className="max-w-[7.5rem] shrink-0 truncate rounded-full bg-[#f3f5f9] px-2.5 py-1 text-xs font-medium text-[#3a4357]">
-                          Tag {document.tag}
-                        </span>
+                        <Badge variant="secondary" dot={false} className="max-w-[7.5rem]">
+                          <span className="truncate">Tag {document.tag}</span>
+                        </Badge>
                       ) : null}
                     </div>
                   </li>
@@ -319,13 +314,11 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
               </ul>
 
               <div className="space-y-1.5">
-                <Label htmlFor={`${formId}-name`} className="text-[13px] font-medium text-[#556075]">
-                  Recipient name
-                </Label>
+                <Label htmlFor={`${formId}-name`}>Recipient name</Label>
                 <Input
                   id={`${formId}-name`}
                   autoComplete="name"
-                  className="h-11 rounded-[10px] border-[#e0e4ec] focus:border-[#2457d6] focus:outline-none focus:ring-2 focus:ring-[#2457d6]/20"
+                  className="h-11 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   aria-invalid={!!form.formState.errors.recipientName}
                   {...form.register("recipientName")}
                 />
@@ -335,15 +328,13 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor={`${formId}-email`} className="text-[13px] font-medium text-[#556075]">
-                  Email
-                </Label>
+                <Label htmlFor={`${formId}-email`}>Email</Label>
                 <Input
                   id={`${formId}-email`}
                   type="email"
                   autoComplete="email"
                   inputMode="email"
-                  className="h-11 rounded-[10px] border-[#e0e4ec] focus:border-[#2457d6] focus:outline-none focus:ring-2 focus:ring-[#2457d6]/20"
+                  className="h-11 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   aria-invalid={!!emailError}
                   {...form.register("email")}
                 />
@@ -351,7 +342,7 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
               </div>
 
               <fieldset className="space-y-2">
-                <legend className="text-[13px] font-medium text-[#556075]">Link expiry</legend>
+                <legend className="text-sm font-medium text-slate-700">Link expiry</legend>
                 <RadioGroup
                   value={expiresInDays}
                   onValueChange={(value) => {
@@ -359,29 +350,22 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                     setExpiresInDays(next);
                     form.setValue("expiresInDays", next, { shouldValidate: true });
                   }}
-                  className="grid grid-cols-3 gap-2"
+                  className="flex flex-wrap gap-4"
                 >
-                  {EXPIRY_PRESETS.map((preset) => {
-                    const selected = expiresInDays === preset.value;
-                    return (
-                      <label
-                        key={preset.value}
-                        className={cn(
-                          "flex h-11 cursor-pointer items-center justify-center gap-2 rounded-[10px] border px-2 text-sm font-medium transition-all duration-200 ease-out",
-                          selected
-                            ? "border-[#2457d6] bg-[#e8eefc] text-[#151a27]"
-                            : "border-[#e0e4ec] text-[#151a27] hover:bg-[#f3f5f9]"
-                        )}
-                      >
-                        <RadioGroupItem value={preset.value} id={`${formId}-expiry-${preset.value}`} />
-                        <span className="whitespace-nowrap">{preset.label}</span>
-                      </label>
-                    );
-                  })}
+                  {EXPIRY_PRESETS.map((preset) => (
+                    <label
+                      key={preset.value}
+                      htmlFor={`${formId}-expiry-${preset.value}`}
+                      className="flex cursor-pointer items-center gap-2 text-sm text-slate-700"
+                    >
+                      <RadioGroupItem value={preset.value} id={`${formId}-expiry-${preset.value}`} />
+                      {preset.label}
+                    </label>
+                  ))}
                 </RadioGroup>
               </fieldset>
 
-              <label className="flex h-11 items-center gap-3 text-sm font-medium text-[#151a27]">
+              <label className="flex h-11 items-center gap-3 text-sm font-medium text-slate-900">
                 <Checkbox
                   checked={allowDownload}
                   onCheckedChange={(checked) => {
@@ -396,7 +380,7 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
               <div className="space-y-2">
                 <button
                   type="button"
-                  className="text-sm font-medium text-[#2457d6] underline-offset-4 transition-all duration-200 ease-out hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  className="text-sm font-medium text-primary underline-offset-4 transition-all duration-200 ease-out hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                   aria-expanded={advanced}
                   onClick={() => {
                     setAdvanced((current) => {
@@ -409,14 +393,12 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                 </button>
                 {advanced ? (
                   <div className="space-y-1.5">
-                    <Label htmlFor={`${formId}-password`} className="text-[13px] font-medium text-[#556075]">
-                      Password
-                    </Label>
+                    <Label htmlFor={`${formId}-password`}>Password</Label>
                     <Input
                       id={`${formId}-password`}
                       type="password"
                       autoComplete="new-password"
-                      className="h-11 rounded-[10px] border-[#e0e4ec] focus:border-[#2457d6] focus:outline-none focus:ring-2 focus:ring-[#2457d6]/20"
+                      className="h-11 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                       aria-invalid={!!form.formState.errors.password}
                       {...form.register("password")}
                     />
@@ -434,23 +416,19 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
               ) : null}
             </div>
 
-            <div className="flex shrink-0 flex-col items-stretch justify-between gap-3 border-t border-[#e0e4ec] bg-[#fafbfd] px-6 py-4 sm:flex-row sm:items-center">
-              <button
+            <DialogFooter className="gap-2">
+              <Button
                 type="button"
-                className="flex h-11 w-full items-center justify-center rounded-[10px] border border-[#cdd3df] bg-white px-4 text-sm font-medium text-[#151a27] transition-all duration-200 ease-out hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
+                variant="outline"
                 disabled={pending}
                 onClick={() => onOpenChange(false)}
               >
                 Close
-              </button>
-              <Button
-                type="submit"
-                className="h-11 w-full rounded-[10px] bg-[#2457d6] px-7 text-sm font-bold hover:bg-[#1d48b8] sm:w-auto"
-                loading={pending}
-              >
+              </Button>
+              <Button type="submit" loading={pending}>
                 Share
               </Button>
-            </div>
+            </DialogFooter>
           </form>
           </>
         )}

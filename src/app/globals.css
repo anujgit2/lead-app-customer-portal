@@ -4,40 +4,179 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.75rem;
-    --success: 142.1 76.2% 36.3%;
-    --success-foreground: 355.7 100% 97.3%;
-    --warning: 32.1 94.6% 43.7%;
-    --warning-foreground: 355.7 100% 97.3%;
-  }
-}
+    color-scheme: light;
 
-@layer base {
+    --background: 200 18% 97%;
+    --foreground: 200 28% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 200 28% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 200 28% 10%;
+    --muted: 200 16% 94%;
+    --muted-foreground: 200 12% 34%;
+    --accent: 200 16% 94%;
+    --accent-foreground: 200 28% 10%;
+    --placeholder: 200 9% 40%;
+
+    --border: 200 14% 88%;
+    --input: 205 9% 50%;
+    --ring: 187 75% 38%;
+
+    --primary: 187 86% 22%;
+    --primary-hover: 187 86% 17%;
+    --primary-foreground: 0 0% 100%;
+    --primary-soft: 187 40% 93%;
+    --primary-soft-foreground: 187 90% 15%;
+
+    --secondary: 187 40% 93%;
+    --secondary-foreground: 187 90% 15%;
+
+    --destructive: 0 72% 46%;
+    --destructive-foreground: 0 0% 100%;
+    --danger: 0 72% 46%;
+    --danger-soft: 0 80% 96%;
+    --danger-strong: 0 75% 33%;
+
+    --success: 152 70% 26%;
+    --success-foreground: 0 0% 100%;
+    --success-soft: 150 50% 94%;
+    --success-strong: 152 80% 20%;
+
+    --warning: 32 92% 35%;
+    --warning-foreground: 0 0% 100%;
+    --warning-soft: 40 90% 93%;
+    --warning-strong: 28 90% 24%;
+
+    --info: 214 80% 42%;
+    --info-soft: 214 85% 95%;
+    --info-strong: 214 80% 30%;
+
+    --neutral-soft: 200 14% 93%;
+    --neutral-strong: 200 14% 28%;
+
+    --radius: 8px;
+    --r-sm: 6px;
+    --r-md: 8px;
+    --r-lg: 12px;
+    --r-xl: 16px;
+
+    --shadow-1: 0 1px 2px hsl(200 40% 10% / 0.06);
+    --shadow-2: 0 4px 12px hsl(200 40% 10% / 0.08), 0 1px 3px hsl(200 40% 10% / 0.06);
+    --shadow-3: 0 16px 40px hsl(200 40% 10% / 0.16), 0 2px 6px hsl(200 40% 10% / 0.08);
+  }
+
+  .dark {
+    color-scheme: dark;
+    --background: 205 24% 7%;
+    --foreground: 200 15% 94%;
+    --card: 205 20% 10%;
+    --card-foreground: 200 15% 94%;
+    --popover: 205 20% 12%;
+    --popover-foreground: 200 15% 94%;
+    --muted: 205 16% 14%;
+    --muted-foreground: 200 10% 68%;
+    --accent: 205 16% 14%;
+    --accent-foreground: 200 15% 94%;
+    --placeholder: 200 8% 62%;
+    --border: 205 14% 20%;
+    --input: 205 9% 46%;
+    --ring: 186 75% 55%;
+    --primary: 186 70% 55%;
+    --primary-hover: 186 72% 62%;
+    --primary-foreground: 205 40% 8%;
+    --primary-soft: 187 40% 15%;
+    --primary-soft-foreground: 187 70% 78%;
+    --secondary: 187 40% 15%;
+    --secondary-foreground: 187 70% 78%;
+    --destructive: 0 85% 68%;
+    --destructive-foreground: 205 40% 8%;
+    --danger: 0 85% 68%;
+    --danger-soft: 0 40% 15%;
+    --danger-strong: 0 90% 80%;
+    --success: 150 55% 55%;
+    --success-foreground: 205 40% 8%;
+    --success-soft: 152 35% 14%;
+    --success-strong: 150 60% 76%;
+    --warning: 38 92% 58%;
+    --warning-foreground: 205 40% 8%;
+    --warning-soft: 36 40% 14%;
+    --warning-strong: 40 90% 74%;
+    --info: 214 90% 68%;
+    --info-soft: 214 40% 16%;
+    --info-strong: 214 95% 80%;
+    --neutral-soft: 205 12% 17%;
+    --neutral-strong: 200 12% 80%;
+    --shadow-1: 0 1px 2px hsl(0 0% 0% / 0.4);
+    --shadow-2: 0 6px 16px hsl(0 0% 0% / 0.45);
+    --shadow-3: 0 20px 48px hsl(0 0% 0% / 0.6);
+  }
+
   * {
     @apply border-border;
   }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-size: 14px;
+    line-height: 1.5;
+    font-feature-settings: "calt", "rlig", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  h1, h2, h3, h4 {
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum", "cv11";
+  }
+
+  .money-amount {
+    color: #087f8c;
+    font-weight: 650;
+  }
+
+  .dark .money-amount {
+    color: #7be0d5;
+  }
+
+  .tone-brand {
+    background: hsl(var(--primary-soft));
+    color: hsl(var(--primary-soft-foreground));
+  }
+
+  .tone-warning {
+    background: hsl(var(--warning-soft));
+    color: hsl(var(--warning-strong));
+  }
+
+  .tone-success {
+    background: hsl(var(--success-soft));
+    color: hsl(var(--success-strong));
+  }
+
+  .tone-danger {
+    background: hsl(var(--danger-soft));
+    color: hsl(var(--danger-strong));
+  }
+
+  .tone-info {
+    background: hsl(var(--info-soft));
+    color: hsl(var(--info-strong));
   }
 }
 
@@ -49,4 +188,36 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+}
+
+/* Toasts match the design system: popover surface, 4px tone bar, dialog shadow. */
+[data-sonner-toaster] {
+  --width: 360px;
+}
+
+[data-sonner-toast] {
+  background: hsl(var(--popover)) !important;
+  color: hsl(var(--foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-left-width: 4px !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--shadow-3) !important;
+  font-size: 14px !important;
+}
+
+[data-sonner-toast][data-type="success"] { border-left-color: hsl(var(--success)) !important; }
+[data-sonner-toast][data-type="info"] { border-left-color: hsl(var(--info)) !important; }
+[data-sonner-toast][data-type="warning"] { border-left-color: hsl(var(--warning)) !important; }
+[data-sonner-toast][data-type="error"] { border-left-color: hsl(var(--danger)) !important; }
+
+[data-sonner-toast] [data-title] {
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+[data-sonner-toast] [data-description] {
+  font-size: 13px;
+  line-height: 18px;
+  color: hsl(var(--muted-foreground));
 }

@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 
 const STATIC_SHARE_TOKEN = "link";
-const STATIC_DOCUMENT_ID = "view";
+const STATIC_PLACEHOLDER = "view";
 
 const listeners = new Set<() => void>();
 let historyPatched = false;
@@ -83,5 +83,9 @@ export function useSharedBundleToken(): RouteSegment {
 }
 
 export function useDocumentRouteId(): RouteSegment {
-  return useResolvedSegment("documents", STATIC_DOCUMENT_ID);
+  return useResolvedSegment("documents", STATIC_PLACEHOLDER);
+}
+
+export function useProfileRouteId(): RouteSegment {
+  return useResolvedSegment("profiles", STATIC_PLACEHOLDER);
 }

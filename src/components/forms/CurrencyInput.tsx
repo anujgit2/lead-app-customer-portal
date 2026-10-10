@@ -41,12 +41,12 @@ export function CurrencyInput({
       customInput={Input}
       getInputRef={inputRef}
       id={id}
-      className="rounded-sm"
+      className="text-right tabular-nums"
       error={error}
       disabled={disabled}
       readOnly={readOnly}
       placeholder={placeholder}
-      startAdornment={<span className="text-xs font-medium">₹</span>}
+      startAdornment={<span className="text-sm font-medium">₹</span>}
       thousandSeparator={format.useGrouping ? format.thousandSeparator : false}
       decimalSeparator={format.decimalSeparator}
       decimalScale={format.decimalScale}

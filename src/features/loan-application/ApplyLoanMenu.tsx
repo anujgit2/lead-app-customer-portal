@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, PlusCircle } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,22 +40,20 @@ export function ApplyLoanMenu({ onNavigate, className }: ApplyLoanMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium text-muted-foreground outline-none transition-all duration-200 ease-out",
-          "hover:text-foreground hover:bg-muted hover:-translate-y-0.5 active:scale-[0.98]",
-          "focus:ring-2 focus:ring-blue-500/20 focus:outline-none data-[state=open]:bg-muted data-[state=open]:text-foreground",
+          "inline-flex h-8 items-center justify-center gap-2 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground outline-none transition-[background] duration-150 hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring max-[900px]:h-8 max-[900px]:w-8 max-[900px]:px-0",
           className
         )}
+        aria-label="Apply for a loan"
       >
         <PlusCircle className="h-4 w-4" />
-        Apply for a Loan
-        <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+        <span className="max-[900px]:hidden">Apply for a loan</span>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-72">
+      <DropdownMenuContent align="end" className="w-[300px]">
         <DropdownMenuLabel>Select a loan program</DropdownMenuLabel>
         {isLoading ? (
-          <div className="px-2.5 py-3 text-xs text-slate-500">Loading programs…</div>
+          <div className="px-2.5 py-3 text-xs text-muted-foreground">Loading programs…</div>
         ) : available.length === 0 ? (
-          <div className="px-2.5 py-3 text-xs text-slate-500">
+          <div className="px-2.5 py-3 text-xs text-muted-foreground">
             No loan programs are available right now.
           </div>
         ) : (
@@ -63,15 +61,16 @@ export function ApplyLoanMenu({ onNavigate, className }: ApplyLoanMenuProps) {
             <DropdownMenuItem
               key={program.id}
               onSelect={() => handleApply(program)}
+              className="items-start"
             >
-              <span className="font-semibold tracking-tight text-slate-900">
-                {program.displayName || program.name}
+              <span className="min-w-0">
+                <span className="block font-semibold">{program.displayName || program.name}</span>
+                {program.description && (
+                  <span className="mt-0.5 block text-[13px] font-normal leading-[18px] text-muted-foreground line-clamp-2">
+                    {program.description}
+                  </span>
+                )}
               </span>
-              {program.description && (
-                <span className="text-xs font-normal text-slate-500 line-clamp-2">
-                  {program.description}
-                </span>
-              )}
             </DropdownMenuItem>
           ))
         )}

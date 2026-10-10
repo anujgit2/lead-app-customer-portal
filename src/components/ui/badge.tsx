@@ -3,29 +3,29 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 text-xs font-semibold leading-none before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:bg-current before:opacity-90 before:content-['']",
   {
     variants: {
       variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
-        secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
-        success:
-          "border-transparent bg-green-100 text-green-800",
-        warning:
-          "border-transparent bg-yellow-100 text-yellow-800",
-        info:
-          "border-transparent bg-blue-100 text-blue-800",
-        draft:
-          "border-transparent bg-gray-100 text-gray-700",
+        default: "bg-primary text-primary-foreground before:hidden",
+        secondary: "bg-neutral-soft text-neutral-strong",
+        destructive: "bg-danger-soft text-danger-strong",
+        outline:
+          "bg-transparent text-foreground shadow-[inset_0_0_0_1px_hsl(var(--input))]",
+        success: "bg-success-soft text-success-strong",
+        warning: "bg-warning-soft text-warning-strong",
+        info: "bg-info-soft text-info-strong",
+        draft: "bg-neutral-soft text-neutral-strong",
+        brand: "bg-primary-soft text-primary-soft-foreground",
+      },
+      dot: {
+        true: "",
+        false: "before:hidden",
       },
     },
     defaultVariants: {
       variant: "default",
+      dot: true,
     },
   }
 );
@@ -34,9 +34,9 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
+function Badge({ className, variant, dot, ...props }: BadgeProps) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <div className={cn(badgeVariants({ variant, dot }), className)} {...props} />
   );
 }
 

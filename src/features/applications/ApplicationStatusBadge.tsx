@@ -5,15 +5,15 @@ const STATUS_CONFIG: Record<
   ApplicationStatus,
   {
     label: string;
-    variant: "success" | "warning" | "destructive" | "info" | "draft" | "default";
+    variant: "success" | "warning" | "destructive" | "info" | "draft" | "brand";
   }
 > = {
   draft: { label: "Draft", variant: "draft" },
   submitted: { label: "Submitted", variant: "info" },
-  under_review: { label: "Under Review", variant: "warning" },
+  under_review: { label: "Under review", variant: "warning" },
   approved: { label: "Approved", variant: "success" },
   rejected: { label: "Rejected", variant: "destructive" },
-  disbursed: { label: "Disbursed", variant: "success" },
+  disbursed: { label: "Disbursed", variant: "brand" },
 };
 
 export function ApplicationStatusBadge({

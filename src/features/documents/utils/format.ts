@@ -52,13 +52,28 @@ export function categoryFiltersFor(values: string[]): { id: string; label: strin
 
 export function filterDocuments(
   documents: PortalDocument[],
-  filters: { category?: string; q?: string }
+  filters: { category?: string; typeId?: string; q?: string }
 ): PortalDocument[] {
   const query = filters.q?.trim().toLowerCase() ?? "";
   return documents.filter((document) => {
     if (filters.category && categoryKey(document.category) !== filters.category) return false;
+    if (filters.typeId && document.typeId !== filters.typeId) return false;
     if (!query) return true;
-    return `${document.typeName} ${document.label}`.toLowerCase().includes(query);
+    const linked = (document.linked ?? [])
+      .map((item) => `${item.displayName ?? ""} ${item.relation}`)
+      .join(" ");
+    const haystack = [
+      document.typeName,
+      document.label,
+      document.category,
+      document.fileName,
+      document.source,
+      linked,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(query);
   });
 }
 

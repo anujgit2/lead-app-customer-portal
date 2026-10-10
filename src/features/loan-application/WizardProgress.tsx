@@ -17,107 +17,100 @@ export function WizardProgress({
   stepStatuses,
   onStepClick,
 }: WizardProgressProps) {
-  const totalSteps = templates.length + 1;
+  const steps = [
+    ...templates.map((template, index) => ({
+      key: template.code,
+      label: template.title,
+      index,
+    })),
+    { key: "review", label: "Review", index: templates.length },
+  ];
 
   return (
     <div className="w-full">
-      {/* Mobile compact progress */}
-      <div className="flex items-center gap-2 sm:hidden mb-2">
-        <div className="flex-1 bg-muted rounded-full h-2 overflow-hidden">
+      <div className="mb-2 flex items-center gap-3 sm:hidden">
+        <div
+          className="h-2 flex-1 overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-valuenow={currentStep + 1}
+          aria-valuemin={1}
+          aria-valuemax={steps.length}
+        >
           <div
-            className="bg-primary h-full rounded-full transition-all duration-500"
-            style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
+            className="h-full rounded-full bg-primary transition-[width] duration-300"
+            style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
           />
         </div>
+        <span className="text-xs text-muted-foreground">
+          Step {currentStep + 1} of {steps.length}
+        </span>
       </div>
 
-      {/* Desktop step indicator */}
-      <div className="hidden sm:block">
-        <div
-          className="grid items-start"
-          style={{ gridTemplateColumns: `repeat(${totalSteps}, minmax(0, 1fr))` }}
-        >
-          {templates.map((template, index) => {
-            const isCurrent = index === currentStep;
-            const isCompleted = Boolean(stepStatuses[index]?.completed);
-            const canNavigate = index <= currentStep || isCompleted;
+      <div
+        className="hidden sm:grid"
+        style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+        aria-label="Application steps"
+      >
+        {steps.map((step, index) => {
+          const isCurrent = index === currentStep;
+          const isCompleted = index < templates.length && Boolean(stepStatuses[index]?.completed);
+          const done = isCompleted && !isCurrent;
+          const canNavigate = index <= currentStep || isCompleted;
+          const lineFilled = index > 0 && (isCurrent || done || index < currentStep);
 
+          const dot = (
+            <span
+              className={cn(
+                "relative z-[1] grid h-7 w-7 place-items-center rounded-full border-2 border-input bg-card text-xs font-semibold",
+                done && "border-primary bg-primary text-primary-foreground",
+                isCurrent && "border-primary text-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.16)]"
+              )}
+            >
+              {done ? <Check className="h-3.5 w-3.5" /> : index + 1}
+            </span>
+          );
+
+          const label = (
+            <span
+              className={cn(
+                "max-w-[120px] text-center text-[13px] leading-[18px] text-muted-foreground",
+                isCurrent && "font-semibold text-foreground"
+              )}
+            >
+              {step.label}
+            </span>
+          );
+
+          const shell = cn(
+            "relative flex min-w-0 flex-col items-center gap-2 px-1 text-center",
+            index > 0 &&
+              "before:absolute before:left-[calc(-50%+18px)] before:right-[calc(50%+18px)] before:top-[13px] before:h-0.5 before:bg-border",
+            lineFilled && "before:bg-primary"
+          );
+
+          if (step.key === "review") {
             return (
-              <button
-                key={template.code}
-                type="button"
-                onClick={() => canNavigate && onStepClick?.(index)}
-                disabled={!canNavigate}
-                aria-current={isCurrent ? "step" : undefined}
-                className={cn(
-                  "group flex min-w-0 flex-col items-center gap-2 rounded-lg px-1 py-1 transition-all duration-200 ease-out active:scale-[0.98]",
-                  canNavigate
-                    ? "cursor-pointer hover:-translate-y-0.5"
-                    : "cursor-not-allowed"
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex h-5 w-5 items-center justify-center rounded-full transition-all duration-200 ease-out",
-                    isCurrent && "bg-primary shadow-sm shadow-primary/25",
-                    isCompleted && !isCurrent && "bg-emerald-500",
-                    !isCurrent &&
-                      !isCompleted &&
-                      "border-2 border-slate-300 bg-white"
-                  )}
-                >
-                  {isCompleted && !isCurrent ? (
-                    <Check className="h-3.5 w-3.5 stroke-[3] text-white" />
-                  ) : isCurrent ? (
-                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                  ) : null}
-                </span>
-                <span
-                  className={cn(
-                    "max-w-[110px] text-center text-xs leading-tight transition-colors duration-200",
-                    isCurrent
-                      ? "font-semibold text-slate-900"
-                      : isCompleted
-                        ? "font-medium text-slate-700"
-                        : "font-normal text-slate-500"
-                  )}
-                >
-                  {template.title}
-                </span>
-              </button>
+              <div key={step.key} className={shell} aria-current={isCurrent ? "step" : undefined}>
+                {dot}
+                {label}
+              </div>
             );
-          })}
+          }
 
-          <div
-            aria-current={currentStep === templates.length ? "step" : undefined}
-            className="flex min-w-0 flex-col items-center gap-2 px-1 py-1"
-          >
-            <span
-              className={cn(
-                "flex h-5 w-5 items-center justify-center rounded-full transition-all duration-200 ease-out",
-                currentStep === templates.length
-                  ? "bg-primary shadow-sm shadow-primary/25"
-                  : "border-2 border-slate-300 bg-white"
-              )}
+          return (
+            <button
+              key={step.key}
+              type="button"
+              onClick={() => canNavigate && onStepClick?.(index)}
+              disabled={!canNavigate}
+              aria-current={isCurrent ? "step" : undefined}
+              className={cn(shell, canNavigate ? "cursor-pointer" : "cursor-not-allowed")}
             >
-              {currentStep === templates.length && (
-                <span className="h-1.5 w-1.5 rounded-full bg-white" />
-              )}
-            </span>
-            <span
-              className={cn(
-                "text-center text-xs leading-tight",
-                currentStep === templates.length
-                  ? "font-semibold text-slate-900"
-                  : "font-normal text-slate-500"
-              )}
-            >
-              Review
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-3 border-t-2 border-slate-200" />
+              {dot}
+              {label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

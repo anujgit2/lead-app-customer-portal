@@ -25,6 +25,16 @@ import { ACCEPT_ATTRIBUTE, DOCUMENT_DIALOG_CLASS, MAX_UPLOAD_BYTES } from "../ut
 import { categoryKey } from "../utils/format";
 import { validateUploadFile } from "../utils/upload";
 import { DocumentTypeFields } from "./DocumentTypeFields";
+import { ProfileSearchPicker } from "@/features/profiles/components/ProfileSearchPicker";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { CustomerProfileSummary, DocumentProfileRelation } from "@/types";
 
 export interface LockedUpload {
   documentId: string;
@@ -34,18 +44,25 @@ export interface LockedUpload {
   category: string;
 }
 
+export interface PresetProfileUpload {
+  profileId: string;
+  displayName: string;
+  relation: DocumentProfileRelation;
+}
+
 interface UploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   locked?: LockedUpload;
+  presetProfile?: PresetProfileUpload;
 }
 
-export function UploadDialog({ open, onOpenChange, locked }: UploadDialogProps) {
+export function UploadDialog({ open, onOpenChange, locked, presetProfile }: UploadDialogProps) {
   if (!open) return null;
-  return <UploadDialogForm onOpenChange={onOpenChange} locked={locked} />;
+  return <UploadDialogForm onOpenChange={onOpenChange} locked={locked} presetProfile={presetProfile} />;
 }
 
-function UploadDialogForm({ onOpenChange, locked }: Omit<UploadDialogProps, "open">) {
+function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDialogProps, "open">) {
   const upload = useUpload();
   const types = useDocumentTypes(!locked);
   const [category, setCategory] = useState(locked ? categoryKey(locked.category) : "");
@@ -54,6 +71,8 @@ function UploadDialogForm({ onOpenChange, locked }: Omit<UploadDialogProps, "ope
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [asNew, setAsNew] = useState(false);
+  const [profile, setProfile] = useState<CustomerProfileSummary | null>(null);
+  const [relation, setRelation] = useState<DocumentProfileRelation>(presetProfile?.relation ?? "RELATED_TO");
 
   const markChanged = () => {
     upload.rotateKey();
@@ -120,6 +139,11 @@ function UploadDialogForm({ onOpenChange, locked }: Omit<UploadDialogProps, "ope
       label: label.trim(),
       documentId: locked?.documentId,
       asNewDocument: asNew,
+      ...(presetProfile
+        ? { profileId: presetProfile.profileId, relation: presetProfile.relation }
+        : profile
+          ? { profileId: profile.id, relation }
+          : {}),
     };
   };
 
@@ -256,6 +280,36 @@ function UploadDialogForm({ onOpenChange, locked }: Omit<UploadDialogProps, "ope
               Upload as a new document
             </label>
           ) : null}
+
+          {presetProfile ? (
+            <p className="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              Linked to {presetProfile.displayName} as{" "}
+              {presetProfile.relation === "FOR" ? "For" : "Related to"}.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="upload-relation">Profile relation</Label>
+                <Select value={relation} onValueChange={(value) => setRelation(value as DocumentProfileRelation)}>
+                  <SelectTrigger id="upload-relation" className="h-11" disabled={upload.isPending}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="RELATED_TO">Related to</SelectItem>
+                    <SelectItem value="FOR">For</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <ProfileSearchPicker selectedId={profile?.id} onSelect={setProfile} />
+              {profile ? (
+                <p className="text-sm text-slate-600" role="status">
+                  Selected {profile.displayName || "Untitled profile"}
+                </p>
+              ) : (
+                <p className="text-sm text-slate-500">Optional. Leave unselected to upload without a profile.</p>
+              )}
+            </div>
+          )}
 
           {upload.isPending ? (
             <div

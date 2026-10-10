@@ -39,15 +39,15 @@ const statusConfig: Record<
       | "destructive"
       | "info"
       | "draft"
-      | "default";
+      | "brand";
   }
 > = {
   draft: { label: "Draft", variant: "draft" },
   submitted: { label: "Submitted", variant: "info" },
-  under_review: { label: "Under Review", variant: "warning" },
+  under_review: { label: "Under review", variant: "warning" },
   approved: { label: "Approved", variant: "success" },
   rejected: { label: "Rejected", variant: "destructive" },
-  disbursed: { label: "Disbursed", variant: "success" },
+  disbursed: { label: "Disbursed", variant: "brand" },
 };
 
 export function ApplicationDetailsDialog({

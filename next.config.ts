@@ -24,6 +24,10 @@ const nextConfig: NextConfig = {
           source: "/documents/:id((?!view$)[^/]+)",
           destination: "/documents/view",
         },
+        {
+          source: "/profiles/:id((?!(?:view|new)(?:/|$))[^/]+)",
+          destination: "/profiles/view",
+        },
       ],
     };
   },

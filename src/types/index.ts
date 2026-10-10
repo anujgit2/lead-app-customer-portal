@@ -132,6 +132,8 @@ export interface LoanApplication {
   formData?: Record<string, unknown>;
   /** Raw property values returned by the applications API. */
   properties?: ApplicationProperty[];
+  customerProfileId?: string;
+  customerProfileVersionNo?: number;
 }
 
 export interface ApplicationSummary {
@@ -675,4 +677,127 @@ export interface NewLoanProduct {
   components?: Record<string, ComponentDefinition> | null;
   forms?: NewFormatForm[] | null;
   documents?: DocumentDefinition[] | null;
+}
+
+// ─── Customer profiles ─────────────────────────────────────────────────────────
+export type CustomerProfileType = "INDIVIDUAL" | "BUSINESS";
+
+export type CustomerProfileStatus = "ACTIVE" | "ARCHIVED";
+
+export type CustomerProfileLinkRole =
+  | "PROMOTER"
+  | "DIRECTOR"
+  | "PARTNER"
+  | "GUARANTOR"
+  | "AUTHORISED_SIGNATORY";
+
+export interface CustomerProfileIdentifiers {
+  pan: string | null;
+  gstin: string | null;
+  mobile: string | null;
+}
+
+export interface CustomerProfileSummary {
+  id: string;
+  type: CustomerProfileType;
+  displayName: string;
+  status: CustomerProfileStatus;
+  currentVersionNo: number;
+  identifiers: CustomerProfileIdentifiers;
+  updatedAt: string;
+  updatedBy: string;
+}
+
+export interface CustomerProfileLink {
+  id: string;
+  role: CustomerProfileLinkRole;
+  ownershipPct: number | null;
+  profile: CustomerProfileSummary;
+}
+
+export interface CustomerProfileDetail extends CustomerProfileSummary {
+  templateCode: string;
+  templateVersion: number;
+  data: Record<string, unknown>;
+  links: CustomerProfileLink[];
+}
+
+export interface CustomerProfileVersionItem {
+  versionNo: number;
+  createdAt: string;
+  createdBy: string;
+  changeNote: string | null;
+}
+
+export interface CustomerProfileVersion extends CustomerProfileVersionItem {
+  templateCode: string;
+  templateVersion: number;
+  data: Record<string, unknown>;
+}
+
+export interface CustomerProfileDiffChange {
+  path: string;
+  before: unknown;
+  after: unknown;
+}
+
+export interface CustomerProfileDiff {
+  from: number;
+  to: number;
+  changes: CustomerProfileDiffChange[];
+}
+
+export interface CustomerProfilePage {
+  content: CustomerProfileSummary[];
+  page: number;
+  size: number;
+  totalElements: number;
+}
+
+export interface CustomerProfileListFilters {
+  type?: CustomerProfileType;
+  q?: string;
+  status?: CustomerProfileStatus;
+  page: number;
+  size: number;
+}
+
+export interface CreateCustomerProfileRequest {
+  type: CustomerProfileType;
+  data: Record<string, unknown>;
+  changeNote?: string;
+}
+
+export interface UpdateCustomerProfileRequest {
+  data: Record<string, unknown>;
+  changeNote?: string;
+  expectedVersionNo: number;
+}
+
+export interface CreateProfileLinkRequest {
+  childProfileId: string;
+  role: CustomerProfileLinkRole;
+  ownershipPct?: number;
+}
+
+export interface RestoreProfileVersionRequest {
+  changeNote?: string;
+}
+
+export interface ProfileMemoSelection {
+  versionNo?: number;
+  sections?: string[];
+}
+
+export interface SavedProfileMemo {
+  id: string;
+}
+
+export type DocumentProfileRelation = "RELATED_TO" | "FOR";
+
+export interface LinkedDocumentProfile {
+  profileId: string;
+  displayName: string;
+  type: CustomerProfileType;
+  relation: DocumentProfileRelation;
 }

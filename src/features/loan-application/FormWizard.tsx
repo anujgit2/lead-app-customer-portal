@@ -354,23 +354,18 @@ export function FormWizard({
     <PanVerificationProvider>
     <ApplicationIdProvider applicationId={draftId}>
     <PersistDocumentStepProvider onPersist={persistDocumentStep}>
-    <div className="min-h-screen bg-slate-50/70">
+    <div className="min-h-screen bg-background">
       {/* ── Sticky header ── */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-slate-100 sticky top-0 z-30 shadow-[0_2px_12px_rgb(0,0,0,0.04)]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
+      <div className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-sm">
+        <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6">
           <div className="mb-4 flex items-start justify-between gap-4">
             <div className="flex min-w-0 flex-col gap-0.5">
-              <h1 className="text-base font-semibold tracking-tight text-slate-900 leading-snug">
+              <h1 className="text-base font-semibold leading-snug tracking-[-0.01em] text-foreground">
                 {product.name}
               </h1>
-              <p className="text-xs text-slate-400 font-normal">{product.description}</p>
+              <p className="text-xs text-muted-foreground">{product.description}</p>
             </div>
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="shrink-0 gap-1.5 border-slate-200 text-slate-600 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 ease-out active:scale-[0.98] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
-            >
+            <Button asChild variant="outline" size="sm" className="shrink-0 gap-1.5">
               <Link href="/dashboard">
                 <LayoutDashboard className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Back to dashboard</span>
@@ -384,18 +379,18 @@ export function FormWizard({
             stepStatuses={stepStatuses}
             onStepClick={navigateToStep}
           />
-          <div className="mt-1 grid grid-cols-3 items-center">
+          <div className="mt-3 grid grid-cols-3 items-center">
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={handlePrev}
               disabled={currentStep === 0}
-              className="justify-self-start px-2 text-slate-500 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-transparent hover:text-slate-900 active:scale-[0.98]"
+              className="justify-self-start px-2 text-muted-foreground"
             >
               Back
             </Button>
-            <span className="justify-self-center whitespace-nowrap text-xs font-medium text-slate-500">
+            <span className="justify-self-center whitespace-nowrap text-xs font-medium text-muted-foreground">
               Step {currentStep + 1} of {totalSteps + 1}
             </span>
             <Button
@@ -405,7 +400,7 @@ export function FormWizard({
               onClick={() => handleSaveDraft(false)}
               loading={savingMode === "draft"}
               disabled={savingMode !== null || isSubmitting}
-              className="justify-self-end px-2 text-slate-500 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-transparent hover:text-slate-900 active:scale-[0.98]"
+              className="justify-self-end px-2 text-muted-foreground"
             >
               Save
             </Button>
@@ -417,11 +412,11 @@ export function FormWizard({
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {currentTemplate && (
           <div className="mb-8">
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
+            <h2 className="text-2xl font-[650] leading-8 tracking-[-0.02em] text-foreground">
               {currentTemplate.title}
             </h2>
             {currentTemplate.description && (
-              <p className="text-sm text-slate-500 mt-1.5 leading-relaxed max-w-2xl">
+              <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                 {currentTemplate.description}
               </p>
             )}
@@ -431,7 +426,7 @@ export function FormWizard({
         {stepError && !isReviewStep(currentStep) && (
           <div
             role="alert"
-            className="mb-6 flex items-start gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3.5 text-sm text-destructive shadow-sm"
+            className="mb-6 flex items-start gap-3 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3.5 text-sm text-danger-strong"
           >
             <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
             <span>{stepError}</span>
@@ -466,13 +461,13 @@ export function FormWizard({
 
         {/* ── Navigation footer ── */}
         {!isReviewStep(currentStep) && (
-          <div className="flex items-center justify-between mt-10 pt-6 border-t border-slate-100">
+          <div className="mt-10 flex items-center justify-between border-t border-border pt-6">
             <Button
               type="button"
               variant="outline"
               onClick={handlePrev}
               disabled={currentStep === 0}
-              className="gap-2 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-40 transition-all duration-200 active:scale-[0.98]"
+              className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
               Back
@@ -485,7 +480,7 @@ export function FormWizard({
                 onClick={() => handleSaveDraft(true)}
                 loading={savingMode === "close"}
                 disabled={savingMode !== null}
-                className="gap-2 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 active:scale-[0.98]"
+                className="gap-2"
               >
                 <SaveAll className="h-4 w-4" />
                 Save &amp; Close
@@ -493,7 +488,7 @@ export function FormWizard({
               <Button
                 type="button"
                 onClick={handleNext}
-                className="gap-2 min-w-[130px] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
+                className="min-w-[130px] gap-2"
               >
                 {currentStep === totalSteps - 1 ? (
                   <>

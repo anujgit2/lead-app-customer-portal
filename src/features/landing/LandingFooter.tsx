@@ -30,7 +30,7 @@ const FOOTER_SECTIONS = [
 
 export function LandingFooter() {
   return (
-    <footer className="border-t border-slate-100 bg-slate-50/70">
+    <footer className="border-t border-border bg-muted/60">
       <div className="mx-auto max-w-7xl px-6 py-16">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div>

@@ -3,16 +3,15 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border p-4 text-sm [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:h-4 [&>svg]:w-4 [&>svg~*]:pl-7",
+  "relative w-full rounded-lg border p-3.5 text-sm leading-5 [&>svg]:absolute [&>svg]:left-3.5 [&>svg]:top-3.5 [&>svg]:size-5 [&>svg~*]:pl-8",
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground border-border",
-        destructive:
-          "border-destructive/30 bg-destructive/5 text-destructive [&>svg]:text-destructive",
-        warning: "border-amber-300 bg-amber-50 text-amber-800 [&>svg]:text-amber-600",
-        success: "border-emerald-300 bg-emerald-50 text-emerald-800 [&>svg]:text-emerald-600",
-        info: "border-blue-200 bg-blue-50 text-blue-800 [&>svg]:text-blue-600",
+        default: "border-border bg-muted text-foreground",
+        destructive: "border-danger/30 bg-danger-soft text-danger-strong [&>svg]:text-danger-strong",
+        warning: "border-warning/35 bg-warning-soft text-warning-strong [&>svg]:text-warning-strong",
+        success: "border-success/30 bg-success-soft text-success-strong [&>svg]:text-success-strong",
+        info: "border-info/30 bg-info-soft text-info-strong [&>svg]:text-info-strong",
       },
     },
     defaultVariants: {
@@ -31,14 +30,14 @@ Alert.displayName = "Alert";
 
 const AlertTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
   ({ className, ...props }, ref) => (
-    <h5 ref={ref} className={cn("mb-1 font-semibold leading-none tracking-tight", className)} {...props} />
+    <h5 ref={ref} className={cn("mb-0.5 font-semibold leading-5", className)} {...props} />
   )
 );
 AlertTitle.displayName = "AlertTitle";
 
 const AlertDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("text-sm [&_p]:leading-relaxed", className)} {...props} />
+    <div ref={ref} className={cn("text-sm leading-5 opacity-[0.92] [&_p]:leading-5", className)} {...props} />
   )
 );
 AlertDescription.displayName = "AlertDescription";

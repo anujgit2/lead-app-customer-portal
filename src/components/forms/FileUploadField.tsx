@@ -222,25 +222,23 @@ export function FileUploadField({
         <div
           {...getRootProps()}
           className={cn(
-            "flex cursor-pointer items-center gap-3 rounded-[10px] border-[1.5px] border-dashed px-3.5 py-3 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]",
-            isDragActive
-              ? "border-primary bg-primary/5"
-              : "border-slate-200 hover:border-primary hover:bg-primary/5",
-            error && "border-destructive"
+            "flex cursor-pointer items-center gap-3.5 rounded-lg border-[1.5px] border-dashed border-input bg-card px-4 py-4 transition-[border-color,background] duration-150 hover:border-primary hover:bg-primary-soft/50",
+            isDragActive && "border-primary bg-primary-soft/50",
+            error && "border-danger bg-danger-soft"
           )}
         >
           <input {...getInputProps()} />
-          <div className="grid h-[34px] w-[34px] shrink-0 place-items-center rounded-[9px] bg-primary/10 text-primary">
+          <div className="tone-brand grid h-10 w-10 shrink-0 place-items-center rounded-md">
             <Upload className="h-4 w-4" />
           </div>
           {isDragActive ? (
             <p className="text-sm font-medium text-primary">Drop files here</p>
           ) : (
             <div className="min-w-0">
-              <p className="text-sm text-slate-800">
-                Drop files or <span className="font-medium text-primary">browse</span>
+              <p className="text-sm font-medium text-foreground">
+                Drop files or <span className="text-primary underline underline-offset-[3px]">browse</span>
               </p>
-              <p className="truncate text-xs text-slate-500">
+              <p className="truncate text-[13px] leading-[18px] text-muted-foreground">
                 {formatAcceptLabel(acceptList)} · up to {sizeLimitMb} MB
                 {maxFiles > 1 ? ` · up to ${maxFiles} files` : ""}
                 {minFiles > 0 ? ` · at least ${minFiles} required` : ""}
@@ -261,12 +259,15 @@ export function FileUploadField({
           {fileItems.map((item) => (
             <li
               key={item.id}
-              className="flex items-center gap-3 rounded-[10px] border border-slate-100 bg-white px-3 py-2.5"
+              className={cn(
+                "flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5",
+                item.status === "error" && "border-danger/50 bg-danger-soft/50"
+              )}
             >
               {item.status === "success" ? (
-                <CheckCircle2 className="h-[18px] w-[18px] shrink-0 text-emerald-600" />
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
               ) : item.status === "error" ? (
-                <AlertCircle className="h-[18px] w-[18px] shrink-0 text-destructive" />
+                <AlertCircle className="h-5 w-5 shrink-0 text-danger" />
               ) : item.preview ? (
                 <img
                   src={item.preview}
@@ -274,12 +275,12 @@ export function FileUploadField({
                   className="h-[18px] w-[18px] shrink-0 rounded object-cover"
                 />
               ) : (
-                <FileText className="h-[18px] w-[18px] shrink-0 text-slate-400" />
+                <FileText className="h-5 w-5 shrink-0 text-primary" />
               )}
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-slate-800">{item.fileName}</p>
-                <p className="text-xs text-slate-500">
+                <p className="truncate text-sm font-medium text-foreground">{item.fileName}</p>
+                <p className="text-xs text-muted-foreground">
                   {formatFileSize(item.sizeBytes)}
                   {item.status === "uploading" && " · Uploading…"}
                 </p>

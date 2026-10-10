@@ -11,13 +11,16 @@ import {
   getDocument,
   getTypes,
   importDocument,
+  linkDocumentProfile,
   listDigiLockerDocuments,
   listDocuments,
   listShares,
   previewVersion,
   revokeShare,
+  unlinkDocumentProfile,
 } from "./documentsApi";
 import type { CreateShareBody, DocumentFilters, ImportDocumentInput, PreviewVersionInput } from "../types";
+import type { DocumentProfileRelation } from "@/types";
 import { newIdempotencyKey } from "../utils/upload";
 
 function retryDocumentQuery(failureCount: number, error: unknown): boolean {
@@ -124,6 +127,30 @@ export function useDigiLockerDocuments(enabled: boolean) {
     queryFn: listDigiLockerDocuments,
     enabled,
     retry: false,
+  });
+}
+
+export function useLinkDocumentProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { documentId: string; profileId: string; relation: DocumentProfileRelation }) =>
+      linkDocumentProfile(input.documentId, input.profileId, input.relation),
+    onSuccess: async (_result, input) => {
+      await queryClient.invalidateQueries({ queryKey: ["documents"] });
+      await queryClient.invalidateQueries({ queryKey: ["document", input.documentId] });
+    },
+  });
+}
+
+export function useUnlinkDocumentProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { documentId: string; profileId: string }) =>
+      unlinkDocumentProfile(input.documentId, input.profileId),
+    onSuccess: async (_result, input) => {
+      await queryClient.invalidateQueries({ queryKey: ["documents"] });
+      await queryClient.invalidateQueries({ queryKey: ["document", input.documentId] });
+    },
   });
 }
 

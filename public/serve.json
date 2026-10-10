@@ -5,6 +5,8 @@
     { "source": "/shared/:token", "destination": "/shared/link/index.html" },
     { "source": "/shared/:token/", "destination": "/shared/link/index.html" },
     { "source": "/documents/:id", "destination": "/documents/view/index.html" },
-    { "source": "/documents/:id/", "destination": "/documents/view/index.html" }
+    { "source": "/documents/:id/", "destination": "/documents/view/index.html" },
+    { "source": "/profiles/:id((?!(?:view|new)(?:/|$))[^/]+)", "destination": "/profiles/view/index.html" },
+    { "source": "/profiles/:id((?!(?:view|new)(?:/|$))[^/]+)/", "destination": "/profiles/view/index.html" }
   ]
 }

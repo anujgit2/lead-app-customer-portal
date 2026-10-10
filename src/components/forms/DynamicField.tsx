@@ -23,7 +23,7 @@ import {
 import { FileUploadField } from "./FileUploadField";
 import { CurrencyInput } from "./CurrencyInput";
 import { MultiSelectField } from "./MultiSelectField";
-import { Info, Percent } from "lucide-react";
+import { Info } from "lucide-react";
 import { useFormDebug } from "./form-debug-context";
 import { useFieldRules } from "./use-field-rules";
 import { cn } from "@/lib/utils";
@@ -151,11 +151,11 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
     <div className="flex min-h-6 min-w-0 items-center gap-1.5 pl-1">
       <Label
         htmlFor={fieldName}
-        className="flex min-w-0 items-center text-sm font-medium text-slate-600"
+        className="flex min-w-0 items-center text-sm font-medium text-foreground"
       >
         <span className="truncate">{field.label}</span>
         {isRequired && (
-          <span className="ml-1 shrink-0 text-destructive">*</span>
+          <span className="ml-0.5 shrink-0 text-danger">*</span>
         )}
       </Label>
       {isPanSearchField(field) && <PanVerificationBadge currentPan={watch(fieldName)} />}
@@ -189,11 +189,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
         {labelEl}
         <Textarea
           id={fieldName}
-          className={
-            field.type === "json"
-              ? "rounded-sm font-mono text-xs"
-              : "rounded-sm"
-          }
+          className={field.type === "json" ? "font-mono text-[13px] leading-5" : undefined}
           placeholder={field.placeholder ?? (field.type === "json" ? '{ "key": "value" }' : undefined)}
           disabled={field.disabled}
           readOnly={field.readonly}
@@ -275,7 +271,6 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
               <SelectTrigger
                 id={fieldName}
                 error={!!error}
-                className="rounded-sm"
               >
                 <SelectValue placeholder={field.placeholder ?? `Select ${field.label}`} />
               </SelectTrigger>
@@ -400,7 +395,6 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
           id={fieldName}
           type="date"
           className={cn(
-            "rounded-sm",
             isEmpty &&
               "text-muted-foreground [&::-webkit-datetime-edit]:text-muted-foreground [&::-webkit-datetime-edit-text]:text-muted-foreground [&::-webkit-datetime-edit-month-field]:text-muted-foreground [&::-webkit-datetime-edit-day-field]:text-muted-foreground [&::-webkit-datetime-edit-year-field]:text-muted-foreground"
           )}
@@ -446,7 +440,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
         <Input
           id={fieldName}
           type="number"
-          className="rounded-sm"
+          className="text-right tabular-nums"
           placeholder={field.placeholder}
           error={!!error}
           disabled={field.disabled}
@@ -454,7 +448,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
           min={typeof v?.min === "number" ? v.min : undefined}
           max={typeof v?.max === "number" ? v.max : undefined}
           step={v?.integer ? 1 : 0.01}
-          endAdornment={<Percent className="h-3.5 w-3.5 text-muted-foreground" />}
+          endAdornment={<span className="pr-2 text-sm font-medium text-info-strong">%</span>}
           {...register(fieldName)}
         />
         <FieldHint text={field.helpText} />
@@ -533,7 +527,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
         <Input
           id={fieldName}
           type={inputType}
-          className="rounded-sm"
+          className={inputType === "number" ? "tabular-nums" : undefined}
           placeholder={derivedPlaceholder}
           error={!!error}
           disabled={field.disabled}

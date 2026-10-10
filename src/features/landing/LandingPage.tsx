@@ -64,9 +64,9 @@ function ProgramGrid({
       {programs.map((program) => (
         <article
           key={program.name}
-          className="group flex flex-col rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-200 hover:shadow-[0_12px_40px_rgb(0,0,0,0.07)]"
+          className="flex flex-col rounded-lg border border-border bg-card p-6 shadow-sm"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-primary transition-all duration-200 ease-out group-hover:bg-primary group-hover:text-white">
+          <div className="tone-brand flex h-10 w-10 items-center justify-center rounded-md">
             <program.icon className="h-5 w-5" />
           </div>
 
@@ -101,10 +101,10 @@ export function LandingPage() {
 
       <main>
         {/* Hero */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50/40 pt-28 pb-16 sm:pt-36 sm:pb-20">
+        <section className="relative overflow-hidden bg-background pt-28 pb-16 sm:pt-36 sm:pb-20">
           <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 lg:grid-cols-2 lg:gap-16">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1 text-xs font-medium text-primary-soft-foreground">
                 <Sparkles className="h-3 w-3" />
                 Collateral-free MSME credit up to ₹10 crore
               </span>
@@ -270,7 +270,7 @@ export function LandingPage() {
                   className="group rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgb(0,0,0,0.07)]"
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-primary transition-all duration-200 ease-out group-hover:bg-primary group-hover:text-white">
+                    <div className="tone-brand flex h-10 w-10 items-center justify-center rounded-md transition-colors duration-150 group-hover:bg-primary group-hover:text-primary-foreground">
                       <step.icon className="h-5 w-5" />
                     </div>
                     <span className="text-sm font-semibold tabular-nums text-slate-300">
@@ -299,7 +299,7 @@ export function LandingPage() {
               />
               <div
                 aria-hidden
-                className="pointer-events-none absolute -bottom-32 -left-24 h-72 w-72 rounded-full bg-blue-500/15 blur-3xl"
+                className="pointer-events-none absolute -bottom-32 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl"
               />
 
               <div className="relative">

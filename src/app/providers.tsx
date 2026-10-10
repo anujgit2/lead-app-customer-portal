@@ -14,12 +14,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <Toaster
           position="top-right"
           expand={false}
-          richColors
+          offset={16}
           toastOptions={{
-            style: {
-              borderRadius: "10px",
-              fontSize: "13px",
-            },
+            duration: 5000,
           }}
         />
       </TooltipProvider>

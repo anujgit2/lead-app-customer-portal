@@ -90,17 +90,14 @@ export function LoginForm() {
     }
   };
 
-  const inputClassName =
-    "h-12 rounded-[0.6rem] border-slate-200 bg-white hover:border-slate-300 focus-visible:ring-4 focus-visible:ring-blue-500/15 focus-visible:border-blue-400 transition-all duration-200 ease-out";
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/40 flex flex-col">
-      <header className="w-full px-6 sm:px-10 lg:px-16 pt-6 lg:pt-8 flex items-center justify-between">
-        <Link href="/" className="inline-flex items-center gap-2.5 group">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary transition-transform duration-200 ease-out group-hover:-translate-y-0.5">
-            <Building2 className="h-4 w-4 text-white" />
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="flex w-full items-center justify-between px-6 pt-6 sm:px-10 lg:px-16 lg:pt-8">
+        <Link href="/" className="inline-flex items-center gap-2.5 text-foreground">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <Building2 className="h-4 w-4" />
           </span>
-          <span className="text-sm font-semibold text-slate-900 tracking-tight hidden sm:inline">
+          <span className="hidden text-sm font-semibold tracking-[-0.01em] sm:inline">
             LoanPortal
           </span>
         </Link>
@@ -139,7 +136,7 @@ export function LoginForm() {
             <div className="space-y-5 mb-10">
               {BENEFITS.map((benefit) => (
                 <div key={benefit.title} className="flex items-start gap-4">
-                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50">
+                  <div className="tone-brand flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md">
                     <benefit.icon className="h-5 w-5 text-primary" />
                   </div>
                   <div>
@@ -154,7 +151,7 @@ export function LoginForm() {
               ))}
             </div>
 
-            <div className="rounded-2xl border border-blue-100/80 bg-white/70 backdrop-blur-sm p-5 shadow-[0_8px_30px_rgb(0,0,0,0.03)]">
+            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-xs font-medium text-slate-500">
@@ -164,7 +161,7 @@ export function LoginForm() {
                     92%
                   </p>
                 </div>
-                <div className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-600 text-xs font-semibold px-2.5 py-1">
+                <div className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2.5 py-1 text-xs font-semibold text-success-strong">
                   <TrendingUp className="h-3.5 w-3.5" />
                   +18%
                 </div>
@@ -177,7 +174,7 @@ export function LoginForm() {
                       "flex-1 rounded-t-md transition-all duration-300",
                       index === GROWTH_BARS.length - 2
                         ? "bg-primary"
-                        : "bg-blue-100"
+                        : "bg-primary-soft"
                     )}
                     style={{ height: `${height}%` }}
                   />
@@ -188,9 +185,9 @@ export function LoginForm() {
 
           {/* Right: login form */}
           <div className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
-            <Card className="border border-slate-200 rounded-[22px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-slate-100">
+            <Card className="rounded-xl bg-card shadow-md">
               <CardContent className="p-8 sm:p-10">
-                <div className="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-blue-50 mb-5">
+                <div className="tone-brand mb-5 inline-flex h-11 w-11 items-center justify-center rounded-md">
                   <LogIn className="h-5 w-5 text-primary" />
                 </div>
                 <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
@@ -214,7 +211,7 @@ export function LoginForm() {
                       autoComplete="email"
                       error={!!errors.email}
                       startAdornment={<Mail className="h-4 w-4" />}
-                      className={inputClassName}
+                      className="h-12"
                       {...register("email")}
                     />
                     {errors.email && (
@@ -239,7 +236,7 @@ export function LoginForm() {
                       autoComplete="current-password"
                       error={!!errors.password}
                       startAdornment={<Lock className="h-4 w-4" />}
-                      className={inputClassName}
+                      className="h-12"
                       endAdornment={
                         <button
                           type="button"
@@ -279,7 +276,7 @@ export function LoginForm() {
                     type="submit"
                     size="lg"
                     loading={isSubmitting}
-                    className="w-full gap-2 h-12 rounded-xl text-base font-semibold shadow-lg shadow-blue-500/15 hover:shadow-blue-500/25 hover:-translate-y-0.5 mt-2"
+                    className="w-full"
                   >
                     Sign in
                     <ArrowRight className="h-4 w-4" />

@@ -1,6 +1,7 @@
 import type { AxiosRequestConfig, AxiosResponse } from "axios";
 import { parseApiError } from "@/lib/api-error";
 import apiClient from "@/lib/axios";
+import type { DocumentProfileRelation } from "@/types";
 import type {
   ActivityPage,
   CreateShareBody,
@@ -53,6 +54,8 @@ export async function listDocuments(params: DocumentFilters = {}): Promise<Porta
     params: {
       ...(params.category ? { category: params.category } : {}),
       ...(params.q ? { q: params.q } : {}),
+      ...(params.profileId ? { profileId: params.profileId } : {}),
+      ...(params.relation ? { relation: params.relation } : {}),
     },
   });
   return normalizeDocumentList(response.data);
@@ -75,6 +78,23 @@ export async function previewVersion(body: PreviewVersionInput): Promise<Version
     ...(body.documentId ? { documentId: body.documentId } : {}),
   });
   return normalizeVersionPreview(response.data);
+}
+
+export async function linkDocumentProfile(
+  documentId: string,
+  profileId: string,
+  relation: DocumentProfileRelation
+): Promise<void> {
+  await apiClient.post(`/api/documents/${encodeURIComponent(documentId)}/profiles`, {
+    profileId,
+    relation,
+  });
+}
+
+export async function unlinkDocumentProfile(documentId: string, profileId: string): Promise<void> {
+  await apiClient.delete(
+    `/api/documents/${encodeURIComponent(documentId)}/profiles/${encodeURIComponent(profileId)}`
+  );
 }
 
 export async function uploadDocument(
