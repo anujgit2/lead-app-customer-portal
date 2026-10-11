@@ -10,7 +10,7 @@ interface CategoryFilterProps {
 
 export function CategoryFilter({ categories, value, onChange }: CategoryFilterProps) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1" role="toolbar" aria-label="Filter by category">
+    <div className="flex w-fit max-w-full gap-0.5 overflow-x-auto rounded-md bg-muted p-1" role="toolbar" aria-label="Filter by category">
       {categories.map((category) => {
         const active = category.id === value;
         return (
@@ -20,10 +20,10 @@ export function CategoryFilter({ categories, value, onChange }: CategoryFilterPr
             aria-pressed={active}
             onClick={() => onChange(category.id)}
             className={cn(
-              "min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500/20",
+              "h-8 shrink-0 rounded-md px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               active
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "border border-slate-100 bg-white text-slate-600 shadow-sm hover:text-slate-900"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted-foreground/10 hover:text-foreground"
             )}
           >
             {category.label}

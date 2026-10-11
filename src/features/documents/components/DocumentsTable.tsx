@@ -2,9 +2,30 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Download, Eye, Files, Loader2, Share2, Upload } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Download,
+  Eye,
+  FileText,
+  Files,
+  Loader2,
+  MoreHorizontal,
+  Search,
+  Share2,
+  Upload,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -13,12 +34,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { profileInitials } from "@/features/profiles/utils/display";
 import { cn } from "@/lib/utils";
+import type { LinkedDocumentProfile } from "@/types";
 import type { PortalDocument } from "../types";
-import { formatDisplayDate, formatVersionLabel } from "../utils/format";
-import { documentRelationLabel } from "@/features/profiles/utils/display";
+import { categoryKey, categoryLabel, formatDisplayDate } from "../utils/format";
 import { SourceBadge } from "./SourceBadge";
+
+export type DocumentSortKey = "name" | "updated";
+export type DocumentSortDir = "asc" | "desc";
 
 interface DocumentsTableProps {
   documents: PortalDocument[];
@@ -26,6 +50,9 @@ interface DocumentsTableProps {
   isFiltered?: boolean;
   selectedIds: string[];
   pendingDownloadId?: string | null;
+  sort: DocumentSortKey;
+  dir: DocumentSortDir;
+  onSort: (column: DocumentSortKey) => void;
   onSelectedChange: (id: string, selected: boolean) => void;
   onSelectVisible: (selected: boolean) => void;
   onShare: (document: PortalDocument) => void;
@@ -33,36 +60,88 @@ interface DocumentsTableProps {
   onView: (document: PortalDocument) => void;
   onUpdate: (document: PortalDocument) => void;
   onUpload: () => void;
+  onOpen: (document: PortalDocument) => void;
+  onClearFilters: () => void;
 }
 
-function RowAction({
+const badgeClass = "h-[22px] px-2 text-xs";
+
+function documentTypeCode(typeId: string, typeName: string): string {
+  const id = typeId.trim();
+  if (/^[A-Za-z][A-Za-z0-9_]*$/.test(id) && (id.includes("_") || id === id.toUpperCase()) && id.length > 1) {
+    return id.toUpperCase();
+  }
+  const fromName = typeName
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+  return fromName || "DOCUMENT";
+}
+
+function primaryProfile(document: PortalDocument): LinkedDocumentProfile | undefined {
+  const linked = document.linked ?? [];
+  return linked.find((item) => item.relation === "FOR") ?? linked[0];
+}
+
+function profileName(profile: LinkedDocumentProfile | undefined): string {
+  return profile?.displayName?.trim() || "Untitled profile";
+}
+
+function SortHeader({
   label,
-  disabled,
-  onClick,
-  children,
+  column,
+  sort,
+  dir,
+  onSort,
+  className,
 }: {
   label: string;
-  disabled?: boolean;
-  onClick: () => void;
+  column: DocumentSortKey;
+  sort: DocumentSortKey;
+  dir: DocumentSortDir;
+  onSort: (column: DocumentSortKey) => void;
+  className?: string;
+}) {
+  const active = sort === column;
+  const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <TableHead
+      aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
+      className={cn(active && "text-foreground", className)}
+    >
+      <button
+        type="button"
+        className="inline-flex h-full cursor-pointer items-center gap-1 rounded-sm font-semibold text-inherit transition-colors duration-150 hover:text-foreground"
+        onClick={() => onSort(column)}
+      >
+        {label}
+        <Icon className="h-3.5 w-3.5" aria-hidden />
+      </button>
+    </TableHead>
+  );
+}
+
+function MenuAction({
+  icon,
+  children,
+  disabled,
+  onSelect,
+}: {
+  icon: ReactNode;
   children: ReactNode;
+  disabled?: boolean;
+  onSelect: () => void;
 }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label={label}
-          disabled={disabled}
-          onClick={onClick}
-          className="h-8 w-8 border-slate-100 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98]"
-        >
-          {children}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
+    <DropdownMenuItem
+      disabled={disabled}
+      className="px-2.5 py-[7px] text-[13px]"
+      onSelect={onSelect}
+    >
+      {icon}
+      {children}
+    </DropdownMenuItem>
   );
 }
 
@@ -72,6 +151,9 @@ export function DocumentsTable({
   isFiltered,
   selectedIds,
   pendingDownloadId,
+  sort,
+  dir,
+  onSort,
   onSelectedChange,
   onSelectVisible,
   onShare,
@@ -79,143 +161,237 @@ export function DocumentsTable({
   onView,
   onUpdate,
   onUpload,
+  onOpen,
+  onClearFilters,
 }: DocumentsTableProps) {
-  if (isLoading) {
-    return (
-      <div className="space-y-2 p-4" aria-busy="true">
-        <p className="sr-only">Loading documents</p>
-        {Array.from({ length: 6 }).map((_, index) => (
-          <div key={index} className="h-12 animate-pulse rounded-lg bg-slate-100" />
-        ))}
-      </div>
-    );
-  }
-
-  if (documents.length === 0) {
-    return (
-      <div className="px-6 py-16 text-center">
-        <Files className="mx-auto mb-4 h-12 w-12 text-slate-300" />
-        {isFiltered ? (
-          <>
-            <p className="text-base font-semibold tracking-tight text-slate-900">No matching documents</p>
-            <p className="mt-1 text-sm font-normal text-slate-500">Try another type or search.</p>
-          </>
-        ) : (
-          <>
-            <p className="text-base font-semibold tracking-tight text-slate-900">No documents yet</p>
-            <p className="mx-auto mt-1 max-w-sm text-sm font-normal text-slate-500">
-              Upload a file to keep statements, identity proof and other paperwork in one place.
-            </p>
-            <Button type="button" className="mt-6 h-11" onClick={onUpload}>
-              Upload document
-            </Button>
-          </>
-        )}
-      </div>
-    );
-  }
-
   const selected = new Set(selectedIds);
-  const allSelected = documents.every((document) => selected.has(document.id));
+  const allSelected = documents.length > 0 && documents.every((document) => selected.has(document.id));
   const someSelected = documents.some((document) => selected.has(document.id));
 
   return (
-    <Table className="min-w-[760px]">
+    <Table className="text-[13px] [&_td]:h-[52px] [&_td]:px-3 [&_th]:h-[38px] [&_th]:px-3 [&_th]:text-xs">
+      <caption className="sr-only">Documents</caption>
       <TableHeader>
-        <TableRow className="bg-slate-50/60 hover:bg-transparent">
-          <TableHead className="h-9 w-10 px-3">
+        <TableRow className="hover:bg-transparent">
+          <TableHead className="w-9 pr-0">
             <Checkbox
               checked={allSelected ? true : someSelected ? "indeterminate" : false}
               onCheckedChange={() => onSelectVisible(!allSelected)}
-              aria-label="Select all documents"
+              aria-label="Select all on this page"
+              disabled={isLoading || documents.length === 0}
               className="h-4 w-4"
             />
           </TableHead>
-          <TableHead className="h-9 px-3">Type</TableHead>
-          <TableHead className="h-9 px-3">Category</TableHead>
-          <TableHead className="h-9 px-3">Version</TableHead>
-          <TableHead className="h-9 px-3">Source</TableHead>
-          <TableHead className="h-9 px-3">Updated</TableHead>
-          <TableHead className="h-9 px-3 text-right">Actions</TableHead>
+          <SortHeader label="Document" column="name" sort={sort} dir={dir} onSort={onSort} />
+          <TableHead className="hidden min-[901px]:table-cell">Category</TableHead>
+          <TableHead className="hidden min-[901px]:table-cell">Profile</TableHead>
+          <TableHead>Version</TableHead>
+          <TableHead className="hidden min-[901px]:table-cell">Source</TableHead>
+          <SortHeader
+            label="Updated"
+            column="updated"
+            sort={sort}
+            dir={dir}
+            onSort={onSort}
+            className="hidden sm:table-cell"
+          />
+          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {documents.map((document) => {
-          const isSelected = selected.has(document.id);
-          const label = document.label ? `${document.typeName}, ${document.label}` : document.typeName;
-          return (
-          <TableRow
-            key={document.id}
-            data-state={isSelected ? "selected" : undefined}
-            className={cn("hover:bg-slate-50", isSelected && "bg-slate-50")}
-          >
-            <TableCell className="h-11 px-3 py-1.5">
-              <Checkbox
-                checked={isSelected}
-                onCheckedChange={(checked) => onSelectedChange(document.id, checked === true)}
-                aria-label={`Select ${label}`}
-                className="h-4 w-4"
-              />
-            </TableCell>
-            <TableCell className="h-11 px-3 py-1.5">
-              <Link
-                href={`/documents/${document.id}`}
-                className="block rounded-md transition-all duration-200 ease-out hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              >
-                <span className="block text-[13px] font-semibold leading-4 tracking-tight text-slate-900">
-                  {document.typeName}
+        {isLoading ? (
+          Array.from({ length: 5 }, (_, index) => (
+            <TableRow key={index} className="hover:bg-transparent">
+              <TableCell colSpan={8} className="h-12">
+                {index === 0 ? <p className="sr-only">Loading documents</p> : null}
+                <div className="h-8 animate-pulse rounded-md bg-muted" aria-hidden />
+              </TableCell>
+            </TableRow>
+          ))
+        ) : documents.length === 0 ? (
+          <TableRow className="hover:bg-transparent">
+            <TableCell colSpan={8} className="h-auto !p-0">
+              <div className="flex flex-col items-center gap-1 px-6 py-10 text-center" role="status">
+                <span className="tone-brand mb-3 grid h-12 w-12 place-items-center rounded-lg">
+                  {isFiltered ? <Search className="h-5 w-5" /> : <Files className="h-5 w-5" />}
                 </span>
-                {document.label ? (
-                  <span className="mt-0.5 block text-xs font-normal leading-4 text-slate-500">{document.label}</span>
-                ) : null}
-              </Link>
-              {document.linked && document.linked.length > 0 ? (
-                <span className="mt-1 flex flex-wrap gap-1">
-                  {document.linked.map((item) => (
-                    <Link
-                      key={`${item.profileId}-${item.relation}`}
-                      href={`/profiles/${item.profileId}`}
-                      className="rounded-full border border-slate-100 bg-slate-50 px-2 py-0.5 text-[11px] leading-4 text-slate-600 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    >
-                      {item.displayName || "Profile"} · {documentRelationLabel(item.relation)}
-                    </Link>
-                  ))}
-                </span>
-              ) : null}
-            </TableCell>
-            <TableCell className="h-11 px-3 py-1.5 text-[13px] text-slate-600">{document.category}</TableCell>
-            <TableCell className="h-11 whitespace-nowrap px-3 py-1.5 text-[13px] font-medium text-slate-700">
-              {formatVersionLabel(document.latestVersion, true)}
-            </TableCell>
-            <TableCell className="h-11 px-3 py-1.5">
-              <SourceBadge source={document.source} />
-            </TableCell>
-            <TableCell className="h-11 whitespace-nowrap px-3 py-1.5 text-[13px] text-slate-500">
-              {formatDisplayDate(document.updatedAt)}
-            </TableCell>
-            <TableCell className="h-11 px-3 py-1.5">
-              <div className="flex justify-end gap-1">
-                <RowAction label="Share" onClick={() => onShare(document)}>
-                  <Share2 />
-                </RowAction>
-                <RowAction
-                  label="Download"
-                  disabled={pendingDownloadId === document.id}
-                  onClick={() => onDownload(document)}
-                >
-                  {pendingDownloadId === document.id ? <Loader2 className="animate-spin" /> : <Download />}
-                </RowAction>
-                <RowAction label="View" onClick={() => onView(document)}>
-                  <Eye />
-                </RowAction>
-                <RowAction label="Update" onClick={() => onUpdate(document)}>
-                  <Upload />
-                </RowAction>
+                <h3 className="text-base font-semibold leading-6 text-foreground">
+                  {isFiltered ? "No documents found" : "No documents yet"}
+                </h3>
+                <p className="max-w-[36ch] text-sm text-muted-foreground">
+                  {isFiltered
+                    ? "Try a different search or clear the filters."
+                    : "Upload a file to keep statements, identity proof and other paperwork in one place."}
+                </p>
+                {isFiltered ? (
+                  <Button type="button" variant="outline" size="sm" className="mt-4" onClick={onClearFilters}>
+                    Clear filters
+                  </Button>
+                ) : (
+                  <Button type="button" className="mt-4" size="sm" onClick={onUpload}>
+                    Upload document
+                  </Button>
+                )}
               </div>
             </TableCell>
           </TableRow>
-          );
-        })}
+        ) : (
+          documents.map((document) => {
+            const isSelected = selected.has(document.id);
+            const fileName = document.fileName?.trim() ?? "";
+            const title = fileName || document.typeName;
+            const label = document.label ? `${title} ${document.label}` : title;
+            const profile = primaryProfile(document);
+            const extraProfiles = Math.max(0, (document.linked?.length ?? 0) - (profile ? 1 : 0));
+            const name = profile ? profileName(profile) : "";
+            const updated = formatDisplayDate(document.updatedAt);
+            const financial = categoryKey(document.category) === "FINANCIALS";
+            const downloading = pendingDownloadId === document.id;
+            return (
+              <TableRow
+                key={document.id}
+                tabIndex={0}
+                aria-selected={isSelected}
+                data-state={isSelected ? "selected" : undefined}
+                className="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onClick={() => onOpen(document)}
+                onKeyDown={(event) => {
+                  if (event.target !== event.currentTarget) return;
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onOpen(document);
+                  }
+                }}
+              >
+                <TableCell className="w-9 pr-0" onClick={(event) => event.stopPropagation()}>
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={(checked) => onSelectedChange(document.id, checked === true)}
+                    aria-label={`Select ${label}`}
+                    className="h-4 w-4"
+                  />
+                </TableCell>
+                <TableCell>
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="tone-brand grid h-[30px] w-[30px] shrink-0 place-items-center rounded-sm">
+                      <FileText className="h-4 w-4" aria-hidden />
+                    </span>
+                    <div className="min-w-0">
+                      <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] font-semibold leading-[18px] text-foreground">
+                        <Link
+                          href={`/documents/${document.id}`}
+                          className="min-w-0 truncate rounded-sm hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {title}
+                        </Link>
+                        {document.label ? (
+                          <Badge variant="outline" dot={false} className={badgeClass}>
+                            {document.label}
+                          </Badge>
+                        ) : null}
+                      </span>
+                      <span className="mt-px block truncate text-[12px] leading-4 text-muted-foreground">
+                        {fileName && fileName !== document.typeName
+                          ? document.typeName
+                          : documentTypeCode(document.typeId, document.typeName)}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[12.5px] text-muted-foreground min-[901px]:hidden">
+                        {name ? `${name} · ${updated}` : updated}
+                      </span>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell className="hidden min-[901px]:table-cell">
+                  <Badge variant={financial ? "brand" : "info"} className={badgeClass}>
+                    {categoryLabel(categoryKey(document.category), document.category)}
+                  </Badge>
+                </TableCell>
+                <TableCell className="hidden min-[901px]:table-cell">
+                  {profile ? (
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <span
+                        aria-hidden
+                        className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full bg-primary-soft text-[10px] font-semibold text-primary-soft-foreground"
+                      >
+                        {profileInitials(name)}
+                      </span>
+                      <span className="truncate">{name}</span>
+                      {extraProfiles > 0 ? (
+                        <span className="shrink-0 text-xs text-muted-foreground">+{extraProfiles}</span>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="whitespace-nowrap">
+                  <span className="inline-flex h-5 items-center rounded-md bg-muted px-1.5 text-[11.5px] font-semibold tabular-nums">
+                    v{document.latestVersion}
+                  </span>
+                  <Badge variant="success" dot={false} className={cn(badgeClass, "ml-1")}>
+                    Latest
+                  </Badge>
+                </TableCell>
+                <TableCell className="hidden min-[901px]:table-cell">
+                  <SourceBadge source={document.source} className={badgeClass} />
+                </TableCell>
+                <TableCell className="hidden whitespace-nowrap text-muted-foreground tabular-nums sm:table-cell">
+                  {updated}
+                </TableCell>
+                <TableCell className="text-right" onClick={(event) => event.stopPropagation()}>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Actions for ${label}`}
+                        className="h-8 w-8 p-0 text-muted-foreground hover:bg-primary-soft hover:text-primary data-[state=open]:bg-primary-soft data-[state=open]:text-primary"
+                      >
+                        <MoreHorizontal />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-[210px]">
+                      <MenuAction
+                        icon={<Eye className="h-4 w-4 text-muted-foreground" />}
+                        onSelect={() => onView(document)}
+                      >
+                        Preview
+                      </MenuAction>
+                      <MenuAction
+                        disabled={downloading}
+                        icon={
+                          downloading ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          ) : (
+                            <Download className="h-4 w-4 text-muted-foreground" />
+                          )
+                        }
+                        onSelect={() => onDownload(document)}
+                      >
+                        Download
+                      </MenuAction>
+                      <MenuAction
+                        icon={<Share2 className="h-4 w-4 text-muted-foreground" />}
+                        onSelect={() => onShare(document)}
+                      >
+                        Share
+                      </MenuAction>
+                      <DropdownMenuSeparator />
+                      <MenuAction
+                        icon={<Upload className="h-4 w-4 text-muted-foreground" />}
+                        onSelect={() => onUpdate(document)}
+                      >
+                        Upload new version
+                      </MenuAction>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            );
+          })
+        )}
       </TableBody>
     </Table>
   );

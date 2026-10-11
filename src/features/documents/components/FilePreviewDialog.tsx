@@ -66,7 +66,7 @@ export function FilePreviewDialog({
             <p className="text-sm text-destructive" role="alert">
               We couldn&apos;t open the preview.
             </p>
-            <Button type="button" variant="outline" className="h-11" onClick={() => void file.refetch()}>
+            <Button type="button" variant="outline" className="h-8" onClick={() => void file.refetch()} size="sm">
               Try again
             </Button>
           </div>
@@ -77,7 +77,7 @@ export function FilePreviewDialog({
         {file.data && !kind ? (
           <div className="space-y-4">
             <p className="text-sm text-slate-500">This file can&apos;t be shown here. You can download it instead.</p>
-            <Button type="button" className="h-11 gap-2" onClick={() => onDownload(version, fileName)}>
+            <Button type="button" className="h-8 gap-2" onClick={() => onDownload(version, fileName)} size="sm">
               <Download className="h-4 w-4" />
               Download
             </Button>

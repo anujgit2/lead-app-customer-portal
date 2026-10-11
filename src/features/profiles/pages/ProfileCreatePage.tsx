@@ -90,7 +90,7 @@ export function ProfileCreatePage() {
           New {profileTypeLabel(type).toLowerCase()} profile
         </h1>
         <p className="mt-1 text-sm font-normal text-slate-500">
-          Fields come from the {templateCode} form template.
+          Each form in the {templateCode} template opens in its own tab.
         </p>
       </div>
 
@@ -110,7 +110,7 @@ export function ProfileCreatePage() {
 
       {templateQuery.data ? (
         <ProfileForm
-          template={templateQuery.data}
+          templates={templateQuery.data}
           submitLabel="Save profile"
           pending={createProfile.isPending}
           onCancel={() => router.push(returnTo ?? "/profiles")}

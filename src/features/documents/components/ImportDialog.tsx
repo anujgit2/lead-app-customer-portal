@@ -126,7 +126,7 @@ function ImportDialogBody({
             <p className="text-sm text-destructive" role="alert">
               DigiLocker is unavailable right now.
             </p>
-            <Button type="button" className="h-11" onClick={onUploadInstead}>
+            <Button type="button" className="h-8" onClick={onUploadInstead} size="sm">
               Upload manually instead
             </Button>
           </div>
@@ -143,7 +143,7 @@ function ImportDialogBody({
             <p className="text-sm font-normal text-slate-500">
               Connect DigiLocker to see documents you can import. You&apos;ll come back here afterwards.
             </p>
-            <Button type="button" className="h-11" loading={connect.isPending} onClick={() => void startConnect()}>
+            <Button type="button" className="h-8" loading={connect.isPending} onClick={() => void startConnect()} size="sm">
               Connect DigiLocker
             </Button>
           </div>
@@ -157,7 +157,7 @@ function ImportDialogBody({
                 <p className="text-sm text-destructive" role="alert">
                   DigiLocker is unavailable right now.
                 </p>
-                <Button type="button" className="h-11" onClick={onUploadInstead}>
+                <Button type="button" className="h-8" onClick={onUploadInstead} size="sm">
                   Upload manually instead
                 </Button>
               </div>
@@ -215,10 +215,10 @@ function ImportDialogBody({
             />
 
             <DialogFooter className="gap-2">
-              <Button type="button" variant="outline" className="h-11" onClick={onUploadInstead}>
+              <Button type="button" variant="outline" className="h-8" onClick={onUploadInstead} size="sm">
                 Upload manually instead
               </Button>
-              <Button type="button" className="h-11" disabled={!canContinue} onClick={() => setStep(3)}>
+              <Button type="button" className="h-8" disabled={!canContinue} onClick={() => setStep(3)} size="sm">
                 Continue
               </Button>
             </DialogFooter>
@@ -240,16 +240,16 @@ function ImportDialogBody({
                 <p className="text-sm text-destructive" role="alert">
                   Couldn&apos;t import this document. Please try again.
                 </p>
-                <Button type="button" variant="outline" className="h-11" onClick={() => void confirmImport()}>
+                <Button type="button" variant="outline" className="h-8" onClick={() => void confirmImport()} size="sm">
                   Retry
                 </Button>
               </div>
             ) : null}
             <DialogFooter className="gap-2">
-              <Button type="button" variant="outline" className="h-11" onClick={() => setStep(2)}>
+              <Button type="button" variant="outline" className="h-8" onClick={() => setStep(2)} size="sm">
                 Back
               </Button>
-              <Button type="button" className="h-11" loading={importer.isPending} onClick={() => void confirmImport()}>
+              <Button type="button" className="h-8" loading={importer.isPending} onClick={() => void confirmImport()} size="sm">
                 Import
               </Button>
             </DialogFooter>

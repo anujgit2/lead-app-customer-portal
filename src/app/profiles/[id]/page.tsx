@@ -10,7 +10,7 @@ export function generateStaticParams() {
 
 function DetailFallback() {
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-6 sm:p-8" aria-busy="true">
+    <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-6 px-4 pb-20 pt-6 sm:px-8" aria-busy="true">
       <p className="sr-only">Loading profile</p>
       <div className="h-8 w-40 animate-pulse rounded-lg bg-muted" />
       <div className="h-32 animate-pulse rounded-xl bg-muted" />

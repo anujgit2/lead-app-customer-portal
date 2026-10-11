@@ -84,7 +84,7 @@ export function DocumentTypeFields({
             We couldn&apos;t load document types.
           </p>
           {onRetry ? (
-            <Button type="button" variant="outline" onClick={onRetry} className="h-11">
+            <Button type="button" variant="outline" onClick={onRetry} className="h-8" size="sm">
               Try again
             </Button>
           ) : null}

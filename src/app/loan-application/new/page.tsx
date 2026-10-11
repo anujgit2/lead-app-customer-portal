@@ -185,13 +185,13 @@ async function resolveProfileVersion(profileId: string, versionRaw: string | nul
 
 async function prefillFromProfile(applicationId: string, profileId: string, programKey: string) {
   const profile = await profileService.get(profileId);
-  const [template, product] = await Promise.all([
-    profileService.getFormTemplate(profile.templateCode),
+  const [profileTemplates, product] = await Promise.all([
+    profileService.getFormTemplateVersion(profile.templateCode, profile.templateVersion),
     applicationService.getLoanProductByProgramId(programKey),
   ]);
   const formData = prefillWizardFormData(
     product.templates,
-    fieldValuesFromProfile(template, profile.data)
+    fieldValuesFromProfile(profileTemplates, profile.data)
   ) as FormData;
   if (Object.keys(formData).length === 0) return;
   await applicationService.saveDraft(

@@ -1,0 +1,22 @@
+---
+description: Skip server and browser verification for UI changes
+alwaysApply: true
+---
+
+# UI changes — edit only
+
+When changing UI (layout, styling, components, pages, client state, or rendered data), make the code change and stop.
+
+- Do not start, restart, or check a dev server (`npm run dev`, `npm run local:dev`, or any other server).
+- Do not open a browser, use browser tools, take screenshots, or click through the app to verify the change.
+- Do not run curl, rendering scripts, or other substitutes to preview the UI.
+
+```text
+❌ BAD — after a styling edit
+Start the dev server, open /dashboard, and screenshot the page.
+
+✅ GOOD — after a styling edit
+Update the component and report what changed.
+```
+
+Logic, API, and non-UI bug fixes may still be checked with tests or typecheck when that check does not require a server or browser.

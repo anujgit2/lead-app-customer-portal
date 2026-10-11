@@ -39,13 +39,13 @@ export function ArchiveProfileDialog({
           <Button
             type="button"
             variant="outline"
-            className="h-11"
+            className="h-8"
             disabled={pending}
             onClick={() => onOpenChange(false)}
-          >
+           size="sm">
             Cancel
           </Button>
-          <Button type="button" variant="destructive" className="h-11" loading={pending} onClick={onConfirm}>
+          <Button type="button" variant="destructive" className="h-8" loading={pending} onClick={onConfirm} size="sm">
             Archive
           </Button>
         </DialogFooter>

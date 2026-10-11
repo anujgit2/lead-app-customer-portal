@@ -1,11 +1,28 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
-import { Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Download,
+  Eye,
+  FileText,
+  Files,
+  Loader2,
+  MoreHorizontal,
+  Search,
+  Share2,
+  Upload,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -23,117 +40,338 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UploadDialog } from "@/features/documents/components/UploadDialog";
+import { FilePreviewDialog } from "@/features/documents/components/FilePreviewDialog";
+import { ShareDialog } from "@/features/documents/components/ShareDialog";
+import { UploadDialog, type LockedUpload } from "@/features/documents/components/UploadDialog";
 import { useDocuments } from "@/features/documents/api/queries";
 import { useLinkDocumentProfile } from "@/features/documents/api/queries";
 import { useDebouncedValue } from "@/features/documents/hooks/useDebouncedValue";
+import { useFileDownload } from "@/features/documents/hooks/useFileDownload";
+import { categoryKey, categoryLabel } from "@/features/documents/utils/format";
+import type { PortalDocument } from "@/features/documents/types";
 import { parseApiError } from "@/lib/api-error";
-import { cn } from "@/lib/utils";
+import { cn, formatFileSize } from "@/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { CustomerProfileDetail, DocumentProfileRelation } from "@/types";
-import { documentRelationLabel } from "../utils/display";
+import { formatProfileDay } from "../utils/display";
+
+const badgeClass = "h-[22px] px-2 text-xs";
+
+function documentTypeCode(typeId: string, typeName: string): string {
+  const id = typeId.trim();
+  if (/^[A-Za-z][A-Za-z0-9_]*$/.test(id) && (id.includes("_") || id === id.toUpperCase()) && id.length > 1) {
+    return id.toUpperCase();
+  }
+  const fromName = typeName
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+  return fromName || "DOCUMENT";
+}
 
 interface ProfileDocumentsTabProps {
   profile: CustomerProfileDetail;
 }
 
 export function ProfileDocumentsTab({ profile }: ProfileDocumentsTabProps) {
+  const router = useRouter();
   const [relation, setRelation] = useState<"ALL" | DocumentProfileRelation>("ALL");
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [lockedUpload, setLockedUpload] = useState<LockedUpload | null>(null);
   const [linkOpen, setLinkOpen] = useState(false);
+  const [previewTarget, setPreviewTarget] = useState<PortalDocument | null>(null);
+  const [shareTarget, setShareTarget] = useState<PortalDocument | null>(null);
+  const { download, pendingKey } = useFileDownload();
   const documents = useDocuments({
     profileId: profile.id,
     ...(relation === "ALL" ? {} : { relation }),
   });
+  const rows = documents.data ?? [];
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex gap-2 overflow-x-auto" role="toolbar" aria-label="Document relation">
-          {(
-            [
-              ["ALL", "All"],
-              ["RELATED_TO", "Related to"],
-              ["FOR", "For"],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              aria-pressed={relation === id}
-              onClick={() => setRelation(id)}
-              className={cn(
-                "min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500/20",
-                relation === id
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "border border-slate-100 bg-white text-muted-foreground shadow-sm"
-              )}
-            >
-              {label}
-            </button>
-          ))}
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold leading-6 tracking-[-0.01em]">Documents</h2>
+          <p className="text-[13px] leading-[18px] text-muted-foreground">Files uploaded for this profile.</p>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Button type="button" variant="outline" className="h-11" onClick={() => setLinkOpen(true)}>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-fit max-w-full gap-0.5 overflow-x-auto rounded-md bg-muted p-[3px]" role="toolbar" aria-label="Document relation">
+            {(
+              [
+                ["ALL", "All"],
+                ["RELATED_TO", "Related to"],
+                ["FOR", "For"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={relation === id}
+                onClick={() => setRelation(id)}
+                className={cn(
+                  "h-7 shrink-0 rounded-sm px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  relation === id
+                    ? "bg-card text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={() => setLinkOpen(true)}>
             Link existing
           </Button>
-          <Button type="button" className="h-11" onClick={() => setUploadOpen(true)}>
-            Upload
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setLockedUpload(null);
+              setUploadOpen(true);
+            }}
+          >
+            <Upload className="h-4 w-4" />
+            Upload document
           </Button>
         </div>
       </div>
 
-      {documents.isLoading ? (
-        <div className="space-y-2" aria-busy="true">
-          <p className="sr-only">Loading documents</p>
-          <div className="h-16 animate-pulse rounded-xl bg-muted" />
-          <div className="h-16 animate-pulse rounded-xl bg-muted" />
-        </div>
-      ) : null}
-      {documents.isError ? (
-        <ErrorState
-          compact
-          title="Unable to load documents"
-          message={parseApiError(documents.error).message}
-          onRetry={() => {
-            void documents.refetch();
-          }}
-        />
-      ) : null}
-      {!documents.isLoading && !documents.isError && (documents.data?.length ?? 0) === 0 ? (
-        <p className="rounded-xl border border-slate-100 bg-card p-6 text-sm text-muted-foreground shadow-sm" role="status">
-          No documents are linked to this profile.
-        </p>
-      ) : null}
-      <ul className="space-y-3">
-        {(documents.data ?? []).map((document) => {
-          const linked = document.linked?.find((item) => item.profileId === profile.id);
-          return (
-            <li key={document.id}>
-              <Link
-                href={`/documents/${document.id}`}
-                className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-card p-4 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98] sm:flex-row sm:items-center sm:justify-between"
-              >
-                <span>
-                  <span className="block font-semibold tracking-tight text-slate-900">{document.typeName}</span>
-                  {document.label ? (
-                    <span className="mt-1 block text-sm text-muted-foreground">{document.label}</span>
-                  ) : null}
-                </span>
-                {linked ? <Badge variant="secondary">{documentRelationLabel(linked.relation)}</Badge> : null}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      <section className="overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-1)]">
+        <Table className="text-[13px]">
+          <caption className="sr-only">Documents for this profile</caption>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="h-[38px] px-3 text-xs">Document</TableHead>
+              <TableHead className="h-[38px] px-3 text-xs">Category</TableHead>
+              <TableHead className="h-[38px] px-3 text-xs">Version</TableHead>
+              <TableHead className="hidden h-[38px] px-3 text-xs sm:table-cell">Size</TableHead>
+              <TableHead className="hidden h-[38px] px-3 text-xs sm:table-cell">Updated</TableHead>
+              <TableHead className="h-[38px] w-16 px-3 text-right text-xs">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {documents.isLoading ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={6} className="h-24 text-muted-foreground">
+                  <span className="sr-only">Loading documents</span>
+                  <span className="block h-4 w-40 animate-pulse rounded bg-muted" />
+                </TableCell>
+              </TableRow>
+            ) : null}
+            {documents.isError ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={6} className="h-auto p-4">
+                  <ErrorState
+                    compact
+                    title="Unable to load documents"
+                    message={parseApiError(documents.error).message}
+                    onRetry={() => {
+                      void documents.refetch();
+                    }}
+                  />
+                </TableCell>
+              </TableRow>
+            ) : null}
+            {!documents.isLoading && !documents.isError && rows.length === 0 ? (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={6} className="h-auto p-0">
+                  <div className="flex flex-col items-center px-6 py-10 text-center" role="status">
+                    <span className="tone-brand mb-3 grid h-12 w-12 place-items-center rounded-lg">
+                      <Files className="h-5 w-5" aria-hidden />
+                    </span>
+                    <h3 className="text-base font-semibold leading-6">No documents yet</h3>
+                    <p className="mt-1 max-w-[36ch] text-sm text-muted-foreground">
+                      Upload a document for this profile.
+                    </p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : null}
+            {!documents.isLoading && !documents.isError
+              ? rows.map((document) => {
+                  const financial = categoryKey(document.category) === "FINANCIALS";
+                  const downloading = pendingKey === `${document.id}:${document.latestVersion}`;
+                  const label = document.label ? `${document.typeName} ${document.label}` : document.typeName;
+                  return (
+                    <TableRow
+                      key={document.id}
+                      tabIndex={0}
+                      className="cursor-pointer"
+                      onClick={() => router.push(`/documents/${document.id}`)}
+                      onKeyDown={(event) => {
+                        if (event.target !== event.currentTarget) return;
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          router.push(`/documents/${document.id}`);
+                        }
+                      }}
+                    >
+                      <TableCell className="px-3">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="tone-brand grid h-[30px] w-[30px] shrink-0 place-items-center rounded-sm">
+                            <FileText className="h-4 w-4" aria-hidden />
+                          </span>
+                          <div className="min-w-0">
+                            <span className="flex flex-wrap items-center gap-1.5 text-[13.5px] font-semibold leading-[18px]">
+                              {document.typeName}
+                              {document.label ? (
+                                <Badge variant="outline" dot={false} className={badgeClass}>
+                                  {document.label}
+                                </Badge>
+                              ) : null}
+                            </span>
+                            <span className="block truncate font-mono text-[11px] leading-[14px] text-muted-foreground">
+                              {documentTypeCode(document.typeId, document.typeName)}
+                            </span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-3">
+                        <Badge variant={financial ? "brand" : "info"} className={badgeClass}>
+                          {categoryLabel(categoryKey(document.category), document.category)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap px-3">
+                        <span className="inline-flex h-5 items-center rounded-md bg-muted px-1.5 text-[11.5px] font-semibold tabular-nums">
+                          v{document.latestVersion}
+                        </span>
+                        <Badge variant="success" dot={false} className={cn(badgeClass, "ml-1")}>
+                          Latest
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden whitespace-nowrap px-3 text-muted-foreground tabular-nums sm:table-cell">
+                        {document.sizeBytes ? formatFileSize(document.sizeBytes) : "—"}
+                      </TableCell>
+                      <TableCell className="hidden whitespace-nowrap px-3 text-muted-foreground tabular-nums sm:table-cell">
+                        {formatProfileDay(document.updatedAt)}
+                      </TableCell>
+                      <TableCell className="w-16 px-3 text-right" onClick={(event) => event.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:bg-primary-soft hover:text-primary"
+                              aria-label={`Actions for ${label}`}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-[210px]">
+                            <DropdownMenuItem className="px-2.5 py-[7px] text-[13px]" onSelect={() => setPreviewTarget(document)}>
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                              Preview
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="px-2.5 py-[7px] text-[13px]"
+                              disabled={downloading}
+                              onSelect={() => {
+                                void download(
+                                  document.id,
+                                  document.latestVersion,
+                                  document.fileName || document.typeName
+                                );
+                              }}
+                            >
+                              {downloading ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                              ) : (
+                                <Download className="h-4 w-4 text-muted-foreground" />
+                              )}
+                              Download
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="px-2.5 py-[7px] text-[13px]" onSelect={() => setShareTarget(document)}>
+                              <Share2 className="h-4 w-4 text-muted-foreground" />
+                              Share
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="px-2.5 py-[7px] text-[13px]"
+                              onSelect={() => {
+                                setLockedUpload({
+                                  documentId: document.id,
+                                  typeId: document.typeId,
+                                  typeName: document.typeName,
+                                  label: document.label,
+                                  category: document.category,
+                                });
+                                setUploadOpen(true);
+                              }}
+                            >
+                              <Upload className="h-4 w-4 text-muted-foreground" />
+                              Upload new version
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              : null}
+          </TableBody>
+        </Table>
+      </section>
 
       <UploadDialog
         open={uploadOpen}
-        onOpenChange={setUploadOpen}
-        presetProfile={{
-          profileId: profile.id,
-          displayName: profile.displayName || "This profile",
-          relation: relation === "ALL" ? "RELATED_TO" : relation,
+        onOpenChange={(open) => {
+          setUploadOpen(open);
+          if (!open) setLockedUpload(null);
         }}
+        locked={lockedUpload ?? undefined}
+        presetProfile={
+          lockedUpload
+            ? undefined
+            : {
+                profileId: profile.id,
+                displayName: profile.displayName || "This profile",
+                relation: relation === "ALL" ? "RELATED_TO" : relation,
+              }
+        }
+      />
+      <FilePreviewDialog
+        open={!!previewTarget}
+        onOpenChange={(open) => {
+          if (!open) setPreviewTarget(null);
+        }}
+        documentId={previewTarget?.id ?? ""}
+        version={previewTarget?.latestVersion ?? 0}
+        fileName={previewTarget?.fileName || previewTarget?.typeName || "document"}
+        contentType={previewTarget?.contentType ?? ""}
+        onDownload={(version, fileName) => {
+          if (!previewTarget) return;
+          void download(previewTarget.id, version, fileName);
+        }}
+      />
+      <ShareDialog
+        open={!!shareTarget}
+        onOpenChange={(open) => {
+          if (!open) setShareTarget(null);
+        }}
+        documents={
+          shareTarget
+            ? [
+                {
+                  id: shareTarget.id,
+                  name: shareTarget.fileName || shareTarget.typeName,
+                  fileName: shareTarget.fileName,
+                  typeName: shareTarget.typeName,
+                  tag: shareTarget.label || undefined,
+                },
+              ]
+            : []
+        }
       />
       {linkOpen ? <LinkExistingDialog profileId={profile.id} onOpenChange={setLinkOpen} /> : null}
     </div>
@@ -204,12 +442,12 @@ function LinkExistingDialog({
           </ul>
         </div>
         <DialogFooter className="gap-2">
-          <Button type="button" variant="outline" className="h-11" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="outline" className="h-8" onClick={() => onOpenChange(false)} size="sm">
             Cancel
           </Button>
           <Button
             type="button"
-            className="h-11"
+            className="h-8"
             disabled={!documentId}
             loading={link.isPending}
             onClick={() => {
@@ -224,7 +462,7 @@ function LinkExistingDialog({
                 }
               );
             }}
-          >
+           size="sm">
             Link
           </Button>
         </DialogFooter>

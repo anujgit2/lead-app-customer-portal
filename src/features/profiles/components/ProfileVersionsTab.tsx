@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -87,7 +88,7 @@ export function ProfileVersionsTab({ profile }: ProfileVersionsTabProps) {
   const rows = versions.data ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-4">
       {viewing !== null ? (
         <VersionReader
           profileId={profile.id}
@@ -96,20 +97,30 @@ export function ProfileVersionsTab({ profile }: ProfileVersionsTabProps) {
           onBack={() => setViewing(null)}
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-100 bg-card shadow-sm">
-          <Table>
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold leading-6 tracking-[-0.01em]">Version history</h2>
+              <p className="text-[13px] leading-[18px] text-muted-foreground">
+                Every saved edit creates a new version.
+              </p>
+            </div>
+          </div>
+          <section className="overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-1)]">
+          <Table className="text-[13px]">
+            <caption className="sr-only">Profile versions</caption>
             <TableHeader>
-              <TableRow>
-                <TableHead>Version</TableHead>
-                <TableHead>Author</TableHead>
-                <TableHead>When</TableHead>
-                <TableHead>Note</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="h-[38px] px-3 text-xs">Version</TableHead>
+                <TableHead className="h-[38px] px-3 text-xs">Change</TableHead>
+                <TableHead className="hidden h-[38px] px-3 text-xs sm:table-cell">Updated by</TableHead>
+                <TableHead className="h-[38px] px-3 text-xs">Updated</TableHead>
+                <TableHead className="h-[38px] px-3 text-right text-xs">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.length === 0 ? (
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
                     No versions yet.
                   </TableCell>
@@ -117,37 +128,45 @@ export function ProfileVersionsTab({ profile }: ProfileVersionsTabProps) {
               ) : (
                 rows.map((item) => (
                   <TableRow key={item.versionNo}>
-                    <TableCell className="font-medium">
-                      {item.versionNo}
+                    <TableCell className="whitespace-nowrap px-3">
+                      <span className="inline-flex h-5 items-center rounded-md bg-muted px-1.5 text-[11.5px] font-semibold tabular-nums">
+                        v{item.versionNo}
+                      </span>
                       {item.versionNo === profile.currentVersionNo ? (
-                        <span className="ml-2 text-xs font-normal text-muted-foreground">Current</span>
+                        <Badge variant="success" dot={false} className="ml-1 h-5 px-2 text-[11.5px]">
+                          Latest
+                        </Badge>
                       ) : null}
                     </TableCell>
-                    <TableCell>{item.createdBy || "—"}</TableCell>
-                    <TableCell className="whitespace-nowrap text-muted-foreground">
+                    <TableCell className="max-w-[230px] truncate px-3">{item.changeNote || "—"}</TableCell>
+                    <TableCell className="hidden max-w-[230px] px-3 sm:table-cell">
+                      <span className="block truncate font-mono text-xs text-muted-foreground" title={item.createdBy || undefined}>
+                        {item.createdBy || "—"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap px-3 text-muted-foreground tabular-nums">
                       {formatProfileWhen(item.createdAt)}
                     </TableCell>
-                    <TableCell className="max-w-xs truncate">{item.changeNote || "—"}</TableCell>
-                    <TableCell>
+                    <TableCell className="px-3">
                       <div className="flex justify-end gap-2">
                         <Button
                           type="button"
                           variant="outline"
-                          className="h-11"
+                          className="h-8"
                           onClick={() => setViewing(item.versionNo)}
-                        >
+                         size="sm">
                           Open
                         </Button>
                         {item.versionNo === profile.currentVersionNo ? null : (
                           <Button
                             type="button"
                             variant="outline"
-                            className="h-11"
+                            className="h-8"
                             onClick={() => {
                               setNote("");
                               setRestoreTarget(item.versionNo);
                             }}
-                          >
+                           size="sm">
                             Restore
                           </Button>
                         )}
@@ -158,11 +177,12 @@ export function ProfileVersionsTab({ profile }: ProfileVersionsTabProps) {
               )}
             </TableBody>
           </Table>
-        </div>
+          </section>
+        </>
       )}
 
-      <div className="space-y-4 rounded-xl border border-slate-100 bg-card p-6 shadow-sm">
-        <h2 className="font-semibold tracking-tight text-slate-900">Compare versions</h2>
+      <div className="space-y-4 rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-1)]">
+        <h2 className="text-base font-semibold leading-6 tracking-[-0.01em]">Compare versions</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="diff-from">From</Label>
@@ -197,10 +217,10 @@ export function ProfileVersionsTab({ profile }: ProfileVersionsTabProps) {
         </div>
         <Button
           type="button"
-          className="h-11"
+          className="h-8"
           disabled={!fromVersion || !toVersion || fromVersion === toVersion}
           onClick={() => setCompare(true)}
-        >
+         size="sm">
           Compare
         </Button>
         {compare && from !== null && to !== null && from !== to ? (
@@ -235,12 +255,12 @@ export function ProfileVersionsTab({ profile }: ProfileVersionsTabProps) {
             />
           </div>
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" className="h-11" disabled={restore.isPending} onClick={() => setRestoreTarget(null)}>
+            <Button type="button" variant="outline" className="h-8" disabled={restore.isPending} onClick={() => setRestoreTarget(null)} size="sm">
               Cancel
             </Button>
             <Button
               type="button"
-              className="h-11"
+              className="h-8"
               loading={restore.isPending}
               onClick={() => {
                 if (restoreTarget === null) return;
@@ -257,7 +277,7 @@ export function ProfileVersionsTab({ profile }: ProfileVersionsTabProps) {
                   }
                 );
               }}
-            >
+             size="sm">
               Restore
             </Button>
           </DialogFooter>
@@ -279,13 +299,13 @@ function VersionReader({
   onBack: () => void;
 }) {
   const version = useProfileVersion(profileId, versionNo);
-  const template = useFormTemplate(version.data?.templateCode ?? "");
+  const template = useFormTemplate(version.data?.templateCode ?? "", version.data?.templateVersion);
   const current = versionNo === currentVersionNo;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Button type="button" variant="outline" className="h-11 w-fit" onClick={onBack}>
+        <Button type="button" variant="outline" className="h-8 w-fit" onClick={onBack} size="sm">
           Back to history
         </Button>
         {current ? null : (
@@ -321,7 +341,7 @@ function VersionReader({
         />
       ) : null}
       {version.data && template.data ? (
-        <ProfileOverview template={template.data} data={version.data.data} />
+        <ProfileOverview templates={template.data} data={version.data.data} />
       ) : null}
     </div>
   );

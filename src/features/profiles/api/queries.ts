@@ -43,10 +43,15 @@ export function useProfile(id: string) {
   });
 }
 
-export function useFormTemplate(code: string) {
+export function useFormTemplate(code: string, versionNumber?: number) {
+  const version =
+    typeof versionNumber === "number" && Number.isFinite(versionNumber) ? versionNumber : null;
   return useQuery({
-    queryKey: formTemplateQueryKey(code),
-    queryFn: () => profileService.getFormTemplate(code),
+    queryKey: formTemplateQueryKey(code, version ?? undefined),
+    queryFn: () =>
+      version === null
+        ? profileService.getFormTemplate(code)
+        : profileService.getFormTemplateVersion(code, version),
     enabled: code.length > 0,
     retry: retryProfileQuery,
   });

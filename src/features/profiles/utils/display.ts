@@ -40,3 +40,42 @@ export function formatProfileWhen(value: string): string {
   }
   return formatted;
 }
+
+function profileDate(value: string): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function formatProfileDay(value: string): string {
+  const date = profileDate(value);
+  if (!date) return "—";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+export function formatProfileTime(value: string): string {
+  const date = profileDate(value);
+  if (!date) return "";
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  })
+    .format(date)
+    .toLowerCase();
+}
+
+export function profileInitials(name: string): string {
+  const letters = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0] ?? "")
+    .join("");
+  return letters.toUpperCase() || "?";
+}

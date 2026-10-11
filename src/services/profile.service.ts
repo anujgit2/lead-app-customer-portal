@@ -20,7 +20,7 @@ import type {
   SavedProfileMemo,
   UpdateCustomerProfileRequest,
 } from "@/types";
-import { readFormTemplate } from "@/features/profiles/utils/read-form-template";
+import { readFormTemplates } from "@/features/profiles/utils/read-form-template";
 
 const LINK_ROLES: readonly CustomerProfileLinkRole[] = [
   "PROMOTER",
@@ -223,6 +223,15 @@ function optionalNote(note?: string): { changeNote: string } | Record<string, ne
   return changeNote ? { changeNote } : {};
 }
 
+async function loadProfileFormTemplate(path: string, code: string): Promise<FormTemplate[]> {
+  try {
+    const { data } = await apiClient.get<unknown>(path);
+    return readFormTemplates(data, code);
+  } catch (error) {
+    rethrow(error);
+  }
+}
+
 export const profileService = {
   async list(filters: CustomerProfileListFilters): Promise<CustomerProfilePage> {
     try {
@@ -289,15 +298,18 @@ export const profileService = {
     }
   },
 
-  async getFormTemplate(code: string): Promise<FormTemplate> {
-    try {
-      const { data } = await apiClient.get<unknown>(
-        `/api/form-templates/code/${encodeURIComponent(code)}/latest`
-      );
-      return readFormTemplate(data, code);
-    } catch (error) {
-      rethrow(error);
-    }
+  async getFormTemplate(code: string): Promise<FormTemplate[]> {
+    return loadProfileFormTemplate(
+      `/api/profile-form-templates/code/${encodeURIComponent(code)}/latest`,
+      code
+    );
+  },
+
+  async getFormTemplateVersion(code: string, versionNumber: number): Promise<FormTemplate[]> {
+    return loadProfileFormTemplate(
+      `/api/profile-form-templates/code/${encodeURIComponent(code)}/versions/${encodeURIComponent(String(versionNumber))}`,
+      code
+    );
   },
 
   async listVersions(id: string): Promise<CustomerProfileVersionItem[]> {

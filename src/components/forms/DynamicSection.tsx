@@ -7,9 +7,10 @@ import { DynamicField } from "./DynamicField";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Search, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buildSectionDefaults } from "@/utils/schema-builder";
+import { useFormChrome } from "./form-chrome";
 import { useFieldRules } from "./use-field-rules";
 import { PanSearchDialog } from "@/features/loan-application/PanSearchDialog";
 import { findPanSearchField, getPanSearchVariant } from "@/utils/pan-search";
@@ -55,6 +56,7 @@ function isDocumentSection(section: FormSection): boolean {
 }
 
 function FieldGrid({ section, namePrefix }: { section: FormSection; namePrefix?: string }) {
+  const chrome = useFormChrome();
   if (isDocumentSection(section)) {
     return (
       <div className="space-y-3">
@@ -73,7 +75,7 @@ function FieldGrid({ section, namePrefix }: { section: FormSection; namePrefix?:
     "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
 
   return (
-    <div className={cn("grid items-start gap-x-6 gap-y-5", gridClass)}>
+    <div className={cn("grid items-start", chrome === "profile" ? "gap-x-5 gap-y-3.5" : "gap-x-6 gap-y-5", gridClass)}>
       {section.fields.map((field) => (
         <FieldWrapper
           key={field.name}
@@ -161,6 +163,8 @@ function RepeatableSectionInstances({
 }
 
 export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
+  const chrome = useFormChrome();
+  const profile = chrome === "profile";
   const sectionPrefix = namePrefix
     ? `${namePrefix}.${section.code}`
     : section.code;
@@ -177,23 +181,41 @@ export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
   }
 
   const panSearchField = findPanSearchField(section);
+  const readOnly =
+    section.fields.length > 0 && section.fields.every((field) => field.readonly || field.disabled);
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0 space-y-1.5">
-            <CardTitle className="text-base">{section.title}</CardTitle>
-            {section.description && (
-              <CardDescription>{section.description}</CardDescription>
-            )}
+    <Card className={profile ? "shadow-[var(--shadow-1)]" : undefined}>
+      <CardHeader
+        className={
+          profile
+            ? "flex-row items-center justify-between gap-3 px-5 py-3.5"
+            : "pb-4"
+        }
+      >
+        <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
+          <div className="min-w-0">
+            <CardTitle className={profile ? "text-[15px] font-semibold leading-[22px] tracking-[-0.01em]" : "text-base"}>
+              {section.title}
+            </CardTitle>
+            {section.description ? (
+              <CardDescription className={profile ? "mt-px text-[12.5px]" : undefined}>
+                {section.description}
+              </CardDescription>
+            ) : null}
           </div>
-          {panSearchField && (
+          {panSearchField && readOnly ? (
+            <Button type="button" variant="outline" size="sm" disabled className="shrink-0 gap-2">
+              <Search className="h-4 w-4" />
+              Search PAN
+            </Button>
+          ) : null}
+          {panSearchField && !readOnly ? (
             <PanSearchDialog variant={getPanSearchVariant(panSearchField.name)} />
-          )}
+          ) : null}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className={profile ? "px-5 pb-5 pt-1" : undefined}>
         {section.repeatable ? (
           <RepeatableSectionInstances section={section} namePrefix={namePrefix} />
         ) : (

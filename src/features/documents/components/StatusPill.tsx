@@ -1,10 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import type { ShareStatus } from "../types";
 
-const STYLES: Record<ShareStatus, "success" | "draft" | "outline"> = {
+const STYLES: Record<ShareStatus, "success" | "warning" | "destructive"> = {
   ACTIVE: "success",
-  EXPIRED: "draft",
-  REVOKED: "outline",
+  EXPIRED: "warning",
+  REVOKED: "destructive",
 };
 
 const LABELS: Record<ShareStatus, string> = {

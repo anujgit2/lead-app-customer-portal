@@ -1,4 +1,5 @@
 import type { LinkedDocumentProfile } from "@/types";
+import { toPublicShareLink } from "../shared-recipient/links";
 import type {
   ActivityPage,
   CreateShareResult,
@@ -154,7 +155,7 @@ export function normalizeDocument(raw: unknown): PortalDocument | null {
     fileName: fileNameFromRecord(raw, info.typeName),
     contentType: pick(raw, ["contentType", "mimeType"]) || undefined,
     sizeBytes: pickNumber(raw, ["sizeBytes", "size"]),
-    linked: normalizeLinkedProfiles(raw.linked),
+    linked: normalizeLinkedProfiles(raw.profiles ?? raw.linked),
   };
 }
 
@@ -286,6 +287,14 @@ export function normalizeVersionPreview(data: unknown): VersionPreview | null {
   return { nextVersion, documentId: documentId || undefined };
 }
 
+function shareLink(raw: Record<string, unknown>): string | undefined {
+  const token = pick(raw, ["token", "shareToken"]);
+  const rawUrl = pick(raw, ["url", "shareUrl", "link", "href"]);
+  if (!token && !rawUrl) return undefined;
+  const publicUrl = toPublicShareLink(rawUrl, token || undefined);
+  return publicUrl || undefined;
+}
+
 export function normalizeShare(raw: unknown, now = Date.now()): ShareSummary | null {
   if (!isRecord(raw)) return null;
   const id = pick(raw, ["id", "shareId"]);
@@ -314,6 +323,7 @@ export function normalizeShare(raw: unknown, now = Date.now()): ShareSummary | n
     viewCount: pickNumber(raw, ["viewCount", "views"]) ?? 0,
     downloadCount: pickNumber(raw, ["downloadCount", "downloads"]) ?? 0,
     lastOpenedAt: pick(raw, ["lastOpenedAt", "lastViewedAt"]) || undefined,
+    url: shareLink(raw),
   };
 }
 

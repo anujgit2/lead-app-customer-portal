@@ -91,6 +91,7 @@ export interface ShareSummary {
   viewCount: number;
   downloadCount: number;
   lastOpenedAt?: string;
+  url?: string;
 }
 
 export interface ShareActivity {

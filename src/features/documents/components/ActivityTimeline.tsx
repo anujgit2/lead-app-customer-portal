@@ -1,13 +1,13 @@
 "use client";
 
-import { Check, X } from "lucide-react";
+import { Ban, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ShareActivity, ShareEventType } from "../types";
-import { activityEventLabel, formatDisplayDateTime, maskContact } from "../utils/format";
+import { activityEventLabel, formatDisplayDateTime } from "../utils/format";
 
-function isCompleteEvent(eventType: ShareEventType): boolean {
-  return eventType === "SHARED" || eventType === "LINK_SENT" || eventType === "VIEWED" || eventType === "DOWNLOADED";
+function dotTone(eventType: ShareEventType): "success" | "danger" {
+  return eventType === "REVOKED" || eventType === "ACCESS_DENIED" ? "danger" : "success";
 }
 
 interface ActivityTimelineProps {
@@ -34,7 +34,7 @@ export function ActivityTimeline({
       <div className="space-y-3" aria-busy="true">
         <p className="sr-only">Loading activity</p>
         {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} className="h-10 animate-pulse rounded-lg bg-slate-100" />
+          <div key={index} className="h-10 animate-pulse rounded-md bg-muted" />
         ))}
       </div>
     );
@@ -47,7 +47,7 @@ export function ActivityTimeline({
           Couldn&apos;t load activity.
         </p>
         {onRetry ? (
-          <Button type="button" variant="outline" className="h-11" onClick={onRetry}>
+          <Button type="button" variant="outline" size="sm" onClick={onRetry}>
             Try again
           </Button>
         ) : null}
@@ -56,7 +56,7 @@ export function ActivityTimeline({
   }
 
   if (events.length === 0) {
-    return <p className="text-sm text-slate-500">No activity yet.</p>;
+    return <p className="text-sm text-muted-foreground">No activity yet.</p>;
   }
 
   const ordered = [...events].sort(
@@ -65,36 +65,36 @@ export function ActivityTimeline({
 
   return (
     <div className="space-y-4">
-      <ol className="relative space-y-5 border-l border-success/40 pl-6">
-        {ordered.map((event) => {
-          const contact = maskContact(event.contactMasked);
-          const complete = isCompleteEvent(event.eventType);
+      <ol className="flex flex-col">
+        {ordered.map((event, index) => {
+          const tone = dotTone(event.eventType);
+          const last = index === ordered.length - 1;
           return (
-            <li key={event.id} className="relative">
+            <li key={event.id} className="relative flex gap-3 pb-4 last:pb-0">
+              {last ? null : (
+                <span className="absolute bottom-1 left-[9px] top-6 w-0.5 rounded-sm bg-border" aria-hidden />
+              )}
               <span
                 className={cn(
-                  "absolute -left-[calc(1.5rem+10px)] top-0 grid h-5 w-5 place-items-center rounded-full text-white ring-4 ring-white",
-                  complete ? "bg-success" : "bg-danger"
+                  "relative z-[1] grid h-5 w-5 shrink-0 place-items-center rounded-full text-card",
+                  tone === "danger" ? "bg-danger" : "bg-success"
                 )}
                 aria-hidden
               >
-                {complete ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                {tone === "danger" ? <Ban className="h-3 w-3" /> : <Check className="h-3 w-3" />}
               </span>
-              <p className="text-sm font-semibold text-slate-900">{activityEventLabel(event)}</p>
-              {contact ? <p className="mt-0.5 text-sm font-normal text-slate-500">{contact}</p> : null}
-              <p className="mt-0.5 text-xs text-slate-500">{formatDisplayDateTime(event.occurredAt)}</p>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold leading-5">{activityEventLabel(event)}</p>
+                <p className="num text-[12.5px] leading-[18px] text-muted-foreground">
+                  {formatDisplayDateTime(event.occurredAt)}
+                </p>
+              </div>
             </li>
           );
         })}
       </ol>
       {hasMore ? (
-        <Button
-          type="button"
-          variant="outline"
-          className="h-11"
-          loading={isLoadingMore}
-          onClick={onLoadMore}
-        >
+        <Button type="button" variant="outline" size="sm" loading={isLoadingMore} onClick={onLoadMore}>
           Load more
         </Button>
       ) : null}

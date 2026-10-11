@@ -214,6 +214,58 @@ describe("documents api shapes", () => {
     assert.equal(key.includes("super-secret-token"), false);
   });
 
+  it("reads file name and linked profiles from the documents list", () => {
+    const documents = normalizeDocumentList([
+      {
+        id: "uuid",
+        typeId: 1,
+        category: "OTHER",
+        typeName: "SUPPORTING_DOCUMENT",
+        label: "PAN",
+        fileName: "pan.pdf",
+        latestVersion: 1,
+        createdAt: "2026-10-11T00:00:00Z",
+        profiles: [
+          { profileId: "uuid", displayName: "Acme Pvt Ltd", type: "BUSINESS", relation: "RELATED_TO" },
+        ],
+      },
+    ]);
+    assert.equal(documents[0]?.fileName, "pan.pdf");
+    assert.equal(documents[0]?.typeId, "1");
+    assert.equal(documents[0]?.latestVersion, 1);
+    assert.equal(documents[0]?.updatedAt, "2026-10-11T00:00:00Z");
+    assert.equal(documents[0]?.linked?.[0]?.displayName, "Acme Pvt Ltd");
+    assert.equal(documents[0]?.linked?.[0]?.relation, "RELATED_TO");
+    assert.equal(filterDocuments(documents, { profileId: "uuid" }).length, 1);
+    assert.equal(filterDocuments(documents, { q: "pan.pdf" }).length, 1);
+  });
+
+  it("keeps documents linked to the selected profile", () => {
+    const documents = normalizeDocumentList({
+      items: [
+        {
+          id: "a",
+          typeName: "PAN",
+          category: "Identity",
+          linked: [
+            { profileId: "p1", displayName: "Ada", type: "INDIVIDUAL", relation: "FOR" },
+          ],
+        },
+        {
+          id: "b",
+          typeName: "GST",
+          category: "Identity",
+          linked: [
+            { profileId: "p2", displayName: "Bee", type: "BUSINESS", relation: "RELATED_TO" },
+          ],
+        },
+      ],
+    });
+    assert.equal(filterDocuments(documents, { profileId: "p1" }).length, 1);
+    assert.equal(filterDocuments(documents, { profileId: "p1" })[0]?.id, "a");
+    assert.equal(filterDocuments(documents, { q: "bee" }).length, 1);
+  });
+
   it("keeps every uploaded version and marks the highest as latest", () => {
     const detail = normalizeDocumentDetail({
       id: "54aa26c7-c2b0-4196-a517-e27728b04c6c",

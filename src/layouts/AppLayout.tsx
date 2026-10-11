@@ -17,7 +17,6 @@ import {
   Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ApplyLoanMenu } from "@/features/loan-application/ApplyLoanMenu";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
 import { getInitials } from "@/lib/utils";
@@ -95,8 +94,6 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <ApplyLoanMenu />
-
           <button
             type="button"
             className="relative inline-flex h-10 w-10 items-center justify-center rounded-md text-foreground hover:bg-muted"

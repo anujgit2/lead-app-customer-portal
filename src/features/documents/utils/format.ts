@@ -52,12 +52,18 @@ export function categoryFiltersFor(values: string[]): { id: string; label: strin
 
 export function filterDocuments(
   documents: PortalDocument[],
-  filters: { category?: string; typeId?: string; q?: string }
+  filters: { category?: string; typeId?: string; profileId?: string; q?: string }
 ): PortalDocument[] {
   const query = filters.q?.trim().toLowerCase() ?? "";
   return documents.filter((document) => {
     if (filters.category && categoryKey(document.category) !== filters.category) return false;
     if (filters.typeId && document.typeId !== filters.typeId) return false;
+    if (
+      filters.profileId &&
+      !(document.linked ?? []).some((item) => item.profileId === filters.profileId)
+    ) {
+      return false;
+    }
     if (!query) return true;
     const linked = (document.linked ?? [])
       .map((item) => `${item.displayName ?? ""} ${item.relation}`)

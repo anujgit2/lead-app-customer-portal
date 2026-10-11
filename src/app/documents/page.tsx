@@ -9,8 +9,8 @@ export default function DocumentsRoute() {
     <AppLayout>
       <Suspense
         fallback={
-          <div className="mx-auto max-w-7xl p-6 sm:p-8">
-            <p className="text-sm text-slate-500">Loading documents…</p>
+          <div className="mx-auto max-w-[1200px] px-4 py-5 sm:px-8 sm:py-9">
+            <p className="text-sm text-muted-foreground">Loading documents…</p>
           </div>
         }
       >

@@ -20,6 +20,7 @@ export function profileDiffQueryKey(id: string, fromVersion: number, toVersion: 
   return ["profile", id, "diff", fromVersion, toVersion] as const;
 }
 
-export function formTemplateQueryKey(code: string) {
-  return ["form-template", code] as const;
+export function formTemplateQueryKey(code: string, versionNumber?: number) {
+  if (versionNumber === undefined) return ["form-template", code] as const;
+  return ["form-template", code, versionNumber] as const;
 }

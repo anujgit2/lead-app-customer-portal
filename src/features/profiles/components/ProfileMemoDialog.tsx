@@ -139,16 +139,16 @@ function ProfileMemoForm({ profile, sections, onOpenChange }: ProfileMemoDialogP
           <Button
             type="button"
             variant="outline"
-            className="h-11"
+            className="h-8"
             disabled={!canExport}
             loading={downloading}
             onClick={() => void download()}
-          >
+           size="sm">
             Download
           </Button>
           <Button
             type="button"
-            className="h-11"
+            className="h-8"
             disabled={!canExport}
             loading={saveMemo.isPending}
             onClick={() => {
@@ -161,7 +161,7 @@ function ProfileMemoForm({ profile, sections, onOpenChange }: ProfileMemoDialogP
                 onError: (error) => toast.error(parseApiError(error).message),
               });
             }}
-          >
+           size="sm">
             Save to documents
           </Button>
         </DialogFooter>

@@ -140,6 +140,10 @@
 }
 
 @layer components {
+  .portal-page {
+    @apply mx-auto w-full max-w-7xl space-y-6 p-6 sm:p-8;
+  }
+
   .num {
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum", "cv11";
@@ -187,6 +191,17 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  .profile-fields label {
+    font-size: 13px;
+    line-height: 20px;
+  }
+
+  .profile-fields input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  .profile-fields button[role="combobox"] {
+    height: 36px;
+    font-size: 13.5px;
   }
 }
 

@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { Lock, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { parseApiError } from "@/lib/api-error";
 import { useRevokeShare, useShares } from "../api/queries";
-import type { ShareSummary } from "../types";
+import type { ShareStatus, ShareSummary } from "../types";
 import { ConfirmRevokeDialog } from "./ConfirmRevokeDialog";
 import { ShareCard } from "./ShareCard";
 
@@ -14,11 +16,27 @@ interface SharingTabProps {
   onShare: () => void;
 }
 
+type ShareFilter = "all" | ShareStatus;
+
+const FILTERS: { id: ShareFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "ACTIVE", label: "Active" },
+  { id: "EXPIRED", label: "Expired" },
+  { id: "REVOKED", label: "Revoked" },
+];
+
+function byNewest(left: ShareSummary, right: ShareSummary): number {
+  const leftTime = new Date(left.createdAt).getTime();
+  const rightTime = new Date(right.createdAt).getTime();
+  return (Number.isNaN(rightTime) ? 0 : rightTime) - (Number.isNaN(leftTime) ? 0 : leftTime);
+}
+
 export function SharingTab({ documentId, onShare }: SharingTabProps) {
   const shares = useShares(documentId);
   const revoke = useRevokeShare(documentId);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [pendingRevoke, setPendingRevoke] = useState<ShareSummary | null>(null);
+  const [filter, setFilter] = useState<ShareFilter>("all");
 
   const confirmRevoke = async () => {
     if (!pendingRevoke) return;
@@ -35,54 +53,121 @@ export function SharingTab({ documentId, onShare }: SharingTabProps) {
 
   if (shares.isLoading) {
     return (
-      <div className="space-y-3" aria-busy="true">
+      <section className="rounded-lg border border-border bg-card p-5 shadow-sm" aria-busy="true" aria-labelledby="sh-h">
         <p className="sr-only">Loading shares</p>
-        {Array.from({ length: 2 }).map((_, index) => (
-          <div key={index} className="h-24 animate-pulse rounded-xl bg-slate-100" />
-        ))}
-      </div>
+        <div className="flex items-start gap-3.5">
+          <div className="h-10 w-10 animate-pulse rounded-md bg-muted" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+            <div className="h-8 w-full max-w-sm animate-pulse rounded bg-muted" />
+          </div>
+        </div>
+      </section>
     );
   }
 
   if (shares.isError) {
     return (
-      <div className="space-y-3 rounded-xl border border-slate-100 p-6">
-        <p className="text-sm text-destructive" role="alert">
-          Couldn&apos;t load sharing details.
-        </p>
-        <Button type="button" variant="outline" className="h-11" onClick={() => void shares.refetch()}>
-          Try again
-        </Button>
-      </div>
+      <section className="flex items-start gap-3.5 rounded-lg border border-border bg-card p-5 shadow-sm" aria-labelledby="sh-h">
+        <span className="tone-brand grid h-10 w-10 shrink-0 place-items-center rounded-md">
+          <Lock className="h-5 w-5" aria-hidden />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-3">
+          <div>
+            <h2 id="sh-h" className="text-base font-semibold leading-6 tracking-tight">
+              Sharing
+            </h2>
+            <p className="mt-0.5 text-[13px] leading-[18px] text-destructive" role="alert">
+              Couldn&apos;t load sharing details.
+            </p>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={() => void shares.refetch()}>
+            Try again
+          </Button>
+        </div>
+      </section>
     );
   }
 
   const items = shares.data ?? [];
+  const activeCount = items.filter((share) => share.status === "ACTIVE").length;
+  const summary =
+    items.length === 0
+      ? "Not shared with anyone. Create a secure link for a lender or advisor and revoke it any time."
+      : `Shared with ${items.length} ${items.length === 1 ? "person" : "people"} · ${activeCount} active. Create a secure link for a lender or advisor and revoke it any time.`;
+  const visible = items
+    .filter((share) => filter === "all" || share.status === filter)
+    .sort(byNewest);
+  const emptyFilter =
+    filter === "all" ? "No shares yet." : `No ${filter.toLowerCase()} shares.`;
 
   return (
-    <div className="space-y-4">
-      {items.length === 0 ? (
-        <div className="rounded-xl border border-slate-100 bg-white px-6 py-12 text-center shadow-sm">
-          <p className="text-base font-semibold tracking-tight text-slate-900">Not shared yet</p>
-          <p className="mx-auto mt-1 max-w-sm text-sm font-normal text-slate-500">
-            Share this document with someone by email or phone. You can turn off access at any time.
-          </p>
-          <Button type="button" className="mt-6 h-11" onClick={onShare}>
-            Share securely
-          </Button>
+    <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm" aria-labelledby="sh-h">
+      <div className="flex items-start justify-between gap-4 p-5">
+        <div className="flex min-w-0 items-start gap-3.5">
+          <span className="tone-brand grid h-10 w-10 shrink-0 place-items-center rounded-md">
+            <Lock className="h-5 w-5" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <h2 id="sh-h" className="text-base font-semibold leading-6 tracking-tight">
+              Sharing
+            </h2>
+            <p className="mt-0.5 text-[13px] leading-[18px] text-muted-foreground">{summary}</p>
+          </div>
         </div>
-      ) : (
-        items.map((share) => (
-          <ShareCard
-            key={share.id}
-            documentId={documentId}
-            share={share}
-            expanded={expandedId === share.id}
-            onToggle={() => setExpandedId((current) => (current === share.id ? null : share.id))}
-            onRevoke={setPendingRevoke}
-          />
-        ))
-      )}
+        <Button type="button" size="sm" className="shrink-0" onClick={onShare}>
+          <Share2 />
+          Share securely
+        </Button>
+      </div>
+
+      {items.length > 0 ? (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/50 px-5 py-3">
+            <div className="inline-flex max-w-full gap-0.5 overflow-x-auto rounded-md bg-muted p-[3px]" role="group" aria-label="Filter by status">
+              {FILTERS.map((item) => {
+                const count =
+                  item.id === "all" ? items.length : items.filter((share) => share.status === item.id).length;
+                const pressed = filter === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    aria-pressed={pressed}
+                    className={cn(
+                      "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-sm px-3 text-[13px] font-medium text-muted-foreground transition-colors duration-150",
+                      pressed && "bg-card text-foreground shadow-sm"
+                    )}
+                    onClick={() => setFilter(item.id)}
+                  >
+                    {item.label}
+                    <span className="num opacity-70">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[13px] leading-[18px] text-muted-foreground">Newest first</p>
+          </div>
+
+          <div className="flex flex-col gap-3 border-t border-border px-5 py-4 sm:px-5 sm:py-5">
+            {visible.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{emptyFilter}</p>
+            ) : (
+              visible.map((share) => (
+                <ShareCard
+                  key={share.id}
+                  documentId={documentId}
+                  share={share}
+                  expanded={expandedId === share.id}
+                  onToggle={() => setExpandedId((current) => (current === share.id ? null : share.id))}
+                  onRevoke={setPendingRevoke}
+                  onShareAgain={onShare}
+                />
+              ))
+            )}
+          </div>
+        </>
+      ) : null}
 
       <ConfirmRevokeDialog
         open={!!pendingRevoke}
@@ -95,6 +180,6 @@ export function SharingTab({ documentId, onShare }: SharingTabProps) {
           void confirmRevoke();
         }}
       />
-    </div>
+    </section>
   );
 }

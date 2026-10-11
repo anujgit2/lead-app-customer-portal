@@ -1,52 +1,61 @@
 "use client";
 
-import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/layouts/AppLayout";
-import { Card, CardContent } from "@/components/ui/card";
-import { applicationService } from "@/services/application.service";
+import { ErrorState } from "@/components/ErrorState";
 import { ApplicationsTable } from "@/features/applications/ApplicationsTable";
-import { FileText } from "lucide-react";
+import { ApplyLoanMenu } from "@/features/loan-application/ApplyLoanMenu";
+import { parseApiError } from "@/lib/api-error";
+import { applicationService } from "@/services/application.service";
 
 export default function ApplicationsPage() {
-  const { data: applications, isLoading, isFetching, refetch } = useQuery({
+  const { data: applications, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["applications"],
     queryFn: () => applicationService.getApplications(),
   });
+  const apiError = isError ? parseApiError(error) : null;
 
   return (
     <AppLayout>
-      <div className="p-6 sm:p-8 max-w-7xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Applications
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            All your loan applications
-          </p>
+      <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-7 px-4 py-5 sm:px-8 sm:py-9">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold leading-8 tracking-[-0.02em] text-foreground">
+              Applications
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">All your loan applications</p>
+          </div>
+          <ApplyLoanMenu label="New Application" compact={false} className="w-full sm:w-auto" />
         </div>
 
-        <Card>
-          <CardContent className="p-0">
-            <ApplicationsTable
-              applications={applications}
-              isLoading={isLoading}
-              isRefreshing={isFetching && !isLoading}
-              onRefresh={() => {
-                void refetch();
-              }}
-              emptyState={
-                <div className="py-16 text-center">
-                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-base font-medium">No applications yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Use Apply for a Loan in the header to get started
-                  </p>
-                </div>
-              }
-            />
-          </CardContent>
-        </Card>
+        {isError ? (
+          <ErrorState
+            compact
+            title="Unable to load applications"
+            message={apiError?.message ?? "Something went wrong."}
+            status={apiError?.status}
+            code={
+              apiError?.status === 401
+                ? "SESSION_EXPIRED"
+                : apiError?.status === 403
+                  ? "FORBIDDEN"
+                  : "UNKNOWN"
+            }
+            onRetry={() => {
+              void refetch();
+            }}
+          />
+        ) : (
+          <ApplicationsTable
+            separateFilters
+            applications={applications}
+            isLoading={isLoading}
+            isRefreshing={isFetching && !isLoading}
+            onRefresh={() => {
+              void refetch();
+            }}
+          />
+        )}
       </div>
     </AppLayout>
   );

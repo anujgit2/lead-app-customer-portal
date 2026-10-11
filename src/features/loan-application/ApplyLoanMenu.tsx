@@ -16,9 +16,17 @@ import { cn } from "@/lib/utils";
 interface ApplyLoanMenuProps {
   onNavigate?: () => void;
   className?: string;
+  label?: string;
+  /** Collapse to an icon on narrow screens. The top bar uses this; page headers keep the label. */
+  compact?: boolean;
 }
 
-export function ApplyLoanMenu({ onNavigate, className }: ApplyLoanMenuProps) {
+export function ApplyLoanMenu({
+  onNavigate,
+  className,
+  label = "Apply for a loan",
+  compact = true,
+}: ApplyLoanMenuProps) {
   const router = useRouter();
   const { data: programs = [], isLoading } = useQuery({
     queryKey: ["tenant-programs"],
@@ -40,13 +48,14 @@ export function ApplyLoanMenu({ onNavigate, className }: ApplyLoanMenuProps) {
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn(
-          "inline-flex h-8 items-center justify-center gap-2 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground outline-none transition-[background] duration-150 hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring max-[900px]:h-8 max-[900px]:w-8 max-[900px]:px-0",
+          "inline-flex h-8 items-center justify-center gap-2 rounded-md bg-primary px-3 text-[13px] font-medium text-primary-foreground outline-none transition-[background] duration-150 hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+          compact && "max-[900px]:w-8 max-[900px]:px-0",
           className
         )}
-        aria-label="Apply for a loan"
+        aria-label={label}
       >
-        <PlusCircle className="h-4 w-4" />
-        <span className="max-[900px]:hidden">Apply for a loan</span>
+        <PlusCircle className="h-4 w-4 shrink-0" />
+        <span className={cn(compact && "max-[900px]:hidden")}>{label}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[300px]">
         <DropdownMenuLabel>Select a loan program</DropdownMenuLabel>

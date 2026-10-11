@@ -99,6 +99,18 @@ function parseSectionValue(
   return result;
 }
 
+/** Merges one saved object per form into the single profile `data` payload. */
+export function mergeProfileFormValues(
+  templates: FormTemplate[],
+  valuesByTemplate: Record<string, unknown>
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const template of templates) {
+    assignDeep(result, formValuesToProfileData(template, valuesByTemplate[template.code]));
+  }
+  return result;
+}
+
 /** Form-engine values (keyed by section code) → the profile `data` object. */
 export function formValuesToProfileData(
   template: FormTemplate,

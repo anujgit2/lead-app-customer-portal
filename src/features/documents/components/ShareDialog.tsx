@@ -181,11 +181,11 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                       .join("\n\n")
                   )
                 }
-              >
+               size="sm">
                 {copiedKey === "all" ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
                 {copiedKey === "all" ? "Copied" : "Copy all links"}
               </Button>
-              <Button type="button" onClick={() => onOpenChange(false)}>
+              <Button type="button" onClick={() => onOpenChange(false)} size="sm">
                 Done
               </Button>
             </DialogFooter>
@@ -422,10 +422,10 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                 variant="outline"
                 disabled={pending}
                 onClick={() => onOpenChange(false)}
-              >
+               size="sm">
                 Close
               </Button>
-              <Button type="submit" loading={pending}>
+              <Button type="submit" loading={pending} size="sm">
                 Share
               </Button>
             </DialogFooter>

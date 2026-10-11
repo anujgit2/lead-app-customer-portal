@@ -134,7 +134,7 @@ export function SharedViewerPage() {
           <section className="rounded-xl border border-slate-100 bg-white p-8 text-center shadow-sm">
             <h1 className="text-xl font-semibold tracking-tight text-slate-900">We couldn&apos;t open this link</h1>
             <p className="mt-2 text-sm font-normal text-slate-500">Check your connection and try again.</p>
-            <Button type="button" className="mt-6 h-11" onClick={() => void lookup.refetch()}>
+            <Button type="button" className="mt-6 h-8" onClick={() => void lookup.refetch()} size="sm">
               Try again
             </Button>
           </section>
@@ -176,7 +176,7 @@ export function SharedViewerPage() {
                     </p>
                   ) : null}
                 </div>
-                <Button type="submit" className="h-11 w-full" loading={unlocking} disabled={!password}>
+                <Button type="submit" className="h-8 w-full" loading={unlocking} disabled={!password} size="sm">
                   Unlock
                 </Button>
               </form>
@@ -205,7 +205,7 @@ export function SharedViewerPage() {
                 <p className="text-sm text-slate-700" role="alert">
                   We couldn&apos;t load the preview.
                 </p>
-                <Button type="button" variant="outline" className="mt-4 h-11" onClick={() => void preview.refetch()}>
+                <Button type="button" variant="outline" className="mt-4 h-8" onClick={() => void preview.refetch()} size="sm">
                   Try again
                 </Button>
               </div>
@@ -219,7 +219,7 @@ export function SharedViewerPage() {
 
             {meta.allowDownload ? (
               <div className="space-y-2">
-                <Button type="button" className="h-11 w-full gap-2 sm:w-auto" loading={downloading} onClick={() => void download()}>
+                <Button type="button" className="h-8 w-full gap-2 sm:w-auto" loading={downloading} onClick={() => void download()} size="sm">
                   <Download className="h-4 w-4" />
                   Download
                 </Button>

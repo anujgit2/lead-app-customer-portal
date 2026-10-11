@@ -16,6 +16,10 @@ const STATUS_CONFIG: Record<
   disbursed: { label: "Disbursed", variant: "brand" },
 };
 
+export function applicationStatusLabel(status: ApplicationStatus): string {
+  return (STATUS_CONFIG[status] ?? STATUS_CONFIG.draft).label;
+}
+
 export function ApplicationStatusBadge({
   status,
   className,

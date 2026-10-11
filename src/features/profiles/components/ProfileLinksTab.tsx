@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Users } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,17 +64,29 @@ export function ProfileLinksTab({ profile }: ProfileLinksTabProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-4">
+      <div>
+        <h2 className="text-base font-semibold leading-6 tracking-[-0.01em]">People</h2>
+        <p className="text-[13px] leading-[18px] text-muted-foreground">Individuals linked to this business.</p>
+      </div>
       <ul className="space-y-3">
         {profile.links.length === 0 ? (
-          <li className="rounded-xl border border-slate-100 bg-card p-6 text-sm text-muted-foreground shadow-sm" role="status">
-            No related people yet.
+          <li className="overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-1)]" role="status">
+            <div className="flex flex-col items-center px-6 py-10 text-center">
+              <span className="tone-brand mb-3 grid h-12 w-12 place-items-center rounded-lg">
+                <Users className="h-5 w-5" aria-hidden />
+              </span>
+              <h3 className="text-base font-semibold leading-6">No related people yet</h3>
+              <p className="mt-1 max-w-[36ch] text-sm text-muted-foreground">
+                Link a person when this business has promoters, directors, or signatories.
+              </p>
+            </div>
           </li>
         ) : (
           profile.links.map((link) => (
             <li
               key={link.id}
-              className="flex flex-col gap-3 rounded-xl border border-slate-100 bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-[var(--shadow-1)] sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
                 <Link
@@ -92,7 +105,7 @@ export function ProfileLinksTab({ profile }: ProfileLinksTabProps) {
               <Button
                 type="button"
                 variant="outline"
-                className="h-11"
+                className="h-8"
                 loading={deleteLink.isPending && deleteLink.variables === link.id}
                 onClick={() => {
                   deleteLink.mutate(link.id, {
@@ -100,7 +113,7 @@ export function ProfileLinksTab({ profile }: ProfileLinksTabProps) {
                     onError: (error) => toast.error(parseApiError(error).message),
                   });
                 }}
-              >
+               size="sm">
                 Remove
               </Button>
             </li>
@@ -143,7 +156,7 @@ export function ProfileLinksTab({ profile }: ProfileLinksTabProps) {
             />
           </div>
         </div>
-        <Button type="button" className="h-11" disabled={!child} loading={createLink.isPending} onClick={add}>
+        <Button type="button" className="h-8" disabled={!child} loading={createLink.isPending} onClick={add} size="sm">
           Add person
         </Button>
       </div>

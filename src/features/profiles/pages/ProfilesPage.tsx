@@ -1,11 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronLeft, ChevronRight, Search, UserRound, Users } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Building2,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid,
+  Menu,
+  Plus,
+  Search,
+  UserRound,
+  Users,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,107 +45,333 @@ import {
 } from "@/components/ui/table";
 import { parseApiError } from "@/lib/api-error";
 import { cn } from "@/lib/utils";
-import type { CustomerProfileStatus, CustomerProfileSummary, CustomerProfileType } from "@/types";
+import type { CustomerProfileListFilters, CustomerProfileStatus, CustomerProfileSummary, CustomerProfileType } from "@/types";
 import { useProfiles } from "../api/queries";
 import { PROFILE_PAGE_SIZE } from "../constants";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import {
-  formatProfileWhen,
+  formatProfileDay,
+  formatProfileTime,
+  profileInitials,
   profileStatusLabel,
   profileTypeLabel,
   showIdentifier,
 } from "../utils/display";
 
-const TYPE_FILTERS: { id: "ALL" | CustomerProfileType; label: string }[] = [
-  { id: "ALL", label: "All" },
-  { id: "INDIVIDUAL", label: "Individual" },
-  { id: "BUSINESS", label: "Business" },
-];
+const PAGE_SIZES = [5, 10, 25] as const;
 
-const STATUS_FILTERS: { id: "ALL" | CustomerProfileStatus; label: string }[] = [
-  { id: "ALL", label: "All statuses" },
-  { id: "ACTIVE", label: "Active" },
-  { id: "ARCHIVED", label: "Archived" },
-];
+type TypeFilter = "ALL" | CustomerProfileType;
+type StatusFilter = "ALL" | CustomerProfileStatus;
+type SortKey = "name" | "updated";
+type SortDir = "asc" | "desc";
+type ProfileView = "table" | "cards";
 
-const PAGE_SIZES = [10, 25, 50] as const;
+function facetFilters(
+  type: TypeFilter,
+  status: StatusFilter,
+  query: string
+): Omit<CustomerProfileListFilters, "page" | "size"> {
+  return {
+    ...(type === "ALL" ? {} : { type }),
+    ...(status === "ALL" ? {} : { status }),
+    ...(query ? { q: query } : {}),
+  };
+}
 
-function FilterPills<T extends string>({
+function shownCount(total: number | undefined): string {
+  return total === undefined ? "–" : String(total);
+}
+
+function listCount(total: number, page: number, size: number, visible: number): string {
+  if (total === 0) return "0 profiles";
+  if (total <= size) return total === 1 ? "1 profile" : `${total} profiles`;
+  const start = page * size + 1;
+  return `Showing ${start}–${start + visible - 1} of ${total} profiles`;
+}
+
+function updatedTime(value: string): number {
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function ProfileAvatar({ name, size = "sm" }: { name: string; size?: "sm" | "md" }) {
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "grid shrink-0 place-items-center rounded-full bg-primary-soft font-semibold text-primary-soft-foreground",
+        size === "md" ? "h-10 w-10 text-sm" : "h-9 w-9 text-[13px]"
+      )}
+    >
+      {profileInitials(name)}
+    </span>
+  );
+}
+
+function TypeBadge({ type }: { type: CustomerProfileType }) {
+  return (
+    <Badge variant={type === "BUSINESS" ? "info" : "secondary"}>
+      {profileTypeLabel(type)}
+    </Badge>
+  );
+}
+
+function StatusBadge({ status }: { status: CustomerProfileSummary["status"] }) {
+  return (
+    <Badge variant={status === "ACTIVE" ? "success" : "secondary"}>
+      {profileStatusLabel(status)}
+    </Badge>
+  );
+}
+
+function VersionTag({ version }: { version: number }) {
+  return (
+    <span className="inline-flex h-[22px] items-center rounded-md bg-muted px-2 text-xs font-semibold tabular-nums">
+      v{version}
+    </span>
+  );
+}
+
+function SortHeader({
   label,
-  value,
-  options,
-  onChange,
+  column,
+  sort,
+  dir,
+  onSort,
+  className,
 }: {
   label: string;
-  value: T;
-  options: { id: T; label: string }[];
-  onChange: (id: T) => void;
+  column: SortKey;
+  sort: SortKey;
+  dir: SortDir;
+  onSort: (column: SortKey) => void;
+  className?: string;
+}) {
+  const active = sort === column;
+  const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <TableHead
+      aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
+      className={cn(active && "text-foreground", className)}
+    >
+      <button
+        type="button"
+        className="inline-flex h-full cursor-pointer items-center gap-1 rounded-sm font-semibold text-inherit hover:text-foreground"
+        onClick={() => onSort(column)}
+      >
+        {label}
+        <Icon className="h-3.5 w-3.5" aria-hidden />
+      </button>
+    </TableHead>
+  );
+}
+
+function EmptyProfiles({
+  filtered,
+  onClear,
+}: {
+  filtered: boolean;
+  onClear: () => void;
 }) {
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1" role="toolbar" aria-label={label}>
-      {options.map((option) => {
-        const active = option.id === value;
+    <div className="flex flex-col items-center gap-1 px-6 py-10 text-center" role="status">
+      <span className="tone-brand mb-3 grid h-12 w-12 place-items-center rounded-lg">
+        {filtered ? <Search className="h-5 w-5" /> : <Users className="h-5 w-5" />}
+      </span>
+      <h3 className="text-base font-semibold leading-6 text-foreground">
+        {filtered ? "No profiles found" : "No profiles yet"}
+      </h3>
+      <p className="max-w-[36ch] text-sm text-muted-foreground">
+        {filtered
+          ? "Try a different search or clear the filters."
+          : "Create an individual or business profile to get started."}
+      </p>
+      {filtered ? (
+        <Button type="button" variant="outline" size="sm" className="mt-4" onClick={onClear}>
+          Clear filters
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+function ProfileSkeleton({ view }: { view: ProfileView }) {
+  if (view === "cards") {
+    return (
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3 p-3" aria-busy="true">
+        <p className="sr-only">Loading profiles</p>
+        {Array.from({ length: 4 }, (_, index) => (
+          <div key={index} className="h-36 animate-pulse rounded-lg bg-muted" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 p-4" aria-busy="true">
+      <p className="sr-only">Loading profiles</p>
+      {Array.from({ length: 5 }, (_, index) => (
+        <div key={index} className="h-12 animate-pulse rounded-md bg-muted" />
+      ))}
+    </div>
+  );
+}
+
+function ProfileCards({
+  profiles,
+  onOpen,
+}: {
+  profiles: CustomerProfileSummary[];
+  onOpen: (profile: CustomerProfileSummary) => void;
+}) {
+  return (
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3 p-3">
+      {profiles.map((profile) => {
+        const name = profile.displayName || "Untitled profile";
+        const day = formatProfileDay(profile.updatedAt);
+        const time = formatProfileTime(profile.updatedAt);
         return (
-          <button
-            key={option.id}
-            type="button"
-            aria-pressed={active}
-            onClick={() => onChange(option.id)}
-            className={cn(
-              "min-h-11 shrink-0 rounded-full px-4 text-sm font-medium transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500/20",
-              active
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "border border-slate-100 bg-white text-muted-foreground shadow-sm hover:text-foreground"
-            )}
+          <article
+            key={profile.id}
+            tabIndex={0}
+            className="flex cursor-pointer flex-col gap-2.5 rounded-lg border border-border bg-card p-3 transition-colors duration-150 hover:border-primary/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            onClick={() => onOpen(profile)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") onOpen(profile);
+            }}
           >
-            {option.label}
-          </button>
+            <div className="flex items-center gap-3">
+              <ProfileAvatar name={name} />
+              <div className="min-w-0">
+                <b className="block truncate font-semibold text-foreground">{name}</b>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  <TypeBadge type={profile.type} />
+                  <StatusBadge status={profile.status} />
+                </div>
+              </div>
+            </div>
+            <dl className="grid gap-1.5">
+              <div className="flex justify-between gap-3 text-[13px]">
+                <dt className="text-muted-foreground">PAN</dt>
+                <dd className="min-w-0 truncate font-mono text-[12.5px] font-medium">
+                  {showIdentifier(profile.identifiers.pan)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3 text-[13px]">
+                <dt className="text-muted-foreground">GSTIN</dt>
+                <dd
+                  className={cn(
+                    "min-w-0 truncate font-mono text-[12.5px] font-medium",
+                    profile.identifiers.gstin ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  {showIdentifier(profile.identifiers.gstin)}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-3 text-[13px]">
+                <dt className="text-muted-foreground">Mobile</dt>
+                <dd
+                  className={cn(
+                    "min-w-0 truncate font-medium",
+                    profile.identifiers.mobile ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  {showIdentifier(profile.identifiers.mobile)}
+                </dd>
+              </div>
+            </dl>
+            <div className="flex items-center justify-between border-t border-border pt-2 text-[12.5px] text-muted-foreground">
+              <span className="tabular-nums">
+                {day}
+                {time ? `, ${time}` : ""}
+              </span>
+              <VersionTag version={profile.currentVersionNo} />
+            </div>
+          </article>
         );
       })}
     </div>
   );
 }
 
-function ProfileSkeleton() {
-  return (
-    <div className="space-y-3 p-6" aria-busy="true">
-      <p className="sr-only">Loading profiles</p>
-      {Array.from({ length: 5 }, (_, index) => (
-        <div key={index} className="h-12 animate-pulse rounded-lg bg-muted" />
-      ))}
-    </div>
-  );
-}
-
 export function ProfilesPage() {
   const router = useRouter();
-  const [type, setType] = useState<(typeof TYPE_FILTERS)[number]["id"]>("ALL");
-  const [status, setStatus] = useState<(typeof STATUS_FILTERS)[number]["id"]>("ALL");
+  const [type, setType] = useState<TypeFilter>("ALL");
+  const [status, setStatus] = useState<StatusFilter>("ALL");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [size, setSize] = useState<number>(PROFILE_PAGE_SIZE);
+  const [sort, setSort] = useState<SortKey>("updated");
+  const [dir, setDir] = useState<SortDir>("desc");
+  const [view, setView] = useState<ProfileView>("table");
   const deferredSearch = useDebouncedValue(search, 300);
   const query = deferredSearch.trim();
 
   const filters = useMemo(
-    () => ({
-      page,
-      size,
-      ...(type === "ALL" ? {} : { type }),
-      ...(status === "ALL" ? {} : { status }),
-      ...(query ? { q: query } : {}),
-    }),
+    () => ({ page, size, ...facetFilters(type, status, query) }),
     [page, size, type, status, query]
+  );
+  const typeCountFilters = useMemo(() => facetFilters("ALL", status, query), [status, query]);
+  const individualCountFilters = useMemo(
+    () => facetFilters("INDIVIDUAL", status, query),
+    [status, query]
+  );
+  const businessCountFilters = useMemo(
+    () => facetFilters("BUSINESS", status, query),
+    [status, query]
+  );
+  const statusCountFilters = useMemo(() => facetFilters(type, "ALL", query), [type, query]);
+  const activeCountFilters = useMemo(() => facetFilters(type, "ACTIVE", query), [type, query]);
+  const archivedCountFilters = useMemo(
+    () => facetFilters(type, "ARCHIVED", query),
+    [type, query]
   );
 
   const profiles = useProfiles(filters);
+  const typeAll = useProfiles({ page: 0, size: 1, ...typeCountFilters });
+  const typeIndividual = useProfiles({ page: 0, size: 1, ...individualCountFilters });
+  const typeBusiness = useProfiles({ page: 0, size: 1, ...businessCountFilters });
+  const statusAll = useProfiles({ page: 0, size: 1, ...statusCountFilters });
+  const statusActive = useProfiles({ page: 0, size: 1, ...activeCountFilters });
+  const statusArchived = useProfiles({ page: 0, size: 1, ...archivedCountFilters });
+
   const filtered = type !== "ALL" || status !== "ALL" || query.length > 0;
   const total = profiles.data?.totalElements ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / size));
-  const currentPage = (profiles.data?.page ?? page) + 1;
+  const totalPages = Math.max(1, Math.ceil((profiles.data?.totalElements ?? 0) / size));
+  const currentPage = Math.min(totalPages, (profiles.data?.page ?? page) + 1);
+
+  const rows = useMemo(() => {
+    const content = [...(profiles.data?.content ?? [])];
+    content.sort((left, right) => {
+      const result =
+        sort === "name"
+          ? (left.displayName || "").localeCompare(right.displayName || "", undefined, {
+              sensitivity: "base",
+            })
+          : updatedTime(left.updatedAt) - updatedTime(right.updatedAt);
+      return dir === "asc" ? result : -result;
+    });
+    return content;
+  }, [profiles.data?.content, sort, dir]);
 
   const openProfile = (profile: CustomerProfileSummary) => {
     router.push(`/profiles/${profile.id}`);
+  };
+
+  const clearFilters = () => {
+    setType("ALL");
+    setStatus("ALL");
+    setSearch("");
+    setPage(0);
+  };
+
+  const changeSort = (column: SortKey) => {
+    if (sort === column) {
+      setDir((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSort(column);
+    setDir(column === "name" ? "asc" : "desc");
   };
 
   if (profiles.isError) {
@@ -158,187 +398,275 @@ export function ProfilesPage() {
     );
   }
 
+  const loading = profiles.isLoading && !profiles.data;
+  const empty = !loading && rows.length === 0;
+
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-6 sm:p-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-7 px-4 py-5 sm:px-8 sm:py-9">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Profiles</h1>
-          <p className="mt-1 text-sm font-normal text-slate-500">
-            Individual and business customers.
-          </p>
+          <h1 className="text-2xl font-semibold leading-8 tracking-[-0.02em] text-foreground">
+            Profiles
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">Individual and business customers.</p>
         </div>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button type="button" className="h-11 gap-2 hover:-translate-y-0.5">
-              New profile
-              <ChevronDown className="h-4 w-4" />
-            </Button>
+          <DropdownMenuTrigger className="group inline-flex h-8 w-full items-center justify-center gap-2 rounded-md border border-transparent bg-primary px-3 text-[13px] font-medium leading-none text-primary-foreground outline-none transition-[background] duration-150 hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-px data-[state=open]:bg-primary-hover sm:w-auto">
+            <Plus className="h-4 w-4 shrink-0" />
+            New profile
+            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-150 group-data-[state=open]:rotate-180" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onSelect={() => router.push("/profiles/new?type=individual")}
-              className="flex-col items-start"
-            >
-              <span className="flex items-center gap-2 font-medium text-slate-900">
-                <UserRound className="h-4 w-4 text-muted-foreground" />
-                Individual
+          <DropdownMenuContent
+            align="end"
+            className="w-[280px] max-sm:w-[var(--radix-dropdown-menu-trigger-width)]"
+          >
+            <DropdownMenuItem onSelect={() => router.push("/profiles/new?type=individual")}>
+              <UserRound className="h-5 w-5 shrink-0 text-primary" />
+              <span className="min-w-0">
+                <span className="block font-semibold">Individual</span>
+                <span className="block text-[12.5px] font-normal leading-[18px] text-muted-foreground">
+                  Person with PAN and mobile
+                </span>
               </span>
-              <span className="text-xs font-normal text-slate-500">A person</span>
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => router.push("/profiles/new?type=business")}
-              className="flex-col items-start"
-            >
-              <span className="flex items-center gap-2 font-medium text-slate-900">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                Business
+            <DropdownMenuItem onSelect={() => router.push("/profiles/new?type=business")}>
+              <Building2 className="h-5 w-5 shrink-0 text-primary" />
+              <span className="min-w-0">
+                <span className="block font-semibold">Business</span>
+                <span className="block text-[12.5px] font-normal leading-[18px] text-muted-foreground">
+                  Company with PAN and GSTIN
+                </span>
               </span>
-              <span className="text-xs font-normal text-slate-500">A company or firm</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <FilterPills
-          label="Profile type"
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        <div className="min-w-0 flex-1 basis-full sm:max-w-[420px] sm:basis-[280px]">
+          <Input
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(0);
+            }}
+            type="search"
+            placeholder="Search by name, PAN, GSTIN, or mobile"
+            aria-label="Search profiles"
+            autoComplete="off"
+            startAdornment={<Search className="h-4 w-4" />}
+            className="h-8 text-[13px]"
+          />
+        </div>
+        <Select
           value={type}
-          options={TYPE_FILTERS}
-          onChange={(next) => {
-            setType(next);
+          onValueChange={(value) => {
+            setType(value as TypeFilter);
             setPage(0);
           }}
-        />
-        <FilterPills
-          label="Profile status"
-          value={status}
-          options={STATUS_FILTERS}
-          onChange={(next) => {
-            setStatus(next);
-            setPage(0);
-          }}
-        />
+        >
+          <SelectTrigger className="h-8 w-full rounded-md px-3 text-[13px] font-medium sm:w-auto sm:min-w-[150px]" aria-label="Filter by type">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All types ({shownCount(typeAll.data?.totalElements)})</SelectItem>
+            <SelectItem value="INDIVIDUAL">
+              Individual ({shownCount(typeIndividual.data?.totalElements)})
+            </SelectItem>
+            <SelectItem value="BUSINESS">
+              Business ({shownCount(typeBusiness.data?.totalElements)})
+            </SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex gap-2 overflow-x-auto" role="group" aria-label="Filter by status">
+          {(
+            [
+              ["ALL", "All statuses", statusAll.data?.totalElements],
+              ["ACTIVE", "Active", statusActive.data?.totalElements],
+              ["ARCHIVED", "Archived", statusArchived.data?.totalElements],
+            ] as const
+          ).map(([id, label, count]) => {
+            const active = status === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => {
+                  setStatus(id);
+                  setPage(0);
+                }}
+                className={cn(
+                  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-3 text-[13px] font-medium transition-[background,border-color,color] duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                  active
+                    ? "border-transparent bg-primary text-primary-foreground"
+                    : "border-input/70 bg-card text-foreground hover:bg-muted"
+                )}
+              >
+                {label}
+                <span className="text-xs tabular-nums opacity-70">{shownCount(count)}</span>
+              </button>
+            );
+          })}
+        </div>
+        <span className="hidden min-w-0 flex-1 sm:block" aria-hidden />
+        <div className="inline-flex h-8 items-center gap-0.5 rounded-md bg-muted p-0.5" role="group" aria-label="View">
+          <button
+            type="button"
+            aria-pressed={view === "table"}
+            aria-label="Table view"
+            onClick={() => setView("table")}
+            className={cn(
+              "inline-flex h-7 w-[34px] items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150",
+              view === "table" && "bg-card text-foreground shadow-sm"
+            )}
+          >
+            <Menu className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === "cards"}
+            aria-label="Card view"
+            onClick={() => setView("cards")}
+            className={cn(
+              "inline-flex h-7 w-[34px] items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150",
+              view === "cards" && "bg-card text-foreground shadow-sm"
+            )}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
-      <Input
-        value={search}
-        onChange={(event) => {
-          setSearch(event.target.value);
-          setPage(0);
-        }}
-        placeholder="Search by name, PAN, GSTIN, or mobile"
-        aria-label="Search by name, PAN, GSTIN, or mobile"
-        startAdornment={<Search className="h-4 w-4" />}
-        className="h-11 max-w-md focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-      />
+      <section
+        className="overflow-hidden rounded-lg border border-border bg-card shadow-sm"
+        aria-label="Profiles list"
+      >
+        {loading ? <ProfileSkeleton view={view} /> : null}
 
-      <Card className="border-slate-100 shadow-sm">
-        <CardContent className="p-0">
-          {profiles.isLoading ? (
-            <ProfileSkeleton />
-          ) : (profiles.data?.content.length ?? 0) === 0 ? (
-            <div className="px-6 py-16 text-center" role="status">
-              <Users className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <p className="text-base font-medium tracking-tight text-slate-900">
-                {filtered ? "No profiles match these filters" : "No profiles yet"}
-              </p>
-              <p className="mt-1 text-sm font-normal text-slate-500">
-                {filtered
-                  ? "Try a different search or filter."
-                  : "Create an individual or business profile to get started."}
-              </p>
-              {filtered ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="mt-6 h-11"
-                  onClick={() => {
-                    setType("ALL");
-                    setStatus("ALL");
-                    setSearch("");
-                    setPage(0);
-                  }}
-                >
-                  Clear filters
-                </Button>
-              ) : null}
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">PAN</TableHead>
-                  <TableHead className="hidden lg:table-cell">GSTIN</TableHead>
-                  <TableHead className="hidden lg:table-cell">Mobile</TableHead>
-                  <TableHead className="hidden sm:table-cell">Version</TableHead>
-                  <TableHead className="hidden xl:table-cell">Updated</TableHead>
+        {!loading && view === "table" ? (
+          <Table className="[&_td]:px-3 [&_th]:h-9 [&_th]:px-3">
+            <caption className="sr-only">Profiles</caption>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <SortHeader label="Profile" column="name" sort={sort} dir={dir} onSort={changeSort} />
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="hidden min-[901px]:table-cell">GSTIN</TableHead>
+                <TableHead className="hidden min-[901px]:table-cell">Mobile</TableHead>
+                <TableHead className="hidden min-[901px]:table-cell">Version</TableHead>
+                <SortHeader
+                  label="Updated"
+                  column="updated"
+                  sort={sort}
+                  dir={dir}
+                  onSort={changeSort}
+                  className="hidden sm:table-cell"
+                />
+                <TableHead className="w-10 pr-3 text-right">
+                  <span className="sr-only">Open</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {empty ? (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={8} className="h-auto !p-0">
+                    <EmptyProfiles filtered={filtered} onClear={clearFilters} />
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {profiles.data?.content.map((profile) => (
-                  <TableRow
-                    key={profile.id}
-                    tabIndex={0}
-                    aria-label={profile.displayName || "Open profile"}
-                    className="cursor-pointer transition-all duration-200 ease-out hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20"
-                    onClick={() => openProfile(profile)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        openProfile(profile);
-                      }
-                    }}
-                  >
-                    <TableCell>
-                      <p className="font-medium tracking-tight text-slate-900">
-                        {profile.displayName || "Untitled profile"}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground md:hidden">
-                        PAN {showIdentifier(profile.identifiers.pan)}
-                        {" · "}
+              ) : (
+                rows.map((profile) => {
+                  const name = profile.displayName || "Untitled profile";
+                  return (
+                    <TableRow
+                      key={profile.id}
+                      tabIndex={0}
+                      aria-label={name}
+                      className="group cursor-pointer hover:[&>td]:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={() => openProfile(profile)}
+                      onKeyDown={(event) => {
+                        if (event.target !== event.currentTarget) return;
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          openProfile(profile);
+                        }
+                      }}
+                    >
+                      <TableCell className="h-12">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <ProfileAvatar name={name} />
+                          <div className="min-w-0">
+                            <Link
+                              href={`/profiles/${profile.id}`}
+                              className="block truncate font-semibold leading-5 text-foreground hover:underline"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {name}
+                            </Link>
+                            <span className="mt-0.5 block font-mono text-xs leading-4 text-muted-foreground">
+                              {showIdentifier(profile.identifiers.pan)}
+                            </span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="h-12">
+                        <TypeBadge type={profile.type} />
+                      </TableCell>
+                      <TableCell className="h-12">
+                        <StatusBadge status={profile.status} />
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "hidden h-12 font-mono text-[12.5px] min-[901px]:table-cell",
+                          profile.identifiers.gstin ? "text-foreground" : "text-muted-foreground"
+                        )}
+                      >
+                        {showIdentifier(profile.identifiers.gstin)}
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "hidden h-12 min-[901px]:table-cell",
+                          profile.identifiers.mobile ? "text-foreground" : "text-muted-foreground"
+                        )}
+                      >
                         {showIdentifier(profile.identifiers.mobile)}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={profile.type === "BUSINESS" ? "info" : "secondary"}>
-                        {profileTypeLabel(profile.type)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={profile.status === "ACTIVE" ? "success" : "draft"}>
-                        {profileStatusLabel(profile.status)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden font-mono text-xs md:table-cell">
-                      {showIdentifier(profile.identifiers.pan)}
-                    </TableCell>
-                    <TableCell className="hidden font-mono text-xs lg:table-cell">
-                      {showIdentifier(profile.identifiers.gstin)}
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      {showIdentifier(profile.identifiers.mobile)}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">{profile.currentVersionNo}</TableCell>
-                    <TableCell className="hidden text-muted-foreground xl:table-cell">
-                      {formatProfileWhen(profile.updatedAt)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                      </TableCell>
+                      <TableCell className="hidden h-12 min-[901px]:table-cell">
+                        <VersionTag version={profile.currentVersionNo} />
+                      </TableCell>
+                      <TableCell className="hidden h-12 sm:table-cell">
+                        <span className="block font-medium leading-5 tabular-nums">
+                          {formatProfileDay(profile.updatedAt)}
+                        </span>
+                        <span className="block text-xs leading-4 text-muted-foreground tabular-nums">
+                          {formatProfileTime(profile.updatedAt)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="h-12 w-10 pr-3 text-right text-muted-foreground">
+                        <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-primary" />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        ) : null}
 
-      {total > 0 ? (
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-muted-foreground" role="status">
-            {total === 1 ? "1 profile" : `${total} profiles`}
+        {!loading && view === "cards" ? (
+          empty ? (
+            <EmptyProfiles filtered={filtered} onClear={clearFilters} />
+          ) : (
+            <ProfileCards profiles={rows} onOpen={openProfile} />
+          )
+        ) : null}
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-3 py-2">
+          <p className="text-[13px] text-muted-foreground" role="status">
+            {loading ? "Loading profiles" : listCount(total, page, size, rows.length)}
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-wrap items-center gap-2">
             <Select
               value={String(size)}
               onValueChange={(value) => {
@@ -346,7 +674,7 @@ export function ProfilesPage() {
                 setPage(0);
               }}
             >
-              <SelectTrigger className="h-11 w-full sm:w-36" aria-label="Profiles per page">
+              <SelectTrigger className="h-8 w-auto rounded-md px-3 text-[13px] font-medium" aria-label="Rows per page">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -357,36 +685,39 @@ export function ProfilesPage() {
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Button
                 type="button"
                 variant="outline"
-                size="icon"
-                className="h-11 w-11"
+                size="sm"
+                className="h-8 w-8 p-0"
                 aria-label="Previous page"
-                disabled={page <= 0}
+                disabled={loading || page <= 0}
                 onClick={() => setPage((current) => Math.max(0, current - 1))}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-3.5 w-3.5" />
               </Button>
-              <span className="min-w-20 text-center text-sm text-muted-foreground">
+              <span
+                className="min-w-14 text-center text-[13px] tabular-nums text-muted-foreground"
+                aria-live="polite"
+              >
                 {currentPage} of {totalPages}
               </span>
               <Button
                 type="button"
                 variant="outline"
-                size="icon"
-                className="h-11 w-11"
+                size="sm"
+                className="h-8 w-8 p-0"
                 aria-label="Next page"
-                disabled={page + 1 >= totalPages}
+                disabled={loading || page + 1 >= totalPages}
                 onClick={() => setPage((current) => current + 1)}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
         </div>
-      ) : null}
+      </section>
     </div>
   );
 }

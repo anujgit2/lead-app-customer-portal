@@ -2,7 +2,17 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, FileText, RefreshCw } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  RefreshCw,
+  Search,
+} from "lucide-react";
 import {
   Table,
   TableBody,
@@ -12,6 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -19,14 +30,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ApplicationStatusBadge } from "@/features/applications/ApplicationStatusBadge";
-import { cn, formatDate } from "@/lib/utils";
-import type { LoanApplication } from "@/types";
+import {
+  ApplicationStatusBadge,
+  applicationStatusLabel,
+} from "@/features/applications/ApplicationStatusBadge";
+import { cn, formatCurrency, formatDate } from "@/lib/utils";
+import type { ApplicationStatus, LoanApplication } from "@/types";
 
-const PAGE_SIZE_OPTIONS = [10, 25, 50] as const;
-const DEFAULT_PAGE_SIZE = 10;
-const COLUMN_COUNT = 6;
-const ROW_HEIGHT_CLASS = "h-10 py-2";
+const PAGE_SIZES = [10, 25, 50] as const;
+const STATUS_FILTERS: { id: "ALL" | ApplicationStatus; label: string }[] = [
+  { id: "ALL", label: "All statuses" },
+  { id: "draft", label: "Draft" },
+  { id: "submitted", label: "Submitted" },
+  { id: "under_review", label: "Under review" },
+  { id: "approved", label: "Approved" },
+  { id: "rejected", label: "Rejected" },
+  { id: "disbursed", label: "Disbursed" },
+];
+
+type SortKey = "application" | "program" | "amount" | "updated";
+type SortDir = "asc" | "desc";
 
 export function getApplicationHref(app: LoanApplication): string {
   const params = new URLSearchParams({ id: app.id });
@@ -46,17 +69,83 @@ function displayDate(value?: string) {
   return formatted;
 }
 
-function pageNumbers(current: number, total: number): (number | "ellipsis")[] {
-  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+function updatedTime(value?: string): number {
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
 
-  const pages: (number | "ellipsis")[] = [1];
-  const start = Math.max(2, current - 1);
-  const end = Math.min(total - 1, current + 1);
-  if (start > 2) pages.push("ellipsis");
-  for (let i = start; i <= end; i += 1) pages.push(i);
-  if (end < total - 1) pages.push("ellipsis");
-  pages.push(total);
-  return pages;
+function programLabel(app: LoanApplication): string {
+  return app.programName || app.loanType || "—";
+}
+
+function applicationTitle(app: LoanApplication): string {
+  return app.applicationNumber || "Draft";
+}
+
+function matchesQuery(app: LoanApplication, query: string): boolean {
+  if (!query) return true;
+  const haystack = [
+    app.applicationNumber,
+    app.id,
+    app.programName,
+    app.loanType,
+    applicationStatusLabel(app.status),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(query);
+}
+
+function shownCount(loading: boolean, count: number): string {
+  return loading ? "–" : String(count);
+}
+
+function listCount(total: number, page: number, size: number, visible: number): string {
+  if (total === 0) return "0 applications";
+  if (total <= size) return total === 1 ? "1 application" : `${total} applications`;
+  const start = page * size + 1;
+  return `Showing ${start}–${start + visible - 1} of ${total} applications`;
+}
+
+function SortHeader({
+  label,
+  column,
+  sort,
+  dir,
+  onSort,
+  align,
+  className,
+}: {
+  label: string;
+  column: SortKey;
+  sort: SortKey;
+  dir: SortDir;
+  onSort: (column: SortKey) => void;
+  align?: "right";
+  className?: string;
+}) {
+  const active = sort === column;
+  const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <TableHead
+      aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
+      className={cn(active && "text-foreground", align === "right" && "text-right", className)}
+    >
+      <button
+        type="button"
+        className={cn(
+          "inline-flex h-full cursor-pointer items-center gap-1 rounded-sm font-semibold text-inherit transition-colors duration-150 hover:text-foreground",
+          align === "right" && "ml-auto"
+        )}
+        onClick={() => onSort(column)}
+      >
+        {label}
+        <Icon className="h-3.5 w-3.5" aria-hidden />
+      </button>
+    </TableHead>
+  );
 }
 
 interface ApplicationsTableProps {
@@ -65,6 +154,8 @@ interface ApplicationsTableProps {
   isRefreshing?: boolean;
   onRefresh?: () => void;
   emptyState?: ReactNode;
+  /** Place search and status filters above the table, with the same gap as Profiles. */
+  separateFilters?: boolean;
 }
 
 export function ApplicationsTable({
@@ -73,226 +164,337 @@ export function ApplicationsTable({
   isRefreshing,
   onRefresh,
   emptyState,
+  separateFilters = false,
 }: ApplicationsTableProps) {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const router = useRouter();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<"ALL" | ApplicationStatus>("ALL");
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState<number>(10);
+  const [sort, setSort] = useState<SortKey>("updated");
+  const [dir, setDir] = useState<SortDir>("desc");
 
-  const total = applications?.length ?? 0;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const currentPage = Math.min(page, totalPages);
+  const query = search.trim().toLowerCase();
+  const loading = !!isLoading && !applications;
 
-  const pageItems = useMemo(() => {
-    if (!applications?.length) return [];
-    const start = (currentPage - 1) * pageSize;
-    return applications.slice(start, start + pageSize);
-  }, [applications, currentPage, pageSize]);
+  const searched = useMemo(
+    () => (applications ?? []).filter((app) => matchesQuery(app, query)),
+    [applications, query]
+  );
+  const visible = useMemo(
+    () => searched.filter((app) => status === "ALL" || app.status === status),
+    [searched, status]
+  );
+  const sorted = useMemo(() => {
+    const next = [...visible];
+    next.sort((left, right) => {
+      const result =
+        sort === "application"
+          ? applicationTitle(left).localeCompare(applicationTitle(right), undefined, { sensitivity: "base" })
+          : sort === "program"
+            ? programLabel(left).localeCompare(programLabel(right), undefined, { sensitivity: "base" })
+            : sort === "amount"
+              ? (left.loanAmount || 0) - (right.loanAmount || 0)
+              : updatedTime(left.updatedAt) - updatedTime(right.updatedAt);
+      return dir === "asc" ? result : -result;
+    });
+    return next;
+  }, [visible, sort, dir]);
 
-  const emptyRowCount = Math.max(0, pageSize - pageItems.length);
-  const rangeStart = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const rangeEnd = Math.min(currentPage * pageSize, total);
+  const pageCount = Math.max(1, Math.ceil(sorted.length / size));
+  const pageIndex = Math.min(page, pageCount - 1);
+  const pageItems = sorted.slice(pageIndex * size, pageIndex * size + size);
+  const filtered = status !== "ALL" || query.length > 0;
 
-  const handlePageSizeChange = (value: string) => {
-    setPageSize(Number(value));
-    setPage(1);
-  };
+  function clearFilters() {
+    setSearch("");
+    setStatus("ALL");
+    setPage(0);
+  }
 
-  const footer = (
-    <div className="flex flex-col gap-3 border-t border-border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex flex-wrap items-center gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={!onRefresh || isRefreshing || isLoading}
-          onClick={() => onRefresh?.()}
-          className="h-8 gap-1.5 px-2.5 text-xs"
+  function changeSort(column: SortKey) {
+    setPage(0);
+    if (sort === column) {
+      setDir((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSort(column);
+    setDir(column === "application" || column === "program" ? "asc" : "desc");
+  }
+
+  const filters = (
+      <div
+        className={cn(
+          "flex flex-wrap items-center",
+          separateFilters ? "gap-x-4 gap-y-3" : "gap-3 border-b border-border px-3 py-2.5"
+        )}
+      >
+        <div className="min-w-0 flex-1 basis-full sm:max-w-[420px] sm:basis-[280px]">
+          <Input
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(0);
+            }}
+            type="search"
+            placeholder="Search applications"
+            aria-label="Search applications"
+            autoComplete="off"
+            startAdornment={<Search className="h-4 w-4" />}
+            className="h-8 text-[13px]"
+          />
+        </div>
+        <Select
+          value={status}
+          onValueChange={(value) => {
+            setStatus(value as "ALL" | ApplicationStatus);
+            setPage(0);
+          }}
         >
-          <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
-          Refresh
-        </Button>
-        <p className="text-[13px] text-muted-foreground">
-          Total records{" "}
-          <span className="font-medium text-foreground">{isLoading ? "—" : total}</span>
-        </p>
+          <SelectTrigger
+            className={cn(
+              "h-8 rounded-md px-3 text-[13px] font-medium",
+              separateFilters
+                ? "w-full sm:w-auto sm:min-w-[150px]"
+                : "w-auto min-w-[140px] flex-1 basis-[140px] sm:min-w-[180px] sm:flex-none"
+            )}
+            aria-label="Filter by status"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_FILTERS.map((option) => (
+              <SelectItem key={option.id} value={option.id}>
+                {option.label} (
+                {shownCount(
+                  loading,
+                  option.id === "ALL"
+                    ? searched.length
+                    : searched.filter((app) => app.status === option.id).length
+                )}
+                )
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {onRefresh ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="sm:ml-auto"
+            disabled={isRefreshing || isLoading}
+            onClick={() => onRefresh()}
+          >
+            <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+            Refresh
+          </Button>
+        ) : null}
       </div>
+  );
 
-      <div className="flex flex-wrap items-center gap-4">
-        <p className="num text-[13px] text-muted-foreground">
-          Showing{" "}
-          <span className="font-medium text-foreground">
-            {rangeStart}–{rangeEnd}
-          </span>{" "}
-          of <span className="font-medium text-foreground">{total}</span>
+  const grid = (
+    <>
+      <Table className="text-[13px] [&_td]:h-[52px] [&_td]:px-3 [&_th]:h-[38px] [&_th]:px-3 [&_th]:text-xs">
+        <caption className="sr-only">Loan applications</caption>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <SortHeader label="Application" column="application" sort={sort} dir={dir} onSort={changeSort} />
+            <SortHeader
+              label="Program"
+              column="program"
+              sort={sort}
+              dir={dir}
+              onSort={changeSort}
+              className="hidden min-[901px]:table-cell"
+            />
+            <SortHeader label="Amount" column="amount" sort={sort} dir={dir} onSort={changeSort} align="right" />
+            <TableHead>Status</TableHead>
+            <SortHeader
+              label="Updated"
+              column="updated"
+              sort={sort}
+              dir={dir}
+              onSort={changeSort}
+              className="hidden sm:table-cell"
+            />
+            <TableHead className="w-10 pr-3 text-right">
+              <span className="sr-only">Open</span>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {loading ? (
+            Array.from({ length: 5 }, (_, index) => (
+              <TableRow key={index} className="hover:bg-transparent">
+                <TableCell colSpan={6} className="h-12">
+                  {index === 0 ? <p className="sr-only">Loading applications</p> : null}
+                  <div className="h-8 animate-pulse rounded-md bg-muted" aria-hidden />
+                </TableCell>
+              </TableRow>
+            ))
+          ) : pageItems.length === 0 ? (
+            <TableRow className="hover:bg-transparent">
+              <TableCell colSpan={6} className="h-auto !p-0">
+                {emptyState && !filtered ? (
+                  emptyState
+                ) : (
+                  <div className="flex flex-col items-center gap-1 px-6 py-10 text-center" role="status">
+                    <span className="tone-brand mb-3 grid h-12 w-12 place-items-center rounded-lg">
+                      {filtered ? <Search className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+                    </span>
+                    <h3 className="text-base font-semibold leading-6 text-foreground">
+                      {filtered ? "No applications found" : "No applications yet"}
+                    </h3>
+                    <p className="max-w-[36ch] text-sm text-muted-foreground">
+                      {filtered
+                        ? "Try a different search or clear the filters."
+                        : "Create an application to get started."}
+                    </p>
+                    {filtered ? (
+                      <Button type="button" variant="outline" size="sm" className="mt-4" onClick={clearFilters}>
+                        Clear filters
+                      </Button>
+                    ) : null}
+                  </div>
+                )}
+              </TableCell>
+            </TableRow>
+          ) : (
+            pageItems.map((app) => {
+              const title = applicationTitle(app);
+              const href = getApplicationHref(app);
+              return (
+                <TableRow
+                  key={app.id}
+                  tabIndex={0}
+                  aria-label={title}
+                  className="group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onClick={() => router.push(href)}
+                  onKeyDown={(event) => {
+                    if (event.target !== event.currentTarget) return;
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      router.push(href);
+                    }
+                  }}
+                >
+                  <TableCell>
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <span className="tone-brand grid h-[30px] w-[30px] shrink-0 place-items-center rounded-sm">
+                        <FileText className="h-4 w-4" aria-hidden />
+                      </span>
+                      <div className="min-w-0">
+                        <Link
+                          href={href}
+                          title={app.status === "draft" ? "Open application form" : "View application"}
+                          className="block truncate text-[13.5px] font-semibold leading-[18px] text-foreground hover:underline"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {title}
+                        </Link>
+                        <span className="mt-px block truncate font-mono text-[11px] leading-[14px] text-muted-foreground">
+                          {app.id}
+                        </span>
+                        <span className="mt-0.5 block truncate text-[12.5px] text-muted-foreground min-[901px]:hidden">
+                          {programLabel(app)}
+                        </span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden min-[901px]:table-cell">{programLabel(app)}</TableCell>
+                  <TableCell className="text-right font-semibold tabular-nums">
+                    {formatCurrency(app.loanAmount || 0)}
+                  </TableCell>
+                  <TableCell>
+                    <ApplicationStatusBadge status={app.status} className="h-[22px] px-2 text-xs" />
+                  </TableCell>
+                  <TableCell className="hidden whitespace-nowrap text-muted-foreground tabular-nums sm:table-cell">
+                    {displayDate(app.updatedAt)}
+                  </TableCell>
+                  <TableCell className="w-10 pr-3 text-right text-muted-foreground">
+                    <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-primary" />
+                  </TableCell>
+                </TableRow>
+              );
+            })
+          )}
+        </TableBody>
+      </Table>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-3 py-2">
+        <p className="text-[13px] text-muted-foreground" role="status">
+          {loading ? "Loading applications" : listCount(sorted.length, pageIndex, size, pageItems.length)}
         </p>
-
-        <div className="flex items-center gap-2">
-          <span className="text-[13px] text-muted-foreground">Rows</span>
-          <Select value={String(pageSize)} onValueChange={handlePageSizeChange}>
-            <SelectTrigger className="h-8 w-[72px] px-2.5 text-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            value={String(size)}
+            onValueChange={(value) => {
+              setSize(Number(value));
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="h-8 w-auto rounded-md px-3 text-[13px] font-medium" aria-label="Rows per page">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {PAGE_SIZE_OPTIONS.map((size) => (
-                <SelectItem key={size} value={String(size)} className="text-xs">
-                  {size}
+              {PAGE_SIZES.map((option) => (
+                <SelectItem key={option} value={String(option)}>
+                  {option} per page
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={currentPage <= 1}
-            onClick={() => setPage(currentPage - 1)}
-            className="h-8 w-8 p-0"
-            aria-label="Previous page"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-
-          {pageNumbers(currentPage, totalPages).map((item, index) =>
-            item === "ellipsis" ? (
-              <span
-                key={`ellipsis-${index}`}
-                className="px-1.5 text-xs text-slate-400"
-              >
-                …
-              </span>
-            ) : (
-              <Button
-                key={item}
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setPage(item)}
-                className={cn(
-                  "h-8 w-8 p-0",
-                  item === currentPage && "border-transparent bg-primary text-primary-foreground hover:bg-primary"
-                )}
-                aria-current={item === currentPage ? "page" : undefined}
-              >
-                {item}
-              </Button>
-            )
-          )}
-
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={currentPage >= totalPages}
-            onClick={() => setPage(currentPage + 1)}
-            className="h-8 w-8 p-0"
-            aria-label="Next page"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 w-8 p-0"
+              aria-label="Previous page"
+              disabled={loading || pageIndex <= 0}
+              onClick={() => setPage(Math.max(0, pageIndex - 1))}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="min-w-14 text-center text-[13px] tabular-nums text-muted-foreground" aria-live="polite">
+              {pageIndex + 1} of {pageCount}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 w-8 p-0"
+              aria-label="Next page"
+              disabled={loading || pageIndex + 1 >= pageCount}
+              onClick={() => setPage(pageIndex + 1)}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 
-  if (isLoading) {
+  if (separateFilters) {
     return (
-      <div>
-        <div className="px-2 py-1">
-          {Array.from({ length: DEFAULT_PAGE_SIZE }).map((_, i) => (
-            <div
-              key={i}
-              className={`flex gap-4 px-4 py-2 animate-pulse ${i % 2 === 1 ? "bg-slate-50/80" : ""}`}
-            >
-              <div className="h-4 bg-muted rounded w-24" />
-              <div className="h-4 bg-muted rounded w-32" />
-              <div className="h-4 bg-muted rounded w-20" />
-              <div className="h-4 bg-muted rounded w-24" />
-              <div className="h-4 bg-muted rounded w-24" />
-              <div className="h-4 bg-muted rounded w-28" />
-            </div>
-          ))}
-        </div>
-        {footer}
-      </div>
-    );
-  }
-
-  if (!applications?.length) {
-    return (
-      <div>
-        {emptyState ?? (
-          <div className="px-6 py-12 text-center">
-            <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm font-medium">No applications yet</p>
-          </div>
-        )}
-        {footer}
-      </div>
+      <>
+        {filters}
+        <section
+          className="overflow-hidden rounded-lg border border-border bg-card shadow-sm"
+          aria-label="Applications list"
+        >
+          {grid}
+        </section>
+      </>
     );
   }
 
   return (
     <div>
-      <Table>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead>ID</TableHead>
-            <TableHead>Application Number</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created Date</TableHead>
-            <TableHead>Submitted Date</TableHead>
-            <TableHead>Program Name</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {pageItems.map((app) => (
-            <TableRow
-              key={app.id}
-              className="hover:bg-muted/50"
-            >
-              <TableCell className={cn(ROW_HEIGHT_CLASS, "whitespace-nowrap text-xs")}>
-                <Link
-                  href={getApplicationHref(app)}
-                  title={app.status === "draft" ? "Open application form" : "View application"}
-                  className="num font-semibold text-primary hover:underline"
-                >
-                  {app.id}
-                </Link>
-              </TableCell>
-              <TableCell className={cn(ROW_HEIGHT_CLASS, "whitespace-nowrap font-medium")}>
-                {app.applicationNumber || "—"}
-              </TableCell>
-              <TableCell className={cn(ROW_HEIGHT_CLASS, "text-xs")}>
-                <ApplicationStatusBadge status={app.status} />
-              </TableCell>
-              <TableCell className={cn(ROW_HEIGHT_CLASS, "whitespace-nowrap text-muted-foreground")}>
-                {displayDate(app.createdAt)}
-              </TableCell>
-              <TableCell className={cn(ROW_HEIGHT_CLASS, "whitespace-nowrap text-muted-foreground")}>
-                {displayDate(app.submittedAt)}
-              </TableCell>
-              <TableCell className={cn(ROW_HEIGHT_CLASS)}>
-                {app.programName || app.loanType || "—"}
-              </TableCell>
-            </TableRow>
-          ))}
-          {Array.from({ length: emptyRowCount }).map((_, i) => (
-            <TableRow
-              key={`empty-${i}`}
-              aria-hidden
-              className="pointer-events-none hover:bg-transparent"
-            >
-              {Array.from({ length: COLUMN_COUNT }).map((_, j) => (
-                <TableCell key={j} className={ROW_HEIGHT_CLASS} />
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-
-      {footer}
+      {filters}
+      {grid}
     </div>
   );
 }

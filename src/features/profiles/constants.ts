@@ -5,7 +5,7 @@ export const PROFILE_TEMPLATE_CODE: Record<CustomerProfileType, string> = {
   BUSINESS: "customer-business",
 };
 
-export const PROFILE_PAGE_SIZE = 10;
+export const PROFILE_PAGE_SIZE = 5;
 
 export function templateCodeForType(type: CustomerProfileType): string {
   return PROFILE_TEMPLATE_CODE[type];

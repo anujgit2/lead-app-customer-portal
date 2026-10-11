@@ -10,8 +10,8 @@ import {
   profileVersionsQueryKey,
   profilesQueryKey,
 } from "./query-keys";
-import { formValuesToProfileData, profileDataToFormValues } from "./utils/profile-data";
-import { readFormTemplate } from "./utils/read-form-template";
+import { formValuesToProfileData, mergeProfileFormValues, profileDataToFormValues } from "./utils/profile-data";
+import { readFormTemplate, readFormTemplates } from "./utils/read-form-template";
 import { mapDiffForDisplay } from "./utils/diff-display";
 import { fieldValuesFromProfile, prefillWizardFormData } from "./utils/prefill-wizard";
 import { safeInternalPath, withProfileReturn } from "./utils/return-path";
@@ -74,6 +74,7 @@ describe("profile query keys", () => {
     assert.deepEqual(profileVersionQueryKey("profile-1", 3), ["profile", "profile-1", 3]);
     assert.deepEqual(profileDiffQueryKey("profile-1", 1, 3), ["profile", "profile-1", "diff", 1, 3]);
     assert.deepEqual(formTemplateQueryKey("customer-business"), ["form-template", "customer-business"]);
+    assert.deepEqual(formTemplateQueryKey("customer-business", 1), ["form-template", "customer-business", 1]);
   });
 });
 
@@ -175,6 +176,160 @@ describe("form template payload", () => {
     assert.equal(template.code, "customer-individual");
     assert.equal(template.sections[0]?.fields[0]?.name, "fullName");
     assert.equal(template.sections[0]?.fields[0]?.label, "Full name");
+  });
+
+  it("reads a published profile template whose schema is sections", () => {
+    const template = readFormTemplate(
+      {
+        id: "version-uuid",
+        tenantId: "leads",
+        type: "customer-business",
+        name: "Customer Business",
+        version: 1,
+        status: "PUBLISHED",
+        schema: [
+          {
+            code: "company",
+            title: "Company",
+            fields: [{ name: "legalName", label: "Legal name", type: "text" }],
+          },
+        ],
+        createdAt: "2026-10-11T00:00:00Z",
+        updatedAt: "2026-10-11T00:00:00Z",
+        createdBy: null,
+        updatedBy: null,
+      },
+      "customer-business"
+    );
+    assert.equal(template.code, "customer-business");
+    assert.equal(template.title, "Customer Business");
+    assert.equal(template.sections[0]?.code, "company");
+    assert.equal(template.sections[0]?.fields[0]?.name, "legalName");
+  });
+
+  it("reads every form inside a profile template schema", () => {
+    const templates = readFormTemplates(
+      {
+        type: "customer-individual",
+        name: "Customer Individual",
+        schema: [
+          {
+            formCode: "identity",
+            ui: { title: "Identity" },
+            sections: [
+              {
+                code: "person",
+                ui: { title: "Person" },
+                fields: [{ key: "fullName", type: "text", ui: { label: "Full name" } }],
+              },
+            ],
+          },
+          {
+            formCode: "contact",
+            ui: { title: "Contact" },
+            sections: [
+              {
+                code: "phone",
+                ui: { title: "Phone" },
+                fields: [{ key: "mobile", type: "text", ui: { label: "Mobile" } }],
+              },
+            ],
+          },
+        ],
+      },
+      "customer-individual"
+    );
+    assert.deepEqual(
+      templates.map((template) => template.code),
+      ["identity", "contact"]
+    );
+  });
+
+  it("keeps each visible form and drops the documents step", () => {
+    const templates = readFormTemplates(
+      {
+        programCode: "customer-business",
+        forms: [
+          {
+            formCode: "company",
+            ui: { title: "Company" },
+            sections: [
+              {
+                code: "identity",
+                ui: { title: "Identity" },
+                fields: [{ key: "legalName", type: "text", ui: { label: "Legal name" } }],
+              },
+            ],
+          },
+          {
+            formCode: "owners",
+            ui: { title: "Owners" },
+            sections: [
+              {
+                code: "owner",
+                ui: { title: "Owner" },
+                fields: [{ key: "name", type: "text", ui: { label: "Name" } }],
+              },
+            ],
+          },
+          {
+            formCode: "hidden",
+            visible: false,
+            ui: { title: "Hidden" },
+            sections: [],
+          },
+        ],
+        documents: [
+          {
+            documentType: "PAN_CARD",
+            scope: "APPLICATION",
+            required: false,
+            ui: { label: "PAN" },
+          },
+        ],
+      },
+      "customer-business"
+    );
+    assert.deepEqual(
+      templates.map((template) => template.code),
+      ["company", "owners"]
+    );
+    assert.equal(templates[0]?.title, "Company");
+    assert.equal(templates[1]?.title, "Owners");
+  });
+});
+
+describe("profile form merge", () => {
+  it("combines each form into one profile payload", () => {
+    const company: FormTemplate = {
+      code: "company",
+      title: "Company",
+      sections: [
+        {
+          code: "identity",
+          title: "Identity",
+          fields: [{ name: "legalName", label: "Legal name", type: "text" }],
+        },
+      ],
+    };
+    const contact: FormTemplate = {
+      code: "contact",
+      title: "Contact",
+      sections: [
+        {
+          code: "phone",
+          title: "Phone",
+          fields: [{ name: "mobile", label: "Mobile", type: "text" }],
+        },
+      ],
+    };
+    assert.deepEqual(
+      mergeProfileFormValues([company, contact], {
+        company: { identity: { legalName: "Analytical Engines" } },
+        contact: { phone: { mobile: "9999999999" } },
+      }),
+      { legalName: "Analytical Engines", mobile: "9999999999" }
+    );
   });
 });
 
