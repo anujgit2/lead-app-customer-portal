@@ -13,6 +13,7 @@ interface WizardState {
   getDraft: (draftId: string) => DraftApplication | null;
   clearDraft: (draftId: string) => void;
   setCurrentDraftId: (id: string | null) => void;
+  reset: () => void;
 }
 
 export const useWizardStore = create<WizardState>()(
@@ -97,6 +98,8 @@ export const useWizardStore = create<WizardState>()(
       },
 
       setCurrentDraftId: (id) => set({ currentDraftId: id }),
+
+      reset: () => set({ drafts: {}, currentDraftId: null }),
     }),
     {
       name: "wizard-store",

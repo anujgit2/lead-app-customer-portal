@@ -285,7 +285,7 @@ function ApiInlineLoader() {
         placeholder="Template ID"
         className="h-8 w-40 text-xs"
       />
-      <Button type="button" size="sm" className="h-8" loading={apiStatus === "loading"} onClick={loadFromApi} disabled={!apiConfig.templateId}>
+      <Button type="button" size="sm" loading={apiStatus === "loading"} onClick={loadFromApi} disabled={!apiConfig.templateId}>
         Load
       </Button>
     </div>

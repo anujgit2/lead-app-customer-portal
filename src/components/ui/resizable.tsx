@@ -74,11 +74,11 @@ export function ResizableSplit({
           if (e.key === "ArrowRight") setLeftWidth((w) => Math.min(maxLeftWidth, w + 2));
         }}
         className={cn(
-          "group relative flex w-1.5 shrink-0 cursor-col-resize items-center justify-center bg-slate-100 transition-colors duration-200 ease-out hover:bg-blue-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 dark:bg-zinc-800",
+          "group relative flex w-1.5 shrink-0 cursor-col-resize items-center justify-center bg-muted transition-colors duration-200 ease-out hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20",
           dragging && "bg-blue-500/30"
         )}
       >
-        <div className="z-10 flex h-8 w-3.5 items-center justify-center rounded-sm border border-slate-100 bg-white shadow-sm transition-colors duration-200 ease-out group-hover:border-blue-200 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="z-10 flex h-8 w-3.5 items-center justify-center rounded-sm border border-border bg-card shadow-sm transition-colors duration-200 ease-out group-hover:border-primary/30">
           <GripVertical className="h-3 w-3 text-slate-400" />
         </div>
       </div>

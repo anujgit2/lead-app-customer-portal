@@ -308,7 +308,8 @@ async function readContentBlob(
   };
 }
 
-function triggerDownload(blob: Blob, fileName: string): void {
+/** Revoking in the same tick as `click()` cancels the download in some Safari/Firefox builds. */
+export function triggerDownload(blob: Blob, fileName: string): void {
   const objectUrl = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = objectUrl;
@@ -317,7 +318,7 @@ function triggerDownload(blob: Blob, fileName: string): void {
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
-  URL.revokeObjectURL(objectUrl);
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
 }
 
 async function saveBlobResponse(response: Response, fallbackFileName: string): Promise<void> {

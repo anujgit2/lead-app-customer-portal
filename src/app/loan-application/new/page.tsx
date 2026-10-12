@@ -150,7 +150,7 @@ function NewLoanApplicationContent() {
             router.replace(`/loan-application/new?${next.toString()}`);
           }}
         />
-        <Button asChild variant="outline" className="h-11">
+        <Button asChild variant="outline" size="md">
           <Link href={`/profiles/new?returnTo=${encodeURIComponent(returnTo)}`}>Create a profile</Link>
         </Button>
       </div>

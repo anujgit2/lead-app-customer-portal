@@ -180,7 +180,7 @@ export function ProfileForm({
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+              className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
               disabled={pending || checking}
               onClick={onCancel}
             >
@@ -190,7 +190,7 @@ export function ProfileForm({
           <Button
             type="button"
             size="sm"
-            className="h-8 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+            className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
             loading={pending || checking}
             onClick={submitAll}
           >

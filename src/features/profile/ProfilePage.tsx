@@ -16,7 +16,9 @@ import {
   AlertCircle,
   CalendarDays,
 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader, PageShell } from "@/components/PageShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -114,7 +116,7 @@ function PersonalTab({ profile }: { profile: UserType | null }) {
             className="bg-muted/50 pr-28"
           />
           {profile?.emailVerified && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-green-600">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-success-strong">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Verified
             </span>
@@ -176,7 +178,7 @@ function ContactTab({ profile }: { profile: UserType | null }) {
             {...register("phone")}
           />
           {profile?.phoneVerified && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-green-600">
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-success-strong">
               <CheckCircle2 className="h-3.5 w-3.5" />
               Verified
             </span>
@@ -238,10 +240,12 @@ function SecurityTab({ profile }: { profile: UserType | null }) {
         </div>
 
         {resetSent ? (
-          <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
-            <CheckCircle2 className="h-4 w-4 shrink-0" />
-            Reset OTP sent. Check your inbox and enter the code on the reset page.
-          </div>
+          <Alert variant="success">
+            <CheckCircle2 aria-hidden />
+            <AlertDescription>
+              Reset OTP sent. Check your inbox and enter the code on the reset page.
+            </AlertDescription>
+          </Alert>
         ) : (
           <Button
             type="button"
@@ -290,14 +294,14 @@ function SecurityTab({ profile }: { profile: UserType | null }) {
 function VerificationPill({ verified }: { verified?: boolean }) {
   if (verified) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-green-600 shrink-0">
+      <span className="inline-flex items-center gap-1 text-xs text-success-strong shrink-0">
         <CheckCircle2 className="h-3.5 w-3.5" />
         Verified
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-xs text-amber-600 shrink-0">
+    <span className="inline-flex items-center gap-1 text-xs text-warning-strong shrink-0">
       <AlertCircle className="h-3.5 w-3.5" />
       Unverified
     </span>
@@ -350,7 +354,7 @@ function ProfileOverview({ profile }: { profile: UserType | null }) {
       <CardContent className="p-6">
         <div className="flex items-center gap-4">
           <Avatar className="h-14 w-14">
-            <AvatarFallback className="text-base bg-primary text-white">
+            <AvatarFallback className="text-base bg-primary text-primary-foreground">
               {getInitials(profile.firstName, profile.lastName)}
             </AvatarFallback>
           </Avatar>
@@ -420,13 +424,11 @@ export function ProfilePage() {
   const displayUser = profile ?? storeUser;
 
   return (
-    <div className="p-6 sm:p-8 max-w-3xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Your Profile</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Manage your personal information and account settings
-        </p>
-      </div>
+    <PageShell width="narrow" className="gap-6">
+      <PageHeader
+        title="Your Profile"
+        description="Manage your personal information and account settings"
+      />
 
       {isLoading && !displayUser ? null : <ProfileOverview profile={displayUser} />}
 
@@ -467,6 +469,6 @@ export function ProfilePage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageShell>
   );
 }

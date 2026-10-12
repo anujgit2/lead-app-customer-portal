@@ -1,156 +1,91 @@
-import {
-  Banknote,
-  Coins,
-  FileText,
-  Landmark,
-  Rocket,
-  Send,
-  ShieldCheck,
-  Sprout,
-  UserPlus,
-  Wrench,
-  type LucideIcon,
-} from "lucide-react";
-
-/**
- * Scheme figures reflect published Government of India guidance as of August
- * 2026 (PMMY, CGTMSE, PMEGP, SISFS, CLCSS). Limits change by circular and
- * budget announcement — re-verify with the nodal agency before relying on them.
- */
-
-export interface ProgramCard {
-  name: string;
-  icon: LucideIcon;
-  amount: string;
-  summary: string;
-  highlights: string[];
-}
-
-export const LOAN_PROGRAMS: ProgramCard[] = [
+export const HOW_IT_WORKS = [
   {
-    name: "PM MUDRA Yojana",
-    icon: Coins,
-    amount: "Up to ₹20 lakh",
-    summary:
-      "Collateral-free loans for micro units in manufacturing, trading, services, and allied agriculture.",
-    highlights: [
-      "Shishu up to ₹50,000 · Kishore up to ₹5 lakh",
-      "Tarun up to ₹10 lakh · Tarun Plus up to ₹20 lakh",
-      "Backed by the CGFMU guarantee",
-    ],
-  },
-  {
-    name: "CGTMSE-backed MSME loan",
-    icon: ShieldCheck,
-    amount: "Up to ₹10 crore",
-    summary:
-      "Credit guarantee cover that lets banks lend to micro and small enterprises without collateral or third-party security.",
-    highlights: [
-      "Ceiling raised from ₹5 crore in April 2025",
-      "Guarantee cover of 75%–85% by category",
-      "Term loans and working capital both eligible",
-    ],
-  },
-  {
-    name: "Stand-Up India",
-    icon: Landmark,
-    amount: "₹10 lakh – ₹1 crore",
-    summary:
-      "Composite loans for greenfield ventures promoted by SC/ST and women entrepreneurs, via scheduled commercial banks.",
-    highlights: [
-      "One borrower per bank branch, at minimum",
-      "Covers manufacturing, services, and trading",
-      "Working capital bundled with the term loan",
-    ],
-  },
-  {
-    name: "PMEGP",
-    icon: Banknote,
-    amount: "Up to ₹50 lakh",
-    summary:
-      "Credit-linked subsidy for new micro enterprises in the non-farm sector, routed through KVIC, KVIB, and District Industries Centres.",
-    highlights: [
-      "₹50 lakh manufacturing · ₹20 lakh services",
-      "Margin money subsidy of 15%–35%",
-      "Promoter contribution of just 5%–10%",
-    ],
-  },
-];
-
-export const GRANT_PROGRAMS: ProgramCard[] = [
-  {
-    name: "Startup India Seed Fund",
-    icon: Rocket,
-    amount: "Up to ₹20 lakh grant",
-    summary:
-      "Non-repayable seed capital for proof of concept and prototyping, disbursed through DPIIT-approved incubators.",
-    highlights: [
-      "A further ₹50 lakh available as convertible debt",
-      "DPIIT recognition and under two years old",
-      "At least 51% Indian promoter shareholding",
-    ],
-  },
-  {
-    name: "PMEGP margin money",
-    icon: Sprout,
-    amount: "15% – 35% subsidy",
-    summary:
-      "The subsidy component of PMEGP, held in a locked term deposit and adjusted against your principal after three years of operation.",
-    highlights: [
-      "35% for SC/ST, women, and NER in rural areas",
-      "15% for general category in urban areas",
-      "Applies to new micro enterprises only",
-    ],
-  },
-  {
-    name: "CLCSS",
-    icon: Wrench,
-    amount: "Up to ₹15 lakh",
-    summary:
-      "A 15% upfront capital subsidy for micro and small manufacturers upgrading to approved modern plant and machinery.",
-    highlights: [
-      "On institutional finance up to ₹1 crore",
-      "20% and ₹20 lakh for NER and hill states",
-      "Credited against your loan principal",
-    ],
-  },
-];
-
-export interface Stat {
-  value: string;
-  label: string;
-}
-
-export const STATS: Stat[] = [
-  { value: "₹20 lakh", label: "MUDRA ceiling after Tarun Plus" },
-  { value: "₹10 crore", label: "CGTMSE collateral-free cover" },
-  { value: "35%", label: "Top PMEGP margin money subsidy" },
-  { value: "₹70 lakh", label: "Total seed support for DPIIT startups" },
-];
-
-export interface Step {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-}
-
-export const STEPS: Step[] = [
-  {
-    icon: UserPlus,
     title: "Create your account",
-    description:
-      "Sign up in two minutes with a quick human verification check.",
+    description: "Sign up and confirm your email with a one-time code.",
   },
   {
-    icon: FileText,
-    title: "Build your business profile",
-    description:
-      "One adaptive form covering Udyam details, ownership, and turnover. Progress saves as you go.",
+    title: "Set up your profile",
+    description: "Tell us about yourself once. We keep it ready for every application.",
   },
   {
-    icon: Send,
-    title: "Apply and track",
-    description:
-      "See the schemes you qualify for, upload documents once, and follow every status change.",
+    title: "Complete your application",
+    description: "Answer step by step. Your progress is saved as you go.",
+  },
+  {
+    title: "Share your documents",
+    description: "Send them to your lender with a private link you control.",
+  },
+];
+
+export const PROFILE_POINTS = [
+  "Compare any two versions",
+  "Restore an earlier version when you need it",
+  "Download a credit memo as a PDF",
+];
+
+export const SHARE_POINTS = [
+  "Choose how long a link works",
+  "Allow or block downloads",
+  "Stop access whenever you like",
+];
+
+export const MORE_FEATURES = [
+  {
+    title: "Guided application",
+    description: "Answer step by step. Stop any time and pick up where you left off.",
+  },
+  {
+    title: "Documents with versions",
+    description: "Upload an updated file and keep the earlier ones on record.",
+  },
+  {
+    title: "Import from DigiLocker",
+    description: "Bring in verified documents without uploading them yourself.",
+  },
+  {
+    title: "Private by default",
+    description: "Sensitive details are masked, and only you decide who sees a document.",
+  },
+];
+
+export const HERO_POINTS = [
+  {
+    title: "Guided application",
+    description: "Saved at every step, so you can stop and come back.",
+  },
+  {
+    title: "A profile with history",
+    description: "Your details are kept once, and every change is remembered.",
+  },
+  {
+    title: "Documents in one place",
+    description: "Upload files, keep earlier versions and import verified ones.",
+  },
+  {
+    title: "Secure sharing",
+    description: "Send a private link to your lender that you control.",
+  },
+];
+
+export const FAQS = [
+  {
+    question: "Who can use LoanPortal?",
+    answer:
+      "LoanPortal is for customers applying for a loan. Your lender tells you which loan programs are open to you.",
+  },
+  {
+    question: "Can I stop and finish later?",
+    answer:
+      "Yes. Your progress is saved as you go. Sign in, open your application and carry on from where you stopped.",
+  },
+  {
+    question: "Who can see my documents?",
+    answer:
+      "Only you, until you share a link. Each link has an expiry, and the person opening it confirms their email with a one-time code.",
+  },
+  {
+    question: "Is my personal information protected?",
+    answer:
+      "Sensitive details are masked on screen and in downloads, and you choose who can see your documents.",
   },
 ];

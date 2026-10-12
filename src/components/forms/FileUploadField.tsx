@@ -62,6 +62,7 @@ export function FileUploadField({
   const [syncedKey, setSyncedKey] = useState(storedKey);
   const [rejectMessage, setRejectMessage] = useState<string | null>(null);
   const uploadsRef = useRef(new Map<string, AbortController>());
+  const previewUrlsRef = useRef(new Set<string>());
   const transientItemsRef = useRef(transientItems);
   const publishedItemsRef = useRef<Set<string>>(new Set());
   const applicationId = useApplicationId();
@@ -84,9 +85,22 @@ export function FileUploadField({
   }, [onChange, storedItems, transientItems]);
 
   useEffect(() => {
+    const previews = previewUrlsRef.current;
+    const live = new Set(transientItems.flatMap((item) => (item.preview ? [item.preview] : [])));
+    previews.forEach((url) => {
+      if (live.has(url)) return;
+      URL.revokeObjectURL(url);
+      previews.delete(url);
+    });
+  }, [transientItems]);
+
+  useEffect(() => {
     const uploads = uploadsRef.current;
+    const previews = previewUrlsRef.current;
     return () => {
       uploads.forEach((controller) => controller.abort());
+      previews.forEach((url) => URL.revokeObjectURL(url));
+      previews.clear();
     };
   }, []);
 
@@ -130,6 +144,9 @@ export function FileUploadField({
         status: "uploading" as const,
         preview: f.type.startsWith("image/") ? URL.createObjectURL(f) : undefined,
       }));
+      newItems.forEach((item) => {
+        if (item.preview) previewUrlsRef.current.add(item.preview);
+      });
 
       const nextTransient = [...transientItemsRef.current, ...newItems];
       transientItemsRef.current = nextTransient;
@@ -179,7 +196,6 @@ export function FileUploadField({
   const removeFile = (item: FileItem) => {
     uploadsRef.current.get(item.id)?.abort();
     uploadsRef.current.delete(item.id);
-    if (item.preview) URL.revokeObjectURL(item.preview);
     if (item.storageFile) {
       void fileStorageService.delete(item.storageFile.id).catch((deleteError: unknown) => {
         toast.error(parseApiError(deleteError).message);

@@ -37,13 +37,12 @@ export function VersionConflictDialog({
           <Button
             type="button"
             variant="outline"
-            className="h-8"
             disabled={pending}
             onClick={() => onOpenChange(false)}
            size="sm">
             Close
           </Button>
-          <Button type="button" className="h-8" loading={pending} onClick={onReload} size="sm">
+          <Button type="button" loading={pending} onClick={onReload} size="sm">
             Reload
           </Button>
         </DialogFooter>

@@ -3,9 +3,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   Download,
   Eye,
   FileText,
@@ -16,6 +13,9 @@ import {
   Share2,
   Upload,
 } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
+import { SortableTableHead, type SortDirection } from "@/components/SortableTableHead";
+import { TableSkeletonRows } from "@/components/TableSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,15 +34,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { profileInitials } from "@/features/profiles/utils/display";
-import { cn } from "@/lib/utils";
+import { ProfileAvatar } from "@/features/profiles/components/ProfileBadges";
 import type { LinkedDocumentProfile } from "@/types";
 import type { PortalDocument } from "../types";
 import { categoryKey, categoryLabel, formatDisplayDate } from "../utils/format";
 import { SourceBadge } from "./SourceBadge";
 
 export type DocumentSortKey = "name" | "updated";
-export type DocumentSortDir = "asc" | "desc";
+export type DocumentSortDir = SortDirection;
 
 interface DocumentsTableProps {
   documents: PortalDocument[];
@@ -63,8 +62,6 @@ interface DocumentsTableProps {
   onOpen: (document: PortalDocument) => void;
   onClearFilters: () => void;
 }
-
-const badgeClass = "h-[22px] px-2 text-xs";
 
 function documentTypeCode(typeId: string, typeName: string): string {
   const id = typeId.trim();
@@ -88,39 +85,7 @@ function profileName(profile: LinkedDocumentProfile | undefined): string {
   return profile?.displayName?.trim() || "Untitled profile";
 }
 
-function SortHeader({
-  label,
-  column,
-  sort,
-  dir,
-  onSort,
-  className,
-}: {
-  label: string;
-  column: DocumentSortKey;
-  sort: DocumentSortKey;
-  dir: DocumentSortDir;
-  onSort: (column: DocumentSortKey) => void;
-  className?: string;
-}) {
-  const active = sort === column;
-  const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;
-  return (
-    <TableHead
-      aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
-      className={cn(active && "text-foreground", className)}
-    >
-      <button
-        type="button"
-        className="inline-flex h-full cursor-pointer items-center gap-1 rounded-sm font-semibold text-inherit transition-colors duration-150 hover:text-foreground"
-        onClick={() => onSort(column)}
-      >
-        {label}
-        <Icon className="h-3.5 w-3.5" aria-hidden />
-      </button>
-    </TableHead>
-  );
-}
+const SortHeader = SortableTableHead<DocumentSortKey>;
 
 function MenuAction({
   icon,
@@ -200,39 +165,30 @@ export function DocumentsTable({
       </TableHeader>
       <TableBody>
         {isLoading ? (
-          Array.from({ length: 5 }, (_, index) => (
-            <TableRow key={index} className="hover:bg-transparent">
-              <TableCell colSpan={8} className="h-12">
-                {index === 0 ? <p className="sr-only">Loading documents</p> : null}
-                <div className="h-8 animate-pulse rounded-md bg-muted" aria-hidden />
-              </TableCell>
-            </TableRow>
-          ))
+          <TableSkeletonRows label="Loading documents" columns={8} />
         ) : documents.length === 0 ? (
           <TableRow className="hover:bg-transparent">
             <TableCell colSpan={8} className="h-auto !p-0">
-              <div className="flex flex-col items-center gap-1 px-6 py-10 text-center" role="status">
-                <span className="tone-brand mb-3 grid h-12 w-12 place-items-center rounded-lg">
-                  {isFiltered ? <Search className="h-5 w-5" /> : <Files className="h-5 w-5" />}
-                </span>
-                <h3 className="text-base font-semibold leading-6 text-foreground">
-                  {isFiltered ? "No documents found" : "No documents yet"}
-                </h3>
-                <p className="max-w-[36ch] text-sm text-muted-foreground">
-                  {isFiltered
+              <EmptyState
+                icon={isFiltered ? Search : Files}
+                title={isFiltered ? "No documents found" : "No documents yet"}
+                description={
+                  isFiltered
                     ? "Try a different search or clear the filters."
-                    : "Upload a file to keep statements, identity proof and other paperwork in one place."}
-                </p>
-                {isFiltered ? (
-                  <Button type="button" variant="outline" size="sm" className="mt-4" onClick={onClearFilters}>
-                    Clear filters
-                  </Button>
-                ) : (
-                  <Button type="button" className="mt-4" size="sm" onClick={onUpload}>
-                    Upload document
-                  </Button>
-                )}
-              </div>
+                    : "Upload a file to keep statements, identity proof and other paperwork in one place."
+                }
+                action={
+                  isFiltered ? (
+                    <Button type="button" variant="outline" size="sm" onClick={onClearFilters}>
+                      Clear filters
+                    </Button>
+                  ) : (
+                    <Button type="button" size="sm" onClick={onUpload}>
+                      Upload document
+                    </Button>
+                  )
+                }
+              />
             </TableCell>
           </TableRow>
         ) : (
@@ -286,7 +242,7 @@ export function DocumentsTable({
                           {title}
                         </Link>
                         {document.label ? (
-                          <Badge variant="outline" dot={false} className={badgeClass}>
+                          <Badge variant="outline" dot={false} size="sm">
                             {document.label}
                           </Badge>
                         ) : null}
@@ -303,19 +259,14 @@ export function DocumentsTable({
                   </div>
                 </TableCell>
                 <TableCell className="hidden min-[901px]:table-cell">
-                  <Badge variant={financial ? "brand" : "info"} className={badgeClass}>
+                  <Badge variant={financial ? "brand" : "info"} size="sm">
                     {categoryLabel(categoryKey(document.category), document.category)}
                   </Badge>
                 </TableCell>
                 <TableCell className="hidden min-[901px]:table-cell">
                   {profile ? (
                     <div className="flex min-w-0 items-center gap-1.5">
-                      <span
-                        aria-hidden
-                        className="grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full bg-primary-soft text-[10px] font-semibold text-primary-soft-foreground"
-                      >
-                        {profileInitials(name)}
-                      </span>
+                      <ProfileAvatar name={name} size="xs" />
                       <span className="truncate">{name}</span>
                       {extraProfiles > 0 ? (
                         <span className="shrink-0 text-xs text-muted-foreground">+{extraProfiles}</span>
@@ -326,15 +277,15 @@ export function DocumentsTable({
                   )}
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
-                  <span className="inline-flex h-5 items-center rounded-md bg-muted px-1.5 text-[11.5px] font-semibold tabular-nums">
+                  <Badge variant="secondary" dot={false} size="xs" className="rounded-md tabular-nums">
                     v{document.latestVersion}
-                  </span>
-                  <Badge variant="success" dot={false} className={cn(badgeClass, "ml-1")}>
+                  </Badge>
+                  <Badge variant="success" dot={false} size="sm" className="ml-1">
                     Latest
                   </Badge>
                 </TableCell>
                 <TableCell className="hidden min-[901px]:table-cell">
-                  <SourceBadge source={document.source} className={badgeClass} />
+                  <SourceBadge source={document.source} size="sm" />
                 </TableCell>
                 <TableCell className="hidden whitespace-nowrap text-muted-foreground tabular-nums sm:table-cell">
                   {updated}
@@ -345,9 +296,9 @@ export function DocumentsTable({
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
+                        size="icon-sm"
                         aria-label={`Actions for ${label}`}
-                        className="h-8 w-8 p-0 text-muted-foreground hover:bg-primary-soft hover:text-primary data-[state=open]:bg-primary-soft data-[state=open]:text-primary"
+                        className="text-muted-foreground hover:bg-primary-soft hover:text-primary data-[state=open]:bg-primary-soft data-[state=open]:text-primary"
                       >
                         <MoreHorizontal />
                       </Button>

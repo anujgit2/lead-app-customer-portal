@@ -30,8 +30,8 @@ export function ConfirmRevokeDialog({
     <Dialog open={open} onOpenChange={(next) => !pending && onOpenChange(next)}>
       <DialogContent className={DOCUMENT_DIALOG_CLASS}>
         <DialogHeader>
-          <DialogTitle className="tracking-tight text-slate-900">Revoke access</DialogTitle>
-          <DialogDescription className="text-sm font-normal text-slate-500">
+          <DialogTitle className="tracking-tight text-foreground">Revoke access</DialogTitle>
+          <DialogDescription className="text-sm font-normal text-muted-foreground">
             {recipientName} will lose access immediately.
           </DialogDescription>
         </DialogHeader>
@@ -39,13 +39,12 @@ export function ConfirmRevokeDialog({
           <Button
             type="button"
             variant="outline"
-            className="h-8"
             disabled={pending}
             onClick={() => onOpenChange(false)}
            size="sm">
             Cancel
           </Button>
-          <Button type="button" variant="destructive" className="h-8" loading={pending} onClick={onConfirm} size="sm">
+          <Button type="button" variant="destructive" loading={pending} onClick={onConfirm} size="sm">
             Revoke access
           </Button>
         </DialogFooter>

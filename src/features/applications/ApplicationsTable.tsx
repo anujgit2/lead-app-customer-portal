@@ -4,15 +4,15 @@ import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   ChevronLeft,
   ChevronRight,
   FileText,
   RefreshCw,
   Search,
 } from "lucide-react";
+import { EmptyState } from "@/components/EmptyState";
+import { SortableTableHead, type SortDirection } from "@/components/SortableTableHead";
+import { TableSkeletonRows } from "@/components/TableSkeleton";
 import {
   Table,
   TableBody,
@@ -49,7 +49,7 @@ const STATUS_FILTERS: { id: "ALL" | ApplicationStatus; label: string }[] = [
 ];
 
 type SortKey = "application" | "program" | "amount" | "updated";
-type SortDir = "asc" | "desc";
+type SortDir = SortDirection;
 
 export function getApplicationHref(app: LoanApplication): string {
   const params = new URLSearchParams({ id: app.id });
@@ -109,44 +109,7 @@ function listCount(total: number, page: number, size: number, visible: number): 
   return `Showing ${start}–${start + visible - 1} of ${total} applications`;
 }
 
-function SortHeader({
-  label,
-  column,
-  sort,
-  dir,
-  onSort,
-  align,
-  className,
-}: {
-  label: string;
-  column: SortKey;
-  sort: SortKey;
-  dir: SortDir;
-  onSort: (column: SortKey) => void;
-  align?: "right";
-  className?: string;
-}) {
-  const active = sort === column;
-  const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;
-  return (
-    <TableHead
-      aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
-      className={cn(active && "text-foreground", align === "right" && "text-right", className)}
-    >
-      <button
-        type="button"
-        className={cn(
-          "inline-flex h-full cursor-pointer items-center gap-1 rounded-sm font-semibold text-inherit transition-colors duration-150 hover:text-foreground",
-          align === "right" && "ml-auto"
-        )}
-        onClick={() => onSort(column)}
-      >
-        {label}
-        <Icon className="h-3.5 w-3.5" aria-hidden />
-      </button>
-    </TableHead>
-  );
-}
+const SortHeader = SortableTableHead<SortKey>;
 
 interface ApplicationsTableProps {
   applications?: LoanApplication[];
@@ -325,38 +288,29 @@ export function ApplicationsTable({
         </TableHeader>
         <TableBody>
           {loading ? (
-            Array.from({ length: 5 }, (_, index) => (
-              <TableRow key={index} className="hover:bg-transparent">
-                <TableCell colSpan={6} className="h-12">
-                  {index === 0 ? <p className="sr-only">Loading applications</p> : null}
-                  <div className="h-8 animate-pulse rounded-md bg-muted" aria-hidden />
-                </TableCell>
-              </TableRow>
-            ))
+            <TableSkeletonRows label="Loading applications" columns={6} />
           ) : pageItems.length === 0 ? (
             <TableRow className="hover:bg-transparent">
               <TableCell colSpan={6} className="h-auto !p-0">
                 {emptyState && !filtered ? (
                   emptyState
                 ) : (
-                  <div className="flex flex-col items-center gap-1 px-6 py-10 text-center" role="status">
-                    <span className="tone-brand mb-3 grid h-12 w-12 place-items-center rounded-lg">
-                      {filtered ? <Search className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
-                    </span>
-                    <h3 className="text-base font-semibold leading-6 text-foreground">
-                      {filtered ? "No applications found" : "No applications yet"}
-                    </h3>
-                    <p className="max-w-[36ch] text-sm text-muted-foreground">
-                      {filtered
+                  <EmptyState
+                    icon={filtered ? Search : FileText}
+                    title={filtered ? "No applications found" : "No applications yet"}
+                    description={
+                      filtered
                         ? "Try a different search or clear the filters."
-                        : "Create an application to get started."}
-                    </p>
-                    {filtered ? (
-                      <Button type="button" variant="outline" size="sm" className="mt-4" onClick={clearFilters}>
-                        Clear filters
-                      </Button>
-                    ) : null}
-                  </div>
+                        : "Create an application to get started."
+                    }
+                    action={
+                      filtered ? (
+                        <Button type="button" variant="outline" size="sm" onClick={clearFilters}>
+                          Clear filters
+                        </Button>
+                      ) : null
+                    }
+                  />
                 )}
               </TableCell>
             </TableRow>
@@ -407,7 +361,7 @@ export function ApplicationsTable({
                     {formatCurrency(app.loanAmount || 0)}
                   </TableCell>
                   <TableCell>
-                    <ApplicationStatusBadge status={app.status} className="h-[22px] px-2 text-xs" />
+                    <ApplicationStatusBadge status={app.status} size="sm" />
                   </TableCell>
                   <TableCell className="hidden whitespace-nowrap text-muted-foreground tabular-nums sm:table-cell">
                     {displayDate(app.updatedAt)}
@@ -449,8 +403,7 @@ export function ApplicationsTable({
             <Button
               type="button"
               variant="outline"
-              size="sm"
-              className="h-8 w-8 p-0"
+              size="icon-sm"
               aria-label="Previous page"
               disabled={loading || pageIndex <= 0}
               onClick={() => setPage(Math.max(0, pageIndex - 1))}
@@ -463,8 +416,7 @@ export function ApplicationsTable({
             <Button
               type="button"
               variant="outline"
-              size="sm"
-              className="h-8 w-8 p-0"
+              size="icon-sm"
               aria-label="Next page"
               disabled={loading || pageIndex + 1 >= pageCount}
               onClick={() => setPage(pageIndex + 1)}

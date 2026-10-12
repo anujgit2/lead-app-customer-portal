@@ -115,8 +115,8 @@ function ImportDialogBody({
     <Dialog open onOpenChange={(next) => !importer.isPending && onOpenChange(next)}>
       <DialogContent className={DOCUMENT_DIALOG_CLASS}>
         <DialogHeader>
-          <DialogTitle className="tracking-tight text-slate-900">Import from DigiLocker</DialogTitle>
-          <DialogDescription className="text-sm font-normal text-slate-500">
+          <DialogTitle className="tracking-tight text-foreground">Import from DigiLocker</DialogTitle>
+          <DialogDescription className="text-sm font-normal text-muted-foreground">
             Pull a verified document into your portal. It will show as Verified via DigiLocker.
           </DialogDescription>
         </DialogHeader>
@@ -126,24 +126,24 @@ function ImportDialogBody({
             <p className="text-sm text-destructive" role="alert">
               DigiLocker is unavailable right now.
             </p>
-            <Button type="button" className="h-8" onClick={onUploadInstead} size="sm">
+            <Button type="button" onClick={onUploadInstead} size="sm">
               Upload manually instead
             </Button>
           </div>
         ) : null}
 
         {!providerDown && connection.isLoading ? (
-          <p className="text-sm text-slate-500" aria-busy="true">
+          <p className="text-sm text-muted-foreground" aria-busy="true">
             Checking DigiLocker…
           </p>
         ) : null}
 
         {!providerDown && !connection.isLoading && displayStep === 1 ? (
           <div className="space-y-4">
-            <p className="text-sm font-normal text-slate-500">
+            <p className="text-sm font-normal text-muted-foreground">
               Connect DigiLocker to see documents you can import. You&apos;ll come back here afterwards.
             </p>
-            <Button type="button" className="h-8" loading={connect.isPending} onClick={() => void startConnect()} size="sm">
+            <Button type="button" loading={connect.isPending} onClick={() => void startConnect()} size="sm">
               Connect DigiLocker
             </Button>
           </div>
@@ -151,30 +151,30 @@ function ImportDialogBody({
 
         {!providerDown && displayStep === 2 ? (
           <div className="space-y-6">
-            {documents.isLoading ? <p className="text-sm text-slate-500">Loading documents…</p> : null}
+            {documents.isLoading ? <p className="text-sm text-muted-foreground">Loading documents…</p> : null}
             {documents.isError ? (
               <div className="space-y-3">
                 <p className="text-sm text-destructive" role="alert">
                   DigiLocker is unavailable right now.
                 </p>
-                <Button type="button" className="h-8" onClick={onUploadInstead} size="sm">
+                <Button type="button" onClick={onUploadInstead} size="sm">
                   Upload manually instead
                 </Button>
               </div>
             ) : null}
             {documents.data && documents.data.length === 0 ? (
-              <p className="text-sm text-slate-500">No documents are available to import.</p>
+              <p className="text-sm text-muted-foreground">No documents are available to import.</p>
             ) : null}
             {documents.data && documents.data.length > 0 ? (
               <fieldset className="space-y-2">
-                <legend className="text-sm font-medium text-slate-900">Choose a document</legend>
+                <legend className="text-sm font-medium text-foreground">Choose a document</legend>
                 <div className="max-h-48 space-y-2 overflow-y-auto">
                   {documents.data.map((item) => (
                     <label
                       key={item.id}
                       className={cn(
                         "flex min-h-11 cursor-pointer items-start gap-3 rounded-xl border px-3 py-3 transition-all duration-200 ease-out",
-                        selectedId === item.id ? "border-blue-500 bg-blue-50/50" : "border-slate-100"
+                        selectedId === item.id ? "border-blue-500 bg-primary-soft/50" : "border-border"
                       )}
                     >
                       <input
@@ -185,8 +185,8 @@ function ImportDialogBody({
                         onChange={() => setSelectedId(item.id)}
                       />
                       <span>
-                        <span className="block text-sm font-semibold text-slate-900">{item.name}</span>
-                        <span className="block text-sm font-normal text-slate-500">
+                        <span className="block text-sm font-semibold text-foreground">{item.name}</span>
+                        <span className="block text-sm font-normal text-muted-foreground">
                           {[item.issuer, item.issuedAt ? formatDisplayDate(item.issuedAt) : ""]
                             .filter(Boolean)
                             .join(" · ")}
@@ -215,10 +215,10 @@ function ImportDialogBody({
             />
 
             <DialogFooter className="gap-2">
-              <Button type="button" variant="outline" className="h-8" onClick={onUploadInstead} size="sm">
+              <Button type="button" variant="outline" onClick={onUploadInstead} size="sm">
                 Upload manually instead
               </Button>
-              <Button type="button" className="h-8" disabled={!canContinue} onClick={() => setStep(3)} size="sm">
+              <Button type="button" disabled={!canContinue} onClick={() => setStep(3)} size="sm">
                 Continue
               </Button>
             </DialogFooter>
@@ -227,29 +227,29 @@ function ImportDialogBody({
 
         {!providerDown && displayStep === 3 && selectedDocument ? (
           <div className="space-y-5">
-            <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm">
-              <p className="font-semibold text-slate-900">{selectedDocument.name}</p>
-              <p className="text-slate-500">
+            <div className="space-y-2 rounded-xl border border-border bg-muted/50 p-4 text-sm">
+              <p className="font-semibold text-foreground">{selectedDocument.name}</p>
+              <p className="text-muted-foreground">
                 {selectedType?.name}
                 {label.trim() ? ` · ${label.trim()}` : ""}
               </p>
-              <p className="text-slate-500">This will show as Verified via DigiLocker.</p>
+              <p className="text-muted-foreground">This will show as Verified via DigiLocker.</p>
             </div>
             {importer.isError ? (
               <div className="space-y-3">
                 <p className="text-sm text-destructive" role="alert">
                   Couldn&apos;t import this document. Please try again.
                 </p>
-                <Button type="button" variant="outline" className="h-8" onClick={() => void confirmImport()} size="sm">
+                <Button type="button" variant="outline" onClick={() => void confirmImport()} size="sm">
                   Retry
                 </Button>
               </div>
             ) : null}
             <DialogFooter className="gap-2">
-              <Button type="button" variant="outline" className="h-8" onClick={() => setStep(2)} size="sm">
+              <Button type="button" variant="outline" onClick={() => setStep(2)} size="sm">
                 Back
               </Button>
-              <Button type="button" className="h-8" loading={importer.isPending} onClick={() => void confirmImport()} size="sm">
+              <Button type="button" loading={importer.isPending} onClick={() => void confirmImport()} size="sm">
                 Import
               </Button>
             </DialogFooter>

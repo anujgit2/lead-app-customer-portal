@@ -6,10 +6,11 @@ import { ChevronLeft, ChevronRight, Download, Search, Share2, Upload } from "luc
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ErrorState } from "@/components/ErrorState";
+import { PageHeader, PageShell } from "@/components/PageShell";
 import { parseApiError } from "@/lib/api-error";
 import { useProfiles } from "@/features/profiles/api/queries";
 import { useDocuments, useDocumentTypes } from "../api/queries";
-import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useFileDownload } from "../hooks/useFileDownload";
 import type { PortalDocument } from "../types";
 import { filterDocuments } from "../utils/format";
@@ -212,21 +213,17 @@ export function DocumentsPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-4 py-5 sm:px-8 sm:pb-16 sm:pt-7">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold leading-8 tracking-[-0.02em] text-foreground">
-            Documents
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Upload, find and share files for your application.
-          </p>
-        </div>
-        <Button type="button" className="w-full sm:w-auto" onClick={() => openUpload()} size="sm">
-          <Upload className="h-4 w-4" />
-          Upload document
-        </Button>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Documents"
+        description="Upload, find and share files for your application."
+        actions={
+          <Button type="button" className="w-full sm:w-auto" onClick={() => openUpload()} size="sm">
+            <Upload className="h-4 w-4" />
+            Upload document
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1 basis-full sm:max-w-[420px] sm:basis-[280px]">
@@ -404,8 +401,7 @@ export function DocumentsPage() {
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0"
+                size="icon-sm"
                 aria-label="Previous page"
                 disabled={loading || pageIndex <= 0}
                 onClick={() => setPage(Math.max(0, pageIndex - 1))}
@@ -421,8 +417,7 @@ export function DocumentsPage() {
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0"
+                size="icon-sm"
                 aria-label="Next page"
                 disabled={loading || pageIndex + 1 >= pageCount}
                 onClick={() => setPage(pageIndex + 1)}
@@ -477,6 +472,6 @@ export function DocumentsPage() {
           tag: document.label || undefined,
         }))}
       />
-    </div>
+    </PageShell>
   );
 }

@@ -401,6 +401,20 @@ describe("return paths", () => {
     assert.equal(safeInternalPath("https://evil.example"), null);
   });
 
+  it("rejects encoded and backslash tricks", () => {
+    assert.equal(safeInternalPath("/\\evil.example"), null);
+    assert.equal(safeInternalPath("/%2F%2Fevil.example"), null);
+    assert.equal(safeInternalPath("/dashboard%5c..%5cevil"), null);
+    assert.equal(safeInternalPath("/dashboard\nLocation: x"), null);
+  });
+
+  it("only returns to known app sections", () => {
+    assert.equal(safeInternalPath("/profiles/abc?tab=documents"), "/profiles/abc?tab=documents");
+    assert.equal(safeInternalPath("/dashboard"), "/dashboard");
+    assert.equal(safeInternalPath("/auth/login"), null);
+    assert.equal(safeInternalPath("/dashboardx"), null);
+  });
+
   it("appends the created profile to the return path", () => {
     assert.equal(
       withProfileReturn("/loan-application/new?programId=1", "profile-9", 2),

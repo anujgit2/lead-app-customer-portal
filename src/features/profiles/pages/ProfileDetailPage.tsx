@@ -8,6 +8,7 @@ import { Archive, ChevronRight, Download, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ErrorState";
+import { PageHeader, PageShell } from "@/components/PageShell";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { listDocuments } from "@/features/documents/api/documentsApi";
 import { parseApiError } from "@/lib/api-error";
@@ -24,17 +25,36 @@ import { ProfileMemoDialog } from "../components/ProfileMemoDialog";
 import { ProfileOverview } from "../components/ProfileOverview";
 import { ProfileVersionsTab } from "../components/ProfileVersionsTab";
 import { VersionConflictDialog } from "../components/VersionConflictDialog";
-import { formatProfileWhen, profileInitials, profileStatusLabel, profileTypeLabel, showIdentifier } from "../utils/display";
+import { ProfileAvatar } from "../components/ProfileBadges";
+import { formatProfileWhen, profileStatusLabel, profileTypeLabel, showIdentifier } from "../utils/display";
 
-function DetailSkeleton() {
+export function ProfileDetailSkeleton() {
   return (
-    <div className="mx-auto flex w-full max-w-[1040px] flex-col gap-6 px-4 pb-20 pt-6 sm:px-8" aria-busy="true">
-      <p className="sr-only">Loading profile</p>
-      <div className="h-5 w-40 animate-pulse rounded-md bg-muted" />
-      <div className="h-44 animate-pulse rounded-2xl bg-muted" />
-      <div className="h-10 animate-pulse rounded-md bg-muted" />
-      <div className="h-64 animate-pulse rounded-lg bg-muted" />
-    </div>
+    <PageShell width="detail" className="pb-20 sm:pb-20">
+      <div className="flex flex-col gap-6" aria-busy="true">
+        <p className="sr-only">Loading profile</p>
+        <div className="h-5 w-40 animate-pulse rounded-md bg-muted" />
+        <div className="h-44 animate-pulse rounded-2xl bg-muted" />
+        <div className="h-10 animate-pulse rounded-md bg-muted" />
+        <div className="h-64 animate-pulse rounded-lg bg-muted" />
+      </div>
+    </PageShell>
+  );
+}
+
+function ProfileNotFound({ description }: { description?: string }) {
+  return (
+    <PageShell width="narrow">
+      <PageHeader
+        title="We couldn't find this profile"
+        description={description}
+        actions={
+          <Button asChild size="sm">
+            <Link href="/profiles">Back to profiles</Link>
+          </Button>
+        }
+      />
+    </PageShell>
   );
 }
 
@@ -80,36 +100,17 @@ export function ProfileDetailPage() {
   };
 
   if (!route.ready || (id.length > 0 && profileQuery.isLoading)) {
-    return <DetailSkeleton />;
+    return <ProfileDetailSkeleton />;
   }
 
   if (!id) {
-    return (
-      <div className="mx-auto max-w-xl space-y-4 p-6 sm:p-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          We couldn&apos;t find this profile
-        </h1>
-        <Button asChild className="h-8" size="sm">
-          <Link href="/profiles">Back to profiles</Link>
-        </Button>
-      </div>
-    );
+    return <ProfileNotFound />;
   }
 
   if (profileQuery.isError) {
     const apiError = parseApiError(profileQuery.error);
     if (apiError.status === 404) {
-      return (
-        <div className="mx-auto max-w-xl space-y-4 p-6 sm:p-8">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            We couldn&apos;t find this profile
-          </h1>
-          <p className="text-sm font-normal text-slate-500">It may have been removed.</p>
-          <Button asChild className="h-8" size="sm">
-            <Link href="/profiles">Back to profiles</Link>
-          </Button>
-        </div>
-      );
+      return <ProfileNotFound description="It may have been removed." />;
     }
     return (
       <div className="mx-auto max-w-2xl p-6 sm:p-8">
@@ -134,16 +135,7 @@ export function ProfileDetailPage() {
   }
 
   if (!profile) {
-    return (
-      <div className="mx-auto max-w-xl space-y-4 p-6 sm:p-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          We couldn&apos;t find this profile
-        </h1>
-        <Button asChild className="h-8" size="sm">
-          <Link href="/profiles">Back to profiles</Link>
-        </Button>
-      </div>
-    );
+    return <ProfileNotFound />;
   }
 
   const name = profile.displayName || "Untitled profile";
@@ -167,7 +159,7 @@ export function ProfileDetailPage() {
     "border-primary-foreground/55 bg-transparent text-primary-foreground hover:bg-primary-foreground/10";
 
   return (
-    <div className={editing ? "mx-auto flex w-full max-w-[1040px] flex-col gap-6 px-4 pb-28 pt-6 sm:px-8" : "mx-auto flex w-full max-w-[1040px] flex-col gap-6 px-4 pb-20 pt-6 sm:px-8"}>
+    <PageShell width="detail" className={editing ? "gap-6 pb-28 sm:pb-28" : "gap-6 pb-20 sm:pb-20"}>
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <Link href="/profiles" className="rounded-sm hover:text-foreground hover:underline">
           Profiles
@@ -242,9 +234,7 @@ export function ProfileDetailPage() {
         </div>
         <div className="relative z-[1] flex flex-col gap-3 rounded-lg bg-card p-4 text-foreground shadow-[var(--shadow-3)]">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-primary-soft-foreground">
-              {profileInitials(name)}
-            </span>
+            <ProfileAvatar name={name} size="lg" className="shrink-0" />
             <div className="min-w-0">
               <p className="text-xs leading-4 text-muted-foreground">{identifierLabel}</p>
               <p className="truncate font-mono text-sm font-semibold tracking-wide">{identifierValue}</p>
@@ -400,6 +390,6 @@ export function ProfileDetailPage() {
         sections={sections}
         onOpenChange={setMemoOpen}
       />
-    </div>
+    </PageShell>
   );
 }

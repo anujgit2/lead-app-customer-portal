@@ -54,21 +54,21 @@ export function DocumentTypeFields({
 
   if (locked) {
     return (
-      <div className="space-y-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
+      <div className="space-y-4 rounded-xl border border-border bg-muted/50 p-4">
         <div>
-          <p className="text-xs font-medium text-slate-500">Category</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900">
+          <p className="text-xs font-medium text-muted-foreground">Category</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">
             {categoryLabel(categoryKey(lockedCategory ?? ""), lockedCategory)}
           </p>
         </div>
         <div>
-          <p className="text-xs font-medium text-slate-500">Type</p>
-          <p className="mt-1 text-sm font-semibold text-slate-900">{lockedTypeName || "Document"}</p>
+          <p className="text-xs font-medium text-muted-foreground">Type</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">{lockedTypeName || "Document"}</p>
         </div>
         {label ? (
           <div>
-            <p className="text-xs font-medium text-slate-500">Label</p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">{label}</p>
+            <p className="text-xs font-medium text-muted-foreground">Label</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">{label}</p>
           </div>
         ) : null}
       </div>
@@ -77,14 +77,14 @@ export function DocumentTypeFields({
 
   return (
     <div className="space-y-5">
-      {isLoading ? <p className="text-sm text-slate-500">Loading document types…</p> : null}
+      {isLoading ? <p className="text-sm text-muted-foreground">Loading document types…</p> : null}
       {isError ? (
         <div className="space-y-3">
           <p className="text-sm text-destructive" role="alert">
             We couldn&apos;t load document types.
           </p>
           {onRetry ? (
-            <Button type="button" variant="outline" onClick={onRetry} className="h-8" size="sm">
+            <Button type="button" variant="outline" onClick={onRetry} size="sm">
               Try again
             </Button>
           ) : null}
@@ -130,7 +130,7 @@ export function DocumentTypeFields({
           </SelectContent>
         </Select>
         {category && visibleTypes.length === 0 && !isLoading ? (
-          <p className="text-sm text-slate-500">No document types in this category.</p>
+          <p className="text-sm text-muted-foreground">No document types in this category.</p>
         ) : null}
       </div>
 
@@ -146,7 +146,7 @@ export function DocumentTypeFields({
           onChange={(event) => onLabelChange(event.target.value)}
           className="h-11 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
         />
-        <p className="text-sm font-normal text-slate-500">
+        <p className="text-sm font-normal text-muted-foreground">
           {selected?.requiresLabel ? "Required for this document type." : "Optional. Add one when it helps you find the file."}
         </p>
       </div>

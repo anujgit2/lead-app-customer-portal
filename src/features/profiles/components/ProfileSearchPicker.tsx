@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { parseApiError } from "@/lib/api-error";
 import type { CustomerProfileSummary } from "@/types";
 import { useProfiles } from "../api/queries";
-import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { profileTypeLabel, showIdentifier } from "../utils/display";
 
 interface ProfileSearchPickerProps {

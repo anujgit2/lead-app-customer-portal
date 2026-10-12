@@ -1,337 +1,397 @@
-"use client";
-
-import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
   ArrowRight,
+  BadgeCheck,
+  Check,
   CheckCircle2,
-  Info,
+  ChevronDown,
+  FileText,
+  Files,
+  History,
+  Lock,
+  Share2,
   ShieldCheck,
   Sparkles,
-  TrendingUp,
+  type LucideIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CurvedGrid } from "@/components/CurvedGrid";
 import { LandingHeader } from "@/features/landing/LandingHeader";
 import { LandingFooter } from "@/features/landing/LandingFooter";
 import {
-  GRANT_PROGRAMS,
-  LOAN_PROGRAMS,
-  STATS,
-  STEPS,
-  type ProgramCard,
+  FAQS,
+  HERO_POINTS,
+  HOW_IT_WORKS,
+  MORE_FEATURES,
+  PROFILE_POINTS,
+  SHARE_POINTS,
 } from "@/features/landing/landing-content";
+import {
+  FaqIllustration,
+  HeroIllustration,
+  ShareIllustration,
+  VersionsIllustration,
+} from "@/features/landing/illustrations";
+import { siteCopy } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-function SectionHeading({
-  eyebrow,
-  title,
-  description,
-  className,
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-  className?: string;
-}) {
+const HERO_ICONS = [FileText, History, Files, Share2];
+const MORE_ICONS = [FileText, Files, BadgeCheck, Lock];
+const TRUST = ["Saved as you go", "Private by default", "Verified DigiLocker imports"];
+
+const interactive =
+  "transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]";
+
+function IconTile({ icon: Icon, className }: { icon: LucideIcon; className?: string }) {
   return (
-    <div className={cn("max-w-2xl", className)}>
-      <span className="inline-flex items-center rounded-full border border-slate-100 bg-slate-50 px-3 py-1 text-xs font-medium tracking-tight text-slate-600">
-        {eyebrow}
-      </span>
-      <h2 className="mt-4 text-2xl sm:text-3xl font-semibold tracking-tight text-slate-900">
-        {title}
-      </h2>
-      <p className="mt-3 text-slate-500 leading-relaxed">{description}</p>
-    </div>
+    <span
+      className={cn(
+        "grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground shadow-sm",
+        className
+      )}
+    >
+      <Icon className="h-5 w-5" aria-hidden />
+    </span>
   );
 }
 
-function ProgramGrid({
-  programs,
-  columns,
+function SectionHeading({
+  id,
+  eyebrow,
+  title,
+  description,
+  align = "left",
 }: {
-  programs: ProgramCard[];
-  columns: 3 | 4;
+  id: string;
+  eyebrow: string;
+  title: string;
+  description?: string;
+  align?: "left" | "center";
 }) {
   return (
-    <div
-      className={cn(
-        "grid gap-5 sm:grid-cols-2",
-        columns === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"
+    <div className={cn("max-w-2xl", align === "center" && "mx-auto text-center")}>
+      <span className="inline-flex items-center rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary-soft-foreground ring-1 ring-inset ring-primary/20">
+        {eyebrow}
+      </span>
+      <h2
+        id={id}
+        className="mt-3 text-[28px] font-semibold leading-[34px] tracking-[-0.03em] text-foreground sm:text-[34px] sm:leading-[40px]"
+      >
+        {title}
+      </h2>
+      {description && (
+        <p className="mt-3 text-base leading-7 text-muted-foreground">{description}</p>
       )}
-    >
-      {programs.map((program) => (
-        <article
-          key={program.name}
-          className="flex flex-col rounded-lg border border-border bg-card p-6 shadow-sm"
-        >
-          <div className="tone-brand flex h-10 w-10 items-center justify-center rounded-md">
-            <program.icon className="h-5 w-5" />
-          </div>
-
-          <h3 className="mt-4 font-semibold tracking-tight text-slate-900">
-            {program.name}
-          </h3>
-          <p className="mt-1 font-semibold tracking-tight text-primary">
-            {program.amount}
-          </p>
-          <p className="mt-2.5 text-sm leading-relaxed text-slate-500">
-            {program.summary}
-          </p>
-
-          <ul className="mt-4 space-y-2 border-t border-slate-100 pt-4">
-            {program.highlights.map((highlight) => (
-              <li key={highlight} className="flex gap-2 text-sm text-slate-600">
-                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                <span className="leading-relaxed">{highlight}</span>
-              </li>
-            ))}
-          </ul>
-        </article>
-      ))}
     </div>
   );
 }
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
       <LandingHeader />
 
-      <main>
+      <main className="flex flex-col">
         {/* Hero */}
-        <section className="relative overflow-hidden bg-background pt-28 pb-16 sm:pt-36 sm:pb-20">
-          <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 lg:grid-cols-2 lg:gap-16">
-            <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1 text-xs font-medium text-primary-soft-foreground">
-                <Sparkles className="h-3 w-3" />
-                Collateral-free MSME credit up to ₹10 crore
+        <section aria-label="Overview" className="lp-hero-bg relative overflow-hidden text-white">
+          <CurvedGrid />
+          <div className="relative mx-auto grid max-w-[1160px] items-center gap-12 px-4 pb-20 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[1.15fr_1fr] lg:pb-24">
+            <div className="min-w-0">
+              <span
+                className="lp-rise inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur"
+                style={{ animationDelay: "0s" }}
+              >
+                <Sparkles className="h-3.5 w-3.5 text-brand-glow" aria-hidden />
+                Guided loan applications, made simple
               </span>
-
-              <h1 className="mt-5 text-4xl font-semibold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl">
-                Government-backed funding for Indian businesses
+              <h1
+                className="lp-rise mt-5 max-w-[16ch] text-[38px] font-semibold leading-[44px] tracking-[-0.04em] sm:text-[52px] sm:leading-[58px]"
+                style={{ animationDelay: "0.05s" }}
+              >
+                Apply for your loan online. Keep{" "}
+                <span className="lp-accent-text">every document</span> in one place.
               </h1>
-
-              <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-500">
-                Compare MUDRA, CGTMSE, Stand-Up India, and PMEGP alongside
-                startup grants and subsidies. Build your profile once and apply
-                without running between bank branches.
+              <p
+                className="lp-rise mt-5 max-w-[46ch] text-base leading-7 text-white/75 sm:text-[17px]"
+                style={{ animationDelay: "0.15s" }}
+              >
+                One guided application, a profile that remembers your details, and secure sharing with your lender.
               </p>
-
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <div className="lp-rise mt-8 flex flex-wrap gap-3" style={{ animationDelay: "0.25s" }}>
                 <Button
                   asChild
-                  size="xl"
-                  className="gap-2 transition-all duration-200 ease-out hover:-translate-y-0.5"
+                  size="lg"
+                  className={cn(
+                    "h-12 gap-2 bg-white px-6 text-[15px] font-semibold text-brand-deep shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)] hover:bg-white/90",
+                    interactive
+                  )}
                 >
                   <Link href="/auth/register">
-                    Get started free
+                    Create an account
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
                 <Button
                   asChild
-                  size="xl"
+                  size="lg"
                   variant="outline"
-                  className="transition-all duration-200 ease-out hover:-translate-y-0.5"
+                  className={cn(
+                    "h-12 border-white/25 bg-white/5 px-6 text-[15px] font-semibold text-white backdrop-blur hover:bg-white/15 hover:text-white",
+                    interactive
+                  )}
                 >
                   <Link href="/auth/login">Sign in</Link>
                 </Button>
               </div>
-
-              <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-500">
-                <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                  Bank-grade encryption
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  Free to check your eligibility
-                </span>
-              </div>
+              <ul
+                className="lp-rise mt-8 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-white/70"
+                style={{ animationDelay: "0.35s" }}
+              >
+                {TRUST.map((item) => (
+                  <li key={item} className="inline-flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-brand-glow" aria-hidden />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <p
+                className="lp-rise mt-6 max-w-[52ch] border-l-2 border-brand-glow/60 pl-3 text-[13px] leading-5 text-white/65"
+                style={{ animationDelay: "0.42s" }}
+              >
+                Invited by a lender or agent? Open the link in your email and your application will be waiting for you.
+              </p>
             </div>
 
-            <div className="relative">
-              <div className="overflow-hidden rounded-3xl border border-slate-100 shadow-[0_20px_60px_rgb(0,0,0,0.10)]">
-                <Image
-                  src="/images/hero-india-msme.jpg"
-                  alt="Two Indian small business owners reviewing their loan application on a tablet in their textile workshop"
-                  width={1600}
-                  height={1066}
-                  priority
-                  className="h-full w-full object-cover"
-                />
-              </div>
-
-              <div className="absolute -bottom-6 -left-4 hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_12px_40px_rgb(0,0,0,0.08)] sm:block">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50">
-                    <TrendingUp className="h-5 w-5 text-emerald-600" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-semibold tracking-tight text-slate-900">
-                      ₹20 lakh
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      MUDRA ceiling under Tarun Plus
-                    </p>
-                  </div>
+            <div className="lp-rise relative mx-auto w-full max-w-[460px]" style={{ animationDelay: "0.2s" }}>
+              <div aria-hidden className="absolute -inset-4 rounded-[28px] bg-brand-glow/20 blur-2xl" />
+              <div className="relative overflow-hidden rounded-2xl bg-card text-foreground shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] ring-1 ring-white/20">
+                <div className="flex items-center gap-1.5 border-b border-border bg-muted/70 px-4 py-2.5">
+                  <span className="h-2.5 w-2.5 rounded-full bg-danger/70" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-warning/70" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-success/70" />
+                  <span className="ml-3 text-xs font-medium text-muted-foreground">Your application</span>
                 </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Stats */}
-        <section className="border-y border-slate-100 bg-white">
-          <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-6 py-10 lg:grid-cols-4">
-            {STATS.map((stat) => (
-              <div key={stat.label}>
-                <p className="text-2xl font-semibold tracking-tight text-slate-900">
-                  {stat.value}
-                </p>
-                <p className="mt-1 text-sm leading-relaxed text-slate-500">
-                  {stat.label}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Business loans */}
-        <section id="business-loans" className="scroll-mt-20 bg-white py-16 sm:py-20">
-          <div className="mx-auto max-w-7xl px-6">
-            <SectionHeading
-              eyebrow="Business loans"
-              title="Four schemes that cover most Indian MSMEs"
-              description="These are central government schemes delivered through scheduled banks, RRBs, small finance banks, and NBFCs — with the government guaranteeing part of the risk so you can borrow without pledging property."
-            />
-
-            <div className="mt-10">
-              <ProgramGrid programs={LOAN_PROGRAMS} columns={4} />
-            </div>
-          </div>
-        </section>
-
-        {/* Grants and subsidies */}
-        <section id="grants" className="scroll-mt-20 bg-slate-50/70 py-16 sm:py-20">
-          <div className="mx-auto max-w-7xl px-6">
-            <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-              <div className="order-2 overflow-hidden rounded-3xl border border-slate-100 shadow-[0_20px_60px_rgb(0,0,0,0.08)] lg:order-1">
-                <Image
-                  src="/images/grants-india-startup.jpg"
-                  alt="A young Indian startup team examining a hardware prototype in an incubator workshop"
-                  width={1200}
-                  height={800}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-
-              <div className="order-1 lg:order-2">
-                <SectionHeading
-                  eyebrow="Grants & subsidies"
-                  title="Support you do not pay back"
-                  description="India runs subsidies and seed grants alongside its lending schemes. They are narrower than loans and competitively assessed, but they reduce what you borrow rather than adding to it."
-                />
-
-                <div className="mt-5 flex gap-3 rounded-2xl border border-amber-100 bg-amber-50/70 p-5">
-                  <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-                  <p className="text-sm leading-relaxed text-amber-900">
-                    <span className="font-medium">Worth knowing:</span> most
-                    Indian &ldquo;grants&rdquo; are really subsidies attached to
-                    a loan. PMEGP and CLCSS reduce your principal, not your
-                    paperwork. Only the Startup India Seed Fund pays out as a
-                    true non-repayable grant.
-                  </p>
+                <div className="border-b border-border bg-primary-soft">
+                  <HeroIllustration />
                 </div>
+                <ul className="grid grid-cols-1 sm:grid-cols-2">
+                  {HERO_POINTS.map((point, index) => {
+                    const Icon = HERO_ICONS[index];
+                    return (
+                      <li
+                        key={point.title}
+                        className={cn(
+                          "flex items-start gap-3 border-border px-4 py-4",
+                          index < HERO_POINTS.length - 1 && "border-b sm:border-b-0",
+                          index < 2 && "sm:border-b",
+                          index % 2 === 0 && "sm:border-r"
+                        )}
+                      >
+                        <IconTile icon={Icon} className="h-8 w-8 rounded-md [&_svg]:h-4 [&_svg]:w-4" />
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-semibold leading-5 text-foreground">{point.title}</p>
+                          <p className="mt-0.5 text-xs leading-[18px] text-muted-foreground">{point.description}</p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
-            </div>
-
-            <div className="mt-10">
-              <ProgramGrid programs={GRANT_PROGRAMS} columns={3} />
             </div>
           </div>
         </section>
 
         {/* How it works */}
-        <section id="how-it-works" className="scroll-mt-20 bg-white py-16 sm:py-20">
-          <div className="mx-auto max-w-7xl px-6">
+        <section
+          id="how"
+          aria-labelledby="how-h"
+          className="scroll-mt-16 border-b border-border bg-card py-16 sm:py-20"
+        >
+          <div className="mx-auto flex max-w-[1160px] flex-col gap-10 px-4 sm:px-6">
             <SectionHeading
+              id="how-h"
               eyebrow="How it works"
-              title="From sign-up to submitted in three steps"
-              description="One profile, reused across every scheme you apply to."
+              title="From sign-up to your lender in four steps"
+              align="center"
+            />
+            <ol className="lp-reveal relative grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <span
+                aria-hidden
+                className="absolute left-[12%] right-[12%] top-7 hidden h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent lg:block"
+              />
+              {HOW_IT_WORKS.map((step, index) => (
+                <li
+                  key={step.title}
+                  className={cn(
+                    "relative flex flex-col items-center gap-3 rounded-xl border border-border bg-background p-6 text-center shadow-sm hover:border-primary/40 hover:shadow-md",
+                    interactive
+                  )}
+                >
+                  <span className="lp-glow grid h-10 w-10 place-items-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                    {index + 1}
+                  </span>
+                  <h3 className="text-base font-semibold tracking-tight text-foreground">{step.title}</h3>
+                  <p className="text-sm leading-6 text-muted-foreground">{step.description}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section id="features" aria-labelledby="feat-h" className="scroll-mt-16 py-16 sm:py-20">
+          <div className="mx-auto flex max-w-[1160px] flex-col gap-10 px-4 sm:px-6">
+            <SectionHeading
+              id="feat-h"
+              eyebrow="Features"
+              title="Made for customers applying for a loan"
+              description="Everything you need to apply, keep your records and share them with confidence."
             />
 
-            <div className="mt-10 grid gap-5 sm:grid-cols-3">
-              {STEPS.map((step, index) => (
+            <div className="lp-reveal grid gap-5 lg:grid-cols-2">
+              <article
+                className={cn(
+                  "lp-hero-bg relative flex flex-col gap-4 overflow-hidden rounded-2xl p-7 text-white shadow-lg",
+                  interactive
+                )}
+              >
+                <CurvedGrid />
+                <IconTile icon={History} className="relative bg-white text-brand-deep" />
+                <h3 className="relative text-xl font-semibold tracking-tight">Your profile, with a full history</h3>
+                <p className="relative max-w-[52ch] text-sm leading-6 text-white/75">
+                  Your details are saved once and reused. Every change is remembered, so you can see what changed and return to an earlier version.
+                </p>
+                <ul className="relative flex flex-col gap-2 text-sm text-white/90">
+                  {PROFILE_POINTS.map((point) => (
+                    <li key={point} className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-glow" strokeWidth={3} aria-hidden />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="relative mt-auto rounded-xl bg-card px-3 py-2 shadow-md">
+                  <VersionsIllustration />
+                </div>
+              </article>
+
+              <article
+                className={cn(
+                  "flex flex-col gap-4 rounded-2xl border border-border bg-card p-7 shadow-sm hover:border-primary/40 hover:shadow-lg",
+                  interactive
+                )}
+              >
+                <IconTile icon={ShieldCheck} />
+                <h3 className="text-xl font-semibold tracking-tight text-foreground">Share only what you choose</h3>
+                <p className="max-w-[52ch] text-sm leading-6 text-muted-foreground">
+                  Send a private link to your lender. Recipients confirm their email with a one-time code before they can open anything.
+                </p>
+                <ul className="flex flex-col gap-2 text-sm text-foreground">
+                  {SHARE_POINTS.map((point) => (
+                    <li key={point} className="flex items-start gap-2">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" strokeWidth={3} aria-hidden />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-auto rounded-xl bg-primary-soft px-3 py-2">
+                  <ShareIllustration />
+                </div>
+              </article>
+            </div>
+
+            <div className="lp-reveal grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {MORE_FEATURES.map((feature, index) => (
                 <div
-                  key={step.title}
-                  className="group rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_12px_40px_rgb(0,0,0,0.07)]"
+                  key={feature.title}
+                  className={cn(
+                    "group flex flex-col gap-3 rounded-xl border border-border bg-card p-5 shadow-sm hover:border-primary/40 hover:shadow-md",
+                    interactive
+                  )}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="tone-brand flex h-10 w-10 items-center justify-center rounded-md transition-colors duration-150 group-hover:bg-primary group-hover:text-primary-foreground">
-                      <step.icon className="h-5 w-5" />
-                    </div>
-                    <span className="text-sm font-semibold tabular-nums text-slate-300">
-                      0{index + 1}
-                    </span>
-                  </div>
-                  <h3 className="mt-4 font-semibold tracking-tight text-slate-900">
-                    {step.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                    {step.description}
-                  </p>
+                  <IconTile
+                    icon={MORE_ICONS[index]}
+                    className="bg-primary-soft text-primary-soft-foreground shadow-none transition-colors duration-200 group-hover:bg-primary group-hover:text-primary-foreground"
+                  />
+                  <h3 className="text-[15px] font-semibold tracking-tight text-foreground">{feature.title}</h3>
+                  <p className="text-[13px] leading-5 text-muted-foreground">{feature.description}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="bg-white pb-16 sm:pb-20">
-          <div className="mx-auto max-w-7xl px-6">
-            <div className="relative overflow-hidden rounded-3xl bg-slate-900 px-8 py-14 text-center sm:px-16">
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary/25 blur-3xl"
+        {/* FAQ */}
+        <section
+          id="faq"
+          aria-labelledby="faq-h"
+          className="lp-faq scroll-mt-16 border-y border-border bg-card py-16 sm:py-20"
+        >
+          <div className="mx-auto grid max-w-[1160px] gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1.5fr] lg:gap-14">
+            <div className="min-w-0">
+              <SectionHeading
+                id="faq-h"
+                eyebrow="Questions"
+                title="Questions people ask"
+                description={`Need something else? Write to ${siteCopy.supportEmail} and we will reply within ${siteCopy.responseTime}.`}
               />
-              <div
-                aria-hidden
-                className="pointer-events-none absolute -bottom-32 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl"
-              />
-
-              <div className="relative">
-                <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-                  See which schemes your business qualifies for
-                </h2>
-                <p className="mx-auto mt-3 max-w-xl leading-relaxed text-slate-300">
-                  Create an account in two minutes. No invitation needed and no
-                  commitment to apply.
-                </p>
-
-                <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-                  <Button
-                    asChild
-                    size="xl"
-                    className="gap-2 bg-white text-slate-900 shadow transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-100"
-                  >
-                    <Link href="/auth/register">
-                      Create your account
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    size="xl"
-                    variant="outline"
-                    className="border-white/20 bg-transparent text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-white/10 hover:text-white"
-                  >
-                    <Link href="/auth/login">I already have an account</Link>
-                  </Button>
-                </div>
+              <div className="lp-reveal mt-8 hidden max-w-[260px] lg:block">
+                <FaqIllustration />
               </div>
+            </div>
+
+            <div className="flex min-w-0 flex-col gap-3">
+              {FAQS.map((item) => (
+                <details
+                  key={item.question}
+                  className="group rounded-xl border border-border bg-background transition-all duration-200 ease-out open:border-primary/40 open:bg-card open:shadow-md"
+                >
+                  <summary className="flex cursor-pointer items-center justify-between gap-4 rounded-xl px-5 py-4 text-[15px] font-semibold text-foreground transition-all duration-200 ease-out hover:text-primary active:scale-[0.98]">
+                    {item.question}
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                      <ChevronDown className="lp-chev h-4 w-4 transition-transform duration-200" aria-hidden />
+                    </span>
+                  </summary>
+                  <p className="max-w-[62ch] px-5 pb-5 text-sm leading-6 text-muted-foreground">{item.answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section aria-labelledby="cta-h" className="px-4 py-16 sm:px-6 sm:py-20">
+          <div className="lp-hero-bg relative mx-auto flex max-w-[1160px] flex-col items-start justify-between gap-6 overflow-hidden rounded-2xl px-7 py-10 text-white shadow-lg sm:flex-row sm:items-center sm:px-12">
+            <CurvedGrid />
+            <div className="relative min-w-0">
+              <h2 id="cta-h" className="text-[26px] font-semibold leading-8 tracking-[-0.03em] sm:text-[30px] sm:leading-9">
+                Ready to start your application?
+              </h2>
+              <p className="mt-2 max-w-[54ch] text-[15px] leading-6 text-white/75">
+                Creating an account takes a few minutes. Your profile and documents will be waiting when you come back.
+              </p>
+            </div>
+            <div className="relative flex shrink-0 flex-wrap gap-3">
+              <Button
+                asChild
+                size="lg"
+                className={cn("h-12 gap-2 bg-white px-6 font-semibold text-brand-deep hover:bg-white/90", interactive)}
+              >
+                <Link href="/auth/register">
+                  Create an account
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className={cn(
+                  "h-12 border-white/25 bg-white/5 px-6 font-semibold text-white hover:bg-white/15 hover:text-white",
+                  interactive
+                )}
+              >
+                <Link href="/auth/login">Sign in</Link>
+              </Button>
             </div>
           </div>
         </section>

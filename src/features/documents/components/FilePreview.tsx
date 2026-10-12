@@ -14,7 +14,7 @@ export function FilePreview({
       <img
         src={url}
         alt={title}
-        className="mx-auto max-h-[70vh] w-full rounded-lg border border-slate-100 bg-white object-contain"
+        className="mx-auto max-h-[70vh] w-full rounded-lg border border-border bg-card object-contain"
       />
     );
   }
@@ -23,7 +23,7 @@ export function FilePreview({
     <iframe
       src={url}
       title={title}
-      className="h-[70vh] w-full rounded-lg border border-slate-100 bg-white"
+      className="h-[70vh] w-full rounded-lg border border-border bg-card"
     />
   );
 }

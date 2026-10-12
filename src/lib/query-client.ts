@@ -1,4 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
+import { parseApiError } from "@/lib/api-error";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -6,14 +7,8 @@ export const queryClient = new QueryClient({
       staleTime: 1000 * 60 * 5,
       gcTime: 1000 * 60 * 10,
       retry: (failureCount, error) => {
-        if (
-          typeof error === "object" &&
-          error !== null &&
-          "status" in error &&
-          (error as { status: number }).status === 401
-        ) {
-          return false;
-        }
+        const status = parseApiError(error).status;
+        if (status === 401 || status === 403) return false;
         return failureCount < 2;
       },
       refetchOnWindowFocus: false,

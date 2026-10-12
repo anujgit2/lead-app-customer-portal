@@ -30,7 +30,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
+import { TableSkeletonRows } from "@/components/TableSkeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -45,7 +47,7 @@ import { ShareDialog } from "@/features/documents/components/ShareDialog";
 import { UploadDialog, type LockedUpload } from "@/features/documents/components/UploadDialog";
 import { useDocuments } from "@/features/documents/api/queries";
 import { useLinkDocumentProfile } from "@/features/documents/api/queries";
-import { useDebouncedValue } from "@/features/documents/hooks/useDebouncedValue";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useFileDownload } from "@/features/documents/hooks/useFileDownload";
 import { categoryKey, categoryLabel } from "@/features/documents/utils/format";
 import type { PortalDocument } from "@/features/documents/types";
@@ -61,8 +63,6 @@ import {
 } from "@/components/ui/table";
 import type { CustomerProfileDetail, DocumentProfileRelation } from "@/types";
 import { formatProfileDay } from "../utils/display";
-
-const badgeClass = "h-[22px] px-2 text-xs";
 
 function documentTypeCode(typeId: string, typeName: string): string {
   const id = typeId.trim();
@@ -161,12 +161,7 @@ export function ProfileDocumentsTab({ profile }: ProfileDocumentsTabProps) {
           </TableHeader>
           <TableBody>
             {documents.isLoading ? (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={6} className="h-24 text-muted-foreground">
-                  <span className="sr-only">Loading documents</span>
-                  <span className="block h-4 w-40 animate-pulse rounded bg-muted" />
-                </TableCell>
-              </TableRow>
+              <TableSkeletonRows label="Loading documents" columns={6} rows={3} />
             ) : null}
             {documents.isError ? (
               <TableRow className="hover:bg-transparent">
@@ -185,15 +180,11 @@ export function ProfileDocumentsTab({ profile }: ProfileDocumentsTabProps) {
             {!documents.isLoading && !documents.isError && rows.length === 0 ? (
               <TableRow className="hover:bg-transparent">
                 <TableCell colSpan={6} className="h-auto p-0">
-                  <div className="flex flex-col items-center px-6 py-10 text-center" role="status">
-                    <span className="tone-brand mb-3 grid h-12 w-12 place-items-center rounded-lg">
-                      <Files className="h-5 w-5" aria-hidden />
-                    </span>
-                    <h3 className="text-base font-semibold leading-6">No documents yet</h3>
-                    <p className="mt-1 max-w-[36ch] text-sm text-muted-foreground">
-                      Upload a document for this profile.
-                    </p>
-                  </div>
+                  <EmptyState
+                    icon={Files}
+                    title="No documents yet"
+                    description="Upload a document for this profile."
+                  />
                 </TableCell>
               </TableRow>
             ) : null}
@@ -225,7 +216,7 @@ export function ProfileDocumentsTab({ profile }: ProfileDocumentsTabProps) {
                             <span className="flex flex-wrap items-center gap-1.5 text-[13.5px] font-semibold leading-[18px]">
                               {document.typeName}
                               {document.label ? (
-                                <Badge variant="outline" dot={false} className={badgeClass}>
+                                <Badge variant="outline" dot={false} size="sm">
                                   {document.label}
                                 </Badge>
                               ) : null}
@@ -237,15 +228,15 @@ export function ProfileDocumentsTab({ profile }: ProfileDocumentsTabProps) {
                         </div>
                       </TableCell>
                       <TableCell className="px-3">
-                        <Badge variant={financial ? "brand" : "info"} className={badgeClass}>
+                        <Badge variant={financial ? "brand" : "info"} size="sm">
                           {categoryLabel(categoryKey(document.category), document.category)}
                         </Badge>
                       </TableCell>
                       <TableCell className="whitespace-nowrap px-3">
-                        <span className="inline-flex h-5 items-center rounded-md bg-muted px-1.5 text-[11.5px] font-semibold tabular-nums">
+                        <Badge variant="secondary" dot={false} size="xs" className="rounded-md tabular-nums">
                           v{document.latestVersion}
-                        </span>
-                        <Badge variant="success" dot={false} className={cn(badgeClass, "ml-1")}>
+                        </Badge>
+                        <Badge variant="success" dot={false} size="sm" className="ml-1">
                           Latest
                         </Badge>
                       </TableCell>
@@ -261,8 +252,8 @@ export function ProfileDocumentsTab({ profile }: ProfileDocumentsTabProps) {
                             <Button
                               type="button"
                               variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:bg-primary-soft hover:text-primary"
+                              size="icon-sm"
+                              className="text-muted-foreground hover:bg-primary-soft hover:text-primary"
                               aria-label={`Actions for ${label}`}
                             >
                               <MoreHorizontal className="h-4 w-4" />
@@ -397,7 +388,7 @@ function LinkExistingDialog({
     <Dialog open onOpenChange={(next) => !link.isPending && onOpenChange(next)}>
       <DialogContent className="max-h-[min(90vh,720px)] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="tracking-tight text-slate-900">Link an existing document</DialogTitle>
+          <DialogTitle className="tracking-tight text-foreground">Link an existing document</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
@@ -418,7 +409,7 @@ function LinkExistingDialog({
             placeholder="Search documents"
             aria-label="Search documents"
             startAdornment={<Search className="h-4 w-4" />}
-            className="h-11 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="h-11"
           />
           {documents.isError ? (
             <p className="text-sm text-destructive" role="alert">
@@ -432,22 +423,22 @@ function LinkExistingDialog({
                   type="button"
                   aria-pressed={documentId === document.id}
                   onClick={() => setDocumentId(document.id)}
-                  className="w-full rounded-lg border border-slate-100 px-3 py-2 text-left text-sm transition-all duration-200 ease-out hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500/20 aria-pressed:border-primary aria-pressed:bg-primary/5"
+                  className="w-full rounded-lg border border-border px-3 py-2 text-left text-sm transition-all duration-200 ease-out hover:bg-muted focus:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-pressed:border-primary aria-pressed:bg-primary/5"
                 >
-                  <span className="font-medium text-slate-900">{document.typeName}</span>
-                  {document.label ? <span className="mt-0.5 block text-slate-500">{document.label}</span> : null}
+                  <span className="font-medium text-foreground">{document.typeName}</span>
+                  {document.label ? <span className="mt-0.5 block text-muted-foreground">{document.label}</span> : null}
                 </button>
               </li>
             ))}
           </ul>
         </div>
         <DialogFooter className="gap-2">
-          <Button type="button" variant="outline" className="h-8" onClick={() => onOpenChange(false)} size="sm">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} size="sm">
             Cancel
           </Button>
           <Button
             type="button"
-            className="h-8"
+            size="sm"
             disabled={!documentId}
             loading={link.isPending}
             onClick={() => {
@@ -462,7 +453,7 @@ function LinkExistingDialog({
                 }
               );
             }}
-           size="sm">
+          >
             Link
           </Button>
         </DialogFooter>

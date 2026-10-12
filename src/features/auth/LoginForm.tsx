@@ -6,56 +6,55 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  ArrowRight,
-  Building2,
-  Eye,
-  EyeOff,
-  Lock,
-  LogIn,
-  Mail,
-  Sparkles,
-  ShieldCheck,
-  Target,
-  TrendingUp,
-} from "lucide-react";
+import { Eye, EyeOff, FileText, History, Lock, Mail, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent } from "@/components/ui/card";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  AuthScreen,
+  BackHomeLink,
+  FieldError,
+  type BrandPoint,
+} from "@/features/auth/AuthScreen";
 
 const loginSchema = z.object({
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(1, "Password is required"),
+  email: z
+    .string()
+    .trim()
+    .min(1, "Enter your email or mobile number.")
+    .refine((value) => {
+      const compact = value.replace(/[\s-]/g, "");
+      const isEmail = z.string().email().safeParse(value).success;
+      const isMobile = /^[6-9]\d{9}$/.test(compact);
+      return isEmail || isMobile;
+    }, "Enter a valid email or 10-digit mobile number."),
+  password: z.string().min(1, "Enter your password."),
   rememberMe: z.boolean().optional(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
-const BENEFITS = [
+const POINTS: BrandPoint[] = [
   {
-    icon: Target,
-    title: "Personalized matches",
-    description: "Find schemes that fit your business",
+    icon: FileText,
+    title: "Saved as you go",
+    description: "Stop any time and continue from the same place.",
   },
   {
-    icon: Sparkles,
-    title: "Simple application",
-    description: "A faster, easier way to apply",
+    icon: History,
+    title: "A profile with history",
+    description: "Every change is remembered and can be reviewed.",
   },
   {
     icon: ShieldCheck,
-    title: "Secure & confidential",
-    description: "Your information is always protected",
+    title: "Private until you share",
+    description: "Only you decide who sees your documents.",
   },
 ];
-
-const GROWTH_BARS = [38, 52, 34, 68, 48, 82, 62];
 
 export function LoginForm() {
   const router = useRouter();
@@ -70,7 +69,7 @@ export function LoginForm() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { rememberMe: false },
+    defaultValues: { rememberMe: true },
   });
 
   const rememberMe = watch("rememberMe");
@@ -91,207 +90,101 @@ export function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="flex w-full items-center justify-between px-6 pt-6 sm:px-10 lg:px-16 lg:pt-8">
-        <Link href="/" className="inline-flex items-center gap-2.5 text-foreground">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Building2 className="h-4 w-4" />
-          </span>
-          <span className="hidden text-sm font-semibold tracking-[-0.01em] sm:inline">
-            LoanPortal
-          </span>
-        </Link>
-        <p className="text-sm text-slate-500">
-          <span className="hidden sm:inline">Don&apos;t have an account? </span>
+    <AuthScreen
+      topRight={<BackHomeLink />}
+      asideTitle="Pick up where you left off."
+      asideDescription="Your application, profile and documents are saved to your account and ready on any device."
+      points={POINTS}
+    >
+      <div>
+        <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.035em] text-foreground">Sign in</h1>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          Welcome back. Pick up your application where you left it.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="identifier">Email or mobile number</Label>
+          <Input
+            id="identifier"
+            type="text"
+            autoComplete="username"
+            placeholder="you@example.com or 98765 43210"
+            error={!!errors.email}
+            aria-describedby={errors.email ? "identifier-err" : undefined}
+            className="h-11 bg-background"
+            startAdornment={<Mail className="h-4 w-4" />}
+            {...register("email")}
+          />
+          <FieldError id="identifier-err">{errors.email?.message}</FieldError>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="password">Password</Label>
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            placeholder="Enter your password"
+            error={!!errors.password}
+            aria-describedby={errors.password ? "password-err" : undefined}
+            className="h-11 bg-background"
+            startAdornment={<Lock className="h-4 w-4" />}
+            endAdornment={
+              <button
+                type="button"
+                onClick={() => setShowPassword((open) => !open)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
+                className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-all duration-200 ease-out hover:bg-muted hover:text-foreground active:scale-[0.98]"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            }
+            {...register("password")}
+          />
+          <FieldError id="password-err">{errors.password?.message}</FieldError>
+        </div>
+
+        <div className="-mt-1 flex flex-wrap items-center justify-between gap-2">
+          <label htmlFor="rememberMe" className="inline-flex cursor-pointer items-center gap-2 text-[13px] leading-5">
+            <Checkbox
+              id="rememberMe"
+              checked={!!rememberMe}
+              onCheckedChange={(value) => setValue("rememberMe", !!value)}
+            />
+            <span>Keep me signed in</span>
+          </label>
           <Link
-            href="/auth/register"
-            className="font-semibold text-primary transition-colors duration-200 ease-out hover:text-primary/80 hover:underline"
+            href="/auth/forgot-password"
+            className="inline-flex min-h-8 items-center text-[13px] font-medium text-primary transition-all duration-200 ease-out hover:underline"
           >
-            Create one
+            Forgot password?
+          </Link>
+        </div>
+
+        <Button
+          type="submit"
+          size="lg"
+          loading={isSubmitting}
+          className="lp-glow h-11 w-full font-semibold transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+        >
+          {isSubmitting ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
+
+      <div className="flex flex-col gap-2 border-t border-border pt-4">
+        <p className="text-[13px] text-muted-foreground">
+          New to LoanPortal?{" "}
+          <Link href="/auth/register" className="font-semibold text-primary hover:underline">
+            Create an account
           </Link>
         </p>
-      </header>
-
-      <main className="flex-1 flex items-center">
-        <div className="w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 py-10 lg:py-14 grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-          {/* Left: value proposition */}
-          <div className="hidden lg:flex flex-col max-w-lg">
-            <div className="inline-flex items-center gap-2 mb-6">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-              <span className="text-xs font-semibold tracking-widest text-primary uppercase">
-                Funding a stronger tomorrow
-              </span>
-            </div>
-
-            <h1 className="text-4xl lg:text-[2.75rem] font-semibold tracking-tight text-slate-900 leading-[1.1] mb-5">
-              Welcome back to your funding journey.
-            </h1>
-
-            <p className="text-base text-slate-600 leading-relaxed mb-10 max-w-md">
-              Sign in to track applications, manage documents, and stay on
-              top of the MSME loan and grant schemes matched to your
-              business.
-            </p>
-
-            <div className="space-y-5 mb-10">
-              {BENEFITS.map((benefit) => (
-                <div key={benefit.title} className="flex items-start gap-4">
-                  <div className="tone-brand flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md">
-                    <benefit.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {benefit.title}
-                    </p>
-                    <p className="text-sm text-slate-500 mt-0.5">
-                      {benefit.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-xs font-medium text-slate-500">
-                    Approval readiness
-                  </p>
-                  <p className="text-2xl font-semibold text-slate-900 tracking-tight">
-                    92%
-                  </p>
-                </div>
-                <div className="inline-flex items-center gap-1 rounded-full bg-success-soft px-2.5 py-1 text-xs font-semibold text-success-strong">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  +18%
-                </div>
-              </div>
-              <div className="flex items-end gap-1.5 h-16">
-                {GROWTH_BARS.map((height, index) => (
-                  <div
-                    key={index}
-                    className={cn(
-                      "flex-1 rounded-t-md transition-all duration-300",
-                      index === GROWTH_BARS.length - 2
-                        ? "bg-primary"
-                        : "bg-primary-soft"
-                    )}
-                    style={{ height: `${height}%` }}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Right: login form */}
-          <div className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto">
-            <Card className="rounded-xl bg-card shadow-md">
-              <CardContent className="p-8 sm:p-10">
-                <div className="tone-brand mb-5 inline-flex h-11 w-11 items-center justify-center rounded-md">
-                  <LogIn className="h-5 w-5 text-primary" />
-                </div>
-                <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-                  Welcome back
-                </h1>
-                <p className="text-slate-500 text-sm mt-1.5 mb-8">
-                  Sign in to your LoanPortal account to continue.
-                </p>
-
-                <form
-                  onSubmit={handleSubmit(onSubmit)}
-                  className="space-y-5"
-                  noValidate
-                >
-                  <div className="space-y-1.5">
-                    <Label htmlFor="email">Email address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="you@company.com"
-                      autoComplete="email"
-                      error={!!errors.email}
-                      startAdornment={<Mail className="h-4 w-4" />}
-                      className="h-12"
-                      {...register("email")}
-                    />
-                    {errors.email && (
-                      <p className="text-xs text-destructive">{errors.email.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
-                      <Link
-                        href="/auth/forgot-password"
-                        className="text-xs font-semibold text-primary transition-colors duration-200 ease-out hover:text-primary/80 hover:underline"
-                      >
-                        Forgot password?
-                      </Link>
-                    </div>
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Your password"
-                      autoComplete="current-password"
-                      error={!!errors.password}
-                      startAdornment={<Lock className="h-4 w-4" />}
-                      className="h-12"
-                      endAdornment={
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="text-slate-400 transition-colors duration-200 ease-out hover:text-slate-700"
-                          aria-label={showPassword ? "Hide password" : "Show password"}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </button>
-                      }
-                      {...register("password")}
-                    />
-                    {errors.password && (
-                      <p className="text-xs text-destructive">{errors.password.message}</p>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2.5">
-                    <Checkbox
-                      id="rememberMe"
-                      checked={!!rememberMe}
-                      onCheckedChange={(v) => setValue("rememberMe", !!v)}
-                    />
-                    <Label
-                      htmlFor="rememberMe"
-                      className="text-sm font-normal cursor-pointer text-slate-600"
-                    >
-                      Remember me for 30 days
-                    </Label>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    size="lg"
-                    loading={isSubmitting}
-                    className="w-full"
-                  >
-                    Sign in
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </form>
-
-                <p className="text-center text-sm text-slate-500 mt-6">
-                  Received an invitation? Use the link in your email to
-                  create your account.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </main>
-    </div>
+        <p className="text-xs leading-[18px] text-muted-foreground">
+          Invited by a lender or agent? Open the link in your email instead. It takes you straight to your application.
+        </p>
+      </div>
+    </AuthScreen>
   );
 }

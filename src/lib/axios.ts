@@ -13,8 +13,6 @@ declare module "axios" {
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
-console.log("NEXT_PUBLIC_API_URL =", process.env.NEXT_PUBLIC_API_URL);
-console.log("BASE_URL =", BASE_URL);
 
 function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;

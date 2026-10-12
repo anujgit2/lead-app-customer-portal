@@ -123,14 +123,14 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                 <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-success-soft text-success-strong">
                   <ShieldCheck className="h-5 w-5" />
                 </div>
-                <DialogTitle className="tracking-tight text-slate-900">Documents shared</DialogTitle>
+                <DialogTitle className="tracking-tight text-foreground">Documents shared</DialogTitle>
               </div>
               {sentMessage ? <p className="text-sm text-warning-strong">{sentMessage}</p> : null}
             </DialogHeader>
-            <p className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 text-sm font-normal text-slate-700" role="status">
+            <p className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm font-normal text-foreground" role="status">
               Following document(s) has been shared with {sharedWith?.name} on email {sharedWith?.email}
             </p>
-            <ul className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100">
+            <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
               {sharedLinks.map((item) => (
                 <li key={item.id} className="bg-card px-3 py-2">
                   <div className="flex items-center gap-2.5">
@@ -138,9 +138,9 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                       <FileText className="h-3.5 w-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold leading-4 tracking-tight text-slate-900">{item.typeName}</p>
+                      <p className="truncate text-sm font-semibold leading-4 tracking-tight text-foreground">{item.typeName}</p>
                       {fileSubtitle(item) ? (
-                        <p className="truncate text-xs font-normal leading-4 text-slate-500">{fileSubtitle(item)}</p>
+                        <p className="truncate text-xs font-normal leading-4 text-muted-foreground">{fileSubtitle(item)}</p>
                       ) : null}
                     </div>
                     {item.tag ? (
@@ -160,7 +160,7 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                         {copiedKey === item.id ? <Check /> : <Copy />}
                       </Button>
                     ) : (
-                      <span className="text-xs text-slate-500">Created</span>
+                      <span className="text-xs text-muted-foreground">Created</span>
                     )}
                   </div>
                 </li>
@@ -197,7 +197,7 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
               <ShieldCheck className="h-5 w-5" />
             </div>
-            <DialogTitle className="tracking-tight text-slate-900">Share securely</DialogTitle>
+            <DialogTitle className="tracking-tight text-foreground">Share securely</DialogTitle>
           </div>
         </DialogHeader>
           <form
@@ -286,7 +286,7 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
             })}
           >
             <div className="space-y-4">
-              <ul className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-100">
+              <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
                 {documents.map((document) => (
                   <li key={document.id} className="bg-card px-3 py-2">
                     <div className="flex items-center gap-2.5">
@@ -294,11 +294,11 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                         <FileText className="h-3.5 w-3.5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold leading-4 tracking-tight text-slate-900">
+                        <p className="truncate text-sm font-semibold leading-4 tracking-tight text-foreground">
                           {document.typeName}
                         </p>
                         {fileSubtitle(document) ? (
-                          <p className="truncate text-xs font-normal leading-4 text-slate-500">
+                          <p className="truncate text-xs font-normal leading-4 text-muted-foreground">
                             {fileSubtitle(document)}
                           </p>
                         ) : null}
@@ -342,7 +342,7 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
               </div>
 
               <fieldset className="space-y-2">
-                <legend className="text-sm font-medium text-slate-700">Link expiry</legend>
+                <legend className="text-sm font-medium text-foreground">Link expiry</legend>
                 <RadioGroup
                   value={expiresInDays}
                   onValueChange={(value) => {
@@ -356,7 +356,7 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                     <label
                       key={preset.value}
                       htmlFor={`${formId}-expiry-${preset.value}`}
-                      className="flex cursor-pointer items-center gap-2 text-sm text-slate-700"
+                      className="flex cursor-pointer items-center gap-2 text-sm text-foreground"
                     >
                       <RadioGroupItem value={preset.value} id={`${formId}-expiry-${preset.value}`} />
                       {preset.label}
@@ -365,7 +365,7 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
                 </RadioGroup>
               </fieldset>
 
-              <label className="flex h-11 items-center gap-3 text-sm font-medium text-slate-900">
+              <label className="flex h-11 items-center gap-3 text-sm font-medium text-foreground">
                 <Checkbox
                   checked={allowDownload}
                   onCheckedChange={(checked) => {

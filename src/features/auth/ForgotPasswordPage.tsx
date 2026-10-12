@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -104,7 +105,7 @@ export function ForgotPasswordPage() {
 
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary mb-4">
-            <KeyRound className="h-6 w-6 text-white" />
+            <KeyRound className="h-6 w-6 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-semibold text-foreground">Reset password</h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -112,7 +113,7 @@ export function ForgotPasswordPage() {
           </p>
         </div>
 
-        <Card className="border-0 shadow-xl shadow-gray-100/50">
+        <Card className="border-0 shadow-lg">
           <CardContent className="p-8 space-y-6">
             <form
               onSubmit={requestForm.handleSubmit(requestCode)}
@@ -153,9 +154,11 @@ export function ForgotPasswordPage() {
                 className="space-y-4 border-t pt-6"
                 noValidate
               >
-                <div className="rounded-lg border bg-blue-50 px-4 py-3 text-sm text-blue-700">
-                  Enter the OTP sent to <span className="font-medium">{email}</span>.
-                </div>
+                <Alert variant="info" role="status">
+                  <AlertDescription>
+                    Enter the OTP sent to <span className="font-medium">{email}</span>.
+                  </AlertDescription>
+                </Alert>
 
                 <div className="space-y-1.5">
                   <Label htmlFor="otp">OTP</Label>
@@ -236,13 +239,15 @@ export function ForgotPasswordPage() {
             )}
 
             {resetComplete && (
-              <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                Password reset complete.
-                <Link href="/auth/login" className="font-medium underline">
-                  Sign in
-                </Link>
-              </div>
+              <Alert variant="success" role="status">
+                <CheckCircle2 aria-hidden />
+                <AlertDescription>
+                  Password reset complete.{" "}
+                  <Link href="/auth/login" className="font-medium underline">
+                    Sign in
+                  </Link>
+                </AlertDescription>
+              </Alert>
             )}
           </CardContent>
         </Card>

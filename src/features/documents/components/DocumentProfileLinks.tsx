@@ -89,12 +89,11 @@ function LinkProfileDialog({
           <ProfileSearchPicker excludeIds={excludeIds} selectedId={profile?.id} onSelect={setProfile} />
         </div>
         <DialogFooter className="gap-2">
-          <Button type="button" variant="outline" className="h-8" onClick={() => onOpenChange(false)} size="sm">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} size="sm">
             Cancel
           </Button>
           <Button
             type="button"
-            className="h-8"
             disabled={!profile}
             loading={link.isPending}
             onClick={() => {

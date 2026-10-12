@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Building2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ErrorState";
+import { PageHeader, PageShell } from "@/components/PageShell";
 import { parseApiError } from "@/lib/api-error";
 import { useCreateProfile, useFormTemplate } from "../api/queries";
 import { profileTypeFromQuery, templateCodeForType } from "../constants";
@@ -23,6 +24,16 @@ function CreateSkeleton() {
   );
 }
 
+/** Route-level Suspense fallback, matching the loaded page's shell. */
+export function ProfileCreateFallback() {
+  return (
+    <PageShell width="detail">
+      <div className="h-8 w-48 animate-pulse rounded-lg bg-muted" />
+      <CreateSkeleton />
+    </PageShell>
+  );
+}
+
 function typeHref(href: string, returnTo: string | null): string {
   if (!returnTo) return href;
   const [path, query = ""] = href.split("?");
@@ -30,6 +41,12 @@ function typeHref(href: string, returnTo: string | null): string {
   params.set("returnTo", returnTo);
   return `${path}?${params.toString()}`;
 }
+
+const backLinkClass =
+  "inline-flex w-fit items-center gap-2 rounded-sm text-sm text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+
+const typeCardClass =
+  "rounded-xl border border-border bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98]";
 
 export function ProfileCreatePage() {
   const router = useRouter();
@@ -42,57 +59,38 @@ export function ProfileCreatePage() {
 
   if (!type) {
     return (
-      <div className="mx-auto max-w-3xl space-y-6 p-6 sm:p-8">
-        <Link
-          href={returnTo ?? "/profiles"}
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-        >
+      <PageShell width="narrow">
+        <Link href={returnTo ?? "/profiles"} className={backLinkClass}>
           <ArrowLeft className="h-4 w-4" />
           Profiles
         </Link>
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">New profile</h1>
-          <p className="mt-1 text-sm font-normal text-slate-500">Choose who this profile is for.</p>
-        </div>
+        <PageHeader title="New profile" description="Choose who this profile is for." />
         <div className="grid gap-6 sm:grid-cols-2">
-          <Link
-            href={typeHref("/profiles/new?type=individual", returnTo)}
-            className="rounded-xl border border-slate-100 bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98]"
-          >
+          <Link href={typeHref("/profiles/new?type=individual", returnTo)} className={typeCardClass}>
             <UserRound className="h-5 w-5 text-primary" />
-            <p className="mt-4 font-semibold tracking-tight text-slate-900">Individual</p>
-            <p className="mt-1 text-sm font-normal text-slate-500">A person.</p>
+            <p className="mt-4 font-semibold tracking-tight text-foreground">Individual</p>
+            <p className="mt-1 text-sm font-normal text-muted-foreground">A person.</p>
           </Link>
-          <Link
-            href={typeHref("/profiles/new?type=business", returnTo)}
-            className="rounded-xl border border-slate-100 bg-card p-6 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98]"
-          >
+          <Link href={typeHref("/profiles/new?type=business", returnTo)} className={typeCardClass}>
             <Building2 className="h-5 w-5 text-primary" />
-            <p className="mt-4 font-semibold tracking-tight text-slate-900">Business</p>
-            <p className="mt-1 text-sm font-normal text-slate-500">A company or firm.</p>
+            <p className="mt-4 font-semibold tracking-tight text-foreground">Business</p>
+            <p className="mt-1 text-sm font-normal text-muted-foreground">A company or firm.</p>
           </Link>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6 sm:p-8">
-        <Link
-          href={returnTo ?? "/profiles"}
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-        >
+    <PageShell width="detail">
+      <Link href={returnTo ?? "/profiles"} className={backLinkClass}>
         <ArrowLeft className="h-4 w-4" />
         Profiles
       </Link>
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          New {profileTypeLabel(type).toLowerCase()} profile
-        </h1>
-        <p className="mt-1 text-sm font-normal text-slate-500">
-          Each form in the {templateCode} template opens in its own tab.
-        </p>
-      </div>
+      <PageHeader
+        title={`New ${profileTypeLabel(type).toLowerCase()} profile`}
+        description={`Each form in the ${templateCode} template opens in its own tab.`}
+      />
 
       {templateQuery.isLoading ? <CreateSkeleton /> : null}
 
@@ -134,6 +132,6 @@ export function ProfileCreatePage() {
           }}
         />
       ) : null}
-    </div>
+    </PageShell>
   );
 }

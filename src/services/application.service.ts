@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/axios";
 import { parseApiError } from "@/lib/api-error";
 import { sleep } from "@/lib/utils";
+import { isDemoEnabled } from "@/lib/demo";
 import type {
   LoanApplication,
   ApplicationSummary,
@@ -564,6 +565,7 @@ function catalogLoanType(app: BackendApplication, catalog: Map<string, string>):
 }
 
 function shouldUseMockFallback(error: unknown): boolean {
+  if (!isDemoEnabled()) return false;
   const apiError = parseApiError(error);
   return !apiError.status || apiError.status >= 500 || apiError.status === 0;
 }
@@ -621,9 +623,12 @@ export const applicationService = {
         rejected: apps.filter((a) => a.status === "rejected").length,
         total: apps.length,
       };
-    } catch {
-      await sleep(300);
-      return MOCK_SUMMARY;
+    } catch (error) {
+      if (shouldUseMockFallback(error)) {
+        await sleep(300);
+        return MOCK_SUMMARY;
+      }
+      throw parseApiError(error);
     }
   },
 
@@ -631,9 +636,12 @@ export const applicationService = {
     try {
       const product = await programService.getDefaultProgramWithTemplates();
       return [product];
-    } catch {
-      await sleep(300);
-      return [LOAN_FORM_TEMPLATES];
+    } catch (error) {
+      if (shouldUseMockFallback(error)) {
+        await sleep(300);
+        return [LOAN_FORM_TEMPLATES];
+      }
+      throw parseApiError(error);
     }
   },
 

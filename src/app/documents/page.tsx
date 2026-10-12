@@ -2,6 +2,8 @@
 
 import { Suspense } from "react";
 import { AppLayout } from "@/layouts/AppLayout";
+import { PageShell } from "@/components/PageShell";
+import { BlockSkeleton } from "@/components/TableSkeleton";
 import { DocumentsPage } from "@/features/documents/pages/DocumentsPage";
 
 export default function DocumentsRoute() {
@@ -9,9 +11,9 @@ export default function DocumentsRoute() {
     <AppLayout>
       <Suspense
         fallback={
-          <div className="mx-auto max-w-[1200px] px-4 py-5 sm:px-8 sm:py-9">
-            <p className="text-sm text-muted-foreground">Loading documents…</p>
-          </div>
+          <PageShell>
+            <BlockSkeleton label="Loading documents" />
+          </PageShell>
         }
       >
         <DocumentsPage />

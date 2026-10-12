@@ -5,18 +5,23 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
-import { Eye, EyeOff, Building2, ArrowRight, Check } from "lucide-react";
+import { Eye, EyeOff, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { authService } from "@/services/auth.service";
 import { getPasswordStrength } from "@/lib/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { InvitationDetails, RegisterApiRequest } from "@/types";
+import {
+  AuthScreen,
+  SignInLink,
+  SIGN_UP_POINTS,
+  signUpAside,
+} from "@/features/auth/AuthScreen";
 
 const registerSchema = z
   .object({
@@ -131,21 +136,21 @@ export function RegisterForm({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary mb-4">
-            <Building2 className="h-6 w-6 text-white" />
-          </div>
-          <h1 className="text-2xl font-semibold text-foreground">Create your account</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Complete registration to start your loan application
-          </p>
-        </div>
+    <AuthScreen
+      topRight={<SignInLink />}
+      asideTitle={signUpAside.title}
+      asideDescription={signUpAside.description}
+      points={SIGN_UP_POINTS}
+      contentClassName="max-w-[420px]"
+    >
+      <div>
+        <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.035em] text-foreground">Create your account</h1>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          Complete registration to start your loan application.
+        </p>
+      </div>
 
-        <Card className="border-0 shadow-xl shadow-gray-100/50">
-          <CardContent className="p-8">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label htmlFor="firstName">First Name</Label>
@@ -328,22 +333,11 @@ export function RegisterForm({
                 type="submit"
                 size="lg"
                 loading={isSubmitting}
-                className="w-full gap-2 mt-2"
+                className="mt-1 lp-glow h-11 w-full font-semibold transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
               >
-                Create account
-                <ArrowRight className="h-4 w-4" />
+                {isSubmitting ? "Creating account…" : "Create account"}
               </Button>
             </form>
-
-            <p className="text-center text-sm text-muted-foreground mt-6">
-              Already have an account?{" "}
-              <Link href="/auth/login" className="text-primary font-medium hover:underline">
-                Sign in
-              </Link>
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    </AuthScreen>
   );
 }

@@ -2,14 +2,19 @@
 
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Building2, AlertCircle, Loader2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { InvitationRegisterFlow } from "@/features/auth/InvitationRegisterFlow";
 import { SelfServeRegisterFlow } from "@/features/auth/SelfServeRegisterFlow";
 import { invitationService } from "@/services/invitation.service";
 import type { InvitationDetails } from "@/types";
+import {
+  AuthScreen,
+  SignInLink,
+  SIGN_UP_POINTS,
+  signUpAside,
+} from "@/features/auth/AuthScreen";
 
 type PageState = "loading" | "ready" | "error";
 
@@ -81,65 +86,65 @@ export function RegisterPageClient() {
 
   if (isBrokenInvitationLink) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 flex items-center justify-center p-4">
-        <div className="w-full max-w-md text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary mb-4">
-            <Building2 className="h-6 w-6 text-white" />
+      <AuthScreen
+        topRight={<SignInLink />}
+        asideTitle={signUpAside.title}
+        asideDescription={signUpAside.description}
+        points={SIGN_UP_POINTS}
+      >
+        <div className="flex flex-col items-start gap-4">
+          <AlertCircle className="h-8 w-8 text-danger" />
+          <div>
+            <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.035em] text-foreground">
+              Invitation link incomplete
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              This invitation link is missing information. Use the full link from your email, or create an account yourself.
+            </p>
           </div>
-          <Card className="border-0 shadow-xl shadow-gray-100/50">
-            <CardContent className="p-8 flex flex-col items-center gap-4">
-              <AlertCircle className="h-8 w-8 text-destructive" />
-              <div>
-                <h1 className="text-lg font-semibold">Invitation link incomplete</h1>
-                <p className="text-sm text-muted-foreground mt-2">
-                  This invitation link is missing information. Use the full link
-                  from your email, or create an account yourself.
-                </p>
-              </div>
-              <Button asChild variant="outline">
-                <Link href="/auth/register">Create an account</Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <Button asChild variant="outline" size="md">
+            <Link href="/auth/register">Create an account</Link>
+          </Button>
         </div>
-      </div>
+      </AuthScreen>
     );
   }
 
   if (state === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 flex items-center justify-center p-4">
-        <Card className="border-0 shadow-xl shadow-gray-100/50 w-full max-w-md">
-          <CardContent className="p-8 flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Loading invitation…</p>
-          </CardContent>
-        </Card>
-      </div>
+      <AuthScreen
+        topRight={<SignInLink />}
+        asideTitle={signUpAside.title}
+        asideDescription={signUpAside.description}
+        points={SIGN_UP_POINTS}
+      >
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          Loading invitation…
+        </div>
+      </AuthScreen>
     );
   }
 
   if (state === "error") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 flex items-center justify-center p-4">
-        <div className="w-full max-w-md text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary mb-4">
-            <Building2 className="h-6 w-6 text-white" />
+      <AuthScreen
+        topRight={<SignInLink />}
+        asideTitle={signUpAside.title}
+        asideDescription={signUpAside.description}
+        points={SIGN_UP_POINTS}
+      >
+        <div className="flex flex-col items-start gap-4">
+          <AlertCircle className="h-8 w-8 text-danger" />
+          <div>
+            <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.035em] text-foreground">Cannot register</h1>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{errorMessage}</p>
           </div>
-          <Card className="border-0 shadow-xl shadow-gray-100/50">
-            <CardContent className="p-8 flex flex-col items-center gap-4">
-              <AlertCircle className="h-8 w-8 text-destructive" />
-              <div>
-                <h1 className="text-lg font-semibold">Cannot register</h1>
-                <p className="text-sm text-muted-foreground mt-2">{errorMessage}</p>
-              </div>
-              <Button asChild variant="outline">
-                <Link href="/auth/login">Sign in instead</Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <Button asChild variant="outline" size="md">
+            <Link href="/auth/login">Sign in instead</Link>
+          </Button>
         </div>
-      </div>
+      </AuthScreen>
     );
   }
 

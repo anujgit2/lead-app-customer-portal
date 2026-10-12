@@ -272,10 +272,10 @@ export function RecipientSharePage() {
   const countLabel = documentCount === 1 ? "1 document" : `${documentCount} documents`;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#eef1f6] px-4 py-10 text-[#151a27]">
-      <section className="w-full max-w-[460px] rounded-[20px] bg-white p-8 shadow-[0_24px_60px_rgba(21,26,39,0.12)]">
+    <main className="flex min-h-screen items-center justify-center bg-muted px-4 py-10 text-foreground">
+      <section className="w-full max-w-[460px] rounded-[20px] bg-card p-8 shadow-[0_24px_60px_rgba(21,26,39,0.12)]">
         {state.step === "loading" || !route.ready ? (
-          <p className="text-sm text-[#556075]" role="status">
+          <p className="text-sm text-muted-foreground" role="status">
             Loading shared documents
           </p>
         ) : null}
@@ -289,18 +289,18 @@ export function RecipientSharePage() {
               <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold tracking-tight outline-none">
                 This link has expired
               </h1>
-              <p className="text-sm leading-6 text-[#556075]">
+              <p className="text-sm leading-6 text-muted-foreground">
                 Shared links stop working after a set time for your security. Ask {senderLabel(state.senderName ?? senderName)} to send a new one.
               </p>
             </div>
             {state.confirmation ? (
-              <p className="text-sm text-[#0b7a47]" role="status">
+              <p className="text-sm text-success-strong" role="status">
                 {state.confirmation}
               </p>
             ) : (
               <>
                 {followUp ? (
-                  <p className="text-sm text-[#b42318]" role="status">
+                  <p className="text-sm text-danger-strong" role="status">
                     {followUp}
                   </p>
                 ) : null}
@@ -327,16 +327,16 @@ export function RecipientSharePage() {
               <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold tracking-tight outline-none">
                 {state.mismatch ? "Email doesn't match" : "Verify your email to view documents"}
               </h1>
-              <p className="text-sm leading-6 text-[#556075]">
+              <p className="text-sm leading-6 text-muted-foreground">
                 {state.mismatch
                   ? "This link was shared with a different email address. Use the address where you received it."
                   : `${senderLabel(senderName)} shared ${countLabel} with you. Enter the email address this link was sent to.`}
               </p>
             </div>
             <div aria-live="polite" className="space-y-2">
-              {state.notice ? <p className="text-sm text-[#a15c00]">{state.notice}</p> : null}
-              {locked ? <p className="text-sm text-[#a15c00]">{lockoutCopy(state.lockMinutes ?? 1)}</p> : null}
-              {followUp ? <p className="text-sm text-[#556075]">{followUp}</p> : null}
+              {state.notice ? <p className="text-sm text-warning-strong">{state.notice}</p> : null}
+              {locked ? <p className="text-sm text-warning-strong">{lockoutCopy(state.lockMinutes ?? 1)}</p> : null}
+              {followUp ? <p className="text-sm text-muted-foreground">{followUp}</p> : null}
             </div>
             <div className="space-y-2">
               <label htmlFor={`${formId}-email`} className="text-sm font-medium">
@@ -358,11 +358,11 @@ export function RecipientSharePage() {
                 className={state.mismatch ? inputClassError : inputClass}
               />
               {state.mismatch ? (
-                <p id={`${formId}-mismatch`} className="text-sm text-[#b42318]">
+                <p id={`${formId}-mismatch`} className="text-sm text-danger-strong">
                   This email doesn&apos;t match the one this link was sent to.
                 </p>
               ) : (
-                <p className="text-sm text-[#556075]">Documents open only for the email that received this link.</p>
+                <p className="text-sm text-muted-foreground">Documents open only for the email that received this link.</p>
               )}
             </div>
             {state.mismatch ? (
@@ -397,18 +397,18 @@ export function RecipientSharePage() {
               <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold tracking-tight outline-none">
                 Enter the 6-digit code
               </h1>
-              <p className="text-sm leading-6 text-[#556075]">
+              <p className="text-sm leading-6 text-muted-foreground">
                 We sent a code to {state.maskedEmail}. It works for a few minutes only.
               </p>
             </div>
             <div aria-live="polite">
               {state.error ? (
-                <p id={`${formId}-otp-error`} className="text-sm text-[#b42318]">
+                <p id={`${formId}-otp-error`} className="text-sm text-danger-strong">
                   {state.error}
                 </p>
               ) : null}
               {locked ? (
-                <p id={`${formId}-otp-lock`} className="text-sm text-[#a15c00]">
+                <p id={`${formId}-otp-lock`} className="text-sm text-warning-strong">
                   {lockoutCopy(state.lockMinutes ?? 1)}
                 </p>
               ) : null}
@@ -447,7 +447,7 @@ export function RecipientSharePage() {
                     setDigits(next.digits);
                     setDigitFocus(next.focusIndex);
                   }}
-                  className="h-12 w-12 rounded-[10px] border border-[#cdd3df] bg-[#f3f5f9] text-center text-lg font-bold outline-none focus-visible:ring-2 focus-visible:ring-[#2457d6]"
+                  className="h-12 w-12 rounded-[10px] border border-input bg-muted/60 text-center text-lg font-bold outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               ))}
             </div>
@@ -469,31 +469,31 @@ export function RecipientSharePage() {
               <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-bold tracking-tight outline-none">
                 Email verified
               </h1>
-              <p className="text-sm leading-6 text-[#556075]">
+              <p className="text-sm leading-6 text-muted-foreground">
                 You can download the documents shared by {senderLabel(senderName)}.
               </p>
             </div>
             {listError ? (
-              <p className="text-sm text-[#b42318]" role="status">
+              <p className="text-sm text-danger-strong" role="status">
                 {listError}
               </p>
             ) : null}
             <ul className="space-y-3">
               {documents.map((document) => (
-                <li key={document.id} className="flex items-center gap-3 rounded-[14px] border border-[#e0e4ec] p-3.5">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#e8eefc] text-[#2457d6]">
+                <li key={document.id} className="flex items-center gap-3 rounded-[14px] border border-border p-3.5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-soft text-primary">
                     <FileText className="h-[18px] w-[18px]" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[15px] font-bold">{document.name}</p>
-                    <p className="mt-0.5 truncate text-[13px] text-[#556075]">
+                    <p className="mt-0.5 truncate text-[13px] text-muted-foreground">
                       Type: {document.typeName}
                       {document.tag ? ` · Tag ${document.tag}` : ""}
                     </p>
                   </div>
                   <button
                     type="button"
-                    className="flex h-11 shrink-0 items-center gap-1.5 px-2 text-sm font-bold text-[#2457d6] outline-none focus-visible:ring-2 focus-visible:ring-[#2457d6]"
+                    className="flex h-11 shrink-0 items-center gap-1.5 px-2 text-sm font-bold text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     disabled={downloading !== null}
                     onClick={() => void downloadOne(document)}
                   >
@@ -507,7 +507,7 @@ export function RecipientSharePage() {
               {downloading === "all" ? "Downloading" : "Download all"}
             </button>
             {expiresAt ? (
-              <p className="text-sm text-[#556075]">This link expires on {formatDisplayDate(expiresAt)}.</p>
+              <p className="text-sm text-muted-foreground">This link expires on {formatDisplayDate(expiresAt)}.</p>
             ) : null}
           </div>
         ) : null}
@@ -518,22 +518,22 @@ export function RecipientSharePage() {
 
 function IconBadge({ tone, children }: { tone: "success" | "error" | "warning" | "info"; children: ReactNode }) {
   const tones = {
-    success: "bg-[#e3f5ec] text-[#0b7a47]",
-    error: "bg-[#fdecea] text-[#b42318]",
-    warning: "bg-[#fff3e0] text-[#a15c00]",
-    info: "bg-[#e8eefc] text-[#2457d6]",
+    success: "bg-success-soft text-success-strong",
+    error: "bg-danger-soft text-danger-strong",
+    warning: "bg-warning-soft text-warning-strong",
+    info: "bg-primary-soft text-primary",
   };
   return <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${tones[tone]}`}>{children}</div>;
 }
 
 const primaryClass =
-  "flex h-12 w-full items-center justify-center rounded-[10px] bg-[#2457d6] text-sm font-bold text-white transition-all duration-200 ease-out hover:bg-[#1d48b8] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2457d6] focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50";
+  "flex h-12 w-full items-center justify-center rounded-[10px] bg-primary text-sm font-bold text-primary-foreground transition-all duration-200 ease-out hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50";
 
 const textButtonClass =
-  "flex min-h-11 w-full items-center justify-center text-sm font-bold text-[#2457d6] outline-none focus-visible:ring-2 focus-visible:ring-[#2457d6] disabled:opacity-50";
+  "flex min-h-11 w-full items-center justify-center text-sm font-bold text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
 
 const inputClass =
-  "h-12 w-full rounded-[10px] border border-[#cdd3df] bg-[#f3f5f9] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#2457d6]";
+  "h-12 w-full rounded-[10px] border border-input bg-muted/60 px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 const inputClassError =
-  "h-12 w-full rounded-[10px] border border-[#b42318] bg-[#fdecea] px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#b42318]";
+  "h-12 w-full rounded-[10px] border border-danger bg-danger-soft px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-danger";

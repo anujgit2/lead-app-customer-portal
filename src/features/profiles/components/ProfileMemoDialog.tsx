@@ -139,7 +139,6 @@ function ProfileMemoForm({ profile, sections, onOpenChange }: ProfileMemoDialogP
           <Button
             type="button"
             variant="outline"
-            className="h-8"
             disabled={!canExport}
             loading={downloading}
             onClick={() => void download()}
@@ -148,7 +147,6 @@ function ProfileMemoForm({ profile, sections, onOpenChange }: ProfileMemoDialogP
           </Button>
           <Button
             type="button"
-            className="h-8"
             disabled={!canExport}
             loading={saveMemo.isPending}
             onClick={() => {

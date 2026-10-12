@@ -76,7 +76,7 @@ export function useShares(documentId: string, enabled = true) {
 
 export function useShareActivity(documentId: string, shareId: string, enabled: boolean) {
   return useInfiniteQuery({
-    queryKey: ["activity", shareId],
+    queryKey: ["activity", documentId, shareId],
     enabled: enabled && documentId.length > 0 && shareId.length > 0,
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam }) => getActivity(documentId, shareId, pageParam),
@@ -101,7 +101,7 @@ export function useRevokeShare(documentId: string) {
     mutationFn: (shareId: string) => revokeShare(documentId, shareId),
     onSuccess: async (_result, shareId) => {
       await queryClient.invalidateQueries({ queryKey: ["shares", documentId] });
-      await queryClient.invalidateQueries({ queryKey: ["activity", shareId] });
+      await queryClient.invalidateQueries({ queryKey: ["activity", documentId, shareId] });
     },
   });
 }

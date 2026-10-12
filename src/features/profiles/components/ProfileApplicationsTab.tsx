@@ -12,6 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { ApplicationStatusBadge } from "@/features/applications/ApplicationStatusBadge";
 import { getApplicationHref } from "@/features/applications/ApplicationsTable";
@@ -73,18 +74,12 @@ export function ProfileApplicationsTab({ profile }: ProfileApplicationsTabProps)
       ) : null}
       {empty ? (
         <section className="overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-1)]">
-          <div className="flex flex-col items-center px-6 py-10 text-center" role="status">
-            <span className="tone-brand mb-3 grid h-12 w-12 place-items-center rounded-lg">
-              <FileText className="h-5 w-5" aria-hidden />
-            </span>
-            <h3 className="text-base font-semibold leading-6">No applications yet</h3>
-            <p className="mt-1 max-w-[36ch] text-sm text-muted-foreground">
-              Loan applications started for this profile will show up here.
-            </p>
-            <div className="mt-4">
-              <StartApplicationMenu profileId={profile.id} versionNo={profile.currentVersionNo} />
-            </div>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="No applications yet"
+            description="Loan applications started for this profile will show up here."
+            action={<StartApplicationMenu profileId={profile.id} versionNo={profile.currentVersionNo} />}
+          />
         </section>
       ) : null}
       {!applications.isLoading && !applications.isError && linked.length > 0 ? (
@@ -138,7 +133,7 @@ export function ProfileApplicationsTab({ profile }: ProfileApplicationsTabProps)
                       </div>
                     </TableCell>
                     <TableCell className="px-3">
-                      <ApplicationStatusBadge status={application.status} />
+                      <ApplicationStatusBadge status={application.status} size="sm" />
                     </TableCell>
                     <TableCell className="hidden whitespace-nowrap px-3 text-muted-foreground tabular-nums sm:table-cell">
                       {when}
@@ -176,7 +171,7 @@ function StartApplicationMenu({ profileId, versionNo }: { profileId: string; ver
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Loan program</DropdownMenuLabel>
-        {programs.isLoading ? <p className="px-2.5 py-2 text-xs text-slate-500">Loading programs…</p> : null}
+        {programs.isLoading ? <p className="px-2.5 py-2 text-xs text-muted-foreground">Loading programs…</p> : null}
         {programs.isError ? (
           <p className="px-2.5 py-2 text-xs text-destructive">{parseApiError(programs.error).message}</p>
         ) : null}

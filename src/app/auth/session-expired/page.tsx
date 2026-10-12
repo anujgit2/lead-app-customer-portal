@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { ErrorState } from "@/components/ErrorState";
-import { clearAuthTokens, getAuthError } from "@/lib/session";
+import { clearAuthTokens, parseAuthError, readStoredAuthError } from "@/lib/session";
+import { useAuthStore } from "@/store/auth.store";
+
+const subscribeNoop = () => () => {};
 
 export default function SessionExpiredPage() {
-  const authError = getAuthError();
+  const stored = useSyncExternalStore(subscribeNoop, readStoredAuthError, () => null);
+  const authError = useMemo(() => parseAuthError(stored), [stored]);
 
   useEffect(() => {
     clearAuthTokens();
+    useAuthStore.getState().logout();
   }, []);
 
   return (

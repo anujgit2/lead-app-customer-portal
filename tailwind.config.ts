@@ -95,6 +95,11 @@ const config: Config = {
           soft: "hsl(var(--neutral-soft))",
           strong: "hsl(var(--neutral-strong))",
         },
+        brand: {
+          deep: "hsl(var(--brand-deep))",
+          mid: "hsl(var(--brand-mid))",
+          glow: "hsl(var(--brand-glow))",
+        },
       },
       borderRadius: {
         sm: "var(--r-sm)",

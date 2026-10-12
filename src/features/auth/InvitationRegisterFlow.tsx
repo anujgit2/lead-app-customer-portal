@@ -69,11 +69,12 @@ export function InvitationRegisterFlow({
 
   if (step === "verify-email" && userId && registerData) {
     return (
-      <EmailVerificationForm
-        userId={userId}
-        email={registerData.email}
-        registerData={registerData}
-      />
+        <EmailVerificationForm
+          userId={userId}
+          email={registerData.email}
+          registerData={registerData}
+          onChangeEmail={() => setStep("register")}
+        />
     );
   }
 

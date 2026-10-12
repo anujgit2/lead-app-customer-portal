@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
+  AlertCircle,
   ArrowRight,
   Building2,
   ChevronRight,
@@ -15,6 +16,7 @@ import {
   Loader2,
   MoreHorizontal,
   Pencil,
+  RefreshCw,
   Share2,
   Upload,
   Users,
@@ -36,7 +38,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
+import { PageHeader, PageShell } from "@/components/PageShell";
+import { TableSkeletonRows } from "@/components/TableSkeleton";
 import {
   ApplicationStatusBadge,
 } from "@/features/applications/ApplicationStatusBadge";
@@ -50,16 +55,16 @@ import type { PortalDocument } from "@/features/documents/types";
 import { categoryKey, categoryLabel } from "@/features/documents/utils/format";
 import { useProfiles } from "@/features/profiles/api/queries";
 import {
-  profileInitials,
-  profileStatusLabel,
-  profileTypeLabel,
-  showIdentifier,
-} from "@/features/profiles/utils/display";
+  ProfileAvatar,
+  ProfileStatusBadge,
+  ProfileTypeBadge,
+} from "@/features/profiles/components/ProfileBadges";
+import { profileTypeLabel, showIdentifier } from "@/features/profiles/utils/display";
 import { parseApiError } from "@/lib/api-error";
 import { cn, formatCurrency, formatDate, formatFileSize } from "@/lib/utils";
 import { applicationService } from "@/services/application.service";
 import { useAuthStore } from "@/store/auth.store";
-import type { CustomerProfileSummary, CustomerProfileType, LoanApplication } from "@/types";
+import type { CustomerProfileSummary, LoanApplication } from "@/types";
 
 const RECENT_LIMIT = 5;
 const COMPANY_KEYS = [
@@ -71,8 +76,6 @@ const COMPANY_KEYS = [
   "organisationName",
   "organizationName",
 ];
-
-const badgeClass = "h-[22px] px-2 text-xs";
 
 function plural(count: number, word: string): string {
   return `${count} ${word}${count === 1 ? "" : "s"}`;
@@ -203,7 +206,7 @@ function SectionTitle({
   href: string;
 }) {
   return (
-    <div className="mt-1 flex items-center justify-between gap-3">
+    <div className="flex items-center justify-between gap-3">
       <h2 id={id} className="scroll-mt-20 text-lg font-semibold leading-[26px] tracking-[-0.01em]">
         {title}
       </h2>
@@ -217,26 +220,6 @@ function SectionTitle({
   );
 }
 
-function EmptyBlock({
-  icon: Icon,
-  title,
-  text,
-}: {
-  icon: typeof FileText;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-1 px-6 py-10 text-center" role="status">
-      <span className="tone-brand mb-3 grid h-12 w-12 place-items-center rounded-lg">
-        <Icon className="h-5 w-5" aria-hidden />
-      </span>
-      <h3 className="text-base font-semibold leading-6">{title}</h3>
-      <p className="max-w-[36ch] text-sm text-muted-foreground">{text}</p>
-    </div>
-  );
-}
-
 function SectionMessage({
   message,
   onRetry,
@@ -245,28 +228,22 @@ function SectionMessage({
   onRetry: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
-      <p className="max-w-[42ch] text-sm text-muted-foreground">{message}</p>
-      <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-        Try again
-      </Button>
-    </div>
+    <EmptyState
+      icon={AlertCircle}
+      title="Couldn't load this section"
+      description={message}
+      action={
+        <Button type="button" variant="outline" size="sm" onClick={onRetry}>
+          <RefreshCw />
+          Try again
+        </Button>
+      }
+    />
   );
 }
 
 function LoadingRows({ label, columns }: { label: string; columns: number }) {
-  return (
-    <>
-      {Array.from({ length: 3 }, (_, index) => (
-        <TableRow key={index} className="hover:bg-transparent">
-          <TableCell colSpan={columns} className="h-12">
-            {index === 0 ? <p className="sr-only">{label}</p> : null}
-            <div className="h-8 animate-pulse rounded-md bg-muted" aria-hidden />
-          </TableCell>
-        </TableRow>
-      ))}
-    </>
-  );
+  return <TableSkeletonRows label={label} columns={columns} rows={3} />;
 }
 
 function MenuAction({
@@ -295,9 +272,9 @@ function RowMenu({ label, children }: { label: string; children: ReactNode }) {
         <Button
           type="button"
           variant="ghost"
-          size="sm"
+          size="icon-sm"
           aria-label={`Actions for ${label}`}
-          className="h-8 w-8 p-0 text-muted-foreground hover:bg-primary-soft hover:text-primary data-[state=open]:bg-primary-soft data-[state=open]:text-primary"
+          className="text-muted-foreground hover:bg-primary-soft hover:text-primary data-[state=open]:bg-primary-soft data-[state=open]:text-primary"
           onClick={(event) => event.stopPropagation()}
         >
           <MoreHorizontal />
@@ -311,24 +288,31 @@ function RowMenu({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function RecentTable({
-  labelledBy,
+  id,
+  title,
+  href,
   caption,
   children,
 }: {
-  labelledBy: string;
+  id: string;
+  title: string;
+  href: string;
   caption: string;
   children: ReactNode;
 }) {
   return (
-    <section
-      aria-labelledby={labelledBy}
-      className="overflow-hidden rounded-lg border border-border bg-card shadow-sm"
-    >
-      <Table className="text-[13px] [&_td]:h-14 [&_td]:px-3 [&_th]:h-[38px] [&_th]:px-3 [&_th]:text-xs">
-        <caption className="sr-only">{caption}</caption>
-        {children}
-      </Table>
-    </section>
+    <div className="flex flex-col gap-3">
+      <SectionTitle id={id} title={title} href={href} />
+      <section
+        aria-labelledby={id}
+        className="overflow-hidden rounded-lg border border-border bg-card shadow-sm"
+      >
+        <Table className="text-[13px] [&_td]:h-14 [&_td]:px-3 [&_th]:h-[38px] [&_th]:px-3 [&_th]:text-xs">
+          <caption className="sr-only">{caption}</caption>
+          {children}
+        </Table>
+      </section>
+    </div>
   );
 }
 
@@ -440,15 +424,11 @@ export function DashboardPage() {
   const latestDraft = drafts[0];
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 px-4 py-5 pb-16 sm:px-8 sm:py-7 sm:pb-20">
-      <div>
-        <h1 className="text-2xl font-[650] leading-8 tracking-[-0.02em]">
-          {greeting}, {user?.firstName ?? "there"} 👋
-        </h1>
-        <p className="mt-1 text-sm leading-5 text-muted-foreground">
-          Here&apos;s an overview of your loan applications.
-        </p>
-      </div>
+    <PageShell className="pb-16 sm:pb-20">
+      <PageHeader
+        title={`${greeting}, ${user?.firstName ?? "there"} 👋`}
+        description="Here's an overview of your loan applications."
+      />
 
       <div className="grid grid-cols-3 gap-3 max-sm:gap-2" aria-label="Overview">
         <OverviewCard
@@ -526,8 +506,7 @@ export function DashboardPage() {
         </div>
       ) : null}
 
-      <SectionTitle id="apps-h" title="Recent applications" href="/applications" />
-      <RecentTable labelledBy="apps-h" caption="Loan applications">
+      <RecentTable id="apps-h" title="Recent applications" href="/applications" caption="Loan applications">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead>Application</TableHead>
@@ -545,10 +524,10 @@ export function DashboardPage() {
           ) : recentApplications.length === 0 ? (
             <TableRow className="hover:bg-transparent">
               <TableCell colSpan={7} className="h-auto !p-0">
-                <EmptyBlock
+                <EmptyState
                   icon={FileText}
                   title="No applications yet"
-                  text="Use “Apply for a loan” to start one."
+                  description="Use “Apply for a loan” to start one."
                 />
               </TableCell>
             </TableRow>
@@ -602,7 +581,7 @@ export function DashboardPage() {
                     {formatCurrency(app.loanAmount || 0)}
                   </TableCell>
                   <TableCell>
-                    <ApplicationStatusBadge status={app.status} className={badgeClass} />
+                    <ApplicationStatusBadge status={app.status} size="sm" />
                   </TableCell>
                   <TableCell className="hidden whitespace-nowrap text-muted-foreground tabular-nums sm:table-cell">
                     {displayDate(app.updatedAt)}
@@ -632,8 +611,7 @@ export function DashboardPage() {
         </TableBody>
       </RecentTable>
 
-      <SectionTitle id="pr-h" title="Recent profiles" href="/profiles" />
-      <RecentTable labelledBy="pr-h" caption="Recent profiles">
+      <RecentTable id="pr-h" title="Recent profiles" href="/profiles" caption="Recent profiles">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead>Profile</TableHead>
@@ -662,7 +640,7 @@ export function DashboardPage() {
           ) : recentProfiles.length === 0 ? (
             <TableRow className="hover:bg-transparent">
               <TableCell colSpan={7} className="h-auto !p-0">
-                <EmptyBlock icon={Users} title="No profiles yet" text="Create a profile to get started." />
+                <EmptyState icon={Users} title="No profiles yet" description="Create a profile to get started." />
               </TableCell>
             </TableRow>
           ) : (
@@ -673,8 +651,7 @@ export function DashboardPage() {
         </TableBody>
       </RecentTable>
 
-      <SectionTitle id="dc-h" title="Recent documents" href="/documents" />
-      <RecentTable labelledBy="dc-h" caption="Recent documents">
+      <RecentTable id="dc-h" title="Recent documents" href="/documents" caption="Recent documents">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead>Document</TableHead>
@@ -703,7 +680,7 @@ export function DashboardPage() {
           ) : recentDocuments.length === 0 ? (
             <TableRow className="hover:bg-transparent">
               <TableCell colSpan={7} className="h-auto !p-0">
-                <EmptyBlock icon={Files} title="No documents yet" text="Upload a document to see it here." />
+                <EmptyState icon={Files} title="No documents yet" description="Upload a document to see it here." />
               </TableCell>
             </TableRow>
           ) : (
@@ -741,7 +718,7 @@ export function DashboardPage() {
                         <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[13.5px] font-semibold leading-[18px]">
                           <span className="min-w-0 truncate">{title}</span>
                           {document.label ? (
-                            <Badge variant="outline" dot={false} className={badgeClass}>
+                            <Badge variant="outline" dot={false} size="sm">
                               {document.label}
                             </Badge>
                           ) : null}
@@ -758,16 +735,16 @@ export function DashboardPage() {
                     </div>
                   </TableCell>
                   <TableCell className="hidden min-[901px]:table-cell">
-                    <Badge variant={financial ? "brand" : "info"} className={badgeClass}>
+                    <Badge variant={financial ? "brand" : "info"} size="sm">
                       {categoryLabel(categoryKey(document.category), document.category)}
                     </Badge>
                   </TableCell>
                   <TableCell className="hidden min-[901px]:table-cell">{name || "—"}</TableCell>
                   <TableCell className="whitespace-nowrap">
-                    <span className="inline-flex h-5 items-center rounded-md bg-muted px-1.5 text-[11.5px] font-semibold tabular-nums">
+                    <Badge variant="secondary" dot={false} size="xs" className="rounded-md tabular-nums">
                       v{document.latestVersion}
-                    </span>
-                    <Badge variant="success" dot={false} className={cn(badgeClass, "ml-1")}>
+                    </Badge>
+                    <Badge variant="success" dot={false} size="sm" className="ml-1">
                       Latest
                     </Badge>
                   </TableCell>
@@ -876,7 +853,7 @@ export function DashboardPage() {
             : []
         }
       />
-    </div>
+    </PageShell>
   );
 }
 
@@ -907,12 +884,7 @@ function ProfileRow({
     >
       <TableCell>
         <div className="flex min-w-0 items-center gap-2.5">
-          <span
-            aria-hidden
-            className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full bg-primary-soft text-[11px] font-semibold text-primary-soft-foreground"
-          >
-            {profileInitials(name)}
-          </span>
+          <ProfileAvatar name={name} size="sm" />
           <div className="min-w-0">
             <span className="block truncate text-[13.5px] font-semibold leading-[18px]">{name}</span>
             <span className="mt-px block truncate font-mono text-[11px] leading-[14px] text-muted-foreground">
@@ -925,12 +897,10 @@ function ProfileRow({
         </div>
       </TableCell>
       <TableCell>
-        <TypeBadge type={profile.type} />
+        <ProfileTypeBadge type={profile.type} size="sm" />
       </TableCell>
       <TableCell>
-        <Badge variant={profile.status === "ACTIVE" ? "success" : "secondary"} className={badgeClass}>
-          {profileStatusLabel(profile.status)}
-        </Badge>
+        <ProfileStatusBadge status={profile.status} size="sm" />
       </TableCell>
       <TableCell
         className={cn(
@@ -968,13 +938,5 @@ function ProfileRow({
         </RowMenu>
       </TableCell>
     </TableRow>
-  );
-}
-
-function TypeBadge({ type }: { type: CustomerProfileType }) {
-  return (
-    <Badge variant={type === "BUSINESS" ? "info" : "secondary"} className={badgeClass}>
-      {profileTypeLabel(type)}
-    </Badge>
   );
 }

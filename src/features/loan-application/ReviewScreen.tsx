@@ -2,7 +2,9 @@
 
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { FieldOption, FormData, FormField, FormSection, FormTemplate, StoredFileReference } from "@/types";
+import type { FieldOption, FormData, FormSection, FormTemplate, StoredFileReference } from "@/types";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -24,14 +26,34 @@ import {
 import { toast } from "sonner";
 import { parseApiError } from "@/lib/api-error";
 import { cn, formatDate, formatFileSize } from "@/lib/utils";
-import { getAddressSubfields, isPlainObject } from "@/utils/address-field";
-import { isFieldVisible } from "@/utils/rule-engine";
 import { StoredFileList } from "@/components/forms/StoredFileList";
-import { fileStorageService, isStoredFileReference } from "@/services/file-storage.service";
-import { isDocumentTemplate } from "@/components/forms/DocumentUploadProgress";
+import {
+  fileStorageService,
+  isStoredFileReference,
+  triggerDownload,
+} from "@/services/file-storage.service";
 import { FilePreview } from "@/features/documents/components/FilePreview";
 import { useObjectUrl } from "@/features/documents/hooks/useObjectUrl";
 import { previewKind } from "@/features/documents/utils/format";
+import {
+  collectReviewItems,
+  countTemplateFields,
+  countUploadedFiles,
+  documentGroupsForTemplate,
+  humanizeValue,
+  instanceProfile,
+  isDocumentTemplate,
+  isEmptyReviewValue,
+  sectionRows,
+  templateInstances,
+  type DocGroup,
+  type MissingDoc,
+  type ProvidedDoc,
+  type ReviewItem,
+} from "./review-helpers";
+
+/** `review` is the wizard's last step; `view` is the read-only summary of a saved application. */
+export type SummaryMode = "review" | "view";
 
 interface ReviewScreenProps {
   templates: FormTemplate[];
@@ -44,32 +66,8 @@ interface ReviewScreenProps {
   isSaving?: boolean;
 }
 
-interface ReviewItem {
-  key: string;
-  label: string;
-  value: unknown;
-  type?: string;
-  options?: FieldOption[];
-}
-
-function isDocumentReviewField(type?: string) {
-  return type === "file" || type === "document";
-}
-
-function isEmptyReviewValue(value: unknown): boolean {
-  if (value == null || value === "") return true;
-  if (typeof value === "boolean") return false;
-  if (Array.isArray(value)) return value.length === 0;
-  if (isPlainObject(value)) return Object.values(value).every(isEmptyReviewValue);
-  return false;
-}
-
-function humanizeValue(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-    .trim();
+function NotProvided({ children = "Not provided" }: { children?: React.ReactNode }) {
+  return <span className="text-sm font-normal italic text-muted-foreground">{children}</span>;
 }
 
 function ReviewValue({
@@ -82,7 +80,7 @@ function ReviewValue({
   options?: FieldOption[];
 }) {
   if (value === null || value === undefined || value === "") {
-    return <span className="text-[14px] font-normal italic text-slate-500">Not provided</span>;
+    return <NotProvided />;
   }
   if (typeof value === "boolean") {
     return <span>{value ? "Yes" : "No"}</span>;
@@ -107,22 +105,18 @@ function ReviewValue({
     return <span>{options?.find((opt) => opt.value === raw)?.label ?? humanizeValue(raw)}</span>;
   }
   if (type === "multiselect") {
-    const selected = Array.isArray(value) ? value.filter((item) => typeof item === "string") : [];
+    const selected = Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === "string")
+      : [];
     if (selected.length === 0) {
-      return <span className="text-[14px] font-normal italic text-slate-500">Not provided</span>;
+      return <NotProvided />;
     }
-    const labels = selected.map(
-      (item) => options?.find((opt) => opt.value === item)?.label ?? humanizeValue(item)
-    );
     return (
       <span className="flex flex-wrap gap-1.5">
-        {labels.map((label) => (
-          <span
-            key={label}
-            className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700"
-          >
-            {label}
-          </span>
+        {selected.map((item) => (
+          <Badge key={item} variant="secondary" dot={false} size="sm">
+            {options?.find((opt) => opt.value === item)?.label ?? humanizeValue(item)}
+          </Badge>
         ))}
       </span>
     );
@@ -141,55 +135,9 @@ function ReviewValue({
     if (type === "file" || type === "document" || (files.length > 0 && files.length === value.length)) {
       return <StoredFileList files={files} />;
     }
-    return <span className="text-[14px] font-normal italic text-slate-500">{value.length} file(s)</span>;
+    return <NotProvided>{value.length} file(s)</NotProvided>;
   }
   return <span>{String(value)}</span>;
-}
-
-function collectReviewItems(fields: FormField[], data: Record<string, unknown>) {
-  const items: ReviewItem[] = [];
-  const documents: ReviewItem[] = [];
-
-  for (const field of fields) {
-    if (field.type === "hidden") continue;
-    const value = data[field.name];
-
-    if (isDocumentReviewField(field.type)) {
-      if (value === undefined) continue;
-      documents.push({
-        key: field.name,
-        label: field.label,
-        value,
-        type: field.type,
-        options: field.options,
-      });
-      continue;
-    }
-
-    if (field.type === "address") {
-      const addr = isPlainObject(value) ? value : {};
-      for (const sub of getAddressSubfields()) {
-        items.push({
-          key: `${field.name}.${sub.name}`,
-          label: sub.label,
-          value: addr[sub.name],
-          type: sub.type,
-          options: sub.options,
-        });
-      }
-      continue;
-    }
-
-    items.push({
-      key: field.name,
-      label: field.label,
-      value,
-      type: field.type,
-      options: field.options,
-    });
-  }
-
-  return { items, documents };
 }
 
 function ReviewFieldGrid({
@@ -203,13 +151,13 @@ function ReviewFieldGrid({
   if (visible.length === 0) return null;
 
   return (
-    <dl className="grid grid-cols-1 min-[420px]:grid-cols-2 min-[700px]:grid-cols-3 min-[900px]:grid-cols-4 gap-x-6 gap-y-4 m-0">
+    <dl className="m-0 grid grid-cols-1 gap-x-6 gap-y-4 min-[420px]:grid-cols-2 min-[700px]:grid-cols-3 min-[900px]:grid-cols-4">
       {visible.map((item) => (
         <div key={item.key}>
-          <dt className="text-[13px] font-normal text-slate-500">{item.label}</dt>
+          <dt className="text-[13px] font-normal text-muted-foreground">{item.label}</dt>
           <dd
             className={cn(
-              "mt-0.5 m-0 break-words text-[15px] font-medium text-slate-900",
+              "m-0 mt-0.5 break-words text-[15px] font-medium text-foreground",
               isEmptyReviewValue(item.value) && "font-normal"
             )}
           >
@@ -224,7 +172,7 @@ function ReviewFieldGrid({
 function DocumentFieldGrid({ documents }: { documents: ReviewItem[] }) {
   if (documents.length === 0) return null;
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+    <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
       {documents.map((field) => (
         <div key={field.key}>
           <p className="mb-0.5 text-xs text-muted-foreground">{field.label}</p>
@@ -239,23 +187,21 @@ function DocumentFieldGrid({ documents }: { documents: ReviewItem[] }) {
 
 function ReviewGroup({
   section,
-  data,
+  instance,
+  formData,
   hideEmpty,
 }: {
   section: FormSection;
-  data: unknown;
+  instance: Record<string, unknown>;
+  formData: FormData;
   hideEmpty?: boolean;
 }) {
-  const rows = Array.isArray(data)
-    ? data.filter(isPlainObject)
-    : isPlainObject(data)
-      ? [data]
-      : [{}];
+  const rows = sectionRows(instance[section.code]);
 
   return (
     <>
       {rows.map((row, index) => {
-        const { items, documents } = collectReviewItems(section.fields, row);
+        const { items, documents } = collectReviewItems(section.fields, row, instance, formData);
         const visibleItems = hideEmpty
           ? items.filter((item) => !isEmptyReviewValue(item.value))
           : items;
@@ -264,9 +210,9 @@ function ReviewGroup({
         return (
           <div
             key={index}
-            className="mt-4 border-t border-slate-100 pt-3.5 first:mt-0 first:border-t-0 first:pt-3.5"
+            className="mt-4 border-t border-border pt-3.5 first:mt-0 first:border-t-0 first:pt-3.5"
           >
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-slate-500">
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-[0.06em] text-muted-foreground">
               {section.title}
               {rows.length > 1 ? ` #${index + 1}` : ""}
             </h4>
@@ -281,193 +227,50 @@ function ReviewGroup({
   );
 }
 
-function instanceProfile(template: FormTemplate, instance: Record<string, unknown>) {
-  const merged: Record<string, unknown> = {};
-  for (const section of template.sections) {
-    const data = instance[section.code];
-    if (isPlainObject(data)) Object.assign(merged, data);
-  }
-  const firstName = typeof merged.firstName === "string" ? merged.firstName.trim() : "";
-  const lastName = typeof merged.lastName === "string" ? merged.lastName.trim() : "";
-  const designation = typeof merged.designation === "string" ? merged.designation : "";
-  const name = [firstName, lastName].filter(Boolean).join(" ");
-  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  return {
-    name: name || `${template.title}`,
-    initials: initials || template.title.charAt(0).toUpperCase(),
-    designation: designation ? humanizeValue(designation) : "",
-  };
-}
-
-function countTemplateFields(
-  template: FormTemplate,
-  templateData: unknown
-): { filled: number; total: number } {
-  let filled = 0;
-  let total = 0;
-
-  const tally = (fields: FormField[], data: Record<string, unknown>) => {
-    const { items } = collectReviewItems(fields, data);
-    total += items.length;
-    filled += items.filter((item) => !isEmptyReviewValue(item.value)).length;
-  };
-
-  const instances = template.repeatable
-    ? Array.isArray(templateData)
-      ? templateData.filter(isPlainObject)
-      : []
-    : [isPlainObject(templateData) ? templateData : {}];
-
-  if (instances.length === 0) {
-    for (const section of template.sections) tally(section.fields, {});
-    return { filled, total };
-  }
-
-  for (const instance of instances) {
-    for (const section of template.sections) {
-      const sectionData = instance[section.code];
-      const rows = Array.isArray(sectionData)
-        ? sectionData.filter(isPlainObject)
-        : [isPlainObject(sectionData) ? sectionData : {}];
-      for (const row of rows) tally(section.fields, row);
-    }
-  }
-
-  return { filled, total };
-}
-
-function StepPill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex h-[22px] shrink-0 items-center rounded-full bg-primary-soft px-[9px] text-xs font-semibold text-primary-soft-foreground">
-      {children}
-    </span>
-  );
-}
-
-function EditStepButton({ onClick }: { onClick: () => void }) {
-  return (
-    <Button type="button" variant="outline" size="sm" onClick={onClick} className="gap-2">
-      <Pencil className="h-4 w-4" />
-      Edit
-    </Button>
-  );
-}
-
-interface ProvidedDoc {
-  key: string;
-  label: string;
-  file: StoredFileReference;
-}
-
-interface MissingDoc {
-  key: string;
-  label: string;
-}
-
-interface DocGroup {
-  id: string;
-  title: string;
-  provided: ProvidedDoc[];
-  missing: MissingDoc[];
-  slotCount: number;
-  filledSlots: number;
-}
-
-function filesForField(value: unknown): StoredFileReference[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter(isStoredFileReference);
-}
-
-function documentGroupsForTemplate(
-  template: FormTemplate,
-  templateData: unknown,
-  formData: FormData
-): DocGroup[] {
-  const instance = isPlainObject(templateData) ? templateData : {};
-  const groups: DocGroup[] = [];
-
-  for (const section of template.sections) {
-    const sectionData = instance[section.code];
-    const rows = Array.isArray(sectionData)
-      ? sectionData.filter(isPlainObject)
-      : [isPlainObject(sectionData) ? sectionData : {}];
-
-    rows.forEach((row, rowIndex) => {
-      const provided: ProvidedDoc[] = [];
-      const missing: MissingDoc[] = [];
-      let slotCount = 0;
-      let filledSlots = 0;
-
-      for (const field of section.fields) {
-        if (!isDocumentReviewField(field.type)) continue;
-        if (!isFieldVisible(field, row, instance, formData)) continue;
-        slotCount += 1;
-        const files = filesForField(row[field.name]);
-        if (files.length === 0) {
-          missing.push({
-            key: `${section.code}-${field.name}-missing`,
-            label: field.label,
-          });
-          continue;
-        }
-        filledSlots += 1;
-        files.forEach((file, fileIndex) => {
-          provided.push({
-            key: `${section.code}-${field.name}-${file.id}-${fileIndex}`,
-            label: field.label,
-            file,
-          });
-        });
-      }
-
-      if (slotCount === 0) return;
-      groups.push({
-        id: rows.length > 1 ? `${section.code}-${rowIndex}` : section.code,
-        title: rows.length > 1 ? `${section.title} #${rowIndex + 1}` : section.title,
-        provided,
-        missing,
-        slotCount,
-        filledSlots,
-      });
-    });
-  }
-
-  return groups;
-}
-
-function countUploadedFiles(templates: FormTemplate[], formData: FormData): number {
-  return templates
-    .filter(isDocumentTemplate)
-    .reduce((total, template) => {
-      const groups = documentGroupsForTemplate(template, formData[template.code], formData);
-      return total + groups.reduce((count, group) => count + group.provided.length, 0);
-    }, 0);
-}
-
-function FileIconButton({
-  label,
+function CardHeaderRow({
+  mode,
+  stepIndex,
   title,
-  pending,
-  onClick,
-  children,
+  headingId,
+  filled,
+  total,
+  onEdit,
 }: {
-  label: string;
+  mode: SummaryMode;
+  stepIndex: number;
   title: string;
-  pending?: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
+  headingId?: string;
+  filled: number;
+  total: number;
+  onEdit?: () => void;
 }) {
+  const reviewing = mode === "review";
   return (
-    <button
-      type="button"
-      aria-label={label}
-      title={title}
-      disabled={pending}
-      onClick={onClick}
-      className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-primary-soft hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-45"
-    >
-      {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : children}
-    </button>
+    <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
+      <div className="flex min-w-0 items-center gap-2.5">
+        {reviewing && (
+          <Badge variant="brand" dot={false} size="sm" className="shrink-0">
+            Step {stepIndex + 1}
+          </Badge>
+        )}
+        <h2 id={headingId} className="min-w-0 truncate text-base font-semibold leading-6 tracking-tight text-foreground">
+          {title}
+        </h2>
+      </div>
+      {reviewing && (
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="text-[13px] tabular-nums text-muted-foreground">
+            {filled} of {total}
+          </span>
+          {onEdit && (
+            <Button type="button" variant="outline" size="sm" onClick={onEdit}>
+              <Pencil />
+              Edit
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -475,10 +278,14 @@ function DocumentDownloadButton({ file }: { file: StoredFileReference }) {
   const [pending, setPending] = useState(false);
 
   return (
-    <FileIconButton
-      label={`Download ${file.fileName}`}
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
+      aria-label={`Download ${file.fileName}`}
       title="Download"
-      pending={pending}
+      loading={pending}
+      className="text-muted-foreground hover:bg-primary-soft hover:text-primary"
       onClick={() => {
         setPending(true);
         void fileStorageService
@@ -489,8 +296,8 @@ function DocumentDownloadButton({ file }: { file: StoredFileReference }) {
           .finally(() => setPending(false));
       }}
     >
-      <Download className="h-4 w-4" />
-    </FileIconButton>
+      {pending ? null : <Download />}
+    </Button>
   );
 }
 
@@ -517,13 +324,17 @@ function DocumentRow({
           {detail}
         </small>
       </div>
-      <FileIconButton
-        label={`Preview ${doc.label}`}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        aria-label={`Preview ${doc.label}`}
         title="Preview"
+        className="text-muted-foreground hover:bg-primary-soft hover:text-primary"
         onClick={() => onPreview(doc)}
       >
-        <Eye className="h-4 w-4" />
-      </FileIconButton>
+        <Eye />
+      </Button>
       <DocumentDownloadButton file={doc.file} />
     </div>
   );
@@ -547,26 +358,29 @@ function MissingDocumentRow({ doc }: { doc: MissingDoc }) {
 
 function DocumentGroupBlock({
   group,
+  mode,
   onPreview,
 }: {
   group: DocGroup;
+  mode: SummaryMode;
   onPreview: (doc: ProvidedDoc) => void;
 }) {
+  const reviewing = mode === "review";
   return (
     <div className="p-4 sm:p-5">
       <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h3 className="text-[13px] font-[650] leading-[18px]">{group.title}</h3>
-        <span className="text-[12.5px] tabular-nums text-muted-foreground">
-          {group.filledSlots} of {group.slotCount}
-        </span>
+        <h3 className="text-[13px] font-semibold leading-[18px] text-foreground">{group.title}</h3>
+        {reviewing && (
+          <span className="text-[12.5px] tabular-nums text-muted-foreground">
+            {group.filledSlots} of {group.slotCount}
+          </span>
+        )}
       </div>
       <div className="grid grid-cols-1 gap-2.5 min-[640px]:grid-cols-2">
         {group.provided.map((doc) => (
           <DocumentRow key={doc.key} doc={doc} onPreview={onPreview} />
         ))}
-        {group.missing.map((doc) => (
-          <MissingDocumentRow key={doc.key} doc={doc} />
-        ))}
+        {reviewing && group.missing.map((doc) => <MissingDocumentRow key={doc.key} doc={doc} />)}
       </div>
     </div>
   );
@@ -593,6 +407,11 @@ function ReviewFilePreviewDialog({
 
   const download = () => {
     if (!doc) return;
+    if (file.data) {
+      triggerDownload(file.data.blob, file.data.fileName);
+      onClose();
+      return;
+    }
     setDownloading(true);
     void fileStorageService
       .download(doc.file.id, doc.file.fileName)
@@ -641,8 +460,8 @@ function ReviewFilePreviewDialog({
           <Button type="button" variant="ghost" onClick={onClose}>
             Close
           </Button>
-          <Button type="button" variant="outline" onClick={download} loading={downloading} className="gap-2">
-            <Download className="h-4 w-4" />
+          <Button type="button" variant="outline" onClick={download} loading={downloading}>
+            <Download />
             Download
           </Button>
         </DialogFooter>
@@ -654,52 +473,46 @@ function ReviewFilePreviewDialog({
 function FormReviewCard({
   template,
   templateData,
+  formData,
+  mode,
   hideEmpty,
   stepIndex,
   onEdit,
 }: {
   template: FormTemplate;
   templateData: unknown;
+  formData: FormData;
+  mode: SummaryMode;
   hideEmpty?: boolean;
   stepIndex: number;
   onEdit?: () => void;
 }) {
-  const { filled, total } = countTemplateFields(template, templateData);
-  const instances = template.repeatable
-    ? Array.isArray(templateData)
-      ? templateData.filter(isPlainObject)
-      : []
-    : [isPlainObject(templateData) ? templateData : {}];
+  const { filled, total } = countTemplateFields(template, templateData, formData);
+  const instances = templateInstances(template, templateData);
 
   return (
     <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <StepPill>Step {stepIndex + 1}</StepPill>
-          <h2 className="min-w-0 truncate text-base font-[650] leading-6 tracking-[-0.01em]">
-            {template.title}
-          </h2>
-        </div>
-        <div className="flex shrink-0 items-center gap-3">
-          <span className="text-[13px] tabular-nums text-muted-foreground">
-            {filled} of {total}
-          </span>
-          {onEdit && <EditStepButton onClick={onEdit} />}
-        </div>
-      </div>
-      <div className="border-t border-border px-5 pb-4">
+      <CardHeaderRow
+        mode={mode}
+        stepIndex={stepIndex}
+        title={template.title}
+        filled={filled}
+        total={total}
+        onEdit={onEdit}
+      />
+      <div className="border-t border-border px-4 pb-4 sm:px-5">
         {instances.map((instance, index) => {
           const profile = template.repeatable ? instanceProfile(template, instance) : null;
           return (
             <div key={index}>
               {profile && (
                 <div className="flex items-center gap-3 pb-1.5 pt-4">
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                    {profile.initials}
-                  </div>
+                  <Avatar>
+                    <AvatarFallback>{profile.initials}</AvatarFallback>
+                  </Avatar>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold leading-snug text-slate-900">{profile.name}</p>
-                    <p className="text-[13px] font-normal text-slate-500">
+                    <p className="text-sm font-semibold leading-snug text-foreground">{profile.name}</p>
+                    <p className="text-[13px] font-normal text-muted-foreground">
                       {[profile.designation, `${template.title} #${index + 1}`]
                         .filter(Boolean)
                         .join(" · ")}
@@ -711,7 +524,8 @@ function FormReviewCard({
                 <ReviewGroup
                   key={section.code}
                   section={section}
-                  data={instance[section.code]}
+                  instance={instance}
+                  formData={formData}
                   hideEmpty={hideEmpty}
                 />
               ))}
@@ -727,16 +541,20 @@ function DocumentReviewCard({
   template,
   templateData,
   formData,
+  mode,
   stepIndex,
   onEdit,
 }: {
   template: FormTemplate;
   templateData: unknown;
   formData: FormData;
+  mode: SummaryMode;
   stepIndex: number;
   onEdit?: () => void;
 }) {
-  const groups = documentGroupsForTemplate(template, templateData, formData);
+  const reviewing = mode === "review";
+  const allGroups = documentGroupsForTemplate(template, templateData, formData);
+  const groups = reviewing ? allGroups : allGroups.filter((group) => group.provided.length > 0);
   const [preview, setPreview] = useState<ProvidedDoc | null>(null);
   const filled = groups.reduce((count, group) => count + group.filledSlots, 0);
   const total = groups.reduce((count, group) => count + group.slotCount, 0);
@@ -747,33 +565,32 @@ function DocumentReviewCard({
 
   return (
     <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm" aria-labelledby={headingId}>
-      <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <StepPill>Step {stepIndex + 1}</StepPill>
-          <h2 id={headingId} className="min-w-0 truncate text-base font-[650] leading-6 tracking-[-0.01em]">
-            {template.title}
-          </h2>
+      <CardHeaderRow
+        mode={mode}
+        stepIndex={stepIndex}
+        title={template.title}
+        headingId={headingId}
+        filled={filled}
+        total={total}
+        onEdit={onEdit}
+      />
+      {reviewing ? (
+        <div
+          className="h-[3px] bg-muted"
+          role="progressbar"
+          aria-label="Documents provided"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={percent}
+        >
+          <div className="h-full bg-primary transition-[width] duration-300" style={{ width: `${percent}%` }} />
         </div>
-        <div className="flex shrink-0 items-center gap-3">
-          <span className="text-[13px] tabular-nums text-muted-foreground">
-            {filled} of {total}
-          </span>
-          {onEdit && <EditStepButton onClick={onEdit} />}
-        </div>
-      </div>
-      <div
-        className="h-[3px] bg-muted"
-        role="progressbar"
-        aria-label="Documents provided"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={percent}
-      >
-        <div className="h-full bg-primary transition-[width] duration-300" style={{ width: `${percent}%` }} />
-      </div>
+      ) : (
+        <div className="border-t border-border" />
+      )}
       <div className="divide-y divide-border">
         {groups.map((group) => (
-          <DocumentGroupBlock key={group.id} group={group} onPreview={setPreview} />
+          <DocumentGroupBlock key={group.id} group={group} mode={mode} onPreview={setPreview} />
         ))}
       </div>
       <ReviewFilePreviewDialog doc={preview} onClose={() => setPreview(null)} />
@@ -786,6 +603,7 @@ interface ApplicationFormSummaryProps {
   formData: FormData;
   onEditStep?: (stepIndex: number) => void;
   hideEmpty?: boolean;
+  mode?: SummaryMode;
 }
 
 export function ApplicationFormSummary({
@@ -793,11 +611,13 @@ export function ApplicationFormSummary({
   formData,
   onEditStep,
   hideEmpty,
+  mode = "view",
 }: ApplicationFormSummaryProps) {
   return (
     <div className="flex flex-col gap-5">
       {templates.map((template, stepIndex) => {
         const templateData = formData[template.code];
+        const onEdit = onEditStep ? () => onEditStep(stepIndex) : undefined;
         if (isDocumentTemplate(template)) {
           return (
             <DocumentReviewCard
@@ -805,8 +625,9 @@ export function ApplicationFormSummary({
               template={template}
               templateData={templateData}
               formData={formData}
+              mode={mode}
               stepIndex={stepIndex}
-              onEdit={onEditStep ? () => onEditStep(stepIndex) : undefined}
+              onEdit={onEdit}
             />
           );
         }
@@ -815,9 +636,11 @@ export function ApplicationFormSummary({
             key={template.code}
             template={template}
             templateData={templateData}
+            formData={formData}
+            mode={mode}
             hideEmpty={hideEmpty}
             stepIndex={stepIndex}
-            onEdit={onEditStep ? () => onEditStep(stepIndex) : undefined}
+            onEdit={onEdit}
           />
         );
       })}
@@ -843,7 +666,7 @@ export function ReviewScreen({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h2 className="text-2xl font-[650] leading-8 tracking-[-0.02em] text-foreground">
+        <h2 className="text-2xl font-semibold leading-8 tracking-tight text-foreground">
           Review your application
         </h2>
         <p className="mt-0.5 text-sm leading-5 text-muted-foreground">
@@ -851,7 +674,12 @@ export function ReviewScreen({
         </p>
       </div>
 
-      <ApplicationFormSummary templates={templates} formData={formData} onEditStep={onEditStep} />
+      <ApplicationFormSummary
+        templates={templates}
+        formData={formData}
+        onEditStep={onEditStep}
+        mode="review"
+      />
 
       <div className="sticky bottom-[calc(12px+env(safe-area-inset-bottom,0px))] z-30 flex flex-wrap items-center gap-3 rounded-[14px] border border-border bg-card py-2.5 pl-4 pr-3 shadow-md">
         <label className="flex min-w-[200px] flex-1 cursor-pointer items-center gap-2.5 text-[13px]">
@@ -869,9 +697,9 @@ export function ReviewScreen({
             variant="ghost"
             onClick={onBack}
             disabled={busy}
-            className="gap-2 max-sm:flex-1"
+            className="max-sm:flex-1"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft />
             Back
           </Button>
           {onSaveClose && (

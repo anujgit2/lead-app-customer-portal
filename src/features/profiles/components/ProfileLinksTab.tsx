@@ -105,7 +105,6 @@ export function ProfileLinksTab({ profile }: ProfileLinksTabProps) {
               <Button
                 type="button"
                 variant="outline"
-                className="h-8"
                 loading={deleteLink.isPending && deleteLink.variables === link.id}
                 onClick={() => {
                   deleteLink.mutate(link.id, {
@@ -156,7 +155,7 @@ export function ProfileLinksTab({ profile }: ProfileLinksTabProps) {
             />
           </div>
         </div>
-        <Button type="button" className="h-8" disabled={!child} loading={createLink.isPending} onClick={add} size="sm">
+        <Button type="button" disabled={!child} loading={createLink.isPending} onClick={add} size="sm">
           Add person
         </Button>
       </div>

@@ -4,9 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
   Building2,
   ChevronDown,
   ChevronLeft,
@@ -26,7 +23,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
+import { PageHeader, PageShell } from "@/components/PageShell";
+import { SortableTableHead, type SortDirection } from "@/components/SortableTableHead";
+import { BlockSkeleton } from "@/components/TableSkeleton";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -48,22 +49,16 @@ import { cn } from "@/lib/utils";
 import type { CustomerProfileListFilters, CustomerProfileStatus, CustomerProfileSummary, CustomerProfileType } from "@/types";
 import { useProfiles } from "../api/queries";
 import { PROFILE_PAGE_SIZE } from "../constants";
-import { useDebouncedValue } from "../hooks/useDebouncedValue";
-import {
-  formatProfileDay,
-  formatProfileTime,
-  profileInitials,
-  profileStatusLabel,
-  profileTypeLabel,
-  showIdentifier,
-} from "../utils/display";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { ProfileAvatar, ProfileStatusBadge, ProfileTypeBadge } from "../components/ProfileBadges";
+import { formatProfileDay, formatProfileTime, showIdentifier } from "../utils/display";
 
 const PAGE_SIZES = [5, 10, 25] as const;
 
 type TypeFilter = "ALL" | CustomerProfileType;
 type StatusFilter = "ALL" | CustomerProfileStatus;
 type SortKey = "name" | "updated";
-type SortDir = "asc" | "desc";
+type SortDir = SortDirection;
 type ProfileView = "table" | "cards";
 
 function facetFilters(
@@ -94,75 +89,15 @@ function updatedTime(value: string): number {
   return Number.isNaN(time) ? 0 : time;
 }
 
-function ProfileAvatar({ name, size = "sm" }: { name: string; size?: "sm" | "md" }) {
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "grid shrink-0 place-items-center rounded-full bg-primary-soft font-semibold text-primary-soft-foreground",
-        size === "md" ? "h-10 w-10 text-sm" : "h-9 w-9 text-[13px]"
-      )}
-    >
-      {profileInitials(name)}
-    </span>
-  );
-}
-
-function TypeBadge({ type }: { type: CustomerProfileType }) {
-  return (
-    <Badge variant={type === "BUSINESS" ? "info" : "secondary"}>
-      {profileTypeLabel(type)}
-    </Badge>
-  );
-}
-
-function StatusBadge({ status }: { status: CustomerProfileSummary["status"] }) {
-  return (
-    <Badge variant={status === "ACTIVE" ? "success" : "secondary"}>
-      {profileStatusLabel(status)}
-    </Badge>
-  );
-}
+const TypeBadge = ProfileTypeBadge;
+const StatusBadge = ProfileStatusBadge;
+const SortHeader = SortableTableHead<SortKey>;
 
 function VersionTag({ version }: { version: number }) {
   return (
-    <span className="inline-flex h-[22px] items-center rounded-md bg-muted px-2 text-xs font-semibold tabular-nums">
+    <Badge variant="secondary" dot={false} size="sm" className="rounded-md tabular-nums">
       v{version}
-    </span>
-  );
-}
-
-function SortHeader({
-  label,
-  column,
-  sort,
-  dir,
-  onSort,
-  className,
-}: {
-  label: string;
-  column: SortKey;
-  sort: SortKey;
-  dir: SortDir;
-  onSort: (column: SortKey) => void;
-  className?: string;
-}) {
-  const active = sort === column;
-  const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;
-  return (
-    <TableHead
-      aria-sort={active ? (dir === "asc" ? "ascending" : "descending") : "none"}
-      className={cn(active && "text-foreground", className)}
-    >
-      <button
-        type="button"
-        className="inline-flex h-full cursor-pointer items-center gap-1 rounded-sm font-semibold text-inherit hover:text-foreground"
-        onClick={() => onSort(column)}
-      >
-        {label}
-        <Icon className="h-3.5 w-3.5" aria-hidden />
-      </button>
-    </TableHead>
+    </Badge>
   );
 }
 
@@ -174,24 +109,22 @@ function EmptyProfiles({
   onClear: () => void;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1 px-6 py-10 text-center" role="status">
-      <span className="tone-brand mb-3 grid h-12 w-12 place-items-center rounded-lg">
-        {filtered ? <Search className="h-5 w-5" /> : <Users className="h-5 w-5" />}
-      </span>
-      <h3 className="text-base font-semibold leading-6 text-foreground">
-        {filtered ? "No profiles found" : "No profiles yet"}
-      </h3>
-      <p className="max-w-[36ch] text-sm text-muted-foreground">
-        {filtered
+    <EmptyState
+      icon={filtered ? Search : Users}
+      title={filtered ? "No profiles found" : "No profiles yet"}
+      description={
+        filtered
           ? "Try a different search or clear the filters."
-          : "Create an individual or business profile to get started."}
-      </p>
-      {filtered ? (
-        <Button type="button" variant="outline" size="sm" className="mt-4" onClick={onClear}>
-          Clear filters
-        </Button>
-      ) : null}
-    </div>
+          : "Create an individual or business profile to get started."
+      }
+      action={
+        filtered ? (
+          <Button type="button" variant="outline" size="sm" onClick={onClear}>
+            Clear filters
+          </Button>
+        ) : null
+      }
+    />
   );
 }
 
@@ -207,14 +140,7 @@ function ProfileSkeleton({ view }: { view: ProfileView }) {
     );
   }
 
-  return (
-    <div className="space-y-3 p-4" aria-busy="true">
-      <p className="sr-only">Loading profiles</p>
-      {Array.from({ length: 5 }, (_, index) => (
-        <div key={index} className="h-12 animate-pulse rounded-md bg-muted" />
-      ))}
-    </div>
-  );
+  return <BlockSkeleton label="Loading profiles" />;
 }
 
 function ProfileCards({
@@ -402,45 +328,45 @@ export function ProfilesPage() {
   const empty = !loading && rows.length === 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-7 px-4 py-5 sm:px-8 sm:py-9">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold leading-8 tracking-[-0.02em] text-foreground">
-            Profiles
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Individual and business customers.</p>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger className="group inline-flex h-8 w-full items-center justify-center gap-2 rounded-md border border-transparent bg-primary px-3 text-[13px] font-medium leading-none text-primary-foreground outline-none transition-[background] duration-150 hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-px data-[state=open]:bg-primary-hover sm:w-auto">
-            <Plus className="h-4 w-4 shrink-0" />
-            New profile
-            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-150 group-data-[state=open]:rotate-180" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-[280px] max-sm:w-[var(--radix-dropdown-menu-trigger-width)]"
-          >
-            <DropdownMenuItem onSelect={() => router.push("/profiles/new?type=individual")}>
-              <UserRound className="h-5 w-5 shrink-0 text-primary" />
-              <span className="min-w-0">
-                <span className="block font-semibold">Individual</span>
-                <span className="block text-[12.5px] font-normal leading-[18px] text-muted-foreground">
-                  Person with PAN and mobile
+    <PageShell>
+      <PageHeader
+        title="Profiles"
+        description="Individual and business customers."
+        actions={
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" size="sm" className="group w-full data-[state=open]:bg-primary-hover sm:w-auto">
+                <Plus />
+                New profile
+                <ChevronDown className="transition-transform duration-150 group-data-[state=open]:rotate-180" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-[280px] max-sm:w-[var(--radix-dropdown-menu-trigger-width)]"
+            >
+              <DropdownMenuItem onSelect={() => router.push("/profiles/new?type=individual")}>
+                <UserRound className="h-5 w-5 shrink-0 text-primary" />
+                <span className="min-w-0">
+                  <span className="block font-semibold">Individual</span>
+                  <span className="block text-[12.5px] font-normal leading-[18px] text-muted-foreground">
+                    Person with PAN and mobile
+                  </span>
                 </span>
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => router.push("/profiles/new?type=business")}>
-              <Building2 className="h-5 w-5 shrink-0 text-primary" />
-              <span className="min-w-0">
-                <span className="block font-semibold">Business</span>
-                <span className="block text-[12.5px] font-normal leading-[18px] text-muted-foreground">
-                  Company with PAN and GSTIN
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => router.push("/profiles/new?type=business")}>
+                <Building2 className="h-5 w-5 shrink-0 text-primary" />
+                <span className="min-w-0">
+                  <span className="block font-semibold">Business</span>
+                  <span className="block text-[12.5px] font-normal leading-[18px] text-muted-foreground">
+                    Company with PAN and GSTIN
+                  </span>
                 </span>
-              </span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         <div className="min-w-0 flex-1 basis-full sm:max-w-[420px] sm:basis-[280px]">
@@ -689,8 +615,7 @@ export function ProfilesPage() {
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0"
+                size="icon-sm"
                 aria-label="Previous page"
                 disabled={loading || page <= 0}
                 onClick={() => setPage((current) => Math.max(0, current - 1))}
@@ -706,8 +631,7 @@ export function ProfilesPage() {
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0"
+                size="icon-sm"
                 aria-label="Next page"
                 disabled={loading || page + 1 >= totalPages}
                 onClick={() => setPage((current) => current + 1)}
@@ -718,6 +642,6 @@ export function ProfilesPage() {
           </div>
         </div>
       </section>
-    </div>
+    </PageShell>
   );
 }

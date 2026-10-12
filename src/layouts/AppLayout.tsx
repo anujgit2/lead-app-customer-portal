@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -15,11 +15,22 @@ import {
   Bell,
   ChevronDown,
   Building2,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
 import { getInitials } from "@/lib/utils";
+import { clearFullSession, hasAccessToken } from "@/lib/session";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 const NAV_ITEMS = [
@@ -28,6 +39,11 @@ const NAV_ITEMS = [
   { label: "Profiles", href: "/profiles", icon: Users },
   { label: "Documents", href: "/documents", icon: Files },
 ];
+
+function subscribeToStorage(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  return () => window.removeEventListener("storage", onChange);
+}
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -38,7 +54,14 @@ export function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const { user } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const authorized = useSyncExternalStore(subscribeToStorage, hasAccessToken, () => false);
+
+  useEffect(() => {
+    // Read storage directly: the hydration snapshot is always `false`.
+    if (hasAccessToken()) return;
+    clearFullSession();
+    router.replace("/auth/login");
+  }, [router, authorized]);
 
   const handleLogout = async () => {
     await authService.logout();
@@ -48,18 +71,29 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const initials = user ? getInitials(user.firstName, user.lastName) : "U";
 
+  if (!authorized) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background" aria-busy="true">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <span className="sr-only">Checking your session</span>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 flex h-[60px] items-center justify-between gap-2 border-b border-border bg-card px-2 min-[901px]:gap-4 min-[901px]:px-4">
         <div className="flex min-w-0 items-center gap-2 min-[901px]:gap-4">
-          <button
+          <Button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-md text-foreground hover:bg-muted min-[901px]:hidden"
+            variant="ghost"
+            size="icon"
+            className="min-[901px]:hidden [&_svg]:size-5"
             onClick={() => setMobileOpen(true)}
             aria-label="Open menu"
           >
-            <Menu className="h-5 w-5" />
-          </button>
+            <Menu />
+          </Button>
 
           <Link href="/dashboard" className="flex items-center gap-2.5 text-foreground">
             <span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-primary-foreground">
@@ -94,66 +128,49 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          <Button
             type="button"
-            className="relative inline-flex h-10 w-10 items-center justify-center rounded-md text-foreground hover:bg-muted"
+            variant="ghost"
+            size="icon"
+            className="relative [&_svg]:size-5"
             aria-label="Notifications"
           >
-            <Bell className="h-5 w-5" />
+            <Bell />
             <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-danger shadow-[0_0_0_2px_hsl(var(--card))]" />
-          </button>
+          </Button>
 
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setProfileOpen(!profileOpen)}
-              aria-expanded={profileOpen}
-              aria-haspopup="menu"
-              className="inline-flex h-10 items-center gap-2 rounded-md px-2 text-sm font-medium text-foreground hover:bg-muted"
-            >
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                {initials}
-              </span>
-              <span className="hidden min-[901px]:inline">{user?.firstName}</span>
-              <ChevronDown className="hidden h-3.5 w-3.5 text-muted-foreground min-[901px]:block" />
-            </button>
-
-            {profileOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setProfileOpen(false)} />
-                <div
-                  role="menu"
-                  className="absolute right-0 top-full z-50 mt-1.5 w-60 rounded-lg border border-border bg-popover p-1 text-sm shadow-md"
-                >
-                  <div className="px-2.5 py-2">
-                    <p className="text-sm font-medium">
-                      {user?.firstName} {user?.lastName}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
-                  </div>
-                  <div className="-mx-1 my-1 h-px bg-border" />
-                  <Link
-                    href="/profile"
-                    role="menuitem"
-                    className="flex items-center gap-2.5 rounded-md px-2.5 py-2 hover:bg-muted"
-                    onClick={() => setProfileOpen(false)}
-                  >
-                    <User className="h-4 w-4" />
-                    Profile
-                  </Link>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-danger-strong hover:bg-muted"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign out
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="ghost" className="gap-2 px-2">
+                <Avatar className="h-7 w-7">
+                  <AvatarFallback className="bg-primary text-xs text-primary-foreground">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden min-[901px]:inline">{user?.firstName}</span>
+                <ChevronDown className="hidden text-muted-foreground min-[901px]:block" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <div className="px-2.5 py-2">
+                <p className="text-sm font-medium">
+                  {user?.firstName} {user?.lastName}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/profile">
+                  <User className="h-4 w-4" />
+                  Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-danger-strong" onSelect={() => void handleLogout()}>
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
@@ -178,14 +195,16 @@ export function AppLayout({ children }: AppLayoutProps) {
                   <span className="block text-sm font-semibold leading-[18px]">LoanPortal</span>
                 </span>
               </Link>
-              <button
+              <Button
                 type="button"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-md hover:bg-muted"
+                variant="ghost"
+                size="icon"
+                className="[&_svg]:size-5"
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close navigation"
               >
-                <X className="h-5 w-5" />
-              </button>
+                <X />
+              </Button>
             </div>
             <nav className="flex flex-col gap-0.5">
               {NAV_ITEMS.map((item) => {

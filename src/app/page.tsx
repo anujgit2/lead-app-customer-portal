@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { LandingPage } from "@/features/landing/LandingPage";
 
 export const metadata: Metadata = {
-  title: "LoanPortal – MSME Business Loans & Government Grants in India",
+  title: "LoanPortal home",
   description:
-    "Compare MUDRA, CGTMSE, Stand-Up India, and PMEGP loans alongside startup grants and subsidies. Build your business profile once and apply to the schemes you qualify for.",
+    "Apply for your loan online. One guided application, a profile that remembers your details, and secure sharing with your lender.",
 };
 
 export default function HomePage() {

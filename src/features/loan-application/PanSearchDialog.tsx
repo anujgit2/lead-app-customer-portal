@@ -41,7 +41,7 @@ import {
 import { usePanSearchScopeId, usePanVerification } from "./pan-search-context";
 
 const inputClassName =
-  "rounded-lg border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none";
+  "rounded-lg border-border focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none";
 
 const panSearchSchema = z.object({
   pan: z
@@ -82,18 +82,18 @@ function MatchRow({
     value === true ? (
       <CheckCircle2 className="h-4 w-4 text-emerald-600" />
     ) : value === false ? (
-      <XCircle className="h-4 w-4 text-amber-600" />
+      <XCircle className="h-4 w-4 text-warning-strong" />
     ) : (
-      <CircleAlert className="h-4 w-4 text-slate-400" />
+      <CircleAlert className="h-4 w-4 text-muted-foreground" />
     );
 
   const text =
     value === true ? "Match" : value === false ? "Does not match" : "Not available";
 
   return (
-    <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-100 bg-white px-3.5 py-2.5">
-      <span className="text-sm text-slate-500">{label}</span>
-      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-800">
+    <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-3.5 py-2.5">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
         {icon}
         {text}
       </span>
@@ -139,7 +139,7 @@ function ResultCard({
       </Alert>
 
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-sm font-semibold tracking-tight text-slate-900">
+        <p className="text-sm font-semibold tracking-tight text-foreground">
           {result.pan ?? queried.pan}
         </p>
         {result.category && <Badge variant="info">{result.category}</Badge>}
@@ -151,27 +151,27 @@ function ResultCard({
       <div className="space-y-2">
         <MatchRow label="Name match" value={result.nameMatch} />
         <MatchRow label="Date of birth match" value={result.dobMatch} />
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-100 bg-white px-3.5 py-2.5">
-          <span className="text-sm text-slate-500">Aadhaar seeded</span>
-          <span className="text-sm font-medium text-slate-800">{seeded}</span>
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-card px-3.5 py-2.5">
+          <span className="text-sm text-muted-foreground">Aadhaar seeded</span>
+          <span className="text-sm font-medium text-foreground">{seeded}</span>
         </div>
         {result.message && (
-          <p className="text-sm text-slate-500">{result.message}</p>
+          <p className="text-sm text-muted-foreground">{result.message}</p>
         )}
       </div>
 
-      <div className="rounded-xl border border-slate-100 bg-slate-50/80 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <div className="rounded-xl border border-border bg-muted/50 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           You searched
         </p>
         <dl className="mt-3 space-y-2 text-sm">
           <div className="flex justify-between gap-4">
-            <dt className="text-slate-500">Name as per PAN</dt>
-            <dd className="font-medium text-slate-800">{queried.nameAsPerPan}</dd>
+            <dt className="text-muted-foreground">Name as per PAN</dt>
+            <dd className="font-medium text-foreground">{queried.nameAsPerPan}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-slate-500">Date of birth</dt>
-            <dd className="font-medium text-slate-800">
+            <dt className="text-muted-foreground">Date of birth</dt>
+            <dd className="font-medium text-foreground">
               {formatPanDisplayDate(queried.dateOfBirth)}
             </dd>
           </div>
@@ -275,19 +275,19 @@ export function PanSearchDialog({ variant }: PanSearchDialogProps) {
         variant="outline"
         size="sm"
         onClick={openDialog}
-        className="shrink-0 gap-1.5 border-slate-200 text-slate-600 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+        className="shrink-0 gap-1.5 border-border text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-input hover:bg-muted/50 active:scale-[0.98] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
       >
         <Search className="h-3.5 w-3.5" />
         Search PAN
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:p-8">
+        <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto border-border p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] sm:p-8">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold tracking-tight text-slate-900">
+            <DialogTitle className="text-lg font-semibold tracking-tight text-foreground">
               {view === "result" ? "PAN search result" : "Search PAN"}
             </DialogTitle>
-            <DialogDescription className="text-sm font-normal text-slate-500">
+            <DialogDescription className="text-sm font-normal text-muted-foreground">
               {view === "result"
                 ? "Review the verification result. Confirming and filling the form will come in a later step."
                 : variant === "company"
@@ -299,7 +299,7 @@ export function PanSearchDialog({ variant }: PanSearchDialogProps) {
           {view === "form" ? (
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)} noValidate>
               <div className="space-y-1.5">
-                <Label htmlFor={`${fieldId}-pan`} className="text-slate-600">
+                <Label htmlFor={`${fieldId}-pan`} className="text-muted-foreground">
                   PAN
                 </Label>
                 <Input
@@ -322,7 +322,7 @@ export function PanSearchDialog({ variant }: PanSearchDialogProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor={`${fieldId}-name`} className="text-slate-600">
+                <Label htmlFor={`${fieldId}-name`} className="text-muted-foreground">
                   Name as per PAN
                 </Label>
                 <Input
@@ -339,7 +339,7 @@ export function PanSearchDialog({ variant }: PanSearchDialogProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor={`${fieldId}-dob`} className="text-slate-600">
+                <Label htmlFor={`${fieldId}-dob`} className="text-muted-foreground">
                   {dobLabel}
                 </Label>
                 <Input
@@ -354,14 +354,14 @@ export function PanSearchDialog({ variant }: PanSearchDialogProps) {
                 )}
               </div>
 
-              <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+              <div className="space-y-2 rounded-xl border border-border bg-muted/50 p-4">
                 <Controller
                   name="consent"
                   control={control}
                   render={({ field }) => (
                     <label
                       htmlFor={`${fieldId}-consent`}
-                      className="flex items-start gap-3 text-sm text-slate-600"
+                      className="flex items-start gap-3 text-sm text-muted-foreground"
                     >
                       <Checkbox
                         id={`${fieldId}-consent`}
@@ -389,7 +389,7 @@ export function PanSearchDialog({ variant }: PanSearchDialogProps) {
                   type="button"
                   variant="outline"
                   onClick={() => setOpen(false)}
-                  className="border-slate-200 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+                  className="border-border transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
                 >
                   Cancel
                 </Button>
@@ -412,7 +412,7 @@ export function PanSearchDialog({ variant }: PanSearchDialogProps) {
                     type="button"
                     variant="outline"
                     onClick={() => setView("form")}
-                    className="border-slate-200 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+                    className="border-border transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
                   >
                     Search again
                   </Button>

@@ -49,14 +49,14 @@ export function FilePreviewDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`${DOCUMENT_DIALOG_CLASS} max-w-3xl`}>
         <DialogHeader>
-          <DialogTitle className="tracking-tight text-slate-900">Preview</DialogTitle>
-          <DialogDescription className="truncate text-sm font-normal text-slate-500">
+          <DialogTitle className="tracking-tight text-foreground">Preview</DialogTitle>
+          <DialogDescription className="truncate text-sm font-normal text-muted-foreground">
             {fileName}
           </DialogDescription>
         </DialogHeader>
 
         {file.isLoading ? (
-          <div className="h-64 animate-pulse rounded-xl bg-slate-100" aria-busy="true">
+          <div className="h-64 animate-pulse rounded-xl bg-muted" aria-busy="true">
             <p className="sr-only">Preparing preview</p>
           </div>
         ) : null}
@@ -66,7 +66,7 @@ export function FilePreviewDialog({
             <p className="text-sm text-destructive" role="alert">
               We couldn&apos;t open the preview.
             </p>
-            <Button type="button" variant="outline" className="h-8" onClick={() => void file.refetch()} size="sm">
+            <Button type="button" variant="outline" onClick={() => void file.refetch()} size="sm">
               Try again
             </Button>
           </div>
@@ -76,8 +76,8 @@ export function FilePreviewDialog({
 
         {file.data && !kind ? (
           <div className="space-y-4">
-            <p className="text-sm text-slate-500">This file can&apos;t be shown here. You can download it instead.</p>
-            <Button type="button" className="h-8 gap-2" onClick={() => onDownload(version, fileName)} size="sm">
+            <p className="text-sm text-muted-foreground">This file can&apos;t be shown here. You can download it instead.</p>
+            <Button type="button" className="gap-2" onClick={() => onDownload(version, fileName)} size="sm">
               <Download className="h-4 w-4" />
               Download
             </Button>

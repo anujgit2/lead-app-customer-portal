@@ -152,7 +152,6 @@ export function ProfileVersionsTab({ profile }: ProfileVersionsTabProps) {
                         <Button
                           type="button"
                           variant="outline"
-                          className="h-8"
                           onClick={() => setViewing(item.versionNo)}
                          size="sm">
                           Open
@@ -161,7 +160,6 @@ export function ProfileVersionsTab({ profile }: ProfileVersionsTabProps) {
                           <Button
                             type="button"
                             variant="outline"
-                            className="h-8"
                             onClick={() => {
                               setNote("");
                               setRestoreTarget(item.versionNo);
@@ -217,7 +215,6 @@ export function ProfileVersionsTab({ profile }: ProfileVersionsTabProps) {
         </div>
         <Button
           type="button"
-          className="h-8"
           disabled={!fromVersion || !toVersion || fromVersion === toVersion}
           onClick={() => setCompare(true)}
          size="sm">
@@ -255,12 +252,11 @@ export function ProfileVersionsTab({ profile }: ProfileVersionsTabProps) {
             />
           </div>
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" className="h-8" disabled={restore.isPending} onClick={() => setRestoreTarget(null)} size="sm">
+            <Button type="button" variant="outline" disabled={restore.isPending} onClick={() => setRestoreTarget(null)} size="sm">
               Cancel
             </Button>
             <Button
               type="button"
-              className="h-8"
               loading={restore.isPending}
               onClick={() => {
                 if (restoreTarget === null) return;
@@ -305,7 +301,7 @@ function VersionReader({
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Button type="button" variant="outline" className="h-8 w-fit" onClick={onBack} size="sm">
+        <Button type="button" variant="outline" className="w-fit" onClick={onBack} size="sm">
           Back to history
         </Button>
         {current ? null : (

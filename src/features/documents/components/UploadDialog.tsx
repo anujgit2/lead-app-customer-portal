@@ -29,7 +29,7 @@ import { cn, formatFileSize } from "@/lib/utils";
 import { toDropzoneAccept } from "@/utils/upload-config";
 import type { CustomerProfileSummary, DocumentProfileRelation } from "@/types";
 import { useDocumentTypes, useVersionPreview } from "../api/queries";
-import { useDebouncedValue } from "../hooks/useDebouncedValue";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { uploadFailureMessage, useUpload } from "../hooks/useUpload";
 import type { UploadSubmission } from "../types";
 import { ACCEPT_ATTRIBUTE, MAX_UPLOAD_BYTES } from "../utils/constants";

@@ -11,7 +11,8 @@
     "build:uat": "env-cmd -f .env.uat next build",
     "build:prod": "env-cmd -f .env.prod next build",
     "start": "serve -l 3000 out",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --import tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -65,6 +66,7 @@
     "postcss": "^8.5.15",
     "serve": "^14.2.6",
     "tailwindcss": "^3.4.19",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

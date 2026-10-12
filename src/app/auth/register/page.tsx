@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { RegisterPageClient } from "@/features/auth/RegisterPageClient";
 
-export const metadata = { title: "Create Account – LoanPortal" };
+export const metadata = { title: "Create your LoanPortal account" };
 
 export default function RegisterPage() {
   return (

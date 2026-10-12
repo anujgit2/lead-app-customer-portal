@@ -456,7 +456,7 @@ export function FormWizard({
       <div
         className={cn(
           "mx-auto px-4 sm:px-6",
-          reviewing ? "max-w-[880px] px-4 pb-8 pt-5 sm:px-6 sm:pb-10 sm:pt-7" : "max-w-5xl py-8 sm:py-10"
+          reviewing ? "max-w-[880px] pb-8 pt-5 sm:pb-10 sm:pt-7" : "max-w-5xl py-8 sm:py-10"
         )}
       >
         {currentTemplate && (

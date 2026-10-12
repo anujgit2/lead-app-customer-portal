@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge, type BadgeProps } from "@/components/ui/badge";
 import type { ApplicationStatus } from "@/types";
 
 const STATUS_CONFIG: Record<
@@ -22,14 +22,16 @@ export function applicationStatusLabel(status: ApplicationStatus): string {
 
 export function ApplicationStatusBadge({
   status,
+  size,
   className,
 }: {
   status: ApplicationStatus;
+  size?: BadgeProps["size"];
   className?: string;
 }) {
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.draft;
   return (
-    <Badge variant={config.variant} className={className}>
+    <Badge variant={config.variant} size={size} className={className}>
       {config.label}
     </Badge>
   );

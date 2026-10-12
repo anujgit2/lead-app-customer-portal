@@ -1,89 +1,94 @@
-import React from "react";
 import Link from "next/link";
-import { Building2 } from "lucide-react";
+import { Landmark, Mail, Phone } from "lucide-react";
+import { siteCopy } from "@/lib/site";
 
-const FOOTER_SECTIONS = [
-  {
-    title: "Funding",
-    links: [
-      { label: "Business loans", href: "#business-loans" },
-      { label: "Grants & subsidies", href: "#grants" },
-      { label: "How it works", href: "#how-it-works" },
-    ],
-  },
-  {
-    title: "Account",
-    links: [
-      { label: "Sign in", href: "/auth/login" },
-      { label: "Create account", href: "/auth/register" },
-      { label: "Forgot password", href: "/auth/forgot-password" },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
-      { label: "Terms of Service", href: "/terms" },
-      { label: "Privacy Policy", href: "/privacy" },
-    ],
-  },
+const EXPLORE = [
+  { label: "How it works", href: "#how" },
+  { label: "Features", href: "#features" },
+  { label: "Questions", href: "#faq" },
 ];
 
-export function LandingFooter() {
+const ACCOUNT = [
+  { label: "Create account", href: "/auth/register" },
+  { label: "Sign in", href: "/auth/login" },
+  { label: "Forgot password", href: "/auth/forgot-password" },
+];
+
+const LEGAL = [
+  { label: "Help centre", href: "#faq" },
+  { label: "Contact us", href: "#faq" },
+  { label: "Grievance redressal", href: "#faq" },
+  { label: "Privacy policy", href: "/privacy" },
+  { label: "Terms of use", href: "/terms" },
+];
+
+function FooterColumn({
+  title,
+  links,
+}: {
+  title: string;
+  links: { label: string; href: string }[];
+}) {
   return (
-    <footer className="border-t border-border bg-muted/60">
-      <div className="mx-auto max-w-7xl px-6 py-16">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary">
-                <Building2 className="h-4 w-4 text-white" />
-              </div>
-              <span className="font-semibold tracking-tight text-slate-900">
-                LoanPortal
-              </span>
-            </div>
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-500">
-              A single origination workspace for Indian MSME loans, subsidies,
-              and startup grants.
-            </p>
+    <nav aria-label={title} className="min-w-0">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-white">{title}</p>
+      <ul className="flex flex-col gap-1">
+        {links.map((link) => (
+          <li key={link.label}>
+            <Link
+              href={link.href}
+              className="inline-flex min-h-7 items-center text-sm text-white/60 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-white active:scale-[0.98]"
+            >
+              {link.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+export function LandingFooter() {
+  const year = new Date().getFullYear();
+
+  return (
+    <footer className="bg-brand-deep text-white">
+      <div className="mx-auto grid max-w-[1160px] grid-cols-2 gap-10 px-4 pt-14 sm:px-6 md:grid-cols-[1.6fr_1fr_1fr_1fr]">
+        <div className="col-span-2 flex min-w-0 flex-col gap-4 md:col-span-1">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2.5 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+          >
+            <span className="grid h-8 w-8 place-items-center rounded-md bg-white text-brand-deep">
+              <Landmark className="h-5 w-5" aria-hidden />
+            </span>
+            <span className="text-base font-semibold tracking-[-0.01em]">LoanPortal</span>
+          </Link>
+          <p className="max-w-[36ch] text-sm leading-6 text-white/60">
+            Apply for your loan online and keep every document in one place.
+          </p>
+          <div className="flex flex-col gap-2 text-[13px] text-white/60">
+            <span className="inline-flex items-center gap-2">
+              <Mail className="h-4 w-4 text-brand-glow" aria-hidden />
+              {siteCopy.supportEmail}
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <Phone className="h-4 w-4 text-brand-glow" aria-hidden />
+              {siteCopy.supportPhone} · {siteCopy.supportHours}
+            </span>
           </div>
-
-          {FOOTER_SECTIONS.map((section) => (
-            <div key={section.title}>
-              <h3 className="text-sm font-semibold tracking-tight text-slate-900">
-                {section.title}
-              </h3>
-              <ul className="mt-4 space-y-2.5">
-                {section.links.map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-slate-500 transition-all duration-200 ease-out hover:text-slate-900"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
         </div>
 
-        <div className="mt-12 border-t border-slate-200/70 pt-8">
-          <p className="text-xs leading-relaxed text-slate-500">
-            LoanPortal is an independent loan origination platform. It is not a
-            government body and is not affiliated with or endorsed by the
-            Ministry of MSME, SIDBI, KVIC, DPIIT, or any bank. Scheme amounts,
-            subsidy rates, and eligibility shown here reflect published
-            Government of India guidance as of August 2026 and change by circular
-            and budget announcement. Nothing here is an offer of credit or a
-            guarantee of funding; every application is subject to lender or
-            nodal agency approval.
-          </p>
-          <p className="mt-4 text-xs text-slate-400">
-            © {new Date().getFullYear()} LoanPortal. All rights reserved.
-          </p>
-        </div>
+        <FooterColumn title="Explore" links={EXPLORE} />
+        <FooterColumn title="Your account" links={ACCOUNT} />
+        <FooterColumn title="Support and legal" links={LEGAL} />
+      </div>
+
+      <div className="mx-auto mt-12 flex max-w-[1160px] flex-wrap items-center justify-between gap-x-6 gap-y-1 border-t border-white/10 px-4 py-5 text-xs leading-[18px] text-white/50 sm:px-6">
+        <span>
+          © {year} LoanPortal · {siteCopy.legalEntity}
+        </span>
+        <span>{siteCopy.registration}</span>
       </div>
     </footer>
   );
