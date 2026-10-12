@@ -9,6 +9,8 @@ interface WizardProgressProps {
   currentStep: number;
   stepStatuses: WizardStepStatus[];
   onStepClick?: (index: number) => void;
+  /** Always show the step dots, including on small screens. */
+  compact?: boolean;
 }
 
 export function WizardProgress({
@@ -16,6 +18,7 @@ export function WizardProgress({
   currentStep,
   stepStatuses,
   onStepClick,
+  compact = false,
 }: WizardProgressProps) {
   const steps = [
     ...templates.map((template, index) => ({
@@ -28,7 +31,7 @@ export function WizardProgress({
 
   return (
     <div className="w-full">
-      <div className="mb-2 flex items-center gap-3 sm:hidden">
+      <div className={cn("mb-2 flex items-center gap-3 sm:hidden", compact && "hidden")}>
         <div
           className="h-2 flex-1 overflow-hidden rounded-full bg-muted"
           role="progressbar"
@@ -47,7 +50,7 @@ export function WizardProgress({
       </div>
 
       <div
-        className="hidden sm:grid"
+        className={cn("hidden sm:grid", compact && "grid")}
         style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
         aria-label="Application steps"
       >

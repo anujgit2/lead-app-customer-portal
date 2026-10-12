@@ -123,7 +123,7 @@ export function FileUploadField({
       if (accepted.length === 0) return;
       setRejectMessage(null);
       const newItems: FileItem[] = accepted.slice(0, remaining).map((f) => ({
-        id: crypto.randomUUID(),
+        id: newLocalId(),
         fileName: f.name,
         contentType: f.type,
         sizeBytes: f.size,
@@ -349,6 +349,14 @@ function toItems(files: StoredFileReference[]): FileItem[] {
 
 function errorMessage(error: unknown): string {
   return parseApiError(error).message || "File could not be uploaded";
+}
+
+/** In-flight list key. `randomUUID` exists only in a secure context. */
+function newLocalId(): string {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  return `upload-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function isAbortError(error: unknown): boolean {

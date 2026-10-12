@@ -712,14 +712,16 @@ export function DashboardPage() {
               const primary = linked.find((item) => item.relation === "FOR") ?? linked[0];
               const name = primary ? profileName(primary) : "";
               const updated = displayDate(document.updatedAt);
-              const label = document.label ? `${document.typeName} ${document.label}` : document.typeName;
+              const fileName = document.fileName?.trim() ?? "";
+              const title = fileName || document.typeName;
+              const label = document.label ? `${title} ${document.label}` : title;
               const financial = categoryKey(document.category) === "FINANCIALS";
               const downloading = pendingKey === `${document.id}:${document.latestVersion}`;
               return (
                 <TableRow
                   key={document.id}
                   tabIndex={0}
-                  aria-label={document.typeName}
+                  aria-label={title}
                   className={rowClass}
                   onClick={() => router.push(`/documents/${document.id}`)}
                   onKeyDown={(event) => {
@@ -736,16 +738,18 @@ export function DashboardPage() {
                         <FileText className="h-4 w-4" aria-hidden />
                       </span>
                       <div className="min-w-0">
-                        <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13.5px] font-semibold leading-[18px]">
-                          {document.typeName}
+                        <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[13.5px] font-semibold leading-[18px]">
+                          <span className="min-w-0 truncate">{title}</span>
                           {document.label ? (
                             <Badge variant="outline" dot={false} className={badgeClass}>
                               {document.label}
                             </Badge>
                           ) : null}
                         </span>
-                        <span className="mt-px block truncate font-mono text-[11px] leading-[14px] text-muted-foreground">
-                          {documentTypeCode(document.typeId, document.typeName)}
+                        <span className="mt-px block truncate text-[12px] leading-4 text-muted-foreground">
+                          {fileName && fileName !== document.typeName
+                            ? document.typeName
+                            : documentTypeCode(document.typeId, document.typeName)}
                         </span>
                         <span className="mt-0.5 block truncate text-xs text-muted-foreground min-[901px]:hidden">
                           {name ? `${name} · ${updated}` : updated}

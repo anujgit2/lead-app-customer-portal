@@ -94,7 +94,18 @@ export const fileStorageService = {
     const response = await apiFetch(`/api/files/${encodeURIComponent(fileId)}/content`, {
       method: "GET",
     });
-    await saveBlobResponse(response, fallbackFileName);
+    const file = await readContentBlob(response, fallbackFileName);
+    triggerDownload(file.blob, file.fileName);
+  },
+
+  async fetchContent(
+    fileId: string,
+    fallbackFileName = "document"
+  ): Promise<{ blob: Blob; contentType: string; fileName: string }> {
+    const response = await apiFetch(`/api/files/${encodeURIComponent(fileId)}/content`, {
+      method: "GET",
+    });
+    return readContentBlob(response, fallbackFileName);
   },
 
   async createShare(
@@ -277,26 +288,41 @@ async function readErrorMessage(response: Response): Promise<string> {
   return `Request failed (${response.status || "network"})`;
 }
 
-async function saveBlobResponse(response: Response, fallbackFileName: string): Promise<void> {
-  const contentType = response.headers.get("content-type") ?? "";
-  if (contentType.includes("application/json")) {
+async function readContentBlob(
+  response: Response,
+  fallbackFileName: string
+): Promise<{ blob: Blob; contentType: string; fileName: string }> {
+  const headerType = response.headers.get("content-type") ?? "";
+  if (headerType.includes("application/json")) {
     throw new Error(await readErrorMessage(response));
   }
 
   const blob = await response.blob();
-  const filename = safeDownloadName(
-    filenameFromContentDisposition(response.headers.get("content-disposition")),
-    fallbackFileName
-  );
+  return {
+    blob,
+    contentType: blob.type || headerType,
+    fileName: safeDownloadName(
+      filenameFromContentDisposition(response.headers.get("content-disposition")),
+      fallbackFileName
+    ),
+  };
+}
+
+function triggerDownload(blob: Blob, fileName: string): void {
   const objectUrl = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = objectUrl;
-  anchor.download = filename;
+  anchor.download = fileName;
   anchor.rel = "noopener";
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(objectUrl);
+}
+
+async function saveBlobResponse(response: Response, fallbackFileName: string): Promise<void> {
+  const file = await readContentBlob(response, fallbackFileName);
+  triggerDownload(file.blob, file.fileName);
 }
 
 function filenameFromContentDisposition(header: string | null): string | undefined {

@@ -108,6 +108,7 @@ function ResumeContent() {
       draftId={applicationId}
       initialFormData={initialFormData}
       programId={application.programId}
+      applicationNumber={application.applicationNumber}
     />
   );
 }

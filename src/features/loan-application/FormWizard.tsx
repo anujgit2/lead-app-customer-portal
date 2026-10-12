@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { ApplicationIdProvider, PersistDocumentStepProvider } from "@/components/forms/application-context";
 import { PanVerificationProvider } from "./pan-search-context";
 import { buildWizardSchema } from "@/utils/schema-builder";
@@ -31,6 +32,7 @@ interface FormWizardProps {
   draftId?: string;
   initialFormData?: FormData;
   programId?: string;
+  applicationNumber?: string;
 }
 
 function isEmptyFormValue(value: unknown): boolean {
@@ -72,6 +74,7 @@ export function FormWizard({
   draftId: initialDraftId,
   initialFormData,
   programId,
+  applicationNumber,
 }: FormWizardProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -344,7 +347,8 @@ export function FormWizard({
     }
   };
 
-  const currentTemplate = !isReviewStep(currentStep) ? templates[currentStep] : null;
+  const reviewing = isReviewStep(currentStep);
+  const currentTemplate = !reviewing ? templates[currentStep] : null;
   const mountedTemplate = currentTemplate ?? templates[totalSteps - 1] ?? null;
   const currentDefaultValues = mountedTemplate
     ? (stepData[mountedTemplate.code] as Record<string, unknown>)
@@ -356,29 +360,68 @@ export function FormWizard({
     <PersistDocumentStepProvider onPersist={persistDocumentStep}>
     <div className="min-h-screen bg-background">
       {/* ── Sticky header ── */}
-      <div className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6">
-          <div className="mb-4 flex items-start justify-between gap-4">
+      <div
+        className={cn(
+          "sticky top-0 z-30 border-b border-border bg-card",
+          !reviewing && "bg-card/95 backdrop-blur-sm"
+        )}
+      >
+        <div
+          className={cn(
+            "mx-auto",
+            reviewing
+              ? "flex max-w-[880px] flex-col gap-3 px-4 pb-2.5 pt-3 sm:px-6 sm:pb-3 sm:pt-3.5"
+              : "max-w-5xl px-4 py-4 sm:px-6"
+          )}
+        >
+          <div className={cn("flex items-center justify-between gap-3", !reviewing && "mb-4 items-start")}>
             <div className="flex min-w-0 flex-col gap-0.5">
-              <h1 className="text-base font-semibold leading-snug tracking-[-0.01em] text-foreground">
+              <h1
+                className={cn(
+                  "flex flex-wrap items-center gap-x-2.5 gap-y-0.5 font-semibold tracking-[-0.01em] text-foreground",
+                  reviewing ? "text-lg font-[650] leading-[26px]" : "text-base leading-snug"
+                )}
+              >
                 {product.name}
+                {reviewing && applicationNumber ? (
+                  <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[11.5px] font-medium text-muted-foreground">
+                    {applicationNumber}
+                  </span>
+                ) : null}
               </h1>
-              <p className="text-xs text-muted-foreground">{product.description}</p>
+              {!reviewing && (
+                <p className="text-xs text-muted-foreground">{product.description}</p>
+              )}
             </div>
-            <Button asChild variant="outline" size="sm" className="shrink-0 gap-1.5">
-              <Link href="/dashboard">
-                <LayoutDashboard className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Back to dashboard</span>
-                <span className="sm:hidden">Dashboard</span>
+            <Button
+              asChild
+              variant={reviewing ? "ghost" : "outline"}
+              size="sm"
+              className="shrink-0 gap-2"
+            >
+              <Link href="/dashboard" aria-label={reviewing ? "Dashboard" : "Back to dashboard"}>
+                <LayoutDashboard className="h-4 w-4" />
+                <span className="hidden sm:inline">{reviewing ? "Dashboard" : "Back to dashboard"}</span>
+                {!reviewing && <span className="sm:hidden">Dashboard</span>}
               </Link>
             </Button>
           </div>
-          <WizardProgress
-            templates={templates}
-            currentStep={currentStep}
-            stepStatuses={stepStatuses}
-            onStepClick={navigateToStep}
-          />
+          <div
+            className={
+              reviewing
+                ? cn("mx-auto w-full", templates.length <= 2 && "max-w-[420px]")
+                : undefined
+            }
+          >
+            <WizardProgress
+              templates={templates}
+              currentStep={currentStep}
+              stepStatuses={stepStatuses}
+              onStepClick={navigateToStep}
+              compact={reviewing}
+            />
+          </div>
+          {!reviewing && (
           <div className="mt-3 grid grid-cols-3 items-center">
             <Button
               type="button"
@@ -405,11 +448,17 @@ export function FormWizard({
               Save
             </Button>
           </div>
+          )}
         </div>
       </div>
 
       {/* ── Main content ── */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <div
+        className={cn(
+          "mx-auto px-4 sm:px-6",
+          reviewing ? "max-w-[880px] px-4 pb-8 pt-5 sm:px-6 sm:pb-10 sm:pt-7" : "max-w-5xl py-8 sm:py-10"
+        )}
+      >
         {currentTemplate && (
           <div className="mb-8">
             <h2 className="text-2xl font-[650] leading-8 tracking-[-0.02em] text-foreground">
@@ -451,6 +500,7 @@ export function FormWizard({
               templates={templates}
               formData={stepData as FormData}
               onEditStep={navigateToStep}
+              onBack={handlePrev}
               onSubmit={handleSubmit}
               onSaveClose={() => handleSaveDraft(true)}
               isSubmitting={isSubmitting}

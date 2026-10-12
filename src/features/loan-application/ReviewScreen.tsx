@@ -1,23 +1,43 @@
 "use client";
 
 import React, { useState } from "react";
-import type { FieldOption, FormData, FormField, FormSection, FormTemplate } from "@/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import type { FieldOption, FormData, FormField, FormSection, FormTemplate, StoredFileReference } from "@/types";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import { Edit2, SaveAll } from "lucide-react";
-import { cn, formatDate } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  ArrowLeft,
+  Download,
+  Eye,
+  FileText,
+  Loader2,
+  Pencil,
+  Send,
+} from "lucide-react";
+import { toast } from "sonner";
+import { parseApiError } from "@/lib/api-error";
+import { cn, formatDate, formatFileSize } from "@/lib/utils";
 import { getAddressSubfields, isPlainObject } from "@/utils/address-field";
+import { isFieldVisible } from "@/utils/rule-engine";
 import { StoredFileList } from "@/components/forms/StoredFileList";
-import { isStoredFileReference } from "@/services/file-storage.service";
+import { fileStorageService, isStoredFileReference } from "@/services/file-storage.service";
 import { isDocumentTemplate } from "@/components/forms/DocumentUploadProgress";
+import { FilePreview } from "@/features/documents/components/FilePreview";
+import { useObjectUrl } from "@/features/documents/hooks/useObjectUrl";
+import { previewKind } from "@/features/documents/utils/format";
 
 interface ReviewScreenProps {
   templates: FormTemplate[];
   formData: FormData;
   onEditStep: (stepIndex: number) => void;
+  onBack: () => void;
   onSubmit: () => void;
   onSaveClose?: () => void;
   isSubmitting?: boolean;
@@ -316,15 +336,332 @@ function countTemplateFields(
   return { filled, total };
 }
 
+function StepPill({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex h-[22px] shrink-0 items-center rounded-full bg-primary-soft px-[9px] text-xs font-semibold text-primary-soft-foreground">
+      {children}
+    </span>
+  );
+}
+
+function EditStepButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button type="button" variant="outline" size="sm" onClick={onClick} className="gap-2">
+      <Pencil className="h-4 w-4" />
+      Edit
+    </Button>
+  );
+}
+
+interface ProvidedDoc {
+  key: string;
+  label: string;
+  file: StoredFileReference;
+}
+
+interface MissingDoc {
+  key: string;
+  label: string;
+}
+
+interface DocGroup {
+  id: string;
+  title: string;
+  provided: ProvidedDoc[];
+  missing: MissingDoc[];
+  slotCount: number;
+  filledSlots: number;
+}
+
+function filesForField(value: unknown): StoredFileReference[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isStoredFileReference);
+}
+
+function documentGroupsForTemplate(
+  template: FormTemplate,
+  templateData: unknown,
+  formData: FormData
+): DocGroup[] {
+  const instance = isPlainObject(templateData) ? templateData : {};
+  const groups: DocGroup[] = [];
+
+  for (const section of template.sections) {
+    const sectionData = instance[section.code];
+    const rows = Array.isArray(sectionData)
+      ? sectionData.filter(isPlainObject)
+      : [isPlainObject(sectionData) ? sectionData : {}];
+
+    rows.forEach((row, rowIndex) => {
+      const provided: ProvidedDoc[] = [];
+      const missing: MissingDoc[] = [];
+      let slotCount = 0;
+      let filledSlots = 0;
+
+      for (const field of section.fields) {
+        if (!isDocumentReviewField(field.type)) continue;
+        if (!isFieldVisible(field, row, instance, formData)) continue;
+        slotCount += 1;
+        const files = filesForField(row[field.name]);
+        if (files.length === 0) {
+          missing.push({
+            key: `${section.code}-${field.name}-missing`,
+            label: field.label,
+          });
+          continue;
+        }
+        filledSlots += 1;
+        files.forEach((file, fileIndex) => {
+          provided.push({
+            key: `${section.code}-${field.name}-${file.id}-${fileIndex}`,
+            label: field.label,
+            file,
+          });
+        });
+      }
+
+      if (slotCount === 0) return;
+      groups.push({
+        id: rows.length > 1 ? `${section.code}-${rowIndex}` : section.code,
+        title: rows.length > 1 ? `${section.title} #${rowIndex + 1}` : section.title,
+        provided,
+        missing,
+        slotCount,
+        filledSlots,
+      });
+    });
+  }
+
+  return groups;
+}
+
+function countUploadedFiles(templates: FormTemplate[], formData: FormData): number {
+  return templates
+    .filter(isDocumentTemplate)
+    .reduce((total, template) => {
+      const groups = documentGroupsForTemplate(template, formData[template.code], formData);
+      return total + groups.reduce((count, group) => count + group.provided.length, 0);
+    }, 0);
+}
+
+function FileIconButton({
+  label,
+  title,
+  pending,
+  onClick,
+  children,
+}: {
+  label: string;
+  title: string;
+  pending?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={title}
+      disabled={pending}
+      onClick={onClick}
+      className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-primary-soft hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-45"
+    >
+      {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : children}
+    </button>
+  );
+}
+
+function DocumentDownloadButton({ file }: { file: StoredFileReference }) {
+  const [pending, setPending] = useState(false);
+
+  return (
+    <FileIconButton
+      label={`Download ${file.fileName}`}
+      title="Download"
+      pending={pending}
+      onClick={() => {
+        setPending(true);
+        void fileStorageService
+          .download(file.id, file.fileName)
+          .catch((error: unknown) => {
+            toast.error(parseApiError(error).message);
+          })
+          .finally(() => setPending(false));
+      }}
+    >
+      <Download className="h-4 w-4" />
+    </FileIconButton>
+  );
+}
+
+function DocumentRow({
+  doc,
+  onPreview,
+}: {
+  doc: ProvidedDoc;
+  onPreview: (doc: ProvidedDoc) => void;
+}) {
+  const size = formatFileSize(doc.file.meta.sizeBytes);
+  const detail = `${doc.file.fileName} · ${size}`;
+
+  return (
+    <div className="flex min-w-0 items-center gap-2.5 rounded-lg border border-border bg-card py-2.5 pl-3 pr-2.5">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary-soft text-primary-soft-foreground">
+        <FileText className="h-5 w-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <b className="block truncate text-[13.5px] font-semibold leading-[18px]" title={doc.label}>
+          {doc.label}
+        </b>
+        <small className="block truncate text-xs leading-4 text-muted-foreground" title={detail}>
+          {detail}
+        </small>
+      </div>
+      <FileIconButton
+        label={`Preview ${doc.label}`}
+        title="Preview"
+        onClick={() => onPreview(doc)}
+      >
+        <Eye className="h-4 w-4" />
+      </FileIconButton>
+      <DocumentDownloadButton file={doc.file} />
+    </div>
+  );
+}
+
+function MissingDocumentRow({ doc }: { doc: MissingDoc }) {
+  return (
+    <div className="flex min-w-0 items-center gap-2.5 rounded-lg border border-dashed border-border bg-muted/50 py-2.5 pl-3 pr-2.5">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-muted text-muted-foreground">
+        <FileText className="h-5 w-5" />
+      </span>
+      <div className="min-w-0 flex-1">
+        <b className="block truncate text-[13.5px] font-semibold leading-[18px]" title={doc.label}>
+          {doc.label}
+        </b>
+        <small className="block truncate text-xs leading-4 text-muted-foreground">Not uploaded</small>
+      </div>
+    </div>
+  );
+}
+
+function DocumentGroupBlock({
+  group,
+  onPreview,
+}: {
+  group: DocGroup;
+  onPreview: (doc: ProvidedDoc) => void;
+}) {
+  return (
+    <div className="p-4 sm:p-5">
+      <div className="mb-3 flex items-baseline justify-between gap-3">
+        <h3 className="text-[13px] font-[650] leading-[18px]">{group.title}</h3>
+        <span className="text-[12.5px] tabular-nums text-muted-foreground">
+          {group.filledSlots} of {group.slotCount}
+        </span>
+      </div>
+      <div className="grid grid-cols-1 gap-2.5 min-[640px]:grid-cols-2">
+        {group.provided.map((doc) => (
+          <DocumentRow key={doc.key} doc={doc} onPreview={onPreview} />
+        ))}
+        {group.missing.map((doc) => (
+          <MissingDocumentRow key={doc.key} doc={doc} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ReviewFilePreviewDialog({
+  doc,
+  onClose,
+}: {
+  doc: ProvidedDoc | null;
+  onClose: () => void;
+}) {
+  const file = useQuery({
+    queryKey: ["review-file-preview", doc?.file.id],
+    queryFn: () => fileStorageService.fetchContent(doc!.file.id, doc!.file.fileName),
+    enabled: !!doc,
+    staleTime: Infinity,
+    retry: false,
+  });
+  const url = useObjectUrl(doc ? file.data?.blob ?? null : null);
+  const fileName = file.data?.fileName || doc?.file.fileName || "";
+  const kind = doc ? previewKind(file.data?.contentType || doc.file.contentType, fileName) : null;
+  const [downloading, setDownloading] = useState(false);
+
+  const download = () => {
+    if (!doc) return;
+    setDownloading(true);
+    void fileStorageService
+      .download(doc.file.id, doc.file.fileName)
+      .then(() => onClose())
+      .catch((error: unknown) => {
+        toast.error(parseApiError(error).message);
+      })
+      .finally(() => setDownloading(false));
+  };
+
+  return (
+    <Dialog open={!!doc} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="w-[min(560px,calc(100vw-32px))]">
+        <div className="pr-9">
+          <DialogTitle>{doc?.label}</DialogTitle>
+          <DialogDescription className="mt-0.5">
+            {doc ? `${doc.file.fileName} · ${formatFileSize(doc.file.meta.sizeBytes)}` : ""}
+          </DialogDescription>
+        </div>
+        {file.isLoading ? (
+          <div className="grid h-44 place-items-center rounded-lg bg-muted" aria-busy="true">
+            <p className="sr-only">Preparing preview</p>
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : null}
+        {file.isError ? (
+          <div className="space-y-3">
+            <p className="text-sm text-danger-strong" role="alert">
+              We couldn&apos;t open the preview.
+            </p>
+            <Button type="button" variant="outline" size="sm" onClick={() => void file.refetch()}>
+              Try again
+            </Button>
+          </div>
+        ) : null}
+        {url && kind ? <FilePreview kind={kind} url={url} title={fileName} /> : null}
+        {file.data && !kind ? (
+          <div className="grid h-44 place-items-center rounded-lg border border-dashed border-input/70 bg-muted text-center text-muted-foreground">
+            <div>
+              <FileText className="mx-auto h-6 w-6" />
+              <p className="mt-1.5 text-xs">Preview isn&apos;t available for this file</p>
+            </div>
+          </div>
+        ) : null}
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Close
+          </Button>
+          <Button type="button" variant="outline" onClick={download} loading={downloading} className="gap-2">
+            <Download className="h-4 w-4" />
+            Download
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function FormReviewCard({
   template,
   templateData,
   hideEmpty,
+  stepIndex,
   onEdit,
 }: {
   template: FormTemplate;
   templateData: unknown;
   hideEmpty?: boolean;
+  stepIndex: number;
   onEdit?: () => void;
 }) {
   const { filled, total } = countTemplateFields(template, templateData);
@@ -335,28 +672,22 @@ function FormReviewCard({
     : [isPlainObject(templateData) ? templateData : {}];
 
   return (
-    <section className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      <div className="flex items-center gap-2.5 border-b border-slate-100 px-5 py-4">
-        <h3 className="min-w-0 flex-1 text-base font-semibold tracking-tight text-slate-900">
-          {template.title}
-        </h3>
-        <span className="shrink-0 rounded-full bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-500">
-          {filled} of {total} filled
-        </span>
-        {onEdit && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={onEdit}
-            className="gap-1.5 border-slate-200 text-primary hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
-          >
-            <Edit2 className="h-3.5 w-3.5" />
-            Edit
-          </Button>
-        )}
+    <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <StepPill>Step {stepIndex + 1}</StepPill>
+          <h2 className="min-w-0 truncate text-base font-[650] leading-6 tracking-[-0.01em]">
+            {template.title}
+          </h2>
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="text-[13px] tabular-nums text-muted-foreground">
+            {filled} of {total}
+          </span>
+          {onEdit && <EditStepButton onClick={onEdit} />}
+        </div>
       </div>
-      <div className="px-5 pb-4">
+      <div className="border-t border-border px-5 pb-4">
         {instances.map((instance, index) => {
           const profile = template.repeatable ? instanceProfile(template, instance) : null;
           return (
@@ -395,62 +726,58 @@ function FormReviewCard({
 function DocumentReviewCard({
   template,
   templateData,
+  formData,
   stepIndex,
   onEdit,
 }: {
   template: FormTemplate;
   templateData: unknown;
+  formData: FormData;
   stepIndex: number;
   onEdit?: () => void;
 }) {
+  const groups = documentGroupsForTemplate(template, templateData, formData);
+  const [preview, setPreview] = useState<ProvidedDoc | null>(null);
+  const filled = groups.reduce((count, group) => count + group.filledSlots, 0);
+  const total = groups.reduce((count, group) => count + group.slotCount, 0);
+  const percent = total === 0 ? 0 : Math.round((filled / total) * 100);
+  const headingId = `review-${template.code}`;
+
+  if (groups.length === 0) return null;
+
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">
-              Step {stepIndex + 1}
-            </Badge>
-            <CardTitle className="text-base">{template.title}</CardTitle>
-          </div>
-          {onEdit && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onEdit}
-              className="gap-1.5 text-primary hover:text-primary transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
-            >
-              <Edit2 className="h-3.5 w-3.5" />
-              Edit
-            </Button>
-          )}
+    <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm" aria-labelledby={headingId}>
+      <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-5 sm:py-3.5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <StepPill>Step {stepIndex + 1}</StepPill>
+          <h2 id={headingId} className="min-w-0 truncate text-base font-[650] leading-6 tracking-[-0.01em]">
+            {template.title}
+          </h2>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        <div className="space-y-5">
-          {template.sections.map((section, sIdx) => {
-            const sectionData = isPlainObject(templateData)
-              ? templateData[section.code]
-              : undefined;
-            const { documents } = collectReviewItems(
-              section.fields,
-              isPlainObject(sectionData) ? sectionData : {}
-            );
-            if (documents.length === 0) return null;
-            return (
-              <div key={section.code}>
-                {sIdx > 0 && <Separator className="mb-5" />}
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {section.title}
-                </p>
-                <DocumentFieldGrid documents={documents} />
-              </div>
-            );
-          })}
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="text-[13px] tabular-nums text-muted-foreground">
+            {filled} of {total}
+          </span>
+          {onEdit && <EditStepButton onClick={onEdit} />}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div
+        className="h-[3px] bg-muted"
+        role="progressbar"
+        aria-label="Documents provided"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+      >
+        <div className="h-full bg-primary transition-[width] duration-300" style={{ width: `${percent}%` }} />
+      </div>
+      <div className="divide-y divide-border">
+        {groups.map((group) => (
+          <DocumentGroupBlock key={group.id} group={group} onPreview={setPreview} />
+        ))}
+      </div>
+      <ReviewFilePreviewDialog doc={preview} onClose={() => setPreview(null)} />
+    </section>
   );
 }
 
@@ -468,7 +795,7 @@ export function ApplicationFormSummary({
   hideEmpty,
 }: ApplicationFormSummaryProps) {
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-5">
       {templates.map((template, stepIndex) => {
         const templateData = formData[template.code];
         if (isDocumentTemplate(template)) {
@@ -477,6 +804,7 @@ export function ApplicationFormSummary({
               key={template.code}
               template={template}
               templateData={templateData}
+              formData={formData}
               stepIndex={stepIndex}
               onEdit={onEditStep ? () => onEditStep(stepIndex) : undefined}
             />
@@ -488,6 +816,7 @@ export function ApplicationFormSummary({
             template={template}
             templateData={templateData}
             hideEmpty={hideEmpty}
+            stepIndex={stepIndex}
             onEdit={onEditStep ? () => onEditStep(stepIndex) : undefined}
           />
         );
@@ -500,71 +829,99 @@ export function ReviewScreen({
   templates,
   formData,
   onEditStep,
+  onBack,
   onSubmit,
   onSaveClose,
   isSubmitting,
   isSaving,
 }: ReviewScreenProps) {
-  const [hideEmpty, setHideEmpty] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const uploaded = countUploadedFiles(templates, formData);
+  const busy = Boolean(isSubmitting || isSaving);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Review your application
-          </h2>
-          <p className="mt-1 text-sm font-normal text-slate-500">
-            Check everything below. Use Edit to change a section before you submit.
-          </p>
-        </div>
-        <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-slate-500">
-          <Checkbox
-            checked={hideEmpty}
-            onCheckedChange={(checked) => setHideEmpty(checked === true)}
-            className="border-slate-300"
-          />
-          Hide empty fields
-        </label>
+    <div className="flex flex-col gap-5">
+      <div>
+        <h2 className="text-2xl font-[650] leading-8 tracking-[-0.02em] text-foreground">
+          Review your application
+        </h2>
+        <p className="mt-0.5 text-sm leading-5 text-muted-foreground">
+          Check your documents, then submit.
+        </p>
       </div>
 
-      <ApplicationFormSummary
-        templates={templates}
-        formData={formData}
-        onEditStep={onEditStep}
-        hideEmpty={hideEmpty}
-      />
+      <ApplicationFormSummary templates={templates} formData={formData} onEditStep={onEditStep} />
 
-      <p className="text-[13px] font-normal text-slate-500">
-        By submitting, you confirm all information is accurate.
-      </p>
-
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        {onSaveClose && (
+      <div className="sticky bottom-[calc(12px+env(safe-area-inset-bottom,0px))] z-30 flex flex-wrap items-center gap-3 rounded-[14px] border border-border bg-card py-2.5 pl-4 pr-3 shadow-md">
+        <label className="flex min-w-[200px] flex-1 cursor-pointer items-center gap-2.5 text-[13px]">
+          <Checkbox
+            checked={confirmed}
+            onCheckedChange={(checked) => setConfirmed(checked === true)}
+            disabled={busy}
+            aria-label="I confirm the information is accurate."
+          />
+          <span>I confirm the information is accurate.</span>
+        </label>
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <Button
             type="button"
-            variant="outline"
-            size="lg"
-            onClick={onSaveClose}
-            loading={isSaving}
-            disabled={isSubmitting || isSaving}
-            className="gap-2 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+            variant="ghost"
+            onClick={onBack}
+            disabled={busy}
+            className="gap-2 max-sm:flex-1"
           >
-            <SaveAll className="h-4 w-4" />
-            Save &amp; Close
+            <ArrowLeft className="h-4 w-4" />
+            Back
           </Button>
-        )}
-        <Button
-          type="button"
-          size="lg"
-          onClick={onSubmit}
-          loading={isSubmitting}
-          disabled={isSubmitting || isSaving}
-          className="min-w-[160px] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ease-out active:scale-[0.98]"
-        >
-          {isSubmitting ? "Submitting..." : "Submit application"}
-        </Button>
+          {onSaveClose && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onSaveClose}
+              loading={isSaving}
+              disabled={busy}
+              className="max-sm:flex-1"
+            >
+              Save &amp; Close
+            </Button>
+          )}
+          <Button
+            type="button"
+            onClick={() => setConfirmOpen(true)}
+            disabled={!confirmed || busy}
+            title={confirmed ? undefined : "Tick the confirmation to submit"}
+            className="max-sm:flex-1"
+          >
+            Submit
+          </Button>
+        </div>
       </div>
+
+      <Dialog open={confirmOpen} onOpenChange={(open) => { if (!isSubmitting) setConfirmOpen(open); }}>
+        <DialogContent>
+          <div className="flex items-start gap-3.5 pr-9">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-primary-soft text-primary-soft-foreground">
+              <Send className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <DialogTitle>Submit application?</DialogTitle>
+              <DialogDescription className="mt-0.5">
+                {uploaded} {uploaded === 1 ? "document" : "documents"} will be sent for review. You
+                can&apos;t edit after submitting.
+              </DialogDescription>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setConfirmOpen(false)} disabled={isSubmitting}>
+              Keep editing
+            </Button>
+            <Button type="button" onClick={onSubmit} loading={isSubmitting} disabled={isSubmitting}>
+              Submit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
