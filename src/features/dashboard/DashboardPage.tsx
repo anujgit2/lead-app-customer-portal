@@ -5,77 +5,73 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AlertCircle,
   ArrowRight,
   Building2,
   ChevronRight,
-  Download,
-  Eye,
   FileText,
   Files,
-  Loader2,
-  MoreHorizontal,
-  Pencil,
-  RefreshCw,
-  Share2,
   Upload,
+  UserRound,
   Users,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
-import { PageHeader, PageShell } from "@/components/PageShell";
-import { TableSkeletonRows } from "@/components/TableSkeleton";
-import {
-  ApplicationStatusBadge,
-} from "@/features/applications/ApplicationStatusBadge";
+import { PageShell } from "@/components/PageShell";
+import { ApplicationStatusBadge } from "@/features/applications/ApplicationStatusBadge";
 import { getApplicationHref } from "@/features/applications/ApplicationsTable";
-import { FilePreviewDialog } from "@/features/documents/components/FilePreviewDialog";
-import { ShareDialog } from "@/features/documents/components/ShareDialog";
-import { UploadDialog, type LockedUpload } from "@/features/documents/components/UploadDialog";
+import { UploadDialog } from "@/features/documents/components/UploadDialog";
 import { useDocuments } from "@/features/documents/api/queries";
-import { useFileDownload } from "@/features/documents/hooks/useFileDownload";
 import type { PortalDocument } from "@/features/documents/types";
-import { categoryKey, categoryLabel } from "@/features/documents/utils/format";
 import { useProfiles } from "@/features/profiles/api/queries";
-import {
-  ProfileAvatar,
-  ProfileStatusBadge,
-  ProfileTypeBadge,
-} from "@/features/profiles/components/ProfileBadges";
-import { profileTypeLabel, showIdentifier } from "@/features/profiles/utils/display";
+import { formatProfileDay, formatProfileTime, profileTypeLabel, showIdentifier } from "@/features/profiles/utils/display";
+import { ApplyLoanMenu } from "@/features/loan-application/ApplyLoanMenu";
 import { parseApiError } from "@/lib/api-error";
-import { cn, formatCurrency, formatDate, formatFileSize } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { applicationService } from "@/services/application.service";
 import { useAuthStore } from "@/store/auth.store";
-import type { CustomerProfileSummary, LoanApplication } from "@/types";
+import type { ApplicationStatus, LoanApplication } from "@/types";
 
-const RECENT_LIMIT = 5;
-const COMPANY_KEYS = [
-  "companyName",
-  "legalName",
-  "businessName",
-  "tradeName",
-  "entityName",
-  "organisationName",
-  "organizationName",
+type ActivityKind = "app" | "prof" | "doc";
+type ActivityFilter = "all" | ActivityKind;
+
+const STEPS = ["Draft", "Submitted", "In review", "Approved"] as const;
+
+const VERB: Record<ApplicationStatus, string> = {
+  draft: "draft created",
+  submitted: "submitted for review",
+  under_review: "is in review",
+  approved: "approved",
+  rejected: "was rejected",
+  disbursed: "was disbursed",
+};
+
+const FILTERS: { key: ActivityFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "app", label: "Applications" },
+  { key: "prof", label: "Profiles" },
+  { key: "doc", label: "Documents" },
 ];
+
+interface ActivityEvent {
+  id: string;
+  kind: ActivityKind;
+  at: number;
+  day: string;
+  time: string;
+  title: string;
+  verb: string;
+  meta: string;
+  href: string;
+  tone: string;
+  icon: typeof FileText;
+}
 
 function plural(count: number, word: string): string {
   return `${count} ${word}${count === 1 ? "" : "s"}`;
@@ -87,39 +83,6 @@ function updatedTime(value?: string): number {
   return Number.isNaN(time) ? 0 : time;
 }
 
-function displayDate(value?: string): string {
-  if (!value) return "—";
-  try {
-    return formatDate(value);
-  } catch {
-    return "—";
-  }
-}
-
-function readNamedString(source: unknown, depth = 0): string | undefined {
-  if (depth > 5 || source == null) return undefined;
-  if (Array.isArray(source)) {
-    for (const item of source) {
-      const found = readNamedString(item, depth + 1);
-      if (found) return found;
-    }
-    return undefined;
-  }
-  if (typeof source !== "object") return undefined;
-  const record = source as Record<string, unknown>;
-  for (const key of COMPANY_KEYS) {
-    const value = record[key];
-    if (typeof value === "string" && value.trim()) return value.trim();
-  }
-  for (const value of Object.values(record)) {
-    if (value && typeof value === "object") {
-      const found = readNamedString(value, depth + 1);
-      if (found) return found;
-    }
-  }
-  return undefined;
-}
-
 function applicationTitle(app: LoanApplication): string {
   return app.applicationNumber || "Draft";
 }
@@ -128,205 +91,117 @@ function programLabel(app: LoanApplication): string {
   return app.programName || app.loanType || "—";
 }
 
-function applicationCompany(app: LoanApplication, profileNames: Map<string, string>): string {
-  if (app.customerProfileId) {
-    const linked = profileNames.get(app.customerProfileId);
-    if (linked) return linked;
-  }
-  return readNamedString(app.formData) || readNamedString(app.properties) || "—";
+function stepIndex(status: ApplicationStatus): number {
+  if (status === "draft") return 0;
+  if (status === "submitted") return 1;
+  if (status === "under_review" || status === "rejected") return 2;
+  return 3;
 }
 
-function documentTypeCode(typeId: string, typeName: string): string {
-  const id = typeId.trim();
-  if (/^[A-Za-z][A-Za-z0-9_]*$/.test(id) && (id.includes("_") || id === id.toUpperCase()) && id.length > 1) {
-    return id.toUpperCase();
-  }
-  const fromName = typeName
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, "_")
-    .replace(/^_|_$/g, "");
-  return fromName || "DOCUMENT";
-}
-
-function profileName(profile: { displayName?: string } | undefined): string {
+function profileDisplayName(profile: { displayName?: string } | undefined): string {
   return profile?.displayName?.trim() || "Untitled profile";
 }
 
-function scrollToSection(id: string) {
-  document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+function documentTitle(document: PortalDocument): string {
+  return document.fileName?.trim() || document.typeName;
 }
 
-function OverviewCard({
-  label,
-  value,
-  detail,
-  icon: Icon,
+function documentProfileName(document: PortalDocument): string {
+  const linked = document.linked ?? [];
+  const primary = linked.find((item) => item.relation === "FOR") ?? linked[0];
+  return primary ? profileDisplayName(primary) : "";
+}
+
+const railItemClass =
+  "group flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-left outline-none transition-colors duration-150 hover:bg-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+
+function RailIcon({
   tone,
-  onOpen,
+  icon: Icon,
 }: {
-  label: string;
-  value: string;
-  detail: string;
-  icon: typeof FileText;
   tone: string;
-  onOpen: () => void;
+  icon: typeof FileText;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group flex w-full items-center gap-3.5 rounded-lg border border-border bg-card px-[18px] py-4 text-left shadow-sm transition-[border-color] duration-150 hover:border-primary/60 max-sm:flex-col max-sm:items-start max-sm:gap-2 max-sm:p-3"
-    >
-      <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-md max-sm:hidden", tone)}>
-        <Icon className="h-5 w-5" aria-hidden />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-[26px] font-[650] leading-[30px] tracking-[-0.02em] tabular-nums max-sm:text-[22px] max-sm:leading-[26px]">
-          {value}
-        </span>
-        <span className="block text-[13px] font-semibold leading-[18px]">{label}</span>
-        <span className="mt-0.5 block text-xs leading-4 text-muted-foreground max-[900px]:hidden">{detail}</span>
-      </span>
-      <ChevronRight
-        className="ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-[transform,color] duration-150 group-hover:translate-x-0.5 group-hover:text-primary max-sm:hidden"
-        aria-hidden
-      />
-    </button>
+    <span className={cn("grid h-[34px] w-[34px] shrink-0 place-items-center rounded-md", tone)}>
+      <Icon className="h-5 w-5" aria-hidden />
+    </span>
   );
 }
 
-function SectionTitle({
-  id,
-  title,
-  href,
-}: {
-  id: string;
-  title: string;
-  href: string;
-}) {
+function RailCopy({ title, detail }: { title: string; detail: string }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <h2 id={id} className="scroll-mt-20 text-lg font-semibold leading-[26px] tracking-[-0.01em]">
-        {title}
-      </h2>
-      <Button variant="ghost" size="sm" asChild>
-        <Link href={href}>
-          View all
-          <ArrowRight />
-        </Link>
-      </Button>
-    </div>
+    <span className="min-w-0 flex-1">
+      <span className="block truncate text-[13.5px] font-semibold leading-[18px]">{title}</span>
+      <span className="block truncate text-[12.5px] leading-[17px] text-muted-foreground">{detail}</span>
+    </span>
   );
 }
 
-function SectionMessage({
-  message,
-  onRetry,
-}: {
-  message: string;
-  onRetry: () => void;
-}) {
+function RailChevron() {
   return (
-    <EmptyState
-      icon={AlertCircle}
-      title="Couldn't load this section"
-      description={message}
-      action={
-        <Button type="button" variant="outline" size="sm" onClick={onRetry}>
-          <RefreshCw />
-          Try again
-        </Button>
-      }
+    <ChevronRight
+      className="h-4 w-4 shrink-0 text-muted-foreground transition-colors duration-150 group-hover:text-primary"
+      aria-hidden
     />
   );
 }
 
-function LoadingRows({ label, columns }: { label: string; columns: number }) {
-  return <TableSkeletonRows label={label} columns={columns} rows={3} />;
-}
-
-function MenuAction({
-  icon,
-  children,
-  disabled,
-  onSelect,
-}: {
-  icon: ReactNode;
-  children: ReactNode;
-  disabled?: boolean;
-  onSelect: () => void;
-}) {
+function HeroProgress({ status }: { status: ApplicationStatus }) {
+  const current = stepIndex(status);
+  const rejected = status === "rejected";
+  const label = rejected ? "Rejected" : STEPS[current];
   return (
-    <DropdownMenuItem disabled={disabled} className="px-2.5 py-[7px] text-[13px]" onSelect={onSelect}>
-      {icon}
-      {children}
-    </DropdownMenuItem>
-  );
-}
-
-function RowMenu({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label={`Actions for ${label}`}
-          className="text-muted-foreground hover:bg-primary-soft hover:text-primary data-[state=open]:bg-primary-soft data-[state=open]:text-primary"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <MoreHorizontal />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[210px]" onClick={(event) => event.stopPropagation()}>
-        {children}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function RecentTable({
-  id,
-  title,
-  href,
-  caption,
-  children,
-}: {
-  id: string;
-  title: string;
-  href: string;
-  caption: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-3">
-      <SectionTitle id={id} title={title} href={href} />
-      <section
-        aria-labelledby={id}
-        className="overflow-hidden rounded-lg border border-border bg-card shadow-sm"
-      >
-        <Table className="text-[13px] [&_td]:h-14 [&_td]:px-3 [&_th]:h-[38px] [&_th]:px-3 [&_th]:text-xs">
-          <caption className="sr-only">{caption}</caption>
-          {children}
-        </Table>
-      </section>
+    <div className="grid grid-cols-4 gap-1.5" aria-label={`Progress: ${label}`}>
+      {STEPS.map((step, index) => {
+        const lastRejected = index === 3 && rejected;
+        const reached = index <= current;
+        const active = index === current;
+        return (
+          <div key={step}>
+            <span
+              className={cn(
+                "block h-1 rounded-full bg-muted",
+                reached && "bg-primary",
+                lastRejected && "bg-danger"
+              )}
+            />
+            <span
+              className={cn(
+                "mt-1.5 block text-[11.5px] leading-4 text-muted-foreground",
+                active && "font-semibold text-foreground"
+              )}
+            >
+              {lastRejected ? "Rejected" : step}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-const rowClass =
-  "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+function FeedSkeleton() {
+  return (
+    <div className="flex flex-col" aria-hidden>
+      {Array.from({ length: 4 }, (_, index) => (
+        <div key={index} className="flex items-center gap-3 border-t border-border px-5 py-3 first:border-t-0">
+          <span className="h-[34px] w-[34px] shrink-0 animate-pulse rounded-md bg-muted" />
+          <span className="min-w-0 flex-1 space-y-2">
+            <span className="block h-3.5 w-2/3 animate-pulse rounded bg-muted" />
+            <span className="block h-3 w-1/3 animate-pulse rounded bg-muted" />
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function DashboardPage() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const { download, pendingKey } = useFileDownload();
-  const [previewTarget, setPreviewTarget] = useState<PortalDocument | null>(null);
-  const [shareTarget, setShareTarget] = useState<PortalDocument | null>(null);
+  const [filter, setFilter] = useState<ActivityFilter>("all");
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [lockedUpload, setLockedUpload] = useState<LockedUpload | null>(null);
 
   const applicationsQuery = useQuery({
     queryKey: ["applications"],
@@ -345,14 +220,6 @@ export function DashboardPage() {
   const documents = documentsQuery.data ?? [];
   const profiles = profilesQuery.data?.content ?? [];
 
-  const profileNames = useMemo(() => {
-    const names = new Map<string, string>();
-    for (const profile of profiles) {
-      names.set(profile.id, profile.displayName || "Untitled profile");
-    }
-    return names;
-  }, [profiles]);
-
   const summary = useMemo(() => {
     const list = applications ?? [];
     return {
@@ -363,29 +230,57 @@ export function DashboardPage() {
     };
   }, [applications]);
 
-  const recentApplications = useMemo(() => {
-    return [...(applications ?? [])]
-      .sort((left, right) => updatedTime(right.updatedAt) - updatedTime(left.updatedAt))
-      .slice(0, RECENT_LIMIT);
+  const latestApplication = useMemo(() => {
+    return [...(applications ?? [])].sort(
+      (left, right) => updatedTime(right.updatedAt) - updatedTime(left.updatedAt)
+    )[0];
   }, [applications]);
 
-  const drafts = useMemo(() => {
-    return (applications ?? [])
-      .filter((app) => app.status === "draft")
-      .sort((left, right) => updatedTime(right.updatedAt) - updatedTime(left.updatedAt));
-  }, [applications]);
-
-  const recentProfiles = useMemo(() => {
-    return [...profiles]
-      .sort((left, right) => updatedTime(right.updatedAt) - updatedTime(left.updatedAt))
-      .slice(0, RECENT_LIMIT);
-  }, [profiles]);
-
-  const recentDocuments = useMemo(() => {
-    return [...documents]
-      .sort((left, right) => updatedTime(right.updatedAt) - updatedTime(left.updatedAt))
-      .slice(0, RECENT_LIMIT);
-  }, [documents]);
+  const events = useMemo<ActivityEvent[]>(() => {
+    const applicationEvents: ActivityEvent[] = (applications ?? []).map((app) => ({
+      id: `app-${app.id}`,
+      kind: "app",
+      at: updatedTime(app.updatedAt),
+      day: formatProfileDay(app.updatedAt),
+      time: formatProfileTime(app.updatedAt),
+      title: applicationTitle(app),
+      verb: VERB[app.status] ?? "updated",
+      meta: programLabel(app),
+      href: getApplicationHref(app),
+      tone: "tone-brand",
+      icon: FileText,
+    }));
+    const profileEvents: ActivityEvent[] = profiles.map((profile) => ({
+      id: `prof-${profile.id}`,
+      kind: "prof",
+      at: updatedTime(profile.updatedAt),
+      day: formatProfileDay(profile.updatedAt),
+      time: formatProfileTime(profile.updatedAt),
+      title: profile.displayName || "Untitled profile",
+      verb: "profile updated",
+      meta: `${profileTypeLabel(profile.type)} · ${showIdentifier(profile.identifiers.pan)}`,
+      href: `/profiles/${profile.id}`,
+      tone: "tone-info",
+      icon: UserRound,
+    }));
+    const documentEvents: ActivityEvent[] = documents.map((document) => {
+      const profileName = documentProfileName(document);
+      return {
+        id: `doc-${document.id}`,
+        kind: "doc",
+        at: updatedTime(document.updatedAt),
+        day: formatProfileDay(document.updatedAt),
+        time: formatProfileTime(document.updatedAt),
+        title: documentTitle(document),
+        verb: "uploaded",
+        meta: profileName ? `${document.typeName} · ${profileName}` : document.typeName,
+        href: `/documents/${document.id}`,
+        tone: "tone-success",
+        icon: Upload,
+      };
+    });
+    return [...applicationEvents, ...profileEvents, ...documentEvents].sort((left, right) => right.at - left.at);
+  }, [applications, documents, profiles]);
 
   if (applicationsQuery.isError) {
     const apiError = parseApiError(applicationsQuery.error);
@@ -416,527 +311,345 @@ export function DashboardPage() {
   const appsLoading = applicationsQuery.isLoading && !applications;
   const profilesLoading = profilesQuery.isLoading && !profilesQuery.data;
   const documentsLoading = documentsQuery.isLoading && !documentsQuery.data;
-  const latestDocument = recentDocuments[0];
+  const feedLoading = (appsLoading || profilesLoading || documentsLoading) && events.length === 0;
+  const visible = events.filter((event) => filter === "all" || event.kind === filter);
+  const groups = visible.reduce<{ day: string; items: ActivityEvent[] }[]>((list, event) => {
+    const last = list[list.length - 1];
+    if (!last || last.day !== event.day) list.push({ day: event.day, items: [event] });
+    else last.items.push(event);
+    return list;
+  }, []);
+
   const individualCount = individualQuery.data?.totalElements;
   const businessCount = businessQuery.data?.totalElements;
   const profileTotal = profilesQuery.data?.totalElements;
   const countsReady = individualCount !== undefined && businessCount !== undefined;
-  const latestDraft = drafts[0];
+  const latestDocument = [...documents].sort(
+    (left, right) => updatedTime(right.updatedAt) - updatedTime(left.updatedAt)
+  )[0];
+
+  const applicationDetail = appsLoading
+    ? "–"
+    : [summary.drafts && plural(summary.drafts, "draft"), summary.inReview && `${summary.inReview} in review`, summary.approved && `${summary.approved} approved`]
+        .filter(Boolean)
+        .join(" · ") || "None yet";
 
   return (
-    <PageShell className="pb-16 sm:pb-20">
-      <PageHeader
-        title={`${greeting}, ${user?.firstName ?? "there"} 👋`}
-        description="Here's an overview of your loan applications."
-      />
-
-      <div className="grid grid-cols-3 gap-3 max-sm:gap-2" aria-label="Overview">
-        <OverviewCard
-          label="Applications"
-          value={appsLoading ? "–" : String(summary.total)}
-          detail={
-            appsLoading
-              ? "–"
-              : `${plural(summary.drafts, "draft")} · ${summary.inReview} in review · ${summary.approved} approved`
-          }
-          icon={FileText}
-          tone="tone-brand"
-          onOpen={() => scrollToSection("apps-h")}
+    <PageShell width="detail" className="gap-5 pb-16 sm:gap-5 sm:pb-20">
+      <section
+        className="relative grid items-center gap-5 overflow-hidden rounded-2xl bg-primary p-4 text-primary-foreground sm:p-5 min-[900px]:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] min-[900px]:p-6"
+        aria-labelledby="hello"
+      >
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -bottom-[90px] -right-[60px] h-[200px] w-[200px] rounded-full border-[32px] border-primary-foreground/[0.07]"
         />
-        <OverviewCard
-          label="Profiles"
-          value={profilesLoading || profileTotal === undefined ? "–" : String(profileTotal)}
-          detail={countsReady ? `${individualCount} individual · ${businessCount} business` : "–"}
-          icon={Users}
-          tone="tone-info"
-          onOpen={() => scrollToSection("pr-h")}
-        />
-        <OverviewCard
-          label="Documents"
-          value={documentsLoading ? "–" : String(documents.length)}
-          detail={
-            documentsLoading
-              ? "–"
-              : latestDocument
-                ? `Latest upload ${displayDate(latestDocument.updatedAt)}`
-                : "No uploads yet"
-          }
-          icon={Files}
-          tone="tone-success"
-          onOpen={() => scrollToSection("dc-h")}
-        />
-      </div>
-
-      {latestDraft ? (
-        <div className="flex flex-wrap items-center gap-x-3.5 gap-y-3 rounded-lg border border-primary/25 bg-primary-soft px-4 py-3">
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-card text-primary-soft-foreground">
-            <Pencil className="h-4 w-4" aria-hidden />
-          </span>
-          <p className="min-w-[240px] flex-1 text-[13.5px] leading-5 text-primary-soft-foreground">
-            {drafts.length === 1 ? (
-              <>
-                <b className="font-semibold">You have a draft in progress.</b>{" "}
-                <span className="font-mono text-xs">{applicationTitle(latestDraft)}</span>
-                {" · "}
-                {applicationCompany(latestDraft, profileNames)}
-                {" · "}
-                {programLabel(latestDraft)}
-                {" · updated "}
-                {displayDate(latestDraft.updatedAt)}
-              </>
-            ) : (
-              <>
-                <b className="font-semibold">You have {drafts.length} drafts in progress.</b> Latest:{" "}
-                <span className="font-mono text-xs">{applicationTitle(latestDraft)}</span>
-                {" · "}
-                {applicationCompany(latestDraft, profileNames)}
-                {" · "}
-                {programLabel(latestDraft)}
-              </>
-            )}
+        <div className="relative z-[1]">
+          <h1 id="hello" className="text-[22px] font-[650] leading-7 tracking-tight sm:text-[26px] sm:leading-8">
+            {greeting}, {user?.firstName ?? "there"} 👋
+          </h1>
+          <p className="mt-1 text-sm leading-5 text-primary-foreground/90">
+            Here’s an overview of your loan applications.
           </p>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => router.push(getApplicationHref(latestDraft))}
-          >
-            Continue
-            <ArrowRight />
-          </Button>
+          <div className="mt-6 flex flex-wrap gap-2.5 max-sm:[&_button]:flex-1">
+            <ApplyLoanMenu appearance="inverse" compact={false} className="max-sm:flex-1" />
+            <button
+              type="button"
+              onClick={() => setUploadOpen(true)}
+              className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-primary-foreground/55 bg-transparent px-3 text-[13px] font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary-foreground/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground active:translate-y-px max-sm:flex-1"
+            >
+              <Upload className="h-4 w-4" aria-hidden />
+              Upload document
+            </button>
+          </div>
         </div>
-      ) : null}
-
-      <RecentTable id="apps-h" title="Recent applications" href="/applications" caption="Loan applications">
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead>Application</TableHead>
-            <TableHead className="hidden min-[901px]:table-cell">Company</TableHead>
-            <TableHead className="hidden min-[901px]:table-cell">Program</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="hidden sm:table-cell">Updated</TableHead>
-            <TableHead className="w-16 text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+        <div className="relative z-[1] flex flex-col gap-3 rounded-lg bg-card p-3.5 text-foreground shadow-lg sm:p-4">
           {appsLoading ? (
-            <LoadingRows label="Loading applications" columns={7} />
-          ) : recentApplications.length === 0 ? (
-            <TableRow className="hover:bg-transparent">
-              <TableCell colSpan={7} className="h-auto !p-0">
-                <EmptyState
-                  icon={FileText}
-                  title="No applications yet"
-                  description="Use “Apply for a loan” to start one."
-                />
-              </TableCell>
-            </TableRow>
+            <div className="space-y-3" aria-hidden>
+              <div className="flex items-center gap-2.5">
+                <span className="h-9 w-9 animate-pulse rounded-md bg-muted" />
+                <span className="min-w-0 flex-1 space-y-2">
+                  <span className="block h-3.5 w-2/3 animate-pulse rounded bg-muted" />
+                  <span className="block h-3 w-1/3 animate-pulse rounded bg-muted" />
+                </span>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {STEPS.map((step) => (
+                  <span key={step} className="h-1 animate-pulse rounded-full bg-muted" />
+                ))}
+              </div>
+            </div>
+          ) : latestApplication ? (
+            <LatestApplicationCard application={latestApplication} />
           ) : (
-            recentApplications.map((app) => {
-              const title = applicationTitle(app);
-              const href = getApplicationHref(app);
-              const company = applicationCompany(app, profileNames);
-              const program = programLabel(app);
-              return (
-                <TableRow
-                  key={app.id}
-                  tabIndex={0}
-                  aria-label={title}
-                  className={rowClass}
-                  onClick={() => router.push(href)}
-                  onKeyDown={(event) => {
-                    if (event.target !== event.currentTarget) return;
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      router.push(href);
-                    }
-                  }}
-                >
-                  <TableCell>
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="tone-brand grid h-[30px] w-[30px] shrink-0 place-items-center rounded-sm">
-                        <FileText className="h-4 w-4" aria-hidden />
-                      </span>
-                      <div className="min-w-0">
-                        <span className="block truncate text-[13.5px] font-semibold leading-[18px]">{title}</span>
-                        <span className="mt-px block max-w-[230px] truncate font-mono text-[11px] leading-[14px] text-muted-foreground">
-                          {app.id}
-                        </span>
-                        <span className="mt-0.5 block truncate text-xs text-muted-foreground min-[901px]:hidden">
-                          {company} · {program}
-                        </span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden min-[901px]:table-cell">
-                    <div className="flex min-w-0 items-center gap-2 font-medium">
-                      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-primary-soft text-primary-soft-foreground">
-                        <Building2 className="h-3.5 w-3.5" aria-hidden />
-                      </span>
-                      <span className="truncate">{company}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden min-[901px]:table-cell">{program}</TableCell>
-                  <TableCell className="text-right font-semibold tabular-nums">
-                    {formatCurrency(app.loanAmount || 0)}
-                  </TableCell>
-                  <TableCell>
-                    <ApplicationStatusBadge status={app.status} size="sm" />
-                  </TableCell>
-                  <TableCell className="hidden whitespace-nowrap text-muted-foreground tabular-nums sm:table-cell">
-                    {displayDate(app.updatedAt)}
-                  </TableCell>
-                  <TableCell className="w-16 text-right" onClick={(event) => event.stopPropagation()}>
-                    <RowMenu label={title}>
-                      <MenuAction
-                        icon={<Eye className="h-4 w-4 text-muted-foreground" />}
-                        onSelect={() => router.push(href)}
-                      >
-                        Open application
-                      </MenuAction>
-                      {app.status === "draft" ? (
-                        <MenuAction
-                          icon={<Pencil className="h-4 w-4 text-muted-foreground" />}
-                          onSelect={() => router.push(href)}
-                        >
-                          Continue draft
-                        </MenuAction>
-                      ) : null}
-                    </RowMenu>
-                  </TableCell>
-                </TableRow>
-              );
-            })
+            <p className="text-[13px] text-muted-foreground">
+              No applications yet. Use <b className="font-semibold text-foreground">Apply for a loan</b> to start one.
+            </p>
           )}
-        </TableBody>
-      </RecentTable>
+        </div>
+      </section>
 
-      <RecentTable id="pr-h" title="Recent profiles" href="/profiles" caption="Recent profiles">
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead>Profile</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="hidden min-[901px]:table-cell">GSTIN</TableHead>
-            <TableHead className="hidden min-[901px]:table-cell">Mobile</TableHead>
-            <TableHead className="hidden sm:table-cell">Updated</TableHead>
-            <TableHead className="w-16 text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {profilesLoading ? (
-            <LoadingRows label="Loading profiles" columns={7} />
-          ) : profilesQuery.isError ? (
-            <TableRow className="hover:bg-transparent">
-              <TableCell colSpan={7} className="h-auto !p-0">
-                <SectionMessage
-                  message={parseApiError(profilesQuery.error).message}
+      <div className="grid items-start gap-5 min-[960px]:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm" aria-labelledby="feed-h">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 px-4 pb-3 pt-4 sm:px-5">
+            <h2 id="feed-h" className="text-base font-[650] leading-6 tracking-tight">
+              Recent activity
+            </h2>
+            <div className="flex gap-1.5 overflow-x-auto" role="group" aria-label="Filter activity">
+              {FILTERS.map((item) => {
+                const count =
+                  item.key === "all" ? events.length : events.filter((event) => event.kind === item.key).length;
+                const pressed = filter === item.key;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    aria-pressed={pressed}
+                    onClick={() => setFilter(item.key)}
+                    className={cn(
+                      "inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-full border border-input/70 bg-card px-3.5 text-[13px] font-medium transition-colors duration-150 hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                      pressed && "border-transparent bg-primary text-primary-foreground hover:bg-primary"
+                    )}
+                  >
+                    {item.label}
+                    <span className="text-xs tabular-nums opacity-70">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {profilesQuery.isError || documentsQuery.isError ? (
+            <FeedNotice>
+              {profilesQuery.isError ? (
+                <NoticeLine
+                  message="Profiles couldn’t be loaded."
                   onRetry={() => {
                     void profilesQuery.refetch();
                   }}
                 />
-              </TableCell>
-            </TableRow>
-          ) : recentProfiles.length === 0 ? (
-            <TableRow className="hover:bg-transparent">
-              <TableCell colSpan={7} className="h-auto !p-0">
-                <EmptyState icon={Users} title="No profiles yet" description="Create a profile to get started." />
-              </TableCell>
-            </TableRow>
-          ) : (
-            recentProfiles.map((profile) => (
-              <ProfileRow key={profile.id} profile={profile} onOpen={() => router.push(`/profiles/${profile.id}`)} />
-            ))
-          )}
-        </TableBody>
-      </RecentTable>
-
-      <RecentTable id="dc-h" title="Recent documents" href="/documents" caption="Recent documents">
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead>Document</TableHead>
-            <TableHead className="hidden min-[901px]:table-cell">Category</TableHead>
-            <TableHead className="hidden min-[901px]:table-cell">Profile</TableHead>
-            <TableHead>Version</TableHead>
-            <TableHead className="hidden min-[901px]:table-cell">Size</TableHead>
-            <TableHead className="hidden sm:table-cell">Updated</TableHead>
-            <TableHead className="w-16 text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {documentsLoading ? (
-            <LoadingRows label="Loading documents" columns={7} />
-          ) : documentsQuery.isError ? (
-            <TableRow className="hover:bg-transparent">
-              <TableCell colSpan={7} className="h-auto !p-0">
-                <SectionMessage
-                  message={parseApiError(documentsQuery.error).message}
+              ) : null}
+              {documentsQuery.isError ? (
+                <NoticeLine
+                  message="Documents couldn’t be loaded."
                   onRetry={() => {
                     void documentsQuery.refetch();
                   }}
                 />
-              </TableCell>
-            </TableRow>
-          ) : recentDocuments.length === 0 ? (
-            <TableRow className="hover:bg-transparent">
-              <TableCell colSpan={7} className="h-auto !p-0">
-                <EmptyState icon={Files} title="No documents yet" description="Upload a document to see it here." />
-              </TableCell>
-            </TableRow>
-          ) : (
-            recentDocuments.map((document) => {
-              const linked = document.linked ?? [];
-              const primary = linked.find((item) => item.relation === "FOR") ?? linked[0];
-              const name = primary ? profileName(primary) : "";
-              const updated = displayDate(document.updatedAt);
-              const fileName = document.fileName?.trim() ?? "";
-              const title = fileName || document.typeName;
-              const label = document.label ? `${title} ${document.label}` : title;
-              const financial = categoryKey(document.category) === "FINANCIALS";
-              const downloading = pendingKey === `${document.id}:${document.latestVersion}`;
-              return (
-                <TableRow
-                  key={document.id}
-                  tabIndex={0}
-                  aria-label={title}
-                  className={rowClass}
-                  onClick={() => router.push(`/documents/${document.id}`)}
-                  onKeyDown={(event) => {
-                    if (event.target !== event.currentTarget) return;
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      router.push(`/documents/${document.id}`);
-                    }
-                  }}
-                >
-                  <TableCell>
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="tone-brand grid h-[30px] w-[30px] shrink-0 place-items-center rounded-sm">
-                        <FileText className="h-4 w-4" aria-hidden />
-                      </span>
-                      <div className="min-w-0">
-                        <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[13.5px] font-semibold leading-[18px]">
-                          <span className="min-w-0 truncate">{title}</span>
-                          {document.label ? (
-                            <Badge variant="outline" dot={false} size="sm">
-                              {document.label}
-                            </Badge>
-                          ) : null}
-                        </span>
-                        <span className="mt-px block truncate text-[12px] leading-4 text-muted-foreground">
-                          {fileName && fileName !== document.typeName
-                            ? document.typeName
-                            : documentTypeCode(document.typeId, document.typeName)}
-                        </span>
-                        <span className="mt-0.5 block truncate text-xs text-muted-foreground min-[901px]:hidden">
-                          {name ? `${name} · ${updated}` : updated}
-                        </span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden min-[901px]:table-cell">
-                    <Badge variant={financial ? "brand" : "info"} size="sm">
-                      {categoryLabel(categoryKey(document.category), document.category)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden min-[901px]:table-cell">{name || "—"}</TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    <Badge variant="secondary" dot={false} size="xs" className="rounded-md tabular-nums">
-                      v{document.latestVersion}
-                    </Badge>
-                    <Badge variant="success" dot={false} size="sm" className="ml-1">
-                      Latest
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden whitespace-nowrap text-muted-foreground tabular-nums min-[901px]:table-cell">
-                    {document.sizeBytes ? formatFileSize(document.sizeBytes) : "—"}
-                  </TableCell>
-                  <TableCell className="hidden whitespace-nowrap text-muted-foreground tabular-nums sm:table-cell">
-                    {updated}
-                  </TableCell>
-                  <TableCell className="w-16 text-right" onClick={(event) => event.stopPropagation()}>
-                    <RowMenu label={label}>
-                      <MenuAction
-                        icon={<Eye className="h-4 w-4 text-muted-foreground" />}
-                        onSelect={() => setPreviewTarget(document)}
-                      >
-                        Preview
-                      </MenuAction>
-                      <MenuAction
-                        disabled={downloading}
-                        icon={
-                          downloading ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                          ) : (
-                            <Download className="h-4 w-4 text-muted-foreground" />
-                          )
-                        }
-                        onSelect={() => {
-                          void download(
-                            document.id,
-                            document.latestVersion,
-                            document.fileName || document.typeName
-                          );
-                        }}
-                      >
-                        Download
-                      </MenuAction>
-                      <MenuAction
-                        icon={<Share2 className="h-4 w-4 text-muted-foreground" />}
-                        onSelect={() => setShareTarget(document)}
-                      >
-                        Share
-                      </MenuAction>
-                      <DropdownMenuSeparator />
-                      <MenuAction
-                        icon={<Upload className="h-4 w-4 text-muted-foreground" />}
-                        onSelect={() => {
-                          setLockedUpload({
-                            documentId: document.id,
-                            typeId: document.typeId,
-                            typeName: document.typeName,
-                            label: document.label,
-                            category: document.category,
-                          });
-                          setUploadOpen(true);
-                        }}
-                      >
-                        Upload new version
-                      </MenuAction>
-                    </RowMenu>
-                  </TableCell>
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </RecentTable>
+              ) : null}
+            </FeedNotice>
+          ) : null}
 
-      <UploadDialog
-        open={uploadOpen}
-        onOpenChange={(open) => {
-          setUploadOpen(open);
-          if (!open) setLockedUpload(null);
-        }}
-        locked={lockedUpload ?? undefined}
-      />
-      <FilePreviewDialog
-        open={!!previewTarget}
-        onOpenChange={(open) => {
-          if (!open) setPreviewTarget(null);
-        }}
-        documentId={previewTarget?.id ?? ""}
-        version={previewTarget?.latestVersion ?? 0}
-        fileName={previewTarget?.fileName || previewTarget?.typeName || "document"}
-        contentType={previewTarget?.contentType ?? ""}
-        onDownload={(version, fileName) => {
-          if (!previewTarget) return;
-          void download(previewTarget.id, version, fileName);
-        }}
-      />
-      <ShareDialog
-        open={!!shareTarget}
-        onOpenChange={(open) => {
-          if (!open) setShareTarget(null);
-        }}
-        documents={
-          shareTarget
-            ? [
-                {
-                  id: shareTarget.id,
-                  name: shareTarget.fileName || shareTarget.typeName,
-                  fileName: shareTarget.fileName,
-                  typeName: shareTarget.typeName,
-                  tag: shareTarget.label || undefined,
-                },
-              ]
-            : []
-        }
-      />
+          {feedLoading ? (
+            <FeedSkeleton />
+          ) : visible.length === 0 ? (
+            <EmptyState
+              icon={Files}
+              title="No activity yet"
+              description="Things you do will show up here."
+            />
+          ) : (
+            groups.map((group) => (
+              <div key={group.day}>
+                <h3 className="border-t border-border bg-muted/45 px-4 pb-1.5 pt-2.5 text-xs font-[650] uppercase tracking-[0.05em] text-muted-foreground sm:px-5">
+                  {group.day}
+                </h3>
+                <ul>
+                  {group.items.map((event) => {
+                    const Icon = event.icon;
+                    return (
+                      <li key={event.id} className="border-t border-border first:border-t-0">
+                        <button
+                          type="button"
+                          onClick={() => router.push(event.href)}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors duration-150 hover:bg-muted/50 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring sm:px-5"
+                        >
+                          <RailIcon tone={event.tone} icon={Icon} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-[13.5px] leading-[19px]">
+                              <b className="font-[650]">{event.title}</b> {event.verb}
+                            </span>
+                            <span className="block truncate text-[12.5px] leading-[17px] text-muted-foreground">
+                              {event.meta}
+                            </span>
+                          </span>
+                          <time className="shrink-0 text-[12.5px] tabular-nums text-muted-foreground">
+                            {event.time}
+                          </time>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))
+          )}
+        </section>
+
+        <aside className="flex flex-col gap-4 min-[960px]:sticky min-[960px]:top-[76px]" aria-label="Overview and shortcuts">
+          <section className="rounded-lg border border-border bg-card shadow-sm" aria-labelledby="ov-h">
+            <h2 id="ov-h" className="px-4 pb-1.5 pt-3.5 text-[15px] font-[650] leading-[22px] tracking-tight">
+              Overview
+            </h2>
+            <ul className="px-2 pb-2 pt-1.5">
+              <li>
+                <Link href="/applications" className={railItemClass}>
+                  <RailIcon tone="tone-brand" icon={FileText} />
+                  <RailCopy title="Applications" detail={applicationDetail} />
+                  <span className="text-lg font-[650] tabular-nums">{appsLoading ? "–" : summary.total}</span>
+                  <RailChevron />
+                </Link>
+              </li>
+              <li>
+                <Link href="/profiles" className={railItemClass}>
+                  <RailIcon tone="tone-info" icon={Users} />
+                  <RailCopy
+                    title="Profiles"
+                    detail={countsReady ? `${individualCount} individual · ${businessCount} business` : "–"}
+                  />
+                  <span className="text-lg font-[650] tabular-nums">
+                    {profilesLoading || profileTotal === undefined ? "–" : profileTotal}
+                  </span>
+                  <RailChevron />
+                </Link>
+              </li>
+              <li>
+                <Link href="/documents" className={railItemClass}>
+                  <RailIcon tone="tone-success" icon={Files} />
+                  <RailCopy
+                    title="Documents"
+                    detail={
+                      documentsLoading
+                        ? "–"
+                        : latestDocument
+                          ? `Latest ${formatProfileDay(latestDocument.updatedAt)}`
+                          : "No uploads yet"
+                    }
+                  />
+                  <span className="text-lg font-[650] tabular-nums">
+                    {documentsLoading ? "–" : documents.length}
+                  </span>
+                  <RailChevron />
+                </Link>
+              </li>
+            </ul>
+          </section>
+
+          <section className="rounded-lg border border-border bg-card shadow-sm" aria-labelledby="qa-h">
+            <h2 id="qa-h" className="px-4 pb-1.5 pt-3.5 text-[15px] font-[650] leading-[22px] tracking-tight">
+              Quick actions
+            </h2>
+            <ul className="px-2 pb-2 pt-1.5">
+              <li>
+                <ApplyLoanMenu appearance="row" />
+              </li>
+              <li>
+                <button type="button" className={railItemClass} onClick={() => setUploadOpen(true)}>
+                  <RailIcon tone="tone-success" icon={Upload} />
+                  <RailCopy title="Upload document" detail="Add a file to a profile" />
+                  <RailChevron />
+                </button>
+              </li>
+              <li>
+                <NewProfileAction />
+              </li>
+            </ul>
+          </section>
+        </aside>
+      </div>
+
+      <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
     </PageShell>
   );
 }
 
-function ProfileRow({
-  profile,
-  onOpen,
-}: {
-  profile: CustomerProfileSummary;
-  onOpen: () => void;
-}) {
+function LatestApplicationCard({ application }: { application: LoanApplication }) {
   const router = useRouter();
-  const name = profile.displayName || "Untitled profile";
-  const typeLabel = profileTypeLabel(profile.type);
-  const updated = displayDate(profile.updatedAt);
+  const title = applicationTitle(application);
+  const draft = application.status === "draft";
   return (
-    <TableRow
-      tabIndex={0}
-      aria-label={name}
-      className={rowClass}
-      onClick={onOpen}
-      onKeyDown={(event) => {
-        if (event.target !== event.currentTarget) return;
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onOpen();
-        }
-      }}
-    >
-      <TableCell>
-        <div className="flex min-w-0 items-center gap-2.5">
-          <ProfileAvatar name={name} size="sm" />
-          <div className="min-w-0">
-            <span className="block truncate text-[13.5px] font-semibold leading-[18px]">{name}</span>
-            <span className="mt-px block truncate font-mono text-[11px] leading-[14px] text-muted-foreground">
-              {showIdentifier(profile.identifiers.pan)}
-            </span>
-            <span className="mt-0.5 block truncate text-xs text-muted-foreground min-[901px]:hidden">
-              {typeLabel} · {updated}
-            </span>
-          </div>
+    <>
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span className="tone-brand grid h-9 w-9 shrink-0 place-items-center rounded-md">
+          <FileText className="h-5 w-5" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <b className="block truncate text-[13.5px] font-[650] leading-[18px]">{title}</b>
+          <span className="block truncate text-[12.5px] leading-4 text-muted-foreground">
+            {programLabel(application)}
+          </span>
         </div>
-      </TableCell>
-      <TableCell>
-        <ProfileTypeBadge type={profile.type} size="sm" />
-      </TableCell>
-      <TableCell>
-        <ProfileStatusBadge status={profile.status} size="sm" />
-      </TableCell>
-      <TableCell
-        className={cn(
-          "hidden font-mono text-[12.5px] min-[901px]:table-cell",
-          profile.identifiers.gstin ? "text-foreground" : "text-muted-foreground"
-        )}
+        <ApplicationStatusBadge status={application.status} />
+      </div>
+      <HeroProgress status={application.status} />
+      <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
+        <span className="text-[13px] text-muted-foreground">
+          Updated {formatProfileDay(application.updatedAt)}
+        </span>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => router.push(getApplicationHref(application))}
+        >
+          {draft ? "Continue" : "Open"}
+          <ArrowRight />
+        </Button>
+      </div>
+    </>
+  );
+}
+
+function FeedNotice({ children }: { children: ReactNode }) {
+  return <div className="flex flex-col gap-1 border-t border-border px-4 py-3 sm:px-5">{children}</div>;
+}
+
+function NoticeLine({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <p className="text-[13px] leading-[18px] text-danger-strong">
+      {message}{" "}
+      <button
+        type="button"
+        onClick={onRetry}
+        className="font-semibold underline underline-offset-[3px]"
       >
-        {showIdentifier(profile.identifiers.gstin)}
-      </TableCell>
-      <TableCell
-        className={cn(
-          "hidden min-[901px]:table-cell",
-          profile.identifiers.mobile ? "text-foreground" : "text-muted-foreground"
-        )}
-      >
-        {showIdentifier(profile.identifiers.mobile)}
-      </TableCell>
-      <TableCell className="hidden whitespace-nowrap text-muted-foreground tabular-nums sm:table-cell">
-        {updated}
-      </TableCell>
-      <TableCell className="w-16 text-right" onClick={(event) => event.stopPropagation()}>
-        <RowMenu label={name}>
-          <MenuAction
-            icon={<Eye className="h-4 w-4 text-muted-foreground" />}
-            onSelect={() => router.push(`/profiles/${profile.id}`)}
-          >
-            View profile
-          </MenuAction>
-          <MenuAction
-            icon={<Pencil className="h-4 w-4 text-muted-foreground" />}
-            onSelect={() => router.push(`/profiles/${profile.id}?edit=1`)}
-          >
-            Edit profile
-          </MenuAction>
-        </RowMenu>
-      </TableCell>
-    </TableRow>
+        Try again
+      </button>
+    </p>
+  );
+}
+
+function NewProfileAction() {
+  const router = useRouter();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" className={railItemClass}>
+          <RailIcon tone="tone-info" icon={UserRound} />
+          <RailCopy title="New profile" detail="Individual or business" />
+          <RailChevron />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-[280px]">
+        <DropdownMenuItem onSelect={() => router.push("/profiles/new?type=individual")}>
+          <UserRound className="h-5 w-5 shrink-0 text-primary" />
+          <span className="min-w-0">
+            <span className="block font-semibold">Individual</span>
+            <span className="block text-[12.5px] font-normal leading-[18px] text-muted-foreground">
+              Person with PAN and mobile
+            </span>
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => router.push("/profiles/new?type=business")}>
+          <Building2 className="h-5 w-5 shrink-0 text-primary" />
+          <span className="min-w-0">
+            <span className="block font-semibold">Business</span>
+            <span className="block text-[12.5px] font-normal leading-[18px] text-muted-foreground">
+              Company with PAN and GSTIN
+            </span>
+          </span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

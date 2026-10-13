@@ -1,16 +1,15 @@
 "use client";
 
 import { Suspense, useRef } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Building2 } from "lucide-react";
 import { ErrorState } from "@/components/ErrorState";
-import { Button } from "@/components/ui/button";
-import { ProfileSearchPicker } from "@/features/profiles/components/ProfileSearchPicker";
+import { ChooseProfileDialog } from "@/features/loan-application/ChooseProfileDialog";
 import { parseApiError } from "@/lib/api-error";
 import { applicationService } from "@/services/application.service";
 import { profileService } from "@/services/profile.service";
+import { programService } from "@/services/program.service";
 import type { CustomerProfileSummary, FormData } from "@/types";
 import {
   fieldValuesFromProfile,
@@ -64,19 +63,37 @@ function NewLoanApplicationContent() {
   const programKey = programId || programCode;
   const customerProfileId = searchParams?.get("customerProfileId");
   const versionRaw = searchParams?.get("customerProfileVersionNo");
+  const withoutProfile = searchParams?.get("withoutProfile") === "1";
+  const startToken = searchParams?.get("start");
   const createdId = useRef<string | null>(null);
   const returnParams = new URLSearchParams();
   if (programId) returnParams.set("programId", programId);
   if (programCode) returnParams.set("programCode", programCode);
-  const returnTo = `/loan-application/new?${returnParams.toString()}`;
+  const canCreate = !!programKey && (!!customerProfileId || withoutProfile);
+  const showProfileDialog = !!programKey && !customerProfileId && !withoutProfile;
+  const programsQuery = useQuery({
+    queryKey: ["tenant-programs"],
+    queryFn: () => programService.getTenantPrograms(),
+    enabled: showProfileDialog,
+    retry: 1,
+  });
+  const matchedProgram = (programsQuery.data ?? []).find(
+    (program) => program.id === programId || program.programCode === programCode
+  );
+  const applicationLabel =
+    matchedProgram?.displayName ||
+    matchedProgram?.name ||
+    humanizeProgramCode(programCode) ||
+    "New application";
 
   const { isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["create-application", programKey, customerProfileId],
+    queryKey: ["create-application", programKey, customerProfileId ?? `none:${startToken ?? "default"}`],
     queryFn: async () => {
-      if (!programKey || !customerProfileId) {
-        throw { message: "Choose a profile before starting an application.", status: 400 };
+      if (!programKey || (!customerProfileId && !withoutProfile)) {
+        throw { message: "Choose a profile or continue without one before starting an application.", status: 400 };
       }
-      const storageKey = `${CREATED_PREFIX}${programKey}:${customerProfileId}`;
+      const profileKey = customerProfileId ?? `none:${startToken ?? "default"}`;
+      const storageKey = `${CREATED_PREFIX}${programKey}:${profileKey}`;
       let applicationId = createdId.current ?? readStoredApplicationId(storageKey);
       let resolvedProgramId = programId ?? undefined;
       let resolvedProgramCode = programCode ?? undefined;
@@ -95,11 +112,12 @@ function NewLoanApplicationContent() {
       }
 
       if (!applicationId) {
-        const versionNo = await resolveProfileVersion(customerProfileId, versionRaw);
-        const app = await applicationService.createApplication(programKey, {
-          customerProfileId,
-          customerProfileVersionNo: versionNo,
-        });
+        const app = customerProfileId
+          ? await applicationService.createApplication(programKey, {
+              customerProfileId,
+              customerProfileVersionNo: await resolveProfileVersion(customerProfileId, versionRaw),
+            })
+          : await applicationService.createApplication(programKey);
         applicationId = app.id;
         createdId.current = app.id;
         storeApplicationId(storageKey, app.id);
@@ -107,7 +125,9 @@ function NewLoanApplicationContent() {
         resolvedProgramCode = app.programCode || programCode || undefined;
       }
 
-      await prefillFromProfile(applicationId, customerProfileId, resolvedProgramId || programKey);
+      if (customerProfileId) {
+        await prefillFromProfile(applicationId, customerProfileId, resolvedProgramId || programKey);
+      }
 
       const resumeQuery = new URLSearchParams({ id: applicationId });
       if (resolvedProgramId) resumeQuery.set("programId", resolvedProgramId);
@@ -115,7 +135,7 @@ function NewLoanApplicationContent() {
       router.replace(`/loan-application/resume?${resumeQuery.toString()}`);
       return { id: applicationId };
     },
-    enabled: !!programKey && !!customerProfileId,
+    enabled: canCreate,
     staleTime: Infinity,
     gcTime: 0,
     retry: false,
@@ -133,27 +153,27 @@ function NewLoanApplicationContent() {
     );
   }
 
-  if (!customerProfileId) {
+  if (!customerProfileId && !withoutProfile) {
     return (
-      <div className="mx-auto max-w-xl space-y-6 p-6 sm:p-8">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Choose a profile</h1>
-          <p className="mt-1 text-sm font-normal text-slate-500">
-            The application is filled from this customer profile.
-          </p>
-        </div>
-        <ProfileSearchPicker
-          onSelect={(profile: CustomerProfileSummary) => {
-            const next = new URLSearchParams(returnParams);
-            next.set("customerProfileId", profile.id);
-            next.set("customerProfileVersionNo", String(profile.currentVersionNo));
-            router.replace(`/loan-application/new?${next.toString()}`);
-          }}
-        />
-        <Button asChild variant="outline" size="md">
-          <Link href={`/profiles/new?returnTo=${encodeURIComponent(returnTo)}`}>Create a profile</Link>
-        </Button>
-      </div>
+      <ChooseProfileDialog
+        open
+        applicationLabel={applicationLabel}
+        onOpenChange={(open) => {
+          if (!open) router.push("/dashboard");
+        }}
+        onSelect={(profile: CustomerProfileSummary) => {
+          const next = new URLSearchParams(returnParams);
+          next.set("customerProfileId", profile.id);
+          next.set("customerProfileVersionNo", String(profile.currentVersionNo));
+          router.replace(`/loan-application/new?${next.toString()}`);
+        }}
+        onContinueWithoutProfile={() => {
+          const next = new URLSearchParams(returnParams);
+          next.set("withoutProfile", "1");
+          next.set("start", crypto.randomUUID());
+          router.replace(`/loan-application/new?${next.toString()}`);
+        }}
+      />
     );
   }
 
@@ -174,6 +194,15 @@ function NewLoanApplicationContent() {
   }
 
   return <LoadingState message="Creating your application..." />;
+}
+
+function humanizeProgramCode(code: string | null): string | undefined {
+  if (!code) return undefined;
+  const label = code
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase())
+    .trim();
+  return label.length > 0 ? label : undefined;
 }
 
 async function resolveProfileVersion(profileId: string, versionRaw: string | null): Promise<number> {

@@ -59,15 +59,21 @@ export function RecipientSharePage() {
   const [pending, setPending] = useState(false);
   const [downloading, setDownloading] = useState<string | null>(null);
   const [followUp, setFollowUp] = useState<string | null>(null);
+  const [appliedRouteKey, setAppliedRouteKey] = useState<string | null>(null);
+  const [loadedAccessToken, setLoadedAccessToken] = useState("");
+  const routeKey = route.ready ? token : null;
+  if (routeKey !== appliedRouteKey) {
+    setAppliedRouteKey(routeKey);
+    setState(
+      routeKey
+        ? initialSharedAccessState()
+        : reduceSharedAccess(initialSharedAccessState(), { type: "meta-unavailable" })
+    );
+  }
 
   useEffect(() => {
-    if (!route.ready) return;
-    if (!token) {
-      setState(reduceSharedAccess(initialSharedAccessState(), { type: "meta-unavailable" }));
-      return;
-    }
+    if (!token) return;
     let cancelled = false;
-    setState(initialSharedAccessState());
     fetchSharedBundleMeta(token)
       .then((meta) => {
         if (cancelled) return;
@@ -85,12 +91,12 @@ export function RecipientSharePage() {
     return () => {
       cancelled = true;
     };
-  }, [route.ready, token]);
+  }, [token]);
 
   const mismatch = state.step === "verify" && state.mismatch;
   useEffect(() => {
     if (state.step === "verify") {
-      if (state.mismatch) headingRef.current?.focus();
+      if (mismatch) headingRef.current?.focus();
       else emailRef.current?.focus();
       return;
     }
@@ -113,10 +119,13 @@ export function RecipientSharePage() {
   }, [state.step]);
 
   const accessToken = state.step === "ready" ? state.accessToken : "";
+  if (accessToken !== loadedAccessToken) {
+    setLoadedAccessToken(accessToken);
+    setListError(null);
+  }
   useEffect(() => {
     if (!accessToken) return;
     let cancelled = false;
-    setListError(null);
     fetchSharedBundleDocuments(token, accessToken)
       .then((items) => {
         if (!cancelled) setDocuments(items);
