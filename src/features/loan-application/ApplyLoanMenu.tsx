@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, Plus, PlusCircle } from "lucide-react";
@@ -11,16 +10,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { programService } from "@/services/program.service";
-import type { CustomerProfileSummary } from "@/types";
+import { programService, type Program } from "@/services/program.service";
 import { cn } from "@/lib/utils";
-import { ChooseProfileDialog } from "./ChooseProfileDialog";
-
-interface PendingProgram {
-  id: string;
-  programCode: string;
-  label: string;
-}
 
 interface ApplyLoanMenuProps {
   onNavigate?: () => void;
@@ -40,7 +31,6 @@ export function ApplyLoanMenu({
   appearance = "solid",
 }: ApplyLoanMenuProps) {
   const router = useRouter();
-  const [pendingProgram, setPendingProgram] = useState<PendingProgram | null>(null);
   const { data: programs = [], isLoading } = useQuery({
     queryKey: ["tenant-programs"],
     queryFn: () => programService.getTenantPrograms(),
@@ -49,39 +39,11 @@ export function ApplyLoanMenu({
 
   const available = programs.filter((program) => program.id);
 
-  const startHref = (program: PendingProgram, extra?: Record<string, string>) => {
+  const beginApplication = (program: Program) => {
     const params = new URLSearchParams({ programId: program.id });
     if (program.programCode) params.set("programCode", program.programCode);
-    if (extra) {
-      for (const [key, value] of Object.entries(extra)) params.set(key, value);
-    }
-    return `/loan-application/new?${params.toString()}`;
-  };
-
-  const beginApplication = (href: string) => {
-    setPendingProgram(null);
     onNavigate?.();
-    router.push(href);
-  };
-
-  const handleSelectProfile = (profile: CustomerProfileSummary) => {
-    if (!pendingProgram) return;
-    beginApplication(
-      startHref(pendingProgram, {
-        customerProfileId: profile.id,
-        customerProfileVersionNo: String(profile.currentVersionNo),
-      })
-    );
-  };
-
-  const handleContinueWithoutProfile = () => {
-    if (!pendingProgram) return;
-    beginApplication(
-      startHref(pendingProgram, {
-        withoutProfile: "1",
-        start: crypto.randomUUID(),
-      })
-    );
+    router.push(`/loan-application/new?${params.toString()}`);
   };
 
   return (
@@ -140,15 +102,7 @@ export function ApplyLoanMenu({
             available.map((program) => (
               <DropdownMenuItem
                 key={program.id}
-                onSelect={() => {
-                  window.setTimeout(() => {
-                    setPendingProgram({
-                      id: program.id,
-                      programCode: program.programCode,
-                      label: program.displayName || program.name,
-                    });
-                  }, 0);
-                }}
+                onSelect={() => beginApplication(program)}
                 className="items-start"
               >
                 <span className="min-w-0">
@@ -164,15 +118,6 @@ export function ApplyLoanMenu({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      <ChooseProfileDialog
-        open={pendingProgram !== null}
-        applicationLabel={pendingProgram?.label ?? "New application"}
-        onOpenChange={(open) => {
-          if (!open) setPendingProgram(null);
-        }}
-        onSelect={handleSelectProfile}
-        onContinueWithoutProfile={handleContinueWithoutProfile}
-      />
     </>
   );
 }

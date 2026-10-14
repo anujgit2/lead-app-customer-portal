@@ -10,7 +10,6 @@ import { Separator } from "@/components/ui/separator";
 import { Plus, Search, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buildSectionDefaults } from "@/utils/schema-builder";
-import { useFormChrome } from "./form-chrome";
 import { useFieldRules } from "./use-field-rules";
 import { PanSearchDialog } from "@/features/loan-application/PanSearchDialog";
 import { findPanSearchField, getPanSearchVariant } from "@/utils/pan-search";
@@ -56,7 +55,6 @@ function isDocumentSection(section: FormSection): boolean {
 }
 
 function FieldGrid({ section, namePrefix }: { section: FormSection; namePrefix?: string }) {
-  const chrome = useFormChrome();
   if (isDocumentSection(section)) {
     return (
       <div className="space-y-3">
@@ -75,7 +73,7 @@ function FieldGrid({ section, namePrefix }: { section: FormSection; namePrefix?:
     "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
 
   return (
-    <div className={cn("grid items-start", chrome === "profile" ? "gap-x-5 gap-y-3.5" : "gap-x-6 gap-y-5", gridClass)}>
+    <div className={cn("grid items-start gap-x-5 gap-y-4", gridClass)}>
       {section.fields.map((field) => (
         <FieldWrapper
           key={field.name}
@@ -163,8 +161,6 @@ function RepeatableSectionInstances({
 }
 
 export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
-  const chrome = useFormChrome();
-  const profile = chrome === "profile";
   const sectionPrefix = namePrefix
     ? `${namePrefix}.${section.code}`
     : section.code;
@@ -185,21 +181,15 @@ export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
     section.fields.length > 0 && section.fields.every((field) => field.readonly || field.disabled);
 
   return (
-    <Card className={profile ? "shadow-[var(--shadow-1)]" : undefined}>
-      <CardHeader
-        className={
-          profile
-            ? "flex-row items-center justify-between gap-3 px-5 py-3.5"
-            : "pb-4"
-        }
-      >
+    <Card className="rounded-xl shadow-[var(--shadow-1)]">
+      <CardHeader className="flex-row items-start justify-between gap-3 px-5 pb-1.5 pt-4">
         <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
           <div className="min-w-0">
-            <CardTitle className={profile ? "text-[15px] font-semibold leading-[22px] tracking-[-0.01em]" : "text-base"}>
+            <CardTitle className="text-[15px] font-semibold leading-[22px] tracking-[-0.01em]">
               {section.title}
             </CardTitle>
             {section.description ? (
-              <CardDescription className={profile ? "mt-px text-[12.5px]" : undefined}>
+              <CardDescription className="mt-px text-[12.5px]">
                 {section.description}
               </CardDescription>
             ) : null}
@@ -215,7 +205,7 @@ export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
           ) : null}
         </div>
       </CardHeader>
-      <CardContent className={profile ? "px-5 pb-5 pt-1" : undefined}>
+      <CardContent className="px-5 pb-[22px] pt-3">
         {section.repeatable ? (
           <RepeatableSectionInstances section={section} namePrefix={namePrefix} />
         ) : (

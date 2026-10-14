@@ -1,6 +1,18 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Landmark } from "lucide-react";
+import { useTenantUi } from "@/features/tenant-ui/TenantUiProvider";
 import { cn } from "@/lib/utils";
+
+function DefaultMark() {
+  return (
+    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground">
+      <Landmark className="h-5 w-5" aria-hidden />
+    </span>
+  );
+}
 
 export function Logo({
   href = "/",
@@ -11,6 +23,15 @@ export function Logo({
   className?: string;
   wordmarkClassName?: string;
 }) {
+  const { config } = useTenantUi();
+  const logoUrl = config.theme.logoUrl;
+  const logoAlt = config.theme.logoAlt;
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [logoUrl]);
+
   return (
     <Link
       href={href}
@@ -19,11 +40,18 @@ export function Logo({
         className
       )}
     >
-      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground">
-        <Landmark className="h-5 w-5" aria-hidden />
-      </span>
+      {logoUrl && !imageFailed ? (
+        <img
+          src={logoUrl}
+          alt=""
+          className="h-8 w-auto max-w-[140px] object-contain"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <DefaultMark />
+      )}
       <span className={cn("text-base font-semibold tracking-[-0.01em]", wordmarkClassName)}>
-        LoanPortal
+        {logoAlt || "LoanPortal"}
       </span>
     </Link>
   );

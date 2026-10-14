@@ -7,6 +7,8 @@
     { "source": "/documents/:id", "destination": "/documents/view/index.html" },
     { "source": "/documents/:id/", "destination": "/documents/view/index.html" },
     { "source": "/profiles/:id((?!(?:view|new)(?:/|$))[^/]+)", "destination": "/profiles/view/index.html" },
-    { "source": "/profiles/:id((?!(?:view|new)(?:/|$))[^/]+)/", "destination": "/profiles/view/index.html" }
+    { "source": "/profiles/:id((?!(?:view|new)(?:/|$))[^/]+)/", "destination": "/profiles/view/index.html" },
+    { "source": "/t/:tenant((?!site$)[^/]+)", "destination": "/t/site/index.html" },
+    { "source": "/t/:tenant((?!site$)[^/]+)/", "destination": "/t/site/index.html" }
   ]
 }

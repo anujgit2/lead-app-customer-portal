@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LandingPage } from "@/features/landing/LandingPage";
+import { LandingRoute } from "@/features/landing/registry";
 
 export const metadata: Metadata = {
   title: "LoanPortal home",
@@ -8,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return <LandingPage />;
+  return <LandingRoute />;
 }

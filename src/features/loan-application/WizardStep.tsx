@@ -321,7 +321,7 @@ const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
           <FormProvider {...methods}>
             <form
               ref={formRef}
-              className={isDocumentTemplate(template) ? "space-y-8" : "space-y-6"}
+              className="space-y-5"
               noValidate
               onSubmit={(e) => e.preventDefault()}
             >

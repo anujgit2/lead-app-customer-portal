@@ -9,8 +9,6 @@ interface WizardProgressProps {
   currentStep: number;
   stepStatuses: WizardStepStatus[];
   onStepClick?: (index: number) => void;
-  /** Always show the step dots, including on small screens. */
-  compact?: boolean;
 }
 
 export function WizardProgress({
@@ -18,7 +16,6 @@ export function WizardProgress({
   currentStep,
   stepStatuses,
   onStepClick,
-  compact = false,
 }: WizardProgressProps) {
   const steps = [
     ...templates.map((template, index) => ({
@@ -31,26 +28,8 @@ export function WizardProgress({
 
   return (
     <div className="w-full">
-      <div className={cn("mb-2 flex items-center gap-3 sm:hidden", compact && "hidden")}>
-        <div
-          className="h-2 flex-1 overflow-hidden rounded-full bg-muted"
-          role="progressbar"
-          aria-valuenow={currentStep + 1}
-          aria-valuemin={1}
-          aria-valuemax={steps.length}
-        >
-          <div
-            className="h-full rounded-full bg-primary transition-[width] duration-300"
-            style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-          />
-        </div>
-        <span className="text-xs text-muted-foreground">
-          Step {currentStep + 1} of {steps.length}
-        </span>
-      </div>
-
       <div
-        className={cn("hidden sm:grid", compact && "grid")}
+        className="grid"
         style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
         aria-label="Application steps"
       >
@@ -64,9 +43,11 @@ export function WizardProgress({
           const dot = (
             <span
               className={cn(
-                "relative z-[1] grid h-7 w-7 place-items-center rounded-full border-2 border-input bg-card text-xs font-semibold",
+                "relative z-[1] grid h-8 w-8 place-items-center rounded-full border-2 bg-card text-[13px] font-semibold",
+                "border-input text-muted-foreground",
                 done && "border-primary bg-primary text-primary-foreground",
-                isCurrent && "border-primary text-primary shadow-[0_0_0_4px_hsl(var(--primary)/0.16)]"
+                isCurrent &&
+                  "border-primary bg-primary text-primary-foreground shadow-[0_0_0_5px_hsl(var(--primary)/0.2)]"
               )}
             >
               {done ? <Check className="h-3.5 w-3.5" /> : index + 1}
@@ -76,8 +57,8 @@ export function WizardProgress({
           const label = (
             <span
               className={cn(
-                "max-w-[120px] text-center text-[13px] leading-[18px] text-muted-foreground",
-                isCurrent && "font-semibold text-foreground"
+                "max-w-[140px] text-center text-xs leading-[18px] text-muted-foreground sm:text-[13px]",
+                isCurrent && "text-[13px] font-semibold text-foreground sm:text-[13.5px]"
               )}
             >
               {step.label}
@@ -87,7 +68,7 @@ export function WizardProgress({
           const shell = cn(
             "relative flex min-w-0 flex-col items-center gap-2 px-1 text-center",
             index > 0 &&
-              "before:absolute before:left-[calc(-50%+18px)] before:right-[calc(50%+18px)] before:top-[13px] before:h-0.5 before:bg-border",
+              "before:absolute before:left-[calc(-50%+22px)] before:right-[calc(50%+22px)] before:top-4 before:h-[3px] before:rounded-full before:bg-border",
             lineFilled && "before:bg-primary"
           );
 

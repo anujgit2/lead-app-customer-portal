@@ -1,5 +1,12 @@
 import { apiClient } from "@/lib/axios";
 import { parseApiError } from "@/lib/api-error";
+import {
+  offeredSelections,
+  parentProfileParams,
+  parseProfileOptions,
+  type ProfileOptions,
+  type ProfileSelection,
+} from "@/features/loan-application/profile-options";
 import type { LoanProduct, NewLoanProduct } from "@/types";
 import {
   mapProgramToLoanProduct,
@@ -271,5 +278,43 @@ export const programService = {
       throw { message: "No loan programs available", status: 404 };
     }
     return this.getProgramConfig(programs[0].id);
+  },
+
+  /**
+   * Profiles the caller may attach while creating an application.
+   * `parents` is slot name → selected profile id, sent as `{slot}ProfileId`.
+   */
+  async getProfileOptions(
+    programCodeOrId: string,
+    parents: Record<string, string> = {}
+  ): Promise<ProfileOptions> {
+    try {
+      const programId = await this.resolveProgramId(programCodeOrId);
+      const params: Record<string, string> = {};
+      for (const [slot, profileId] of Object.entries(parents)) {
+        if (profileId) params[`${slot}ProfileId`] = profileId;
+      }
+      const { data } = await apiClient.get<unknown>(
+        `/api/programs/${encodeURIComponent(programId)}/profile-options`,
+        { params }
+      );
+      return parseProfileOptions(data);
+    } catch (error) {
+      throw parseApiError(error);
+    }
+  },
+
+  /** Selections that the profile-options response actually offered, parent slot first. */
+  async acceptProfileSelections(
+    programCodeOrId: string,
+    selections: ProfileSelection[]
+  ): Promise<ProfileSelection[]> {
+    const base = await this.getProfileOptions(programCodeOrId);
+    const parents = parentProfileParams(base.slots, selections);
+    const scoped =
+      Object.keys(parents).length > 0
+        ? await this.getProfileOptions(programCodeOrId, parents)
+        : base;
+    return offeredSelections(scoped, selections);
   },
 };

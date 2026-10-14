@@ -40,8 +40,8 @@ export function ApplicationViewScreen({
   }
 
   return (
-    <div className="min-h-screen bg-muted/40">
-      <div className="bg-card/90 backdrop-blur-sm border-b border-border sticky top-0 z-30 shadow-[0_2px_12px_rgb(0,0,0,0.04)]">
+    <div className="bg-background">
+      <div className="border-b border-border bg-card">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 space-y-3">
           <Link
             href="/applications"

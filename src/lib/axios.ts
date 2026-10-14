@@ -9,6 +9,10 @@ declare module "axios" {
   export interface AxiosRequestConfig {
     /** Opt a request out of the automatic session-expired redirect on 401. */
     skipAuthRedirect?: boolean;
+    /** Leave tenant resolution to the API host. Do not send X-Tenant-ID. */
+    skipTenantHeader?: boolean;
+    /** Public request. Do not send Authorization. */
+    skipAuthHeader?: boolean;
   }
 }
 
@@ -26,12 +30,19 @@ export function getApiBaseUrl(): string {
   return BASE_URL;
 }
 
-export function getApiAuthHeaders(): Record<string, string> {
+export function getApiAuthHeaders(options?: {
+  skipTenantHeader?: boolean;
+  skipAuthHeader?: boolean;
+}): Record<string, string> {
   const headers: Record<string, string> = {};
-  const token = getAccessToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const tenantId = getTenantId();
-  if (tenantId) headers["X-Tenant-ID"] = tenantId;
+  if (!options?.skipAuthHeader) {
+    const token = getAccessToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+  if (!options?.skipTenantHeader) {
+    const tenantId = getTenantId();
+    if (tenantId) headers["X-Tenant-ID"] = tenantId;
+  }
   return headers;
 }
 
@@ -44,7 +55,12 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (config.headers) {
-      Object.entries(getApiAuthHeaders()).forEach(([name, value]) => {
+      Object.entries(
+        getApiAuthHeaders({
+          skipTenantHeader: config.skipTenantHeader,
+          skipAuthHeader: config.skipAuthHeader,
+        })
+      ).forEach(([name, value]) => {
         config.headers[name] = value;
       });
     }
@@ -74,7 +90,9 @@ apiClient.interceptors.response.use(
         !isSessionExpiredRedirectSuppressed()
       ) {
         const path = window.location.pathname;
-        const isAuthPage =
+        const isPublicPage =
+          path === "/" ||
+          path.startsWith("/t/") ||
           path.startsWith("/auth/login") ||
           path.startsWith("/auth/register") ||
           path.startsWith("/auth/session-expired") ||
@@ -82,7 +100,7 @@ apiClient.interceptors.response.use(
           path.startsWith("/s/") ||
           path.startsWith("/shared");
 
-        if (!isAuthPage) {
+        if (!isPublicPage) {
           handleSessionExpired(path);
           window.location.href = "/auth/session-expired";
         }

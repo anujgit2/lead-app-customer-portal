@@ -666,21 +666,15 @@ export const applicationService = {
 
   async createApplication(
     programCodeOrId?: string,
-    profile?: { customerProfileId: string; customerProfileVersionNo?: number }
+    profile?: { customerProfileId?: string }
   ): Promise<LoanApplication> {
     try {
       const program = await programService.resolveProgram(programCodeOrId);
-      const body = profile?.customerProfileId
-        ? {
-            customerProfileId: profile.customerProfileId,
-            ...(typeof profile.customerProfileVersionNo === "number"
-              ? { customerProfileVersionNo: profile.customerProfileVersionNo }
-              : {}),
-          }
-        : undefined;
+      const customerProfileId = profile?.customerProfileId?.trim();
       const { data } = await apiClient.post<BackendApplication>(
         `/api/applications/${encodeURIComponent(program.id)}`,
-        body
+        undefined,
+        customerProfileId ? { params: { customerProfileId } } : undefined
       );
       const mapped = mapApplication(data, program.displayName || program.name);
       return {
@@ -688,6 +682,17 @@ export const applicationService = {
         programId: mapped.programId || program.id,
         programCode: mapped.programCode || program.programCode,
       };
+    } catch (error) {
+      throw parseApiError(error);
+    }
+  },
+
+  async attachProfile(applicationId: string, slot: string, profileId: string): Promise<void> {
+    try {
+      await apiClient.post(`/api/applications/${encodeURIComponent(applicationId)}/profiles`, {
+        slot,
+        profileId,
+      });
     } catch (error) {
       throw parseApiError(error);
     }

@@ -1,16 +1,24 @@
 "use client";
 
-import { Suspense, useRef } from "react";
+import { Suspense, useEffect, useRef, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Building2 } from "lucide-react";
+import { AppLayout } from "@/layouts/AppLayout";
+import { PageShell } from "@/components/PageShell";
+import { LoadingProgressDialog } from "@/features/loan-application/LoadingProgressDialog";
 import { ErrorState } from "@/components/ErrorState";
 import { ChooseProfileDialog } from "@/features/loan-application/ChooseProfileDialog";
+import {
+  decodeProfileSelections,
+  encodeProfileSelections,
+  profileOptionsQueryKey,
+  type ProfileSelection,
+} from "@/features/loan-application/profile-options";
 import { parseApiError } from "@/lib/api-error";
 import { applicationService } from "@/services/application.service";
 import { profileService } from "@/services/profile.service";
 import { programService } from "@/services/program.service";
-import type { CustomerProfileSummary, FormData } from "@/types";
+import type { FormData } from "@/types";
 import {
   fieldValuesFromProfile,
   prefillWizardFormData,
@@ -18,17 +26,16 @@ import {
 
 const CREATED_PREFIX = "loan-start:";
 
-function LoadingState({ message }: { message: string }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="flex flex-col items-center gap-3 text-muted-foreground">
-        <div className="flex h-10 w-10 animate-pulse items-center justify-center rounded-xl bg-primary/10">
-          <Building2 className="h-5 w-5 text-primary" />
-        </div>
-        <p className="text-sm">{message}</p>
-      </div>
-    </div>
-  );
+/** `randomUUID` exists only in a secure context. */
+function newStartToken(): string {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  return `start-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function PageMessage({ children }: { children: ReactNode }) {
+  return <PageShell width="narrow">{children}</PageShell>;
 }
 
 function readStoredApplicationId(key: string): string | null {
@@ -62,19 +69,23 @@ function NewLoanApplicationContent() {
   const programCode = searchParams?.get("programCode");
   const programKey = programId || programCode;
   const customerProfileId = searchParams?.get("customerProfileId");
-  const versionRaw = searchParams?.get("customerProfileVersionNo");
+  const profilesParam = searchParams?.get("profiles");
   const withoutProfile = searchParams?.get("withoutProfile") === "1";
   const startToken = searchParams?.get("start");
+  const selections = profilesParam ? decodeProfileSelections(profilesParam) : null;
+  const profilesInvalid = profilesParam !== null && selections === null;
+  const decisionInUrl = withoutProfile || selections !== null || profilesInvalid;
   const createdId = useRef<string | null>(null);
-  const returnParams = new URLSearchParams();
-  if (programId) returnParams.set("programId", programId);
-  if (programCode) returnParams.set("programCode", programCode);
-  const canCreate = !!programKey && (!!customerProfileId || withoutProfile);
-  const showProfileDialog = !!programKey && !customerProfileId && !withoutProfile;
+  const optionsQuery = useQuery({
+    queryKey: profileOptionsQueryKey(programKey ?? "", {}),
+    queryFn: () => programService.getProfileOptions(programKey!),
+    enabled: !!programKey && !decisionInUrl,
+    retry: 1,
+  });
   const programsQuery = useQuery({
     queryKey: ["tenant-programs"],
     queryFn: () => programService.getTenantPrograms(),
-    enabled: showProfileDialog,
+    enabled: optionsQuery.data?.promptOnCreate === true,
     retry: 1,
   });
   const matchedProgram = (programsQuery.data ?? []).find(
@@ -85,15 +96,48 @@ function NewLoanApplicationContent() {
     matchedProgram?.name ||
     humanizeProgramCode(programCode) ||
     "New application";
+  const skipPrompt = optionsQuery.data?.promptOnCreate === false;
+  const showProfileDialog = optionsQuery.data?.promptOnCreate === true && !decisionInUrl;
+  const legacyProfileId = skipPrompt && customerProfileId ? customerProfileId : null;
+  const canCreate =
+    !!programKey && !profilesInvalid && (withoutProfile || selections !== null || !!legacyProfileId);
+
+  useEffect(() => {
+    if (!programKey || decisionInUrl || !skipPrompt || customerProfileId) return;
+    const next = new URLSearchParams();
+    if (programId) next.set("programId", programId);
+    if (programCode) next.set("programCode", programCode);
+    next.set("withoutProfile", "1");
+    next.set("start", newStartToken());
+    router.replace(`/loan-application/new?${next.toString()}`);
+  }, [programKey, programId, programCode, decisionInUrl, skipPrompt, customerProfileId, router]);
+
+  const selectionKey = selections
+    ? `slots:${profilesParam}`
+    : withoutProfile
+      ? `none:${startToken ?? "default"}`
+      : legacyProfileId ?? "pending";
 
   const { isError, error, refetch, isFetching } = useQuery({
-    queryKey: ["create-application", programKey, customerProfileId ?? `none:${startToken ?? "default"}`],
+    queryKey: ["create-application", programKey, selectionKey],
     queryFn: async () => {
-      if (!programKey || (!customerProfileId && !withoutProfile)) {
+      if (!programKey || (!decisionInUrl && !legacyProfileId)) {
         throw { message: "Choose a profile or continue without one before starting an application.", status: 400 };
       }
-      const profileKey = customerProfileId ?? `none:${startToken ?? "default"}`;
-      const storageKey = `${CREATED_PREFIX}${programKey}:${profileKey}`;
+      if (profilesParam && !selections) {
+        throw { message: "The selected profiles are not valid.", status: 400 };
+      }
+      const accepted =
+        selections && selections.length > 0
+          ? await programService.acceptProfileSelections(programKey, selections)
+          : [];
+      if (selections && accepted.length !== selections.length) {
+        throw {
+          message: "One of the selected profiles is no longer available. Go back and choose again.",
+          status: 400,
+        };
+      }
+      const storageKey = `${CREATED_PREFIX}${programKey}:${selectionKey}`;
       let applicationId = createdId.current ?? readStoredApplicationId(storageKey);
       let resolvedProgramId = programId ?? undefined;
       let resolvedProgramCode = programCode ?? undefined;
@@ -112,11 +156,8 @@ function NewLoanApplicationContent() {
       }
 
       if (!applicationId) {
-        const app = customerProfileId
-          ? await applicationService.createApplication(programKey, {
-              customerProfileId,
-              customerProfileVersionNo: await resolveProfileVersion(customerProfileId, versionRaw),
-            })
+        const app = legacyProfileId
+          ? await applicationService.createApplication(programKey, { customerProfileId: legacyProfileId })
           : await applicationService.createApplication(programKey);
         applicationId = app.id;
         createdId.current = app.id;
@@ -125,8 +166,11 @@ function NewLoanApplicationContent() {
         resolvedProgramCode = app.programCode || programCode || undefined;
       }
 
-      if (customerProfileId) {
-        await prefillFromProfile(applicationId, customerProfileId, resolvedProgramId || programKey);
+      for (const item of accepted) {
+        await applicationService.attachProfile(applicationId, item.slot, item.profileId);
+      }
+      if (accepted.length === 0 && legacyProfileId) {
+        await prefillFromProfile(applicationId, legacyProfileId, resolvedProgramId || programKey);
       }
 
       const resumeQuery = new URLSearchParams({ id: applicationId });
@@ -143,44 +187,77 @@ function NewLoanApplicationContent() {
 
   if (!programKey) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <PageMessage>
         <ErrorState
           compact
           title="No program selected"
           message="Choose a loan program from the dashboard to start an application."
         />
-      </div>
+      </PageMessage>
     );
   }
 
-  if (!customerProfileId && !withoutProfile) {
+  if (profilesParam && !selections) {
+    return (
+      <PageMessage>
+        <ErrorState
+          compact
+          title="Unable to start application"
+          message="The selected profiles are not valid."
+        />
+      </PageMessage>
+    );
+  }
+
+  if (!decisionInUrl && optionsQuery.isError) {
+    const apiError = parseApiError(optionsQuery.error);
+    return (
+      <PageMessage>
+        <ErrorState
+          compact
+          title="Unable to load profiles"
+          message={apiError.message}
+          onRetry={() => {
+            void optionsQuery.refetch();
+          }}
+        />
+      </PageMessage>
+    );
+  }
+
+  if (showProfileDialog && programKey) {
     return (
       <ChooseProfileDialog
         open
+        programId={programKey}
         applicationLabel={applicationLabel}
+        initialProfileId={customerProfileId}
         onOpenChange={(open) => {
           if (!open) router.push("/dashboard");
         }}
-        onSelect={(profile: CustomerProfileSummary) => {
-          const next = new URLSearchParams(returnParams);
-          next.set("customerProfileId", profile.id);
-          next.set("customerProfileVersionNo", String(profile.currentVersionNo));
-          router.replace(`/loan-application/new?${next.toString()}`);
-        }}
-        onContinueWithoutProfile={() => {
-          const next = new URLSearchParams(returnParams);
-          next.set("withoutProfile", "1");
-          next.set("start", crypto.randomUUID());
+        onConfirm={(chosen: ProfileSelection[]) => {
+          const next = new URLSearchParams();
+          if (programId) next.set("programId", programId);
+          if (programCode) next.set("programCode", programCode);
+          if (chosen.length === 0) next.set("withoutProfile", "1");
+          else next.set("profiles", encodeProfileSelections(chosen));
+          next.set("start", newStartToken());
           router.replace(`/loan-application/new?${next.toString()}`);
         }}
       />
     );
   }
 
+  if (!canCreate) {
+    return (
+      <LoadingProgressDialog open title="Starting your application" message="Checking profiles…" />
+    );
+  }
+
   if (isError && !isFetching) {
     const apiError = parseApiError(error);
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
+      <PageMessage>
         <ErrorState
           compact
           title="Unable to start application"
@@ -189,11 +266,17 @@ function NewLoanApplicationContent() {
             void refetch();
           }}
         />
-      </div>
+      </PageMessage>
     );
   }
 
-  return <LoadingState message="Creating your application..." />;
+  return (
+    <LoadingProgressDialog
+      open
+      title="Starting your application"
+      message="Creating your application…"
+    />
+  );
 }
 
 function humanizeProgramCode(code: string | null): string | undefined {
@@ -203,13 +286,6 @@ function humanizeProgramCode(code: string | null): string | undefined {
     .replace(/\b\w/g, (character) => character.toUpperCase())
     .trim();
   return label.length > 0 ? label : undefined;
-}
-
-async function resolveProfileVersion(profileId: string, versionRaw: string | null): Promise<number> {
-  const parsed = versionRaw === null ? Number.NaN : Number(versionRaw);
-  if (Number.isFinite(parsed)) return parsed;
-  const profile = await profileService.get(profileId);
-  return profile.currentVersionNo;
 }
 
 async function prefillFromProfile(applicationId: string, profileId: string, programKey: string) {
@@ -243,8 +319,18 @@ async function prefillFromProfile(applicationId: string, profileId: string, prog
 
 export default function NewLoanApplicationPage() {
   return (
-    <Suspense fallback={<LoadingState message="Creating your application..." />}>
-      <NewLoanApplicationContent />
-    </Suspense>
+    <AppLayout>
+      <Suspense
+        fallback={
+          <LoadingProgressDialog
+            open
+            title="Starting your application"
+            message="Checking profiles…"
+          />
+        }
+      >
+        <NewLoanApplicationContent />
+      </Suspense>
+    </AppLayout>
   );
 }

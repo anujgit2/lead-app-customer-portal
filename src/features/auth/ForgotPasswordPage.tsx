@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authService } from "@/services/auth.service";
 import { toast } from "sonner";
+import { AUTH_FORM_ROUTES } from "@/features/tenant-ui/form-routes";
+import { useTenantUi } from "@/features/tenant-ui/TenantUiProvider";
 
 const requestSchema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -47,6 +49,15 @@ export function ForgotPasswordPage() {
   const [resetComplete, setResetComplete] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { config } = useTenantUi();
+  const requestCopy = config.forms.forgotPassword;
+  const resetCopy = config.forms.resetPassword;
+  const emailField = requestCopy.fields.find((field) => field.key === "email");
+  const otpField = resetCopy.fields.find((field) => field.key === "otp");
+  const newPasswordField = resetCopy.fields.find((field) => field.key === "newPassword");
+  const confirmField = resetCopy.fields.find((field) => field.key === "confirmPassword");
+  const backLink = requestCopy.links.find((link) => link.key === "signin");
+  const successLink = resetCopy.links.find((link) => link.key === "signin");
 
   const requestForm = useForm<RequestFormData>({
     resolver: zodResolver(requestSchema),
@@ -96,9 +107,9 @@ export function ForgotPasswordPage() {
       <div className="w-full max-w-md">
         <div className="mb-5">
           <Button asChild variant="ghost" size="sm" className="gap-2 px-0">
-            <Link href="/auth/login">
+            <Link href={AUTH_FORM_ROUTES.signin}>
               <ArrowLeft className="h-4 w-4" />
-              Back to sign in
+              {backLink?.label ?? "Back to sign in"}
             </Link>
           </Button>
         </div>
@@ -107,9 +118,11 @@ export function ForgotPasswordPage() {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary mb-4">
             <KeyRound className="h-6 w-6 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-semibold text-foreground">Reset password</h1>
+          <h1 className="text-2xl font-semibold text-foreground">
+            {codeSent ? resetCopy.title : requestCopy.title}
+          </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Verify your email OTP and choose a new password
+            {codeSent ? resetCopy.subtitle : requestCopy.subtitle}
           </p>
         </div>
 
@@ -121,11 +134,11 @@ export function ForgotPasswordPage() {
               noValidate
             >
               <div className="space-y-1.5">
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">{emailField?.label ?? "Email address"}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@company.com"
+                  placeholder={emailField?.placeholder}
                   autoComplete="email"
                   error={!!requestForm.formState.errors.email}
                   {...requestForm.register("email")}
@@ -144,7 +157,7 @@ export function ForgotPasswordPage() {
                 className="w-full gap-2"
               >
                 <Mail className="h-4 w-4" />
-                {codeSent ? "Send New OTP" : "Send OTP"}
+                {requestForm.formState.isSubmitting ? requestCopy.submittingLabel : requestCopy.submitLabel}
               </Button>
             </form>
 
@@ -161,7 +174,7 @@ export function ForgotPasswordPage() {
                 </Alert>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="otp">OTP</Label>
+                  <Label htmlFor="otp">{otpField?.label ?? "OTP"}</Label>
                   <Input
                     id="otp"
                     inputMode="numeric"
@@ -179,7 +192,7 @@ export function ForgotPasswordPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="newPassword">New password</Label>
+                  <Label htmlFor="newPassword">{newPasswordField?.label ?? "New password"}</Label>
                   <Input
                     id="newPassword"
                     type={showPassword ? "text" : "password"}
@@ -204,7 +217,7 @@ export function ForgotPasswordPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="confirmPassword">Confirm password</Label>
+                  <Label htmlFor="confirmPassword">{confirmField?.label ?? "Confirm password"}</Label>
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
@@ -233,7 +246,7 @@ export function ForgotPasswordPage() {
                   loading={resetForm.formState.isSubmitting}
                   className="w-full"
                 >
-                  Reset Password
+                  {resetForm.formState.isSubmitting ? resetCopy.submittingLabel : resetCopy.submitLabel}
                 </Button>
               </form>
             )}
@@ -242,9 +255,10 @@ export function ForgotPasswordPage() {
               <Alert variant="success" role="status">
                 <CheckCircle2 aria-hidden />
                 <AlertDescription>
-                  Password reset complete.{" "}
-                  <Link href="/auth/login" className="font-medium underline">
-                    Sign in
+                  {resetCopy.successTitle || "Password reset complete."}{" "}
+                  {resetCopy.successSubtitle ? `${resetCopy.successSubtitle} ` : null}
+                  <Link href={AUTH_FORM_ROUTES.signin} className="font-medium underline">
+                    {successLink?.label ?? "Sign in"}
                   </Link>
                 </AlertDescription>
               </Alert>

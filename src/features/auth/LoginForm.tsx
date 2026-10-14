@@ -20,6 +20,10 @@ import {
   FieldError,
   type BrandPoint,
 } from "@/features/auth/AuthScreen";
+import { checkFields, FieldStack, inputFields } from "@/features/tenant-ui/FieldStack";
+import { AUTH_FORM_ROUTES } from "@/features/tenant-ui/form-routes";
+import { useTenantUi } from "@/features/tenant-ui/TenantUiProvider";
+import type { UiFormField } from "@/features/tenant-ui/types";
 
 const loginSchema = z.object({
   email: z
@@ -59,6 +63,8 @@ const POINTS: BrandPoint[] = [
 export function LoginForm() {
   const router = useRouter();
   const { setUser } = useAuthStore();
+  const { config } = useTenantUi();
+  const formCopy = config.forms.signin;
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -73,10 +79,70 @@ export function LoginForm() {
   });
 
   const rememberMe = watch("rememberMe");
+  const inputs = inputFields(formCopy.fields);
+  const remember = checkFields(formCopy.fields).find((field) => field.key === "rememberMe");
+  const forgot = formCopy.links.find((link) => link.key === "forgotPassword");
+  const otherLinks = formCopy.links.filter((link) => link.key !== "forgotPassword");
+
+  const renderInput = (field: UiFormField) => {
+    if (field.key === "identifier") {
+      return (
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="identifier">{field.label}</Label>
+          <Input
+            id="identifier"
+            type="text"
+            autoComplete="username"
+            placeholder={field.placeholder}
+            error={!!errors.email}
+            aria-describedby={errors.email ? "identifier-err" : undefined}
+            className="h-11 bg-background"
+            startAdornment={<Mail className="h-4 w-4" />}
+            {...register("email")}
+          />
+          <FieldError id="identifier-err">{errors.email?.message}</FieldError>
+        </div>
+      );
+    }
+
+    if (field.key !== "password") return null;
+
+  return (
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="password">{field.label}</Label>
+        <Input
+          id="password"
+          type={showPassword ? "text" : "password"}
+          autoComplete="current-password"
+          placeholder={field.placeholder}
+          error={!!errors.password}
+          aria-describedby={errors.password ? "password-err" : undefined}
+          className="h-11 bg-background"
+          startAdornment={<Lock className="h-4 w-4" />}
+          endAdornment={
+            <button
+              type="button"
+              onClick={() => setShowPassword((open) => !open)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-pressed={showPassword}
+              className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-all duration-200 ease-out hover:bg-muted hover:text-foreground active:scale-[0.98]"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          }
+          {...register("password")}
+        />
+        <FieldError id="password-err">{errors.password?.message}</FieldError>
+      </div>
+    );
+  };
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      const res = await authService.login(data);
+      const res = await authService.login({
+        ...data,
+        rememberMe: remember ? data.rememberMe : false,
+      });
       setUser(res.user);
       toast.success(`Welcome back, ${res.user.firstName}!`);
       router.push("/dashboard");
@@ -97,72 +163,37 @@ export function LoginForm() {
       points={POINTS}
     >
       <div>
-        <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.035em] text-foreground">Sign in</h1>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          Welcome back. Pick up your application where you left it.
-        </p>
+        <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.035em] text-foreground">{formCopy.title}</h1>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">{formCopy.subtitle}</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="identifier">Email or mobile number</Label>
-          <Input
-            id="identifier"
-            type="text"
-            autoComplete="username"
-            placeholder="you@example.com or 98765 43210"
-            error={!!errors.email}
-            aria-describedby={errors.email ? "identifier-err" : undefined}
-            className="h-11 bg-background"
-            startAdornment={<Mail className="h-4 w-4" />}
-            {...register("email")}
-          />
-          <FieldError id="identifier-err">{errors.email?.message}</FieldError>
-        </div>
+        <FieldStack fields={inputs} render={renderInput} />
 
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            autoComplete="current-password"
-            placeholder="Enter your password"
-            error={!!errors.password}
-            aria-describedby={errors.password ? "password-err" : undefined}
-            className="h-11 bg-background"
-            startAdornment={<Lock className="h-4 w-4" />}
-            endAdornment={
-              <button
-                type="button"
-                onClick={() => setShowPassword((open) => !open)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-                aria-pressed={showPassword}
-                className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-all duration-200 ease-out hover:bg-muted hover:text-foreground active:scale-[0.98]"
+        {(remember || forgot) && (
+          <div className="-mt-1 flex flex-wrap items-center justify-between gap-2">
+            {remember ? (
+              <label htmlFor="rememberMe" className="inline-flex cursor-pointer items-center gap-2 text-[13px] leading-5">
+                <Checkbox
+                  id="rememberMe"
+                  checked={!!rememberMe}
+                  onCheckedChange={(value) => setValue("rememberMe", !!value)}
+                />
+                <span>{remember.label}</span>
+              </label>
+            ) : (
+              <span />
+            )}
+            {forgot && (
+              <Link
+                href={AUTH_FORM_ROUTES.forgotPassword}
+                className="inline-flex min-h-8 items-center text-[13px] font-medium text-primary transition-all duration-200 ease-out hover:underline"
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            }
-            {...register("password")}
-          />
-          <FieldError id="password-err">{errors.password?.message}</FieldError>
-        </div>
-
-        <div className="-mt-1 flex flex-wrap items-center justify-between gap-2">
-          <label htmlFor="rememberMe" className="inline-flex cursor-pointer items-center gap-2 text-[13px] leading-5">
-            <Checkbox
-              id="rememberMe"
-              checked={!!rememberMe}
-              onCheckedChange={(value) => setValue("rememberMe", !!value)}
-            />
-            <span>Keep me signed in</span>
-          </label>
-          <Link
-            href="/auth/forgot-password"
-            className="inline-flex min-h-8 items-center text-[13px] font-medium text-primary transition-all duration-200 ease-out hover:underline"
-          >
-            Forgot password?
-          </Link>
-        </div>
+                {forgot.label}
+              </Link>
+            )}
+          </div>
+        )}
 
         <Button
           type="submit"
@@ -170,17 +201,19 @@ export function LoginForm() {
           loading={isSubmitting}
           className="lp-glow h-11 w-full font-semibold transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
         >
-          {isSubmitting ? "Signing in…" : "Sign in"}
+          {isSubmitting ? formCopy.submittingLabel : formCopy.submitLabel}
         </Button>
       </form>
 
       <div className="flex flex-col gap-2 border-t border-border pt-4">
-        <p className="text-[13px] text-muted-foreground">
-          New to LoanPortal?{" "}
-          <Link href="/auth/register" className="font-semibold text-primary hover:underline">
-            Create an account
-          </Link>
-        </p>
+        {otherLinks.map((link) => (
+          <p key={link.key} className="text-[13px] text-muted-foreground">
+            {link.prefix ? `${link.prefix} ` : null}
+            <Link href={AUTH_FORM_ROUTES[link.key]} className="font-semibold text-primary hover:underline">
+              {link.label}
+            </Link>
+          </p>
+        ))}
         <p className="text-xs leading-[18px] text-muted-foreground">
           Invited by a lender or agent? Open the link in your email instead. It takes you straight to your application.
         </p>

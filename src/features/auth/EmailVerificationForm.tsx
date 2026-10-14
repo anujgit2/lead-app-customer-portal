@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import {
   SignupProgress,
   signUpAside,
 } from "@/features/auth/AuthScreen";
+import { useTenantUi } from "@/features/tenant-ui/TenantUiProvider";
 
 interface EmailVerificationFormProps {
   userId: string;
@@ -46,12 +47,24 @@ export function EmailVerificationForm({
   onVerified,
 }: EmailVerificationFormProps) {
   const router = useRouter();
+  const { config } = useTenantUi();
+  const formCopy = config.forms.otp;
   const { setUser } = useAuthStore();
   const [digits, setDigits] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const [resent, setResent] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [isVerifying, setIsVerifying] = useState(false);
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
+  const otpField = formCopy.fields.find((field) => field.key === "otp");
+  const masked = maskEmail(email);
+  const subtitleParts = formCopy.subtitle.split("{email}");
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = window.setTimeout(() => setCooldown((current) => current - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [cooldown]);
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -105,17 +118,24 @@ export function EmailVerificationForm({
   const content = (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.035em] text-foreground">Check your email</h1>
+        <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.035em] text-foreground">{formCopy.title}</h1>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
-          We sent a 6-digit code to{" "}
-          <b className="font-semibold text-foreground">{maskEmail(email)}</b>. It works for a short time only.
+          {subtitleParts.length > 1 ? (
+            <>
+              {subtitleParts[0]}
+              <b className="font-semibold text-foreground">{masked}</b>
+              {subtitleParts.slice(1).join("{email}")}
+            </>
+          ) : (
+            formCopy.subtitle
+          )}
         </p>
       </div>
 
       <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
         <div role="group" aria-labelledby="otp-l" className="flex flex-col gap-2">
           <span id="otp-l" className="text-sm font-medium leading-5">
-            Verification code
+            {otpField?.label ?? "Verification code"}
           </span>
           <div className="flex gap-2">
             {digits.map((digit, index) => (
@@ -173,10 +193,15 @@ export function EmailVerificationForm({
             {resent ? "A new code is on its way. " : "Did not get it? Check your spam folder or "}
             <button
               type="button"
-              onClick={() => setResent(true)}
-              className="inline min-h-6 p-0 text-xs font-semibold text-primary transition-all duration-200 ease-out hover:underline"
+              disabled={cooldown > 0}
+              onClick={() => {
+                setResent(true);
+                const wait = formCopy.resendCooldownSeconds ?? 0;
+                if (wait > 0) setCooldown(wait);
+              }}
+              className="inline min-h-6 p-0 text-xs font-semibold text-primary transition-all duration-200 ease-out hover:underline disabled:pointer-events-none disabled:opacity-60"
             >
-              Send a new code
+              {cooldown > 0 ? `${formCopy.resendLabel} (${cooldown}s)` : formCopy.resendLabel}
             </button>
           </p>
         </div>
@@ -188,7 +213,7 @@ export function EmailVerificationForm({
             loading={isVerifying}
             className="lp-glow h-11 w-full font-semibold transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
           >
-            {isVerifying ? "Verifying…" : "Verify and continue"}
+            {isVerifying ? formCopy.submittingLabel : formCopy.submitLabel}
           </Button>
           {onChangeEmail && (
             <Button

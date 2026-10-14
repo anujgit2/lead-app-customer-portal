@@ -9,21 +9,16 @@ import {
   applicationService,
   resolveApplicationFormData,
 } from "@/services/application.service";
-import { Building2 } from "lucide-react";
+import { AppLayout } from "@/layouts/AppLayout";
+import { PageShell } from "@/components/PageShell";
+import { LoadingProgressDialog } from "@/features/loan-application/LoadingProgressDialog";
 import { ErrorState } from "@/components/ErrorState";
 import { parseApiError } from "@/lib/api-error";
 import type { FormData } from "@/types";
 
 function LoadingState() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3 text-muted-foreground">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center animate-pulse">
-          <Building2 className="h-5 w-5 text-primary" />
-        </div>
-        <p className="text-sm">Loading application...</p>
-      </div>
-    </div>
+    <LoadingProgressDialog open title="Opening your application" message="Loading application…" />
   );
 }
 
@@ -64,27 +59,27 @@ function ResumeContent() {
 
   if (!applicationId) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <PageShell width="narrow">
         <ErrorState
           compact
           title="Invalid link"
           message="No application ID was provided. Please go back and try again."
         />
-      </div>
+      </PageShell>
     );
   }
 
   if (appError) {
     const apiError = parseApiError(appQueryError);
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <PageShell width="narrow">
         <ErrorState
           compact
           title="Unable to load application"
           message={apiError.message}
           onRetry={() => window.location.reload()}
         />
-      </div>
+      </PageShell>
     );
   }
 
@@ -115,8 +110,10 @@ function ResumeContent() {
 
 export default function ResumeLoanApplicationPage() {
   return (
-    <Suspense fallback={<LoadingState />}>
-      <ResumeContent />
-    </Suspense>
+    <AppLayout>
+      <Suspense fallback={<LoadingState />}>
+        <ResumeContent />
+      </Suspense>
+    </AppLayout>
   );
 }
