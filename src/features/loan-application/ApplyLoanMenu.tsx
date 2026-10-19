@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { programService, type Program } from "@/services/program.service";
+import { programService, tenantProgramsQueryKey, type Program } from "@/services/program.service";
 import { cn } from "@/lib/utils";
 
 interface ApplyLoanMenuProps {
@@ -32,7 +32,7 @@ export function ApplyLoanMenu({
 }: ApplyLoanMenuProps) {
   const router = useRouter();
   const { data: programs = [], isLoading } = useQuery({
-    queryKey: ["tenant-programs"],
+    queryKey: tenantProgramsQueryKey,
     queryFn: () => programService.getTenantPrograms(),
     retry: 1,
   });

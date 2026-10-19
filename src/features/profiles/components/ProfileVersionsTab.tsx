@@ -107,21 +107,21 @@ export function ProfileVersionsTab({ profile }: ProfileVersionsTabProps) {
             </div>
           </div>
           <section className="overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-1)]">
-          <Table className="text-[13px]">
+          <Table>
             <caption className="sr-only">Profile versions</caption>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="h-[38px] px-3 text-xs">Version</TableHead>
-                <TableHead className="h-[38px] px-3 text-xs">Change</TableHead>
-                <TableHead className="hidden h-[38px] px-3 text-xs sm:table-cell">Updated by</TableHead>
-                <TableHead className="h-[38px] px-3 text-xs">Updated</TableHead>
-                <TableHead className="h-[38px] px-3 text-right text-xs">Actions</TableHead>
+                <TableHead className="h-[38px] px-3">Version</TableHead>
+                <TableHead className="h-[38px] px-3">Change</TableHead>
+                <TableHead className="hidden h-[38px] px-3 sm:table-cell">Updated by</TableHead>
+                <TableHead className="h-[38px] px-3">Updated</TableHead>
+                <TableHead className="h-[38px] px-3 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.length === 0 ? (
                 <TableRow className="hover:bg-transparent">
-                  <TableCell colSpan={5} className="py-8 text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                     No versions yet.
                   </TableCell>
                 </TableRow>
@@ -129,18 +129,18 @@ export function ProfileVersionsTab({ profile }: ProfileVersionsTabProps) {
                 rows.map((item) => (
                   <TableRow key={item.versionNo}>
                     <TableCell className="whitespace-nowrap px-3">
-                      <span className="inline-flex h-5 items-center rounded-md bg-muted px-1.5 text-[11.5px] font-semibold tabular-nums">
+                      <span className="inline-flex h-5 items-center rounded-md bg-muted px-1.5 text-xs font-semibold tabular-nums">
                         v{item.versionNo}
                       </span>
                       {item.versionNo === profile.currentVersionNo ? (
-                        <Badge variant="success" dot={false} className="ml-1 h-5 px-2 text-[11.5px]">
+                        <Badge variant="success" dot={false} size="sm" className="ml-1">
                           Latest
                         </Badge>
                       ) : null}
                     </TableCell>
                     <TableCell className="max-w-[230px] truncate px-3">{item.changeNote || "—"}</TableCell>
                     <TableCell className="hidden max-w-[230px] px-3 sm:table-cell">
-                      <span className="block truncate font-mono text-xs text-muted-foreground" title={item.createdBy || undefined}>
+                      <span className="block truncate font-mono text-muted-foreground" title={item.createdBy || undefined}>
                         {item.createdBy || "—"}
                       </span>
                     </TableCell>

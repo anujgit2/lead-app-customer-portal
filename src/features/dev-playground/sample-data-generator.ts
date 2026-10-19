@@ -38,6 +38,8 @@ function sampleValueForField(field: FormField): unknown {
     }
     case "email":
       return "sample.user@example.com";
+    case "url":
+      return sampleForPattern(v.pattern) ?? "https://www.example.com";
     case "date":
     case "datetime":
       return new Date().toISOString().slice(0, 10);
@@ -55,7 +57,8 @@ function sampleValueForField(field: FormField): unknown {
         pincode: "400001",
         country: "India",
       };
-    case "tel": {
+    case "tel":
+    case "phone": {
       if (field.mask) return fillMaskPattern(field.mask.pattern);
       return sampleForPattern(v.pattern) ?? "9876543210";
     }

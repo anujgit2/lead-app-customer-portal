@@ -19,4 +19,4 @@ Start the dev server, open /dashboard, and screenshot the page.
 Update the component and report what changed.
 ```
 
-Logic, API, and non-UI bug fixes may still be checked with tests or typecheck when that check does not require a server or browser.
+The same limit applies to logic and API changes. Do not run tests, typecheck, lint, or a build unless the user asks. See `do-not-test-until-asked.mdc`.

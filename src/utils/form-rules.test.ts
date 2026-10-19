@@ -100,6 +100,121 @@ describe("conditional schema validation", () => {
   });
 });
 
+const documentsTemplate: FormTemplate = {
+  code: "DOCUMENTS",
+  title: "Business documents",
+  propertyType: "DocumentProperty",
+  sections: [
+    {
+      code: "APPLICATION_DOCUMENTS",
+      title: "Application documents",
+      fields: [
+        {
+          name: "BUSINESS_PAN",
+          label: "Business PAN Card",
+          type: "document",
+          minFiles: 1,
+          validation: { required: true, message: "Business PAN Card is required" },
+        },
+        {
+          name: "GST_CERTIFICATE",
+          label: "GST Certificate",
+          type: "document",
+          minFiles: 1,
+          validation: { required: true, message: "GST Certificate is required" },
+          rules: {
+            visibleWhen: { field: "gstRegistered", operator: "equals", value: "YES" },
+            requiredWhen: { field: "gstRegistered", operator: "equals", value: "YES" },
+          },
+        },
+        {
+          name: "INCORPORATION_CERTIFICATE",
+          label: "Certificate of Incorporation",
+          type: "document",
+          minFiles: 1,
+          validation: { required: true, message: "Certificate of Incorporation is required" },
+          rules: {
+            visibleWhen: {
+              field: "companyType",
+              operator: "in",
+              value: ["LLP", "PRIVATE_LIMITED", "PUBLIC_LIMITED"],
+            },
+            requiredWhen: {
+              field: "companyType",
+              operator: "in",
+              value: ["LLP", "PRIVATE_LIMITED", "PUBLIC_LIMITED"],
+            },
+          },
+        },
+      ],
+    },
+  ],
+};
+
+describe("grouped document rules", () => {
+  const existence: FormField = {
+    name: "PROPRIETOR_BUSINESS_PROOF",
+    label: "Business Existence Proof",
+    type: "document",
+    rules: {
+      visibleWhen: {
+        field: "",
+        operator: "and",
+        conditions: [
+          { field: "companyType", operator: "equals", value: "PROPRIETORSHIP" },
+          { field: "gstRegistered", operator: "equals", value: "NO" },
+          { field: "udyam", operator: "notExists" },
+        ],
+      },
+    },
+  };
+
+  it("shows the proprietorship proof only when every condition matches", () => {
+    const proprietorship = {
+      company: { business_details: { companyType: "PROPRIETORSHIP" }, business_registrations: { gstRegistered: "NO" } },
+    };
+    const privateLimited = {
+      company: { business_details: { companyType: "PRIVATE_LIMITED" }, business_registrations: { gstRegistered: "NO" } },
+    };
+    assert.equal(isFieldVisible(existence, {}, proprietorship), true);
+    assert.equal(isFieldVisible(existence, {}, privateLimited), false);
+  });
+});
+
+describe("document slots follow the same rules as the page", () => {
+  const earlierAnswers = {
+    company: { details: { gstRegistered: "NO", companyType: "PROPRIETORSHIP" } },
+  };
+
+  it("does not require slots hidden by an earlier answer", () => {
+    const schema = buildTemplateSchema(documentsTemplate, earlierAnswers);
+    const result = schema.safeParse({
+      APPLICATION_DOCUMENTS: {
+        BUSINESS_PAN: [{ id: "pan" }],
+        GST_CERTIFICATE: [],
+        INCORPORATION_CERTIFICATE: [],
+      },
+    });
+    assert.equal(result.success, true);
+  });
+
+  it("still requires a slot once that earlier answer makes it apply", () => {
+    const schema = buildTemplateSchema(documentsTemplate, {
+      company: { details: { gstRegistered: "YES", companyType: "PROPRIETORSHIP" } },
+    });
+    const result = schema.safeParse({
+      APPLICATION_DOCUMENTS: {
+        BUSINESS_PAN: [{ id: "pan" }],
+        GST_CERTIFICATE: [],
+        INCORPORATION_CERTIFICATE: [],
+      },
+    });
+    assert.equal(result.success, false);
+    const messages = result.success ? [] : result.error.issues.map((issue) => issue.message);
+    assert.deepEqual(messages, ["GST Certificate is required"]);
+  });
+});
+
 describe("template defaults", () => {
   it("keeps saved values and fills in missing fields", () => {
     const merged = mergeTemplateDefaults(incomeTemplate, { employment: { employmentType: "SALARIED" } });

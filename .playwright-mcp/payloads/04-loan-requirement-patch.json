@@ -1,0 +1,18 @@
+[
+    {
+        "type": "LoanPurposeProperty",
+        "name": "loanPurpose",
+        "access": {},
+        "value": {
+            "loanProduct": "TERM_LOAN",
+            "loanAmount": 1500000,
+            "loanTerm": 36,
+            "loanPurpose": [
+                "WORKING_CAPITAL"
+            ],
+            "repaymentMode": "EMI",
+            "collateralOffered": "NO",
+            "hasExistingDebt": "YES"
+        }
+    }
+]

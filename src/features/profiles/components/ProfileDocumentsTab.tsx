@@ -147,16 +147,16 @@ export function ProfileDocumentsTab({ profile }: ProfileDocumentsTabProps) {
       </div>
 
       <section className="overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-1)]">
-        <Table className="text-[13px]">
+        <Table>
           <caption className="sr-only">Documents for this profile</caption>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="h-[38px] px-3 text-xs">Document</TableHead>
-              <TableHead className="h-[38px] px-3 text-xs">Category</TableHead>
-              <TableHead className="h-[38px] px-3 text-xs">Version</TableHead>
-              <TableHead className="hidden h-[38px] px-3 text-xs sm:table-cell">Size</TableHead>
-              <TableHead className="hidden h-[38px] px-3 text-xs sm:table-cell">Updated</TableHead>
-              <TableHead className="h-[38px] w-16 px-3 text-right text-xs">Actions</TableHead>
+              <TableHead className="h-[38px] px-3">Document</TableHead>
+              <TableHead className="h-[38px] px-3">Category</TableHead>
+              <TableHead className="h-[38px] px-3">Version</TableHead>
+              <TableHead className="hidden h-[38px] px-3 sm:table-cell">Size</TableHead>
+              <TableHead className="hidden h-[38px] px-3 sm:table-cell">Updated</TableHead>
+              <TableHead className="h-[38px] w-16 px-3 text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -213,7 +213,7 @@ export function ProfileDocumentsTab({ profile }: ProfileDocumentsTabProps) {
                             <FileText className="h-4 w-4" aria-hidden />
                           </span>
                           <div className="min-w-0">
-                            <span className="flex flex-wrap items-center gap-1.5 text-[13.5px] font-semibold leading-[18px]">
+                            <span className="flex flex-wrap items-center gap-1.5 font-semibold leading-[18px]">
                               {document.typeName}
                               {document.label ? (
                                 <Badge variant="outline" dot={false} size="sm">
@@ -221,7 +221,7 @@ export function ProfileDocumentsTab({ profile }: ProfileDocumentsTabProps) {
                                 </Badge>
                               ) : null}
                             </span>
-                            <span className="block truncate font-mono text-[11px] leading-[14px] text-muted-foreground">
+                            <span className="block truncate font-mono text-xs leading-4 text-muted-foreground">
                               {documentTypeCode(document.typeId, document.typeName)}
                             </span>
                           </div>
@@ -233,7 +233,7 @@ export function ProfileDocumentsTab({ profile }: ProfileDocumentsTabProps) {
                         </Badge>
                       </TableCell>
                       <TableCell className="whitespace-nowrap px-3">
-                        <Badge variant="secondary" dot={false} size="xs" className="rounded-md tabular-nums">
+                        <Badge variant="secondary" dot={false} size="sm" className="rounded-md tabular-nums">
                           v{document.latestVersion}
                         </Badge>
                         <Badge variant="success" dot={false} size="sm" className="ml-1">

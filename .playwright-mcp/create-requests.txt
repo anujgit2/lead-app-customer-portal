@@ -1,0 +1,4 @@
+34. [POST] http://leads-services.local/api/applications/a1b49881-4f8b-4080-974f-9b933486a035 => [201] Created
+42. [GET] http://leads-services.local/api/applications/497b67d9-3f9a-458e-a0dd-8dcd3a47e6bf => [200] OK
+
+Note: 36 static requests not shown, run with "static" option to see them.

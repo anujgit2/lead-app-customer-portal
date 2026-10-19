@@ -3,6 +3,7 @@ import {
   handleSessionExpired,
   isSessionExpiredRedirectSuppressed,
 } from "@/lib/session";
+import { resolveApiBaseUrl } from "@/lib/api-base-url";
 import { getTenantId } from "@/lib/tenant";
 
 declare module "axios" {
@@ -16,8 +17,6 @@ declare module "axios" {
   }
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
-
 function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
   return (
@@ -27,7 +26,7 @@ function getAccessToken(): string | null {
 }
 
 export function getApiBaseUrl(): string {
-  return BASE_URL;
+  return resolveApiBaseUrl();
 }
 
 export function getApiAuthHeaders(options?: {
@@ -47,13 +46,14 @@ export function getApiAuthHeaders(options?: {
 }
 
 export const apiClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "/api",
   headers: { "Content-Type": "application/json" },
   timeout: 30000,
 });
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    config.baseURL = getApiBaseUrl();
     if (config.headers) {
       Object.entries(
         getApiAuthHeaders({

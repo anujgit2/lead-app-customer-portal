@@ -1,0 +1,36 @@
+[
+    {
+        "type": "OwnersProperty",
+        "name": "owners",
+        "access": {},
+        "value": [
+            {
+                "title": "MR",
+                "firstName": "Rahul",
+                "lastName": "Sharma",
+                "gender": "MALE",
+                "dob": "1988-06-15",
+                "designation": "PROPRIETOR",
+                "pan": "RAHPS1234K",
+                "ownershipPct": 100,
+                "mobile": "9876501234",
+                "email": "rahul.sharma@acmetraders.example",
+                "qualification": "GRADUATE",
+                "maritalStatus": "MARRIED",
+                "residenceType": "SELF_OWNED",
+                "address": {
+                    "addressLine1": "18 Linking Road",
+                    "addressLine2": "Bandra West",
+                    "city": "Mumbai",
+                    "state": "Maharashtra",
+                    "pincode": "400050",
+                    "country": "India"
+                },
+                "aadhaarLast4": "4321",
+                "isSignatory": true,
+                "isGuarantor": true,
+                "isPep": "NO"
+            }
+        ]
+    }
+]

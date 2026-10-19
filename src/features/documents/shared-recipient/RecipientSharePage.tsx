@@ -283,11 +283,7 @@ export function RecipientSharePage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted px-4 py-10 text-foreground">
       <section className="w-full max-w-[460px] rounded-[20px] bg-card p-8 shadow-[0_24px_60px_rgba(21,26,39,0.12)]">
-        {state.step === "loading" || !route.ready ? (
-          <p className="text-sm text-muted-foreground" role="status">
-            Loading shared documents
-          </p>
-        ) : null}
+        {state.step === "loading" || !route.ready ? <ShareOpening /> : null}
 
         {state.step === "expired" ? (
           <div className="space-y-6">
@@ -522,6 +518,66 @@ export function RecipientSharePage() {
         ) : null}
       </section>
     </main>
+  );
+}
+
+function useShareLoadProgress(): number {
+  const [value, setValue] = useState(12);
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+      setValue(68);
+      return;
+    }
+
+    const started = performance.now();
+    const timer = window.setInterval(() => {
+      const seconds = (performance.now() - started) / 1000;
+      const next = 12 + 80 * (1 - Math.exp(-seconds / 1.7));
+      setValue(Math.min(92, Math.round(next)));
+    }, 80);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return value;
+}
+
+function ShareOpening() {
+  const value = useShareLoadProgress();
+  const detail =
+    value < 38
+      ? "Confirming this secure link"
+      : value < 70
+        ? "Checking the documents shared with you"
+        : "Preparing the page";
+
+  return (
+    <div className="space-y-6" aria-busy="true">
+      <IconBadge tone="info">
+        <ShieldCheck className="h-6 w-6" />
+      </IconBadge>
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Opening shared documents</h1>
+        <p className="text-sm leading-6 text-muted-foreground" role="status">
+          {detail}
+        </p>
+      </div>
+      <div
+        className="h-1.5 overflow-hidden rounded-full bg-muted"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={value}
+        aria-label="Loading shared documents"
+      >
+        <div
+          className="h-full rounded-full bg-primary shadow-[0_0_12px_hsl(var(--primary)/0.35)] transition-[width] duration-300 ease-out"
+          style={{ width: `${value}%` }}
+        />
+      </div>
+    </div>
   );
 }
 

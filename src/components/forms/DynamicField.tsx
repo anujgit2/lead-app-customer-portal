@@ -42,6 +42,8 @@ export const PATTERN_EXAMPLES: Record<string, string> = {
   "^[A-Z]{4}0[A-Z0-9]{6}$": "SBIN0001234",
   "^[1-9][0-9]{5}$": "400001",
   "^[2-9]{1}[0-9]{11}$": "2XXXXXXXXXXX (12 digits)",
+  "^[6-9][0-9]{9}$": "9876543210",
+  "^https?://[^\\s]+\\.[^\\s]+$": "https://www.example.com",
 };
 
 interface DynamicFieldProps {
@@ -484,16 +486,24 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
       </>
     );
   } else {
+    const isPhone = field.type === "tel" || field.type === "phone";
+    const isUrl = field.type === "url";
     const inputType =
       field.type === "email" ? "email" :
-      field.type === "tel" ? "tel" :
+      isUrl ? "url" :
+      isPhone ? "tel" :
       field.type === "number" ? "number" :
       "text";
 
     const registration = register(fieldName);
     const mask = field.mask?.pattern ? field.mask : undefined;
     const inputFormat = field.inputFormat;
-    const isTextual = inputType === "text" || inputType === "tel" || inputType === "email";
+    const isTextual = inputType === "text" || inputType === "tel" || inputType === "email" || inputType === "url";
+    const stripsWhileTyping =
+      !!inputFormat &&
+      (inputFormat.numeric ||
+        inputFormat.allowSpaces === false ||
+        inputFormat.allowSpecialCharacters === false);
 
     const handleChange =
       isTextual && (mask || inputFormat)
@@ -532,8 +542,9 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
           error={!!error}
           disabled={field.disabled}
           readOnly={field.readonly}
-          autoComplete={field.type === "email" ? "email" : undefined}
-          maxLength={mask ? mask.pattern.length : v?.maxLength}
+          autoComplete={field.type === "email" ? "email" : isPhone ? "tel" : isUrl ? "url" : undefined}
+          inputMode={isPhone || inputFormat?.numeric ? "numeric" : isUrl ? "url" : undefined}
+          maxLength={mask ? mask.pattern.length : stripsWhileTyping ? undefined : v?.maxLength}
           min={inputType === "number" && typeof v?.min === "number" ? v.min : undefined}
           max={inputType === "number" && typeof v?.max === "number" ? v.max : undefined}
           step={inputType === "number" && v?.integer ? 1 : undefined}

@@ -43,7 +43,12 @@ function ResumeContent() {
   const productLookup =
     application?.programId || programIdParam || application?.programCode || programCode || "";
 
-  const { data: product, isLoading: productLoading } = useQuery({
+  const {
+    data: product,
+    isLoading: productLoading,
+    isError: productError,
+    error: productQueryError,
+  } = useQuery({
     queryKey: ["loan-product", applicationId, productLookup],
     queryFn: () => applicationService.getLoanProductByProgramId(productLookup),
     enabled: !!application && !!productLookup,
@@ -69,13 +74,13 @@ function ResumeContent() {
     );
   }
 
-  if (appError) {
-    const apiError = parseApiError(appQueryError);
+  if (appError || productError) {
+    const apiError = parseApiError(appError ? appQueryError : productQueryError);
     return (
       <PageShell width="narrow">
         <ErrorState
           compact
-          title="Unable to load application"
+          title={appError ? "Unable to load application" : "Unable to load application form"}
           message={apiError.message}
           onRetry={() => window.location.reload()}
         />

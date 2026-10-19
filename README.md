@@ -22,7 +22,8 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | yes | Base URL for the backend API. |
+| `NEXT_PUBLIC_API_URL` | yes | Base URL for the backend API. | 
+| `NEXT_PUBLIC_TENANT_BASE_DOMAIN` | local multi-tenant hosts | When the page host is `{name}` under this domain, API calls go to `{name}-services.{domain}` so the backend host route selects the tenant. |
 | `NEXT_PUBLIC_APP_PUBLIC_URL` | yes for shared links | Public portal origin used in copied share links (`https://portal.example.com`). Never the API host. |
 | `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | production | reCAPTCHA v2 ("I'm not a robot") site key used by the human check on self-serve signup. |
 

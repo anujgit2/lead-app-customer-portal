@@ -134,7 +134,7 @@ export function DocumentsTable({
   const someSelected = documents.some((document) => selected.has(document.id));
 
   return (
-    <Table className="text-[13px] [&_td]:h-[52px] [&_td]:px-3 [&_th]:h-[38px] [&_th]:px-3 [&_th]:text-xs">
+    <Table className="[&_td]:h-[52px] [&_td]:px-3 [&_th]:h-[38px] [&_th]:px-3">
       <caption className="sr-only">Documents</caption>
       <TableHeader>
         <TableRow className="hover:bg-transparent">
@@ -233,7 +233,7 @@ export function DocumentsTable({
                       <FileText className="h-4 w-4" aria-hidden />
                     </span>
                     <div className="min-w-0">
-                      <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] font-semibold leading-[18px] text-foreground">
+                      <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-semibold leading-[18px] text-foreground">
                         <Link
                           href={`/documents/${document.id}`}
                           className="min-w-0 truncate rounded-sm hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
@@ -247,12 +247,12 @@ export function DocumentsTable({
                           </Badge>
                         ) : null}
                       </span>
-                      <span className="mt-px block truncate text-[12px] leading-4 text-muted-foreground">
+                      <span className="mt-px block truncate text-xs leading-4 text-muted-foreground">
                         {fileName && fileName !== document.typeName
                           ? document.typeName
                           : documentTypeCode(document.typeId, document.typeName)}
                       </span>
-                      <span className="mt-0.5 block truncate text-[12.5px] text-muted-foreground min-[901px]:hidden">
+                      <span className="mt-0.5 block truncate text-xs text-muted-foreground min-[901px]:hidden">
                         {name ? `${name} · ${updated}` : updated}
                       </span>
                     </div>
@@ -277,7 +277,7 @@ export function DocumentsTable({
                   )}
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
-                  <Badge variant="secondary" dot={false} size="xs" className="rounded-md tabular-nums">
+                  <Badge variant="secondary" dot={false} size="sm" className="rounded-md tabular-nums">
                     v{document.latestVersion}
                   </Badge>
                   <Badge variant="success" dot={false} size="sm" className="ml-1">

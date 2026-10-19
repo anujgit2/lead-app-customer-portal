@@ -1,0 +1,1 @@
+[{"type":"FinancialsProperty","name":"financials","access":{},"value":[{"financialYear":"FY2024_25","revenue":2500000,"netIncome":400000,"depreciation":50000,"totalDebt":320000,"netWorth":1800000,"auditStatus":"NO"},{"financialYear":"FY2023_24","revenue":2100000,"netIncome":280000,"depreciation":40000,"totalDebt":450000,"netWorth":1500000,"auditStatus":"NO"}]}]

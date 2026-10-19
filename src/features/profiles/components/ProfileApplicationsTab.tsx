@@ -27,7 +27,7 @@ import {
 import { parseApiError } from "@/lib/api-error";
 import { formatDate } from "@/lib/utils";
 import { applicationService } from "@/services/application.service";
-import { programService } from "@/services/program.service";
+import { programService, tenantProgramsQueryKey } from "@/services/program.service";
 import type { CustomerProfileDetail } from "@/types";
 
 interface ProfileApplicationsTabProps {
@@ -84,13 +84,13 @@ export function ProfileApplicationsTab({ profile }: ProfileApplicationsTabProps)
       ) : null}
       {!applications.isLoading && !applications.isError && linked.length > 0 ? (
         <section className="overflow-hidden rounded-lg border border-border bg-card shadow-[var(--shadow-1)]">
-          <Table className="text-[13px]">
+          <Table>
             <caption className="sr-only">Applications for this profile</caption>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="h-[38px] px-3 text-xs">Application</TableHead>
-                <TableHead className="h-[38px] px-3 text-xs">Status</TableHead>
-                <TableHead className="hidden h-[38px] px-3 text-xs sm:table-cell">Updated</TableHead>
+                <TableHead className="h-[38px] px-3">Application</TableHead>
+                <TableHead className="h-[38px] px-3">Status</TableHead>
+                <TableHead className="hidden h-[38px] px-3 sm:table-cell">Updated</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -122,8 +122,8 @@ export function ProfileApplicationsTab({ profile }: ProfileApplicationsTabProps)
                           <FileText className="h-4 w-4" aria-hidden />
                         </span>
                         <div className="min-w-0">
-                          <span className="block truncate text-[13.5px] font-semibold leading-[18px]">{title}</span>
-                          <span className="block truncate font-mono text-[11px] leading-[14px] text-muted-foreground">
+                          <span className="block truncate font-semibold leading-[18px]">{title}</span>
+                          <span className="block truncate font-mono text-xs leading-4 text-muted-foreground">
                             {application.programName || application.loanType}
                             {application.customerProfileVersionNo
                               ? ` · v${application.customerProfileVersionNo}`
@@ -152,7 +152,7 @@ export function ProfileApplicationsTab({ profile }: ProfileApplicationsTabProps)
 function StartApplicationMenu({ profileId, versionNo }: { profileId: string; versionNo: number }) {
   const router = useRouter();
   const programs = useQuery({
-    queryKey: ["tenant-programs"],
+    queryKey: tenantProgramsQueryKey,
     queryFn: () => programService.getTenantPrograms(),
   });
   const available = useMemo(

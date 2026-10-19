@@ -16,7 +16,7 @@ import type {
   StoredFileReference,
 } from "@/types";
 import { MOCK_APPLICATIONS, MOCK_SUMMARY, LOAN_FORM_TEMPLATES } from "./mock-data";
-import { programService } from "./program.service";
+import { fetchTenantPrograms, programService } from "./program.service";
 import { isStoredFileReference } from "./file-storage.service";
 import { normalizeAddressValue } from "@/utils/address-field";
 import {
@@ -133,6 +133,16 @@ function parseSectionValue(
 
 function isDocumentTemplate(template: FormTemplate): boolean {
   return template.propertyType === "DocumentProperty";
+}
+
+/**
+ * Non-repeatable forms whose backend property still stores `value` as a list.
+ * The wizard keeps a single object; save wraps it as one element.
+ */
+const LIST_VALUED_PROPERTY_TYPES = new Set(["ConsentProperty"]);
+
+function sendsValueAsArray(template: FormTemplate): boolean {
+  return !!template.propertyType && LIST_VALUED_PROPERTY_TYPES.has(template.propertyType);
 }
 
 function forEachDocumentField(
@@ -423,7 +433,7 @@ function formDataToApplicationProperties(
     } else {
       const single = buildTemplateValue(template, data);
       if (Object.keys(single).length === 0) continue;
-      value = single;
+      value = sendsValueAsArray(template) ? [single] : single;
     }
 
     properties.push({
@@ -541,7 +551,7 @@ function mapApplication(app: BackendApplication, loanType?: string): LoanApplica
 
 async function programNameCatalog(): Promise<Map<string, string>> {
   try {
-    const programs = await programService.getTenantPrograms();
+    const programs = await fetchTenantPrograms();
     const catalog = new Map<string, string>();
     for (const program of programs) {
       const name = program.displayName || program.name;

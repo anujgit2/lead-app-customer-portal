@@ -1,0 +1,156 @@
+- generic [ref=f6e1]:
+  - button "Open Next.js Dev Tools" [ref=f6e8] [cursor=pointer]
+  - alert [ref=f6e12]
+  - generic [ref=f6e13]:
+    - banner [ref=f6e14]:
+      - generic [ref=f6e15]:
+        - link "LoanPortal" [ref=f6e16] [cursor=pointer]:
+          - /url: /dashboard/
+        - navigation "Main" [ref=f6e23]:
+          - link "Dashboard" [ref=f6e24] [cursor=pointer]:
+            - /url: /dashboard/
+          - link "Applications" [ref=f6e30] [cursor=pointer]:
+            - /url: /applications/
+          - link "Profiles" [ref=f6e34] [cursor=pointer]:
+            - /url: /profiles/
+          - link "Documents" [ref=f6e40] [cursor=pointer]:
+            - /url: /documents/
+      - generic [ref=f6e45]:
+        - button "Notifications" [ref=f6e46] [cursor=pointer]
+        - button "SJ Steve" [ref=f6e51] [cursor=pointer]:
+          - generic [ref=f6e52]: SJ
+          - generic [ref=f6e54]: Steve
+    - main [ref=f6e57]:
+      - generic [ref=f6e59]:
+        - region "Application progress" [ref=f6e60]:
+          - generic [ref=f6e61]:
+            - heading "Business Loan 9HYXG0N7" [level=1] [ref=f6e62]:
+              - text: Business Loan
+              - generic [ref=f6e63]: 9HYXG0N7
+            - generic [ref=f6e64]:
+              - generic [ref=f6e65]: Step 8 of 9
+              - generic [ref=f6e66]: Draft
+          - generic "Application steps" [ref=f6e69]:
+            - button "1 Business Information" [ref=f6e70] [cursor=pointer]:
+              - generic [ref=f6e71]: "1"
+              - generic [ref=f6e72]: Business Information
+            - button "2 Owners / Partners / Directors" [ref=f6e73] [cursor=pointer]:
+              - generic [ref=f6e74]: "2"
+              - generic [ref=f6e75]: Owners / Partners / Directors
+            - button "3 Loan Requirement" [ref=f6e76] [cursor=pointer]:
+              - generic [ref=f6e77]: "3"
+              - generic [ref=f6e78]: Loan Requirement
+            - button "4 Existing Loans" [ref=f6e79] [cursor=pointer]:
+              - generic [ref=f6e80]: "4"
+              - generic [ref=f6e81]: Existing Loans
+            - button "5 Bank Account Details" [ref=f6e82] [cursor=pointer]:
+              - generic [ref=f6e83]: "5"
+              - generic [ref=f6e84]: Bank Account Details
+            - button "6 Financials" [ref=f6e85] [cursor=pointer]:
+              - generic [ref=f6e86]: "6"
+              - generic [ref=f6e87]: Financials
+            - button "7 Consents & Declarations" [ref=f6e88] [cursor=pointer]:
+              - generic [ref=f6e89]: "7"
+              - generic [ref=f6e90]: Consents & Declarations
+            - button "8 Business documents" [ref=f6e91] [cursor=pointer]:
+              - generic [ref=f6e92]: "8"
+              - generic [ref=f6e93]: Business documents
+            - generic [ref=f6e94]:
+              - generic [ref=f6e95]: "9"
+              - generic [ref=f6e96]: Review
+        - generic [ref=f6e97]:
+          - heading "Business documents" [level=2] [ref=f6e98]
+          - paragraph [ref=f6e99]: Upload what you have now. Only items marked required block submission.
+        - generic [ref=f6e100]:
+          - alert [ref=f6e253]:
+            - generic [ref=f6e256]: Certificate of Incorporation is required. MOA & AOA is required. Board Resolution / Authorisation Letter is required
+          - generic [ref=f6e103]:
+            - generic [ref=f6e104]:
+              - paragraph [ref=f6e105]: 2 of 5 required
+              - paragraph [ref=f6e108]: Add the required documents to continue
+            - generic [ref=f6e109]:
+              - heading "Application documents" [level=3] [ref=f6e110]
+              - generic [ref=f6e111]:
+                - generic [ref=f6e114]:
+                  - generic [ref=f6e115]:
+                    - generic [ref=f6e116]:
+                      - paragraph [ref=f6e118]: Business PAN Card
+                      - paragraph [ref=f6e119]: Upload a clear copy of the business PAN card.
+                    - generic [ref=f6e120]: 1 uploaded
+                  - list [ref=f6e123]:
+                    - listitem [ref=f6e124]:
+                      - generic [ref=f6e128]:
+                        - paragraph [ref=f6e129]: business-pan.png
+                        - paragraph [ref=f6e130]: 70 B
+                      - generic [ref=f6e131]:
+                        - button "Download business-pan.png" [ref=f6e132] [cursor=pointer]: Download
+                        - button "Remove business-pan.png" [ref=f6e136] [cursor=pointer]: ×
+                - generic [ref=f6e139]:
+                  - generic [ref=f6e140]:
+                    - generic [ref=f6e141]:
+                      - generic [ref=f6e142]:
+                        - paragraph [ref=f6e143]: Business Address Proof
+                        - button "Information about Business Address Proof" [ref=f6e144] [cursor=pointer]
+                      - paragraph [ref=f6e147]: Utility bill, rent agreement or property tax receipt for the business address.
+                    - generic [ref=f6e148]: 1 uploaded
+                  - generic [ref=f6e150]:
+                    - generic [ref=f6e151] [cursor=pointer]:
+                      - button "Choose File" [ref=f6e152]
+                      - generic [ref=f6e157]:
+                        - paragraph [ref=f6e158]: Drop files or browse
+                        - paragraph [ref=f6e159]: PDF, JPG, JPEG, PNG · up to 5 MB · up to 2 files · at least 1 required
+                    - list [ref=f6e160]:
+                      - listitem [ref=f6e161]:
+                        - generic [ref=f6e165]:
+                          - paragraph [ref=f6e166]: address-proof.png
+                          - paragraph [ref=f6e167]: 70 B
+                        - generic [ref=f6e168]:
+                          - button "Download address-proof.png" [ref=f6e169] [cursor=pointer]: Download
+                          - button "Remove address-proof.png" [ref=f6e173] [cursor=pointer]: ×
+                - generic [ref=f6e176]:
+                  - generic [ref=f6e177]:
+                    - generic [ref=f6e178]:
+                      - paragraph [ref=f6e180]: Certificate of Incorporation
+                      - paragraph [ref=f6e181]: Upload the certificate issued by the Registrar of Companies / ROC.
+                    - generic [ref=f6e182]: Required
+                  - generic [ref=f6e185] [cursor=pointer]:
+                    - button "Choose File" [ref=f6e186]
+                    - generic [ref=f6e191]:
+                      - paragraph [ref=f6e192]: Drop files or browse
+                      - paragraph [ref=f6e193]: PDF · up to 5 MB · at least 1 required
+                - generic [ref=f6e196]:
+                  - generic [ref=f6e197]:
+                    - generic [ref=f6e198]:
+                      - paragraph [ref=f6e200]: MOA & AOA
+                      - paragraph [ref=f6e201]: Memorandum and Articles of Association. Both can be in one PDF.
+                    - generic [ref=f6e202]: Required
+                  - generic [ref=f6e205] [cursor=pointer]:
+                    - button "Choose File" [ref=f6e206]
+                    - generic [ref=f6e211]:
+                      - paragraph [ref=f6e212]: Drop files or browse
+                      - paragraph [ref=f6e213]: PDF · up to 15 MB · up to 2 files · at least 1 required
+                - generic [ref=f6e216]:
+                  - generic [ref=f6e217]:
+                    - generic [ref=f6e218]:
+                      - paragraph [ref=f6e220]: Board Resolution / Authorisation Letter
+                      - paragraph [ref=f6e221]: Resolution authorising the borrowing and naming the signatories.
+                    - generic [ref=f6e222]: Required
+                  - generic [ref=f6e225] [cursor=pointer]:
+                    - button "Choose File" [ref=f6e226]
+                    - generic [ref=f6e231]:
+                      - paragraph [ref=f6e232]: Drop files or browse
+                      - paragraph [ref=f6e233]: PDF · up to 5 MB · at least 1 required
+          - generic [ref=f6e234]:
+            - generic [ref=f6e235]:
+              - generic [ref=f6e236]:
+                - generic [ref=f6e237]: Required fields
+                - generic [ref=f6e238]: 2 of 5
+              - progressbar "Required fields completed" [ref=f6e239]
+            - generic [ref=f6e241]:
+              - button "Back" [ref=f6e242] [cursor=pointer]
+              - button "Save draft" [ref=f6e245] [cursor=pointer]
+              - button "Continue" [active] [ref=f6e250] [cursor=pointer]
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=f6e257]:
+        - generic [ref=f6e261]: Please fix all errors before proceeding

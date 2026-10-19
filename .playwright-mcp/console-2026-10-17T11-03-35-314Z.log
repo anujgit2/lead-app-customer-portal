@@ -1,0 +1,4 @@
+[   10731ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[   11114ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[   21860ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://cdn.example.com/leads/logo.svg:0
+[   82773ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719

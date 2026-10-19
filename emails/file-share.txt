@@ -1,0 +1,21 @@
+Documents shared with you
+{{#organizationName}}{{organizationName}}{{/organizationName}}{{^organizationName}}LoanPortal{{/organizationName}}
+
+{{#recipientName}}Hello {{recipientName}},{{/recipientName}}{{^recipientName}}Hello,{{/recipientName}}
+
+{{senderName}} shared files with you. Open the secure link to view them. You'll confirm your email before the files open.
+{{#viewOnly}}Downloading is turned off for this share.
+{{/viewOnly}}{{#documentCount}}Files: {{documentCount}}
+{{/documentCount}}
+
+{{#documents}}
+- {{name}}{{#typeName}} ({{typeName}}{{#tag}}, tag {{tag}}{{/tag}}){{/typeName}}{{^typeName}}{{#tag}} (tag {{tag}}){{/tag}}{{/typeName}}
+{{/documents}}
+View documents:
+{{viewUrl}}
+
+{{#passwordProtected}}This link is password protected. {{senderName}} will share the password separately. It is not included in this email.
+{{/passwordProtected}}{{#expiresAt}}This link expires on {{expiresAt}}. {{/expiresAt}}Don't forward this link. If you were not expecting these files, ignore this email{{#recipientEmail}} — it was sent to {{recipientEmail}}{{/recipientEmail}}.
+
+{{#supportEmail}}Questions? Write to {{supportEmail}}.
+{{/supportEmail}}© {{year}} {{#organizationName}}{{organizationName}}{{/organizationName}}{{^organizationName}}LoanPortal{{/organizationName}}

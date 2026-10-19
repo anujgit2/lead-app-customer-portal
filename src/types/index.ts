@@ -152,7 +152,9 @@ export type FieldType =
   | "currency"
   | "percentage"
   | "email"
+  | "url"
   | "tel"
+  | "phone"
   | "checkbox"
   | "select"
   | "multiselect"
@@ -175,6 +177,8 @@ export interface FieldValidation {
   maxLength?: number;
   minLength?: number;
   pattern?: string;
+  /** Shown when `pattern` fails. Kept separate from `message`, which is the required error. */
+  patternMessage?: string;
   min?: number;
   max?: number;
   minExclusive?: number;
@@ -182,9 +186,13 @@ export interface FieldValidation {
   integer?: boolean;
   email?: boolean;
   phone?: boolean;
+  minSelected?: number;
+  maxSelected?: number;
   message?: string;
   minMessage?: string;
   maxMessage?: string;
+  minSelectedMessage?: string;
+  maxSelectedMessage?: string;
 }
 
 /** Comparison operators supported by conditional field rules. */
@@ -201,13 +209,18 @@ export type ConditionOperator =
   | "gt"
   | "gte"
   | "lt"
-  | "lte";
+  | "lte"
+  | "and"
+  | "or";
 
-/** A single condition evaluated against a sibling field's value within the same section/instance. */
+/** A single condition, or an `and` / `or` group of conditions. */
 export interface ConditionRule {
+  /** Empty for an `and` / `or` group. Otherwise the field the comparison reads. */
   field: string;
   operator: ConditionOperator;
   value?: unknown;
+  /** Child conditions when `operator` is `and` or `or`. */
+  conditions?: ConditionRule[];
 }
 
 /** Conditional visibility/required rules for a field. Evaluated by `src/utils/rule-engine.ts`. */
@@ -233,6 +246,8 @@ export interface InputFormatConfig {
   trim?: boolean;
   uppercase?: boolean;
   lowercase?: boolean;
+  /** Keep digits only. Set from `input.transform: "numeric"`. */
+  numeric?: boolean;
   allowSpaces?: boolean;
   allowSpecialCharacters?: boolean;
 }
@@ -324,11 +339,19 @@ export interface FormTemplate {
   sections: FormSection[];
 }
 
+/**
+ * Wizard progress style from program form config `ui.stepper`.
+ * `minimal` is the default when the field is missing or unrecognized.
+ */
+export type StepperVariant = "minimal" | "pills" | "icons" | "cards";
+
 export interface LoanProduct {
   id: string;
   code: string;
   name: string;
   description: string;
+  /** Resolved from `ui.stepper`. Defaults to `minimal` (Minimal line). */
+  stepper?: StepperVariant;
   templates: FormTemplate[];
 }
 
@@ -664,6 +687,11 @@ export interface NewLoanProduct {
   ui?: {
     title: string;
     subtitle: string;
+    /**
+     * Wizard stepper. `minimal` (Minimal line, default) | `pills` (Filled pill)
+     * | `icons` (Icon connector) | `cards` (Card).
+     */
+    stepper?: string;
   };
   limits?: {
     loanAmount?: { min: number; max: number };

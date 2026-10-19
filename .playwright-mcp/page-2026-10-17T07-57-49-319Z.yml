@@ -1,0 +1,290 @@
+- generic [active] [ref=f5e1]:
+  - button "Open Next.js Dev Tools" [ref=f5e8] [cursor=pointer]
+  - alert [ref=f5e12]
+  - generic [ref=f5e13]:
+    - banner [ref=f5e14]:
+      - generic [ref=f5e15]:
+        - link "LoanPortal" [ref=f5e16] [cursor=pointer]:
+          - /url: /dashboard/
+        - navigation "Main" [ref=f5e23]:
+          - link "Dashboard" [ref=f5e24] [cursor=pointer]:
+            - /url: /dashboard/
+          - link "Applications" [ref=f5e30] [cursor=pointer]:
+            - /url: /applications/
+          - link "Profiles" [ref=f5e34] [cursor=pointer]:
+            - /url: /profiles/
+          - link "Documents" [ref=f5e40] [cursor=pointer]:
+            - /url: /documents/
+      - generic [ref=f5e45]:
+        - button "Notifications" [ref=f5e46] [cursor=pointer]
+        - button "SJ Steve" [ref=f5e51] [cursor=pointer]:
+          - generic [ref=f5e52]: SJ
+          - generic [ref=f5e54]: Steve
+    - main [ref=f5e57]:
+      - generic [ref=f5e59]:
+        - region "Application progress" [ref=f5e60]:
+          - generic [ref=f5e61]:
+            - heading "Business Loan 9HYXG0N7" [level=1] [ref=f5e62]:
+              - text: Business Loan
+              - generic [ref=f5e63]: 9HYXG0N7
+            - generic [ref=f5e64]:
+              - generic [ref=f5e65]: Step 1 of 9
+              - generic [ref=f5e66]: Draft
+          - generic "Application steps" [ref=f5e69]:
+            - button "1 Business Information" [ref=f5e70] [cursor=pointer]:
+              - generic [ref=f5e71]: "1"
+              - generic [ref=f5e72]: Business Information
+            - button "2 Owners / Partners / Directors" [disabled] [ref=f5e73]:
+              - generic [ref=f5e74]: "2"
+              - generic [ref=f5e75]: Owners / Partners / Directors
+            - button "3 Loan Requirement" [disabled] [ref=f5e76]:
+              - generic [ref=f5e77]: "3"
+              - generic [ref=f5e78]: Loan Requirement
+            - button "4 Existing Loans" [disabled] [ref=f5e79]:
+              - generic [ref=f5e80]: "4"
+              - generic [ref=f5e81]: Existing Loans
+            - button "5 Bank Account Details" [disabled] [ref=f5e82]:
+              - generic [ref=f5e83]: "5"
+              - generic [ref=f5e84]: Bank Account Details
+            - button "6 Financials" [disabled] [ref=f5e85]:
+              - generic [ref=f5e86]: "6"
+              - generic [ref=f5e87]: Financials
+            - button "7 Consents & Declarations" [disabled] [ref=f5e88]:
+              - generic [ref=f5e89]: "7"
+              - generic [ref=f5e90]: Consents & Declarations
+            - button "8 Business documents" [disabled] [ref=f5e91]:
+              - generic [ref=f5e92]: "8"
+              - generic [ref=f5e93]: Business documents
+            - generic [ref=f5e94]:
+              - generic [ref=f5e95]: "9"
+              - generic [ref=f5e96]: Review
+        - generic [ref=f5e97]:
+          - heading "Business Information" [level=2] [ref=f5e98]
+          - paragraph [ref=f5e99]: Tell us about your business. Details must match your registration documents.
+        - generic [ref=f5e100]:
+          - generic [ref=f5e103]:
+            - generic [ref=f5e104]:
+              - generic [ref=f5e107]:
+                - heading "Business Details" [level=3] [ref=f5e108]
+                - paragraph [ref=f5e109]: Legal and registration information about your business
+              - generic [ref=f5e111]:
+                - generic [ref=f5e113]:
+                  - generic [ref=f5e115]:
+                    - generic [ref=f5e116]: Company Name
+                    - generic [ref=f5e117]: "*"
+                  - textbox "Company Name *" [ref=f5e118]:
+                    - /placeholder: Enter legal company name
+                    - text: Horizon Trade Pvt Ltd
+                - generic [ref=f5e120]:
+                  - generic [ref=f5e122]:
+                    - generic [ref=f5e123]: Company Type
+                    - generic [ref=f5e124]: "*"
+                  - combobox "Company Type *" [ref=f5e125] [cursor=pointer]:
+                    - generic: Private Limited
+                  - combobox [aria-hidden] [ref=f5e128]
+                - generic [ref=f5e130]:
+                  - generic [ref=f5e131]: Doing Business As
+                  - textbox "Doing Business As" [ref=f5e134]:
+                    - /placeholder: Enter trade or brand name
+                    - text: Horizon Trade
+                - generic [ref=f5e136]:
+                  - generic [ref=f5e137]:
+                    - generic [ref=f5e138]:
+                      - generic [ref=f5e139]: Industry Type
+                      - generic [ref=f5e140]: "*"
+                    - button "Information about Industry Type" [ref=f5e141] [cursor=pointer]
+                  - combobox "Industry Type *" [ref=f5e144] [cursor=pointer]:
+                    - generic: Trading
+                  - combobox [aria-hidden] [ref=f5e147]
+                - generic [ref=f5e149]:
+                  - generic [ref=f5e150]:
+                    - generic [ref=f5e151]:
+                      - generic [ref=f5e152]: Nature of Business
+                      - generic [ref=f5e153]: "*"
+                    - button "Information about Nature of Business" [ref=f5e154] [cursor=pointer]
+                  - combobox "Nature of Business *" [ref=f5e157] [cursor=pointer]:
+                    - generic: Wholesale Trading
+                  - combobox [aria-hidden] [ref=f5e160]
+                - generic [ref=f5e162]:
+                  - generic [ref=f5e163]:
+                    - generic [ref=f5e164]:
+                      - generic [ref=f5e165]: State of Formation
+                      - generic [ref=f5e166]: "*"
+                    - button "Information about State of Formation" [ref=f5e167] [cursor=pointer]
+                  - combobox "State of Formation *" [ref=f5e170] [cursor=pointer]:
+                    - generic: Maharashtra
+                  - combobox [aria-hidden] [ref=f5e173]
+                - generic [ref=f5e175]:
+                  - generic [ref=f5e176]:
+                    - generic [ref=f5e177]:
+                      - generic [ref=f5e178]: Date of Incorporation
+                      - generic [ref=f5e179]: "*"
+                    - button "Information about Date of Incorporation" [ref=f5e180] [cursor=pointer]
+                  - textbox "Date of Incorporation *" [ref=f5e183]: 2016-04-12
+                - generic [ref=f5e185]:
+                  - generic [ref=f5e186]:
+                    - generic [ref=f5e187]: Year Established
+                    - button "Information about Year Established" [ref=f5e189] [cursor=pointer]
+                  - spinbutton "Year Established" [ref=f5e192]: "2016"
+                - generic [ref=f5e194]:
+                  - generic [ref=f5e195]: Business Vintage (years)
+                  - spinbutton "Business Vintage (years)" [ref=f5e198]
+                - generic [ref=f5e200]:
+                  - generic [ref=f5e201]:
+                    - generic [ref=f5e202]:
+                      - generic [ref=f5e203]: Annual Revenue
+                      - generic [ref=f5e204]: "*"
+                    - button "Information about Annual Revenue" [ref=f5e205] [cursor=pointer]
+                  - generic [ref=f5e208]:
+                    - generic: ₹
+                    - textbox "Annual Revenue *" [ref=f5e209]:
+                      - /placeholder: Enter annual revenue
+                - generic [ref=f5e211]:
+                  - generic [ref=f5e212]:
+                    - generic [ref=f5e213]: Net Income
+                    - button "Information about Net Income" [ref=f5e215] [cursor=pointer]
+                  - generic [ref=f5e218]:
+                    - generic: ₹
+                    - textbox "Net Income" [ref=f5e219]:
+                      - /placeholder: Enter net income
+            - generic [ref=f5e220]:
+              - generic [ref=f5e222]:
+                - generic [ref=f5e223]:
+                  - heading "Registrations" [level=3] [ref=f5e224]
+                  - paragraph [ref=f5e225]: Tax and registration numbers
+                - button "Search PAN" [ref=f5e226] [cursor=pointer]
+              - generic [ref=f5e231]:
+                - generic [ref=f5e233]:
+                  - generic [ref=f5e234]:
+                    - generic [ref=f5e235]:
+                      - generic [ref=f5e236]: Business PAN
+                      - generic [ref=f5e237]: "*"
+                    - button "Information about Business PAN" [ref=f5e238] [cursor=pointer]
+                  - textbox "Business PAN *" [ref=f5e241]:
+                    - /placeholder: ABCDE1234F
+                    - text: AABCH1234F
+                - generic [ref=f5e243]:
+                  - generic [ref=f5e245]:
+                    - generic [ref=f5e246]: GST Registered
+                    - generic [ref=f5e247]: "*"
+                  - combobox "GST Registered *" [ref=f5e248] [cursor=pointer]:
+                    - generic: "No"
+                  - combobox [aria-hidden] [ref=f5e251]
+                - generic [ref=f5e253]:
+                  - generic [ref=f5e254]:
+                    - generic [ref=f5e255]:
+                      - generic [ref=f5e256]: CIN
+                      - generic [ref=f5e257]: "*"
+                    - button "Information about CIN" [ref=f5e258] [cursor=pointer]
+                  - textbox "CIN *" [ref=f5e261]:
+                    - /placeholder: U12345MH2010PTC123456
+                - generic [ref=f5e263]:
+                  - generic [ref=f5e264]:
+                    - generic [ref=f5e265]: Udyam Registration Number
+                    - button "Information about Udyam Registration Number" [ref=f5e267] [cursor=pointer]
+                  - textbox "Udyam Registration Number" [ref=f5e270]:
+                    - /placeholder: UDYAM-MH-04-0012345
+                - generic [ref=f5e272]:
+                  - generic [ref=f5e273]:
+                    - generic [ref=f5e274]: TAN
+                    - button "Information about TAN" [ref=f5e276] [cursor=pointer]
+                  - textbox "TAN" [ref=f5e279]:
+                    - /placeholder: ABCD12345E
+                - generic [ref=f5e281]:
+                  - generic [ref=f5e282]:
+                    - generic [ref=f5e283]: Import Export Code (IEC)
+                    - button "Information about Import Export Code (IEC)" [ref=f5e285] [cursor=pointer]
+                  - textbox "Import Export Code (IEC)" [ref=f5e288]:
+                    - /placeholder: "0123456789"
+            - generic [ref=f5e289]:
+              - generic [ref=f5e292]:
+                - heading "Contact & Operations" [level=3] [ref=f5e293]
+                - paragraph [ref=f5e294]: How we reach you and how you operate
+              - generic [ref=f5e296]:
+                - generic [ref=f5e298]:
+                  - generic [ref=f5e300]:
+                    - generic [ref=f5e301]: Business Email
+                    - generic [ref=f5e302]: "*"
+                  - textbox "Business Email *" [ref=f5e303]:
+                    - /placeholder: accounts@yourbusiness.com
+                - generic [ref=f5e305]:
+                  - generic [ref=f5e307]:
+                    - generic [ref=f5e308]: Business Mobile
+                    - generic [ref=f5e309]: "*"
+                  - textbox "Business Mobile *" [ref=f5e310]:
+                    - /placeholder: "9876543210"
+                - generic [ref=f5e312]:
+                  - generic [ref=f5e313]: Website
+                  - textbox "Website" [ref=f5e316]:
+                    - /placeholder: https://www.example.com
+                - generic [ref=f5e318]:
+                  - generic [ref=f5e319]: Number of Employees
+                  - spinbutton "Number of Employees" [ref=f5e322]
+                - generic [ref=f5e324]:
+                  - generic [ref=f5e325]:
+                    - generic [ref=f5e326]: NIC Code
+                    - button "Information about NIC Code" [ref=f5e328] [cursor=pointer]
+                  - textbox "NIC Code" [ref=f5e331]:
+                    - /placeholder: e.g. 47111
+                - generic [ref=f5e333]:
+                  - generic [ref=f5e335]:
+                    - generic [ref=f5e336]: Business Premises
+                    - generic [ref=f5e337]: "*"
+                  - combobox "Business Premises *" [ref=f5e338] [cursor=pointer]:
+                    - generic: Select premises ownership
+                  - combobox [aria-hidden] [ref=f5e341]
+            - generic [ref=f5e342]:
+              - generic [ref=f5e345]:
+                - heading "Business Address" [level=3] [ref=f5e346]
+                - paragraph [ref=f5e347]: Where your business operates from
+              - generic [ref=f5e349]:
+                - generic [ref=f5e350]:
+                  - generic [ref=f5e351] [cursor=pointer]: "Business Address #1"
+                  - generic [ref=f5e357]:
+                    - generic [ref=f5e359]:
+                      - generic [ref=f5e361]:
+                        - generic [ref=f5e362]: Address Type
+                        - generic [ref=f5e363]: "*"
+                      - combobox "Address Type *" [ref=f5e364] [cursor=pointer]:
+                        - generic: Select address type
+                      - combobox [aria-hidden] [ref=f5e367]
+                    - generic [ref=f5e369]:
+                      - generic [ref=f5e371]:
+                        - generic [ref=f5e372]: Address Line 1
+                        - generic [ref=f5e373]: "*"
+                      - textbox "Address Line 1 *" [ref=f5e374]:
+                        - /placeholder: Building, house or street address
+                    - generic [ref=f5e376]:
+                      - generic [ref=f5e377]: Address Line 2
+                      - textbox "Address Line 2" [ref=f5e380]:
+                        - /placeholder: Apartment, suite, landmark, etc.
+                    - generic [ref=f5e382]:
+                      - generic [ref=f5e384]:
+                        - generic [ref=f5e385]: City
+                        - generic [ref=f5e386]: "*"
+                      - textbox "City *" [ref=f5e387]:
+                        - /placeholder: Enter city
+                    - generic [ref=f5e389]:
+                      - generic [ref=f5e391]:
+                        - generic [ref=f5e392]: State / UT
+                        - generic [ref=f5e393]: "*"
+                      - combobox "State / UT *" [ref=f5e394] [cursor=pointer]:
+                        - generic: Select state or UT
+                      - combobox [aria-hidden] [ref=f5e397]
+                    - generic [ref=f5e399]:
+                      - generic [ref=f5e401]:
+                        - generic [ref=f5e402]: Pincode
+                        - generic [ref=f5e403]: "*"
+                      - textbox "Pincode *" [ref=f5e404]:
+                        - /placeholder: "201301"
+                - button "Add Business Address" [ref=f5e405] [cursor=pointer]
+          - generic [ref=f5e407]:
+            - generic [ref=f5e408]:
+              - generic [ref=f5e409]:
+                - generic [ref=f5e410]: Required fields
+                - generic [ref=f5e411]: 8 of 18
+              - progressbar "Required fields completed" [ref=f5e412]
+            - generic [ref=f5e414]:
+              - button "Save draft" [ref=f5e415] [cursor=pointer]
+              - button "Continue" [ref=f5e420] [cursor=pointer]
+  - region "Notifications alt+T"

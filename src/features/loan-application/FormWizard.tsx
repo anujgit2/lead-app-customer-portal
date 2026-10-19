@@ -11,11 +11,12 @@ import { applicationService } from "@/services/application.service";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRight, CheckCircle2, AlertCircle, Save } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ApplicationIdProvider, PersistDocumentStepProvider } from "@/components/forms/application-context";
+import { ArrowLeft, ArrowRight, AlertCircle, Save } from "lucide-react";
+import { StepperRecordHeader } from "@/features/loan-application/steppers/StepperRecordHeader";
+import { ApplicationIdProvider, PersistDocumentStepProvider, WizardAnswersProvider } from "@/components/forms/application-context";
 import { PanVerificationProvider } from "./pan-search-context";
 import { buildWizardSchema } from "@/utils/schema-builder";
+import { isFieldRequired, isFieldVisible } from "@/utils/rule-engine";
 import { parseApiError } from "@/lib/api-error";
 import type { ApiError } from "@/types";
 
@@ -58,7 +59,11 @@ function isFilledValue(value: unknown): boolean {
   return true;
 }
 
-function requiredFieldProgress(template: FormTemplate | null, data: unknown): { done: number; total: number } {
+function requiredFieldProgress(
+  template: FormTemplate | null,
+  data: unknown,
+  wizardData?: Record<string, unknown>
+): { done: number; total: number } {
   if (!template) return { done: 0, total: 0 };
   const root = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
   let done = 0;
@@ -75,7 +80,9 @@ function requiredFieldProgress(template: FormTemplate | null, data: unknown): { 
     for (const row of rows) {
       const record = row && typeof row === "object" ? (row as Record<string, unknown>) : {};
       for (const field of section.fields) {
-        if (field.type === "hidden" || !field.validation?.required) continue;
+        if (field.type === "hidden") continue;
+        if (!isFieldVisible(field, record, root, wizardData)) continue;
+        if (!isFieldRequired(field, record, root, wizardData)) continue;
         total += 1;
         if (isFilledValue(record[field.name])) done += 1;
       }
@@ -247,7 +254,11 @@ export function FormWizard({
       }
     }
 
-    const schema = buildWizardSchema(template, template.repeatable ?? false);
+    const schema = buildWizardSchema(
+      template,
+      template.repeatable ?? false,
+      stepDataRef.current
+    );
     const result = schema.safeParse(data ?? (template.repeatable ? [] : {}));
     if (!result.success) {
       setStepError(formatValidationErrors(result));
@@ -349,7 +360,11 @@ export function FormWizard({
     try {
       for (let i = 0; i < templates.length; i++) {
         const template = templates[i];
-        const schema = buildWizardSchema(template, template.repeatable ?? false);
+        const schema = buildWizardSchema(
+          template,
+          template.repeatable ?? false,
+          stepDataRef.current
+        );
         const result = schema.safeParse(
           stepDataRef.current[template.code] ?? (template.repeatable ? [] : {})
         );
@@ -389,7 +404,8 @@ export function FormWizard({
     : undefined;
   const required = requiredFieldProgress(
     currentTemplate,
-    currentTemplate ? stepData[currentTemplate.code] : undefined
+    currentTemplate ? stepData[currentTemplate.code] : undefined,
+    stepData
   );
   const requiredPct = required.total === 0 ? 100 : Math.round((required.done / required.total) * 100);
   const savedLabel = savingMode === "draft" || savingMode === "close"
@@ -400,59 +416,45 @@ export function FormWizard({
 
   return (
     <PanVerificationProvider>
+    <WizardAnswersProvider value={stepData}>
     <ApplicationIdProvider applicationId={draftId}>
     <PersistDocumentStepProvider onPersist={persistDocumentStep}>
     <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5 px-4 pb-10 pt-6 sm:px-6">
       <section
         aria-label="Application progress"
-        className="relative overflow-hidden rounded-xl border border-primary/30 px-5 pb-3.5 pt-[18px] shadow-[0_1px_2px_hsl(var(--primary)/0.06)]"
-        style={{
-          background: "linear-gradient(180deg, hsl(var(--primary-soft)) 0%, hsl(var(--card)) 82%)",
-        }}
+        className="relative z-10 overflow-visible rounded-2xl border border-slate-200 bg-white px-6 pb-6 pt-[22px] shadow-[0_5px_18px_rgba(29,58,94,0.055)] max-[600px]:rounded-xl max-[600px]:px-2.5 max-[600px]:pb-4 max-[600px]:pt-4"
       >
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <h1 className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 text-lg font-semibold leading-[26px] tracking-[-0.01em] text-foreground">
-            {product.name}
-            {applicationNumber ? (
-              <span className="rounded-full bg-muted px-2 py-0.5 font-mono text-[11.5px] font-medium text-muted-foreground">
-                {applicationNumber}
-              </span>
-            ) : null}
-          </h1>
-          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2">
-            <span className="inline-flex h-6 items-center rounded-full bg-primary px-2.5 text-xs font-semibold tracking-wide text-primary-foreground">
-              Step {currentStep + 1} of {totalSteps + 1}
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground" aria-live="polite">
-              {savedAt && savingMode === null ? (
-                <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-              ) : null}
-              {savedLabel}
-            </span>
-          </div>
-        </div>
-        <div className={cn("mx-auto mt-4 w-full max-w-[640px]", reviewing && templates.length <= 2 && "max-w-[420px]")}>
-          <WizardProgress
-            templates={templates}
-            currentStep={currentStep}
-            stepStatuses={stepStatuses}
-            onStepClick={navigateToStep}
-          />
-        </div>
+        <StepperRecordHeader
+          title={product.name}
+          applicationNumber={applicationNumber}
+          applicationId={draftId}
+          savedLabel={savedLabel}
+          saved={Boolean(savedAt && savingMode === null)}
+        />
+        <WizardProgress
+          variant={product.stepper}
+          templates={templates}
+          currentStep={currentStep}
+          stepStatuses={stepStatuses}
+          onStepClick={navigateToStep}
+        />
       </section>
 
-      {currentTemplate ? (
-        <div>
-          <h2 className="text-2xl font-semibold leading-8 tracking-[-0.02em] text-foreground">
-            {currentTemplate.title}
+      <div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h2 className="text-2xl font-semibold leading-8 tracking-tight text-slate-900">
+            {currentTemplate?.title ?? "Review"}
           </h2>
-          {currentTemplate.description ? (
-            <p className="mt-0.5 max-w-2xl text-sm leading-5 text-muted-foreground">
-              {currentTemplate.description}
-            </p>
-          ) : null}
+          <span className="whitespace-nowrap text-sm font-normal text-slate-500">
+            Step {currentStep + 1} of {totalSteps + 1}
+          </span>
         </div>
-      ) : null}
+        {currentTemplate?.description ? (
+          <p className="mt-0.5 max-w-2xl text-sm leading-5 text-muted-foreground">
+            {currentTemplate.description}
+          </p>
+        ) : null}
+      </div>
 
       <div className="flex flex-col gap-5">
         {stepError && !isReviewStep(currentStep) && (
@@ -555,6 +557,7 @@ export function FormWizard({
     </div>
     </PersistDocumentStepProvider>
     </ApplicationIdProvider>
+    </WizardAnswersProvider>
     </PanVerificationProvider>
   );
 }

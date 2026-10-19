@@ -1,12 +1,11 @@
 import axios, { type AxiosRequestConfig, type AxiosResponse } from "axios";
+import { getApiBaseUrl } from "@/lib/axios";
 import type { FilePayload, SharedLookup } from "../types";
 import {
   fileNameFromContentDisposition,
   unavailableReasonFromCode,
 } from "../utils/format";
 import { normalizeSharedLookup, normalizeUnlock } from "./normalize";
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
 
 /**
  * Public client for /api/shared/**.
@@ -27,8 +26,13 @@ export class SharedRequestError extends Error {
 }
 
 const sharedClient = axios.create({
-  baseURL: BASE_URL,
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "/api",
   timeout: 60_000,
+});
+
+sharedClient.interceptors.request.use((config) => {
+  config.baseURL = getApiBaseUrl();
+  return config;
 });
 
 function unwrap(body: unknown): unknown {

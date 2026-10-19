@@ -17,7 +17,7 @@ import {
 import { parseApiError } from "@/lib/api-error";
 import { applicationService } from "@/services/application.service";
 import { profileService } from "@/services/profile.service";
-import { programService } from "@/services/program.service";
+import { programService, tenantProgramsQueryKey } from "@/services/program.service";
 import type { FormData } from "@/types";
 import {
   fieldValuesFromProfile,
@@ -83,7 +83,7 @@ function NewLoanApplicationContent() {
     retry: 1,
   });
   const programsQuery = useQuery({
-    queryKey: ["tenant-programs"],
+    queryKey: tenantProgramsQueryKey,
     queryFn: () => programService.getTenantPrograms(),
     enabled: optionsQuery.data?.promptOnCreate === true,
     retry: 1,

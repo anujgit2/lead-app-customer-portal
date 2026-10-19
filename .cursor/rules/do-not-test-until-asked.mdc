@@ -1,0 +1,22 @@
+---
+description: Do not test or verify changes unless the user asks
+alwaysApply: true
+---
+
+# Do not test until asked
+
+After a code change, stop. Do not verify it unless the user explicitly asks you to test, typecheck, lint, build, or run the app.
+
+- Do not run `tsc`, `npm test`, `npm run lint`, `npm run build`, or any similar check.
+- Do not start a dev server, open a browser, take screenshots, or curl the app.
+- Report what changed and leave verification until the user requests it.
+
+```text
+❌ BAD — after editing a service
+Run `npx tsc --noEmit` to confirm the change compiles.
+
+✅ GOOD — after editing a service
+Describe the change and stop.
+```
+
+When the user asks to test, run only the check they asked for.

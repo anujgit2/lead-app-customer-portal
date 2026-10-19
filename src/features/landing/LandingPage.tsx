@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  BadgeCheck,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -36,8 +35,8 @@ import { siteCopy } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 const HERO_ICONS = [FileText, History, Files, Share2];
-const MORE_ICONS = [FileText, Files, BadgeCheck, Lock];
-const TRUST = ["Saved as you go", "Private by default", "Verified DigiLocker imports"];
+const MORE_ICONS = [FileText, Files, Lock];
+const TRUST = ["Saved as you go", "Private by default", "Earlier versions kept"];
 
 const interactive =
   "transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]";
@@ -299,7 +298,7 @@ export function LandingPage() {
               </article>
             </div>
 
-            <div className="lp-reveal grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="lp-reveal grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {MORE_FEATURES.map((feature, index) => (
                 <div
                   key={feature.title}

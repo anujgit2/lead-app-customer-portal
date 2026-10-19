@@ -70,7 +70,9 @@ interface FormField {
 | `currency` | Formatted amount input (₹ prefix, grouping, fixed decimals) |
 | `percentage` | Input with % suffix |
 | `email` | `<Input type="email">` |
+| `url` | `<Input type="url">`. Optional unless `required` is set. `input.transform: "lowercase"` lowercases while typing. |
 | `tel` | `<Input type="tel">` |
+| `phone` | Same as `tel`. `input.transform: "numeric"` keeps digits only while typing. |
 | `checkbox` | `<Checkbox>` |
 | `select` | `<Select>` (Radix) |
 | `multiselect` | Dropdown with selected values as removable chips. Payload is a string array. |
@@ -234,7 +236,11 @@ formData = {
 
 ```
 FormWizard        — top-level orchestrator; owns step state, navigation, save/submit
-├── WizardProgress  — step indicator with completion dots
+├── WizardProgress  — step indicator; variant from program `ui.stepper`
+│   ├── MinimalLineStepper    — `minimal` (default)
+│   ├── FilledPillStepper     — `pills`
+│   ├── IconConnectorStepper  — `icons`
+│   └── CardStepper           — `cards`
 ├── WizardStep      — renders a single FormTemplate
 │   ├── SingleTemplateForm     — non-repeatable: FormProvider + DynamicSection[]
 │   └── RepeatableTemplateInstances → RepeatableInstance[] (each has own useForm)

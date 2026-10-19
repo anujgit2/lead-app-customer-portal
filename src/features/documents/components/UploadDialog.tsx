@@ -157,8 +157,6 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
   );
   const visibleTypes = (types.data ?? []).filter((type) => !category || categoryKey(type.category) === category);
   const profiles = profilesQuery.data?.content ?? [];
-  const profileRequired = !locked;
-  const profileReady = !!presetProfile || !!profile;
 
   const acceptFile = (next: File | undefined) => {
     if (!next) return;
@@ -191,7 +189,6 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
     !!file &&
     !!typeId &&
     (!requiresLabel || label.trim().length > 0) &&
-    (!profileRequired || profileReady) &&
     !upload.isPending;
 
   const submit = (submission: UploadSubmission) => {
@@ -239,9 +236,7 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
             ? "Choose a document type."
             : !locked && requiresLabel && !label.trim()
               ? "Add a label."
-              : profileRequired && !profileReady
-                ? "Select a profile."
-                : "Ready to upload.";
+              : "Ready to upload.";
 
   const selectedProfileId = presetProfile?.profileId ?? profile?.id;
   const presetMissing =
@@ -510,7 +505,7 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
               <Field
                 id="upload-profile"
                 label="Related to"
-                required={profileRequired}
+                optional
                 hint={
                   profilesQuery.isError
                     ? undefined

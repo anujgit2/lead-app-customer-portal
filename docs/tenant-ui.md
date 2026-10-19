@@ -4,9 +4,9 @@ The portal loads one UI config per tenant. It covers the theme, the account form
 
 ## Request
 
-`GET {NEXT_PUBLIC_API_URL}/api/tenant/ui`
+`GET {api host}/api/tenant/ui`
 
-The browser sends this after the page hydrates, and the screen stays on a loading state until the response arrives. The portal does not send `X-Tenant-ID` on this request and does not choose a tenant from the page URL. The backend resolves the tenant from the API URL. A failed request or an invalid payload falls back to the built-in default config, and only then does the screen render.
+The browser sends this after the page hydrates, and the screen stays on a loading state until the response arrives. The portal does not send `X-Tenant-ID` on this request. The backend resolves the tenant from the API host. On a portal host under `NEXT_PUBLIC_TENANT_BASE_DOMAIN`, `{name}.einfra.local` calls `{name}-services.einfra.local` (for example `south.einfra.local` calls `south-services.einfra.local`). Every other host uses `NEXT_PUBLIC_API_URL`. A failed request or an invalid payload falls back to the built-in default config, and only then does the screen render.
 
 ## Payload
 

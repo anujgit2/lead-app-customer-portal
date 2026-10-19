@@ -39,10 +39,6 @@ export const MORE_FEATURES = [
     description: "Upload an updated file and keep the earlier ones on record.",
   },
   {
-    title: "Import from DigiLocker",
-    description: "Bring in verified documents without uploading them yourself.",
-  },
-  {
     title: "Private by default",
     description: "Sensitive details are masked, and only you decide who sees a document.",
   },
@@ -59,7 +55,7 @@ export const HERO_POINTS = [
   },
   {
     title: "Documents in one place",
-    description: "Upload files, keep earlier versions and import verified ones.",
+    description: "Upload files and keep the earlier versions on record.",
   },
   {
     title: "Secure sharing",

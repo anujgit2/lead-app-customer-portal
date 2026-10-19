@@ -1,0 +1,1 @@
+[{"type":"DebtObligationProperty","name":"existingDebt","access":{},"value":[{"lenderName":"HDFC Bank","debtType":"TERM_LOAN","sanctionedAmount":500000,"outstandingAmount":320000,"emiAmount":18500,"remainingTenure":24,"isOverdue":"NO"}]}]

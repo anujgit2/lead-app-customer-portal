@@ -15,7 +15,7 @@ export function SourceBadge({
   return (
     <Badge variant={verified ? "success" : "draft"} dot={false} size={size} className={className}>
       {verified ? <BadgeCheck className="h-3 w-3" aria-hidden /> : <Upload className="h-3 w-3" aria-hidden />}
-      {verified ? "Verified via DigiLocker" : "Uploaded"}
+      {verified ? "Verified" : "Uploaded"}
     </Badge>
   );
 }

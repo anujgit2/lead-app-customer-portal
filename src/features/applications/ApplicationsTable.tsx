@@ -258,7 +258,7 @@ export function ApplicationsTable({
 
   const grid = (
     <>
-      <Table className="text-[13px] [&_td]:h-[52px] [&_td]:px-3 [&_th]:h-[38px] [&_th]:px-3 [&_th]:text-xs">
+      <Table className="[&_td]:h-[52px] [&_td]:px-3 [&_th]:h-[38px] [&_th]:px-3">
         <caption className="sr-only">Loan applications</caption>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
@@ -342,15 +342,15 @@ export function ApplicationsTable({
                         <Link
                           href={href}
                           title={app.status === "draft" ? "Open application form" : "View application"}
-                          className="block truncate text-[13.5px] font-semibold leading-[18px] text-foreground hover:underline"
+                          className="block truncate font-semibold leading-[18px] text-foreground hover:underline"
                           onClick={(event) => event.stopPropagation()}
                         >
                           {title}
                         </Link>
-                        <span className="mt-px block truncate font-mono text-[11px] leading-[14px] text-muted-foreground">
+                        <span className="mt-px block truncate font-mono text-xs leading-4 text-muted-foreground">
                           {app.id}
                         </span>
-                        <span className="mt-0.5 block truncate text-[12.5px] text-muted-foreground min-[901px]:hidden">
+                        <span className="mt-0.5 block truncate text-xs text-muted-foreground min-[901px]:hidden">
                           {programLabel(app)}
                         </span>
                       </div>

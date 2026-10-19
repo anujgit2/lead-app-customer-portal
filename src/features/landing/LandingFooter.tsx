@@ -3,9 +3,9 @@ import { Landmark, Mail, Phone } from "lucide-react";
 import { siteCopy } from "@/lib/site";
 
 const EXPLORE = [
-  { label: "How it works", href: "#how" },
-  { label: "Features", href: "#features" },
-  { label: "Questions", href: "#faq" },
+  { label: "How it works", href: "/#how" },
+  { label: "Features", href: "/#features" },
+  { label: "Questions", href: "/#faq" },
 ];
 
 const ACCOUNT = [
@@ -15,9 +15,9 @@ const ACCOUNT = [
 ];
 
 const LEGAL = [
-  { label: "Help centre", href: "#faq" },
-  { label: "Contact us", href: "#faq" },
-  { label: "Grievance redressal", href: "#faq" },
+  { label: "Help centre", href: "/#faq" },
+  { label: "Contact us", href: "/#faq" },
+  { label: "Grievance redressal", href: "/#faq" },
   { label: "Privacy policy", href: "/privacy" },
   { label: "Terms of use", href: "/terms" },
 ];

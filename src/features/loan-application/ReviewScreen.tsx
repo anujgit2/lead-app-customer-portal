@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { parseApiError } from "@/lib/api-error";
-import { cn, formatDate, formatFileSize } from "@/lib/utils";
+import { formatDate, formatFileSize } from "@/lib/utils";
 import { StoredFileList } from "@/components/forms/StoredFileList";
 import {
   fileStorageService,
@@ -154,13 +154,8 @@ function ReviewFieldGrid({
     <dl className="m-0 grid grid-cols-1 gap-x-6 gap-y-4 min-[420px]:grid-cols-2 min-[700px]:grid-cols-3 min-[900px]:grid-cols-4">
       {visible.map((item) => (
         <div key={item.key}>
-          <dt className="text-[13px] font-normal text-muted-foreground">{item.label}</dt>
-          <dd
-            className={cn(
-              "m-0 mt-0.5 break-words text-[15px] font-medium text-foreground",
-              isEmptyReviewValue(item.value) && "font-normal"
-            )}
-          >
+          <dt className="text-[13px] font-medium text-muted-foreground">{item.label}</dt>
+          <dd className="m-0 mt-0.5 break-words text-sm font-normal text-foreground">
             <ReviewValue value={item.value} type={item.type} options={item.options} />
           </dd>
         </div>

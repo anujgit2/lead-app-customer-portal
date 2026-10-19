@@ -13,10 +13,10 @@ export type BrandPoint = {
 };
 
 const AUTH_LINKS = [
-  { label: "Help centre", href: "#" },
-  { label: "Contact us", href: "#" },
-  { label: "Privacy policy", href: "#" },
-  { label: "Terms of use", href: "#" },
+  { label: "Help centre", href: "/#faq" },
+  { label: "Contact us", href: "/#faq" },
+  { label: "Privacy policy", href: "/privacy" },
+  { label: "Terms of use", href: "/terms" },
 ];
 
 export function AuthScreen({
@@ -57,13 +57,13 @@ export function AuthScreen({
           </span>
           <nav aria-label="Support and legal" className="flex flex-wrap gap-x-4">
             {AUTH_LINKS.map((link) => (
-              <a
+              <Link
                 key={link.label}
                 href={link.href}
                 className="inline-flex min-h-7 items-center transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-foreground active:scale-[0.98]"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </nav>
         </footer>
@@ -216,7 +216,7 @@ export const SIGN_UP_POINTS: BrandPoint[] = [
   {
     icon: Files,
     title: "Documents in one place",
-    description: "Upload files and import verified ones from DigiLocker.",
+    description: "Upload files and keep every earlier version.",
   },
   {
     icon: Share2,

@@ -8,7 +8,7 @@ const Table = React.forwardRef<
   <div className="relative w-full overflow-x-auto">
     <table
       ref={ref}
-      className={cn("w-full caption-bottom border-separate border-spacing-0 text-sm", className)}
+      className={cn("w-full caption-bottom border-separate border-spacing-0 text-[13px]", className)}
       {...props}
     />
   </div>
@@ -57,7 +57,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "sticky top-0 h-11 whitespace-nowrap border-b border-border bg-muted/60 px-4 text-left align-middle text-[13px] font-semibold text-muted-foreground",
+      "sticky top-0 h-11 whitespace-nowrap border-b border-l border-border bg-muted/60 px-4 text-left align-middle text-xs font-semibold text-muted-foreground first:border-l-0",
       className
     )}
     {...props}
@@ -71,7 +71,7 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn("h-14 border-b border-border px-4 align-middle text-sm text-foreground", className)}
+    className={cn("h-14 border-b border-border px-4 align-middle text-[13px] text-foreground", className)}
     {...props}
   />
 ));

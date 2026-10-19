@@ -1,14 +1,41 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
-import type { FormField } from "@/types";
+import type { ConditionRule, FormField } from "@/types";
 import { useWizardStore } from "@/store/wizard.store";
+import { useWizardAnswers } from "@/components/forms/application-context";
 import {
-  getDependencyValue,
   resolveRuleWatchPath,
   ruleMatches,
   siblingFieldName,
 } from "@/utils/rule-engine";
+
+function isGroupRule(rule: ConditionRule): boolean {
+  return rule.operator === "and" || rule.operator === "or";
+}
+
+function siblingWatchPath(rule: ConditionRule | undefined, namePrefix?: string): string | undefined {
+  if (!rule || isGroupRule(rule) || !rule.field) return undefined;
+  return resolveRuleWatchPath(rule.field, namePrefix);
+}
+
+function matchesRule(
+  rule: ConditionRule,
+  siblingValue: unknown,
+  ...scopes: Array<Record<string, unknown> | undefined>
+): boolean {
+  if (isGroupRule(rule) || siblingValue === undefined) {
+    return ruleMatches(rule, undefined, ...scopes);
+  }
+  return ruleMatches(
+    rule,
+    {
+      [rule.field]: siblingValue,
+      [siblingFieldName(rule.field)]: siblingValue,
+    },
+    ...scopes
+  );
+}
 
 /**
  * Evaluates `visibleWhen` / `requiredWhen` against the current section first,
@@ -20,13 +47,10 @@ export function useFieldRules(field: FormField, namePrefix?: string) {
   const visibleRule = field.rules?.visibleWhen;
   const requiredRule = field.rules?.requiredWhen;
   const hasRules = !!(visibleRule || requiredRule);
+  const wizardAnswers = useWizardAnswers();
 
-  const visibleSiblingPath = visibleRule
-    ? resolveRuleWatchPath(visibleRule.field, namePrefix)
-    : undefined;
-  const requiredSiblingPath = requiredRule
-    ? resolveRuleWatchPath(requiredRule.field, namePrefix)
-    : undefined;
+  const visibleSiblingPath = siblingWatchPath(visibleRule, namePrefix);
+  const requiredSiblingPath = siblingWatchPath(requiredRule, namePrefix);
 
   const visibleSiblingValue = visibleSiblingPath ? watch(visibleSiblingPath) : undefined;
   const requiredSiblingValue = requiredSiblingPath ? watch(requiredSiblingPath) : undefined;
@@ -37,30 +61,12 @@ export function useFieldRules(field: FormField, namePrefix?: string) {
     return id ? state.drafts[id]?.formData : undefined;
   });
 
-  const resolveValue = (ruleField: string, siblingValue: unknown) =>
-    siblingValue !== undefined
-      ? siblingValue
-      : getDependencyValue(ruleField, [formValues, wizardFormData]);
-
-  const visibleValue = visibleRule
-    ? resolveValue(visibleRule.field, visibleSiblingValue)
-    : undefined;
-  const requiredValue = requiredRule
-    ? resolveValue(requiredRule.field, requiredSiblingValue)
-    : undefined;
-
   const visible = visibleRule
-    ? ruleMatches(visibleRule, {
-        [visibleRule.field]: visibleValue,
-        [siblingFieldName(visibleRule.field)]: visibleValue,
-      })
+    ? matchesRule(visibleRule, visibleSiblingValue, formValues, wizardAnswers, wizardFormData)
     : true;
 
   const conditionallyRequired = requiredRule
-    ? ruleMatches(requiredRule, {
-        [requiredRule.field]: requiredValue,
-        [siblingFieldName(requiredRule.field)]: requiredValue,
-      })
+    ? matchesRule(requiredRule, requiredSiblingValue, formValues, wizardAnswers, wizardFormData)
     : false;
 
   return { visible, conditionallyRequired };

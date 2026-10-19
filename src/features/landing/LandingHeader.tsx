@@ -4,9 +4,9 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 
 const NAV_LINKS = [
-  { label: "How it works", href: "#how" },
-  { label: "Features", href: "#features" },
-  { label: "Questions", href: "#faq" },
+  { label: "How it works", href: "/#how" },
+  { label: "Features", href: "/#features" },
+  { label: "Questions", href: "/#faq" },
 ];
 
 const interactive =

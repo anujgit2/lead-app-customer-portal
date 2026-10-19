@@ -1,5 +1,6 @@
 import { apiClient } from "@/lib/axios";
 import { parseApiError } from "@/lib/api-error";
+import { queryClient } from "@/lib/query-client";
 import {
   offeredSelections,
   parentProfileParams,
@@ -160,24 +161,42 @@ function mapPublishedConfig(data: unknown): LoanProduct {
   return mapProgramToLoanProduct(payload as BackendProgramWithTemplates);
 }
 
+/** Shared by the apply menus and by service lookups that need the same list. */
+export const tenantProgramsQueryKey = ["tenant-programs"] as const;
+
+async function requestTenantPrograms(): Promise<Program[]> {
+  try {
+    const { data } = await apiClient.get<unknown>("/api/tenant/programs");
+    return unwrapProgramList(data)
+      .map(normalizeProgram)
+      .filter((program): program is Program => program !== null);
+  } catch (error) {
+    throw parseApiError(error);
+  }
+}
+
+/**
+ * Read tenant programs through the React Query cache (5 minute stale time).
+ * In-flight requests are deduped with any `useQuery` using `tenantProgramsQueryKey`.
+ * Do not call this from that query's `queryFn` — use `programService.getTenantPrograms`.
+ */
+export function fetchTenantPrograms(): Promise<Program[]> {
+  return queryClient.fetchQuery({
+    queryKey: tenantProgramsQueryKey,
+    queryFn: requestTenantPrograms,
+  });
+}
+
 export const programService = {
   /**
-   * Fetch available programs from /api/tenant/programs
-   * These are programs the user can apply for
+   * Network fetch for `/api/tenant/programs`.
+   * UI queries should use this as `queryFn`. Other callers should use `fetchTenantPrograms`
+   * so a list loaded in the last five minutes is reused.
    */
-  async getTenantPrograms(): Promise<Program[]> {
-    try {
-      const { data } = await apiClient.get<unknown>("/api/tenant/programs");
-      return unwrapProgramList(data)
-        .map(normalizeProgram)
-        .filter((program): program is Program => program !== null);
-    } catch (error) {
-      throw parseApiError(error);
-    }
-  },
+  getTenantPrograms: requestTenantPrograms,
 
   async resolveProgram(programCodeOrId?: string): Promise<Program> {
-    const programs = await this.getTenantPrograms();
+    const programs = await fetchTenantPrograms();
     if (programs.length === 0) {
       throw { message: "No loan programs available", status: 404 };
     }
@@ -273,7 +292,7 @@ export const programService = {
   },
 
   async getDefaultProgramWithTemplates(): Promise<LoanProduct> {
-    const programs = await this.getTenantPrograms();
+    const programs = await fetchTenantPrograms();
     if (programs.length === 0) {
       throw { message: "No loan programs available", status: 404 };
     }

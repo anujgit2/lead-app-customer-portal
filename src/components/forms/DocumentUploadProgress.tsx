@@ -3,6 +3,7 @@
 import { useFormContext } from "react-hook-form";
 import type { FormTemplate } from "@/types";
 import { useWizardStore } from "@/store/wizard.store";
+import { useWizardAnswers } from "@/components/forms/application-context";
 import { isFieldRequired, isFieldVisible } from "@/utils/rule-engine";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,7 @@ export { isDocumentTemplate } from "@/utils/document-template";
 export function DocumentUploadProgress({ template }: { template: FormTemplate }) {
   const { watch } = useFormContext();
   const values = watch();
+  const wizardAnswers = useWizardAnswers();
   const wizardFormData = useWizardStore((state) => {
     const id = state.currentDraftId;
     return id ? state.drafts[id]?.formData : undefined;
@@ -32,8 +34,8 @@ export function DocumentUploadProgress({ template }: { template: FormTemplate })
     const scope = isPlainObject(sectionValue) ? sectionValue : {};
     for (const field of section.fields) {
       if (field.type !== "document" && field.type !== "file") continue;
-      if (!isFieldVisible(field, scope, values, wizardFormData)) continue;
-      if (!isFieldRequired(field, scope, values, wizardFormData)) continue;
+      if (!isFieldVisible(field, scope, values, wizardAnswers, wizardFormData)) continue;
+      if (!isFieldRequired(field, scope, values, wizardAnswers, wizardFormData)) continue;
       requiredTotal += 1;
       const min = field.minFiles && field.minFiles > 0 ? field.minFiles : 1;
       if (fileCount(scope[field.name]) >= min) requiredDone += 1;

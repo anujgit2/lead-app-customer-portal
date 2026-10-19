@@ -93,7 +93,10 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
   }
 
   if (field.type === "file" || field.type === "document") {
-    const min = field.minFiles ?? (v.required && !deferToRules ? 1 : 0);
+    // `minFiles` is the minimum while the slot is required. Slots with
+    // `visibleWhen` / `requiredWhen` stay optional here; the template refine
+    // applies the minimum only when those rules currently match.
+    const min = deferToRules ? 0 : (field.minFiles ?? (v.required ? 1 : 0));
     const max = field.maxFiles;
     let files = z.array(z.any());
     if (min > 0) {
@@ -117,8 +120,23 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
 
   if (field.type === "multiselect") {
     let arr = z.array(z.string());
-    if (v.required && !deferToRules) {
-      arr = arr.min(1, { message: v.message ?? `${field.label} is required` });
+    const selectedMin =
+      typeof v.minSelected === "number" && v.minSelected > 0
+        ? v.minSelected
+        : v.required && !deferToRules
+          ? 1
+          : 0;
+    if (selectedMin > 0) {
+      const message =
+        selectedMin === 1
+          ? (v.message ?? v.minSelectedMessage ?? `${field.label} is required`)
+          : (v.minSelectedMessage ?? v.message ?? `Select at least ${selectedMin}`);
+      arr = arr.min(selectedMin, { message });
+    }
+    if (typeof v.maxSelected === "number") {
+      arr = arr.max(v.maxSelected, {
+        message: v.maxSelectedMessage ?? `Select at most ${v.maxSelected}`,
+      });
     }
     return z.preprocess((val) => (val == null ? [] : val), arr);
   }
@@ -194,7 +212,13 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
   });
 
   if (v.required && !deferToRules) {
-    s = s.min(1, { message: `${field.label} is required` });
+    // A lone `message` on a patterned field is the pattern error (legacy). Once
+    // `patternMessage` is set, `message` is the required copy.
+    const requiredMessage =
+      v.pattern && !v.patternMessage
+        ? `${field.label} is required`
+        : (v.message ?? `${field.label} is required`);
+    s = s.min(1, { message: requiredMessage });
   }
 
   // Display values include mask literals (1234-5678-9012). Apply min/maxLength
@@ -213,8 +237,12 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
   }
 
   // Custom pattern (e.g. 10-digit Indian mobile) replaces the generic tel regex.
-  if ((v.phone || field.type === "tel") && !patternToUse) {
+  if ((v.phone || field.type === "tel" || field.type === "phone") && !patternToUse) {
     s = s.regex(/^[+]?[\d\s\-().]{7,15}$/, { message: "Enter a valid phone number" });
+  }
+
+  if (field.type === "url" && !patternToUse) {
+    s = s.regex(/^https?:\/\/[^\s]+\.[^\s]+$/, { message: "Enter a valid website URL" });
   }
 
   let result: z.ZodTypeAny = s;
@@ -238,16 +266,17 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
   }
 
   if (patternToUse) {
+    const patternMessage = v.patternMessage ?? v.message ?? "Invalid format";
     if (!patternRegex) {
       result = result.refine(() => false, {
-        message: v.message ?? "Invalid format",
+        message: patternMessage,
       });
     } else {
       result = result.refine(
         (val) =>
           !val ||
           patternRegex.test(contentForValidation(val, validateUnmasked)),
-        { message: v.message ?? "Invalid format" }
+        { message: patternMessage }
       );
     }
   }
@@ -287,16 +316,31 @@ function templateHasConditionalRules(template: FormTemplate): boolean {
   return template.sections.some((section) => section.fields.some((field) => field.rules));
 }
 
+function uploadedFileCount(value: unknown): number {
+  if (Array.isArray(value)) {
+    return value.filter((item) => item != null && item !== "").length;
+  }
+  if (value == null || value === "") return 0;
+  return 1;
+}
+
+/** Minimum uploads once a file slot is currently required. `minFiles: 0` means optional until then. */
+function requiredFileMinimum(field: FormField): number {
+  return typeof field.minFiles === "number" && field.minFiles > 0 ? field.minFiles : 1;
+}
+
 /**
  * Adds a `superRefine` pass that enforces conditional `requiredWhen` rules (and gates
  * `visibleWhen`-hidden fields out of validation entirely), since Zod's per-field schema
- * has no access to sibling values. Only templates that actually declare `rules` on a
- * field pay this cost — everything else short-circuits back to the plain object schema
- * with unchanged behavior.
+ * has no access to sibling values. `context` is the rest of the wizard, so a document
+ * slot can depend on an earlier answer such as company type. Only templates that
+ * actually declare `rules` on a field pay this cost — everything else short-circuits
+ * back to the plain object schema with unchanged behavior.
  */
 function withConditionalRuleValidation(
   template: FormTemplate,
-  base: z.ZodObject<z.ZodRawShape>
+  base: z.ZodObject<z.ZodRawShape>,
+  context?: Record<string, unknown>
 ): z.ZodTypeAny {
   if (!templateHasConditionalRules(template)) return base;
 
@@ -315,8 +359,25 @@ function withConditionalRuleValidation(
 
       instances.forEach((scope, index) => {
         for (const field of fieldsWithRules) {
-          if (!isFieldVisible(field, scope, templateData)) continue;
-          if (!isFieldRequired(field, scope, templateData)) continue;
+          if (!isFieldVisible(field, scope, templateData, context)) continue;
+          if (!isFieldRequired(field, scope, templateData, context)) continue;
+
+          if (field.type === "file" || field.type === "document") {
+            const min = requiredFileMinimum(field);
+            const count = uploadedFileCount(scope[field.name]);
+            if (count >= min) continue;
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message:
+                count === 0
+                  ? (field.validation?.message ?? `${field.label} is required`)
+                  : `Upload at least ${min} file${min === 1 ? "" : "s"} for ${field.label}`,
+              path: section.repeatable
+                ? [section.code, index, field.name]
+                : [section.code, field.name],
+            });
+            continue;
+          }
 
           if (field.type === "address") {
             const rawAddr = scope[field.name];
@@ -350,7 +411,10 @@ function withConditionalRuleValidation(
   });
 }
 
-export function buildTemplateSchema(template: FormTemplate): z.ZodTypeAny {
+export function buildTemplateSchema(
+  template: FormTemplate,
+  context?: Record<string, unknown>
+): z.ZodTypeAny {
   const shape: z.ZodRawShape = {};
   for (const section of template.sections) {
     if (section.repeatable) {
@@ -363,7 +427,7 @@ export function buildTemplateSchema(template: FormTemplate): z.ZodTypeAny {
       shape[section.code] = buildSectionSchema(section);
     }
   }
-  return withConditionalRuleValidation(template, z.object(shape));
+  return withConditionalRuleValidation(template, z.object(shape), context);
 }
 
 export function buildSectionDefaults(section: FormSection): Record<string, unknown> {
@@ -444,8 +508,12 @@ export function mergeTemplateDefaults(
   return merged;
 }
 
-export function buildWizardSchema(template: FormTemplate, isRepeatable: boolean): z.ZodTypeAny {
-  const templateSchema = buildTemplateSchema(template);
+export function buildWizardSchema(
+  template: FormTemplate,
+  isRepeatable: boolean,
+  context?: Record<string, unknown>
+): z.ZodTypeAny {
+  const templateSchema = buildTemplateSchema(template, context);
   if (isRepeatable) {
     const min = template.minInstances ?? 0;
     let arr = z.array(templateSchema);

@@ -6,10 +6,11 @@
  */
 import type { FieldOption, FormField, FormSection, FormTemplate, LoanProduct } from "@/types";
 import { parseCurrencyFormat } from "@/utils/currency-format";
-import { mergeFieldValidation, parseInputFormat } from "@/utils/field-config";
+import { collectDefinitionTokens, interpolateTokens, mergeFieldValidation, parseInputFormat } from "@/utils/field-config";
 import { isKnownFieldType } from "@/utils/field-types";
 import { parseMaskConfig } from "@/utils/mask";
 import { normalizeFieldRules } from "@/utils/rule-engine";
+import { readStepperConfig } from "@/utils/stepper-variant";
 import { isDocumentSlot, parseUploadConfig } from "@/utils/upload-config";
 
 type Raw = Record<string, unknown>;
@@ -184,14 +185,16 @@ function mapField(raw: unknown, path: string, issues: MappingIssue[]): FormField
     validation?.required && (minFiles === undefined || minFiles < 1) ? 1 : minFiles;
 
   const currencySource = isPlainObject(raw.currencyFormat) ? { ...raw, ...raw.currencyFormat } : raw;
+  const copyVars = collectDefinitionTokens(raw);
+  const resolvedLabel = interpolateTokens(typeof label === "string" ? label : undefined, copyVars);
 
   return {
     name,
     type: type as FormField["type"],
-    label: typeof label === "string" && label.length > 0 ? label : humanize(name),
-    placeholder: asString(raw.placeholder) ?? asString(ui.placeholder),
-    helpText: asString(coerced.helpText),
-    info: asString(raw.info) ?? asString(ui.tooltip),
+    label: resolvedLabel && resolvedLabel.length > 0 ? resolvedLabel : humanize(name),
+    placeholder: interpolateTokens(asString(raw.placeholder) ?? asString(ui.placeholder), copyVars),
+    helpText: interpolateTokens(asString(coerced.helpText), copyVars),
+    info: interpolateTokens(asString(raw.info) ?? asString(ui.tooltip), copyVars),
     path: asString(raw.path),
     prefix: asString(raw.prefix),
     suffix: asString(raw.suffix),
@@ -340,6 +343,7 @@ function mapProgram(program: Raw, issues: MappingIssue[]): LoanProduct {
     code: asString(program.programCode) ?? "",
     name: asString(program.name) ?? "",
     description: asString(program.description) ?? "",
+    stepper: readStepperConfig(program),
     templates,
   };
 }

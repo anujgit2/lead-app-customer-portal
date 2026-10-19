@@ -31,6 +31,8 @@ import type {
   DocumentDefinition,
   DocumentPolicyConfig,
 } from "@/types";
+import { collectDefinitionTokens, interpolateTokens } from "@/utils/field-config";
+import { readStepperConfig } from "@/utils/stepper-variant";
 import { extensionsToAccept } from "@/utils/upload-config";
 
 /**
@@ -41,13 +43,14 @@ function mapNewFieldToOld(
   newField: NewFormatField,
   program: NewLoanProduct
 ): FormField {
+  const copyVars = collectDefinitionTokens(newField, (ref) => resolveProgramRef(ref, program));
   const baseField: FormField = {
     name: newField.key,
-    label: newField.ui?.label || newField.key,
+    label: interpolateTokens(newField.ui?.label, copyVars) || newField.key,
     type: newField.type,
-    placeholder: newField.ui?.placeholder,
-    info: newField.ui?.tooltip,
-    helpText: newField.ui?.helperText,
+    placeholder: interpolateTokens(newField.ui?.placeholder, copyVars),
+    info: interpolateTokens(newField.ui?.tooltip, copyVars),
+    helpText: interpolateTokens(newField.ui?.helperText, copyVars),
   };
   if (typeof newField.path === "string" && newField.path.trim()) {
     baseField.path = newField.path.trim();
@@ -137,6 +140,7 @@ function convertInputConfig(input: InputConfig): InputFormatConfig | undefined {
   if (input.trim) config.trim = true;
   if (input.uppercase || input.transform === "uppercase") config.uppercase = true;
   if (input.lowercase || input.transform === "lowercase") config.lowercase = true;
+  if (input.transform === "numeric") config.numeric = true;
   if (input.allowSpaces === false) config.allowSpaces = false;
   if (input.allowSpecialCharacters === false) config.allowSpecialCharacters = false;
 
@@ -184,6 +188,23 @@ function convertNewRuleToCondition(rule: unknown): ConditionRule | undefined {
   let field = typeof rule.field === "string" ? rule.field : undefined;
   let value = rule.value;
 
+  if (op === "and" || op === "or" || op === "all" || op === "any") {
+    const rawConditions = Array.isArray(rule.conditions)
+      ? rule.conditions
+      : Array.isArray(rule.rules)
+        ? rule.rules
+        : [];
+    const conditions = rawConditions
+      .map((condition) => convertNewRuleToCondition(condition))
+      .filter((condition): condition is ConditionRule => condition !== undefined);
+    if (conditions.length === 0) return undefined;
+    return {
+      field: "",
+      operator: op === "or" || op === "any" ? "or" : "and",
+      conditions,
+    };
+  }
+
   // Operator mapping
   const operatorMap: Record<string, ConditionOperator> = {
     eq: "equals",
@@ -229,17 +250,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function interpolateError(
-  template: string | undefined,
-  vars: Record<string, string | number | undefined>
-): string | undefined {
-  if (!template) return undefined;
-  return template.replace(/\{(\w+)\}/g, (match, key: string) => {
-    const value = vars[key];
-    return value === undefined || value === null ? match : String(value);
-  });
-}
-
 /** Resolve `program.limits.loanTermMonths.min` style refs against the product JSON. */
 function resolveProgramRef(ref: string, program: NewLoanProduct): number | undefined {
   const path = ref.startsWith("program.") ? ref.slice("program.".length) : ref;
@@ -269,13 +279,14 @@ function buildValidationFromNewField(
   const validation: FieldValidation = {};
   let hasValidation = false;
   const errorCopy = field.ui?.errors;
+  const copyVars = collectDefinitionTokens(field, (ref) => resolveProgramRef(ref, program));
 
   // From required flag
   if (field.required) {
     validation.required = true;
     hasValidation = true;
     if (errorCopy?.required) {
-      validation.message = errorCopy.required;
+      validation.message = interpolateTokens(errorCopy.required, copyVars);
     }
   }
 
@@ -292,17 +303,27 @@ function buildValidationFromNewField(
     const minVal = resolveNumericConstraint(field.constraints.min, program);
     if (minVal !== undefined) {
       validation.min = minVal;
-      validation.minMessage = interpolateError(errorCopy?.min, { min: minVal });
+      validation.minMessage = interpolateTokens(errorCopy?.min, copyVars);
       hasValidation = true;
     }
     const maxVal = resolveNumericConstraint(field.constraints.max, program);
     if (maxVal !== undefined) {
       validation.max = maxVal;
-      validation.maxMessage = interpolateError(errorCopy?.max, { max: maxVal });
+      validation.maxMessage = interpolateTokens(errorCopy?.max, copyVars);
       hasValidation = true;
     }
     if (field.constraints.integer) {
       validation.integer = true;
+      hasValidation = true;
+    }
+    if (typeof field.constraints.minSelected === "number") {
+      validation.minSelected = field.constraints.minSelected;
+      validation.minSelectedMessage = interpolateTokens(errorCopy?.minSelected, copyVars);
+      hasValidation = true;
+    }
+    if (typeof field.constraints.maxSelected === "number") {
+      validation.maxSelected = field.constraints.maxSelected;
+      validation.maxSelectedMessage = interpolateTokens(errorCopy?.maxSelected, copyVars);
       hasValidation = true;
     }
   }
@@ -313,12 +334,16 @@ function buildValidationFromNewField(
       if (rule.regex) {
         validation.pattern = rule.regex;
         hasValidation = true;
+        const patternError = errorCopy?.[rule.code] ?? errorCopy?.pattern;
+        if (patternError) validation.patternMessage = interpolateTokens(patternError, copyVars);
+        continue;
       }
-      // Use the first rule's custom message if available
+      // Non-pattern rules (entity checks, async verify) only supply a message
+      // when the field has no required copy of its own.
       if (!validation.message && rule.code) {
-        const errorMsg = field.ui.errors?.[rule.code];
+        const errorMsg = errorCopy?.[rule.code];
         if (errorMsg) {
-          validation.message = errorMsg;
+          validation.message = interpolateTokens(errorMsg, copyVars);
         }
       }
     }
@@ -510,6 +535,7 @@ export function mapNewTemplateToOld(program: NewLoanProduct): LoanProduct {
     code: program.programCode || productId,
     name: program.name || program.ui?.title || "Loan Product",
     description: program.ui?.subtitle || program.name || "Loan Product",
+    stepper: readStepperConfig(program),
     templates,
   };
 }
@@ -542,6 +568,8 @@ export function normalizeTemplateAuto(json: unknown): LoanProduct {
     return mapNewTemplateToOld(json as NewLoanProduct);
   }
 
-  // Already old format
-  return json as LoanProduct;
+  if (!json || typeof json !== "object" || Array.isArray(json)) {
+    return json as LoanProduct;
+  }
+  return { ...(json as LoanProduct), stepper: readStepperConfig(json) };
 }

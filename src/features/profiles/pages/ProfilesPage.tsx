@@ -544,7 +544,7 @@ export function ProfilesPage() {
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "hidden h-12 font-mono text-[12.5px] min-[901px]:table-cell",
+                          "hidden h-12 font-mono min-[901px]:table-cell",
                           profile.identifiers.gstin ? "text-foreground" : "text-muted-foreground"
                         )}
                       >

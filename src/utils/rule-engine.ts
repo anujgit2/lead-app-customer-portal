@@ -24,7 +24,25 @@ type Scope = Record<string, unknown> | null | undefined;
 function convertNewRuleToOld(rule: Record<string, unknown>): ConditionRule | null {
   const op = rule.op as string | undefined;
   const field = rule.field as string | undefined;
-  
+
+  if (op === "and" || op === "or" || op === "all" || op === "any") {
+    const rawConditions = Array.isArray(rule.conditions)
+      ? rule.conditions
+      : Array.isArray(rule.rules)
+        ? rule.rules
+        : [];
+    const conditions = rawConditions
+      .filter((condition): condition is Record<string, unknown> => !!condition && typeof condition === "object" && !Array.isArray(condition))
+      .map((condition) => convertNewRuleToOld(condition))
+      .filter((condition): condition is ConditionRule => condition !== null);
+    if (conditions.length === 0) return null;
+    return {
+      field: "",
+      operator: op === "or" || op === "any" ? "or" : "and",
+      conditions,
+    };
+  }
+
   if (!op || !field) return null;
 
   // Map new operators to old operators
@@ -131,22 +149,35 @@ function toComparable(value: unknown): string {
   return String(value);
 }
 
-/** Evaluates a single condition rule against a scope object. No rule = always non-matching by default of caller. */
-export function ruleMatches(rule: ConditionRule | Record<string, unknown>, scope: Scope): boolean {
+/** Evaluates a condition, including `and` / `or` groups, against one or more scopes. */
+export function ruleMatches(
+  rule: ConditionRule | Record<string, unknown>,
+  scope: Scope,
+  ...extraScopes: Scope[]
+): boolean {
   // Support both old format (operator, field, value) and new format (op, when, left, right)
   let normalizedRule: ConditionRule;
   
   // If this looks like the new format, convert it first
   const ruleRecord = rule as Record<string, unknown>;
-  if (ruleRecord.op && !ruleRecord.operator) {
+  if ((ruleRecord.op || ruleRecord.conditions) && !ruleRecord.operator) {
     const converted = convertNewRuleToOld(ruleRecord);
     if (!converted) return false;
     normalizedRule = converted;
   } else {
     normalizedRule = rule as ConditionRule;
   }
-  
-  const actual = getDependencyValue(normalizedRule.field, [scope]);
+
+  if (normalizedRule.operator === "and") {
+    const conditions = normalizedRule.conditions ?? [];
+    return conditions.length > 0 && conditions.every((child) => ruleMatches(child, scope, ...extraScopes));
+  }
+  if (normalizedRule.operator === "or") {
+    const conditions = normalizedRule.conditions ?? [];
+    return conditions.some((child) => ruleMatches(child, scope, ...extraScopes));
+  }
+
+  const actual = getDependencyValue(normalizedRule.field, [scope, ...extraScopes]);
 
   switch (normalizedRule.operator) {
     case "equals":
@@ -192,8 +223,7 @@ export function ruleMatches(rule: ConditionRule | Record<string, unknown>, scope
 export function isFieldVisible(field: FormField, scope: Scope, ...extraScopes: Scope[]): boolean {
   const rule = field.rules?.visibleWhen;
   if (!rule) return true;
-  const value = getDependencyValue(rule.field, [scope, ...extraScopes]);
-  return ruleMatches(rule, { [rule.field]: value });
+  return ruleMatches(rule, scope, ...extraScopes);
 }
 
 /** True when the field is statically required, or its `requiredWhen` rule currently matches. */
@@ -201,8 +231,7 @@ export function isFieldRequired(field: FormField, scope: Scope, ...extraScopes: 
   const staticRequired = !!field.validation?.required;
   const rule = field.rules?.requiredWhen;
   if (!rule) return staticRequired;
-  const value = getDependencyValue(rule.field, [scope, ...extraScopes]);
-  return staticRequired || ruleMatches(rule, { [rule.field]: value });
+  return staticRequired || ruleMatches(rule, scope, ...extraScopes);
 }
 
 export { isEmptyValue };
@@ -221,6 +250,8 @@ const CONDITION_OPERATORS: ReadonlySet<string> = new Set<ConditionOperator>([
   "gte",
   "lt",
   "lte",
+  "and",
+  "or",
 ]);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -247,6 +278,28 @@ const OP_TO_OPERATOR: Record<string, ConditionOperator> = {
 
 export function normalizeConditionRule(raw: unknown): ConditionRule | undefined {
   if (!isPlainObject(raw)) return undefined;
+
+  const groupOp =
+    (typeof raw.op === "string" && raw.op) ||
+    (typeof raw.operator === "string" && raw.operator) ||
+    undefined;
+  if (groupOp === "and" || groupOp === "or" || groupOp === "all" || groupOp === "any") {
+    const rawConditions = Array.isArray(raw.conditions)
+      ? raw.conditions
+      : Array.isArray(raw.rules)
+        ? raw.rules
+        : [];
+    const conditions = rawConditions
+      .map((condition) => normalizeConditionRule(condition))
+      .filter((condition): condition is ConditionRule => condition !== undefined);
+    if (conditions.length === 0) return undefined;
+    return {
+      field: "",
+      operator: groupOp === "or" || groupOp === "any" ? "or" : "and",
+      conditions,
+    };
+  }
+
   if (typeof raw.field !== "string" || raw.field.length === 0) return undefined;
 
   const field = siblingFieldName(raw.field);

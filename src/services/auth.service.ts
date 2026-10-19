@@ -17,6 +17,13 @@ import type {
 } from "@/types";
 import { MOCK_USER } from "./mock-data";
 
+function registrationIdempotencyKey(): string {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  return `reg-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+}
+
 /** No refresh flow exists, so refresh tokens are never written to web storage. */
 function persistTokens(accessToken: string, rememberMe = true) {
   if (typeof window === "undefined") return;
@@ -114,7 +121,8 @@ export const authService = {
     try {
       const { data: response } = await apiClient.post<RegisterApiResponse>(
         "/auth/register",
-        data
+        data,
+        { headers: { "Idempotency-Key": registrationIdempotencyKey() } }
       );
       return response;
     } catch (error) {
@@ -128,7 +136,8 @@ export const authService = {
     try {
       const { data: response } = await apiClient.post<RegisterApiResponse>(
         "/auth/register",
-        data
+        data,
+        { headers: { "Idempotency-Key": registrationIdempotencyKey() } }
       );
       return response;
     } catch (error) {
