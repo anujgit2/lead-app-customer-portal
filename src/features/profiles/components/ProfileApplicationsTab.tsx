@@ -27,7 +27,7 @@ import {
 import { parseApiError } from "@/lib/api-error";
 import { formatDate } from "@/lib/utils";
 import { applicationService } from "@/services/application.service";
-import { programService, tenantProgramsQueryKey } from "@/services/program.service";
+import { programService, programsInCategory, tenantProgramsQueryKey } from "@/services/program.service";
 import type { CustomerProfileDetail } from "@/types";
 
 interface ProfileApplicationsTabProps {
@@ -156,7 +156,7 @@ function StartApplicationMenu({ profileId, versionNo }: { profileId: string; ver
     queryFn: () => programService.getTenantPrograms(),
   });
   const available = useMemo(
-    () => (programs.data ?? []).filter((program) => program.id),
+    () => programsInCategory(programs.data ?? [], "APPLICATION"),
     [programs.data]
   );
 

@@ -13,7 +13,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, AlertCircle, Save } from "lucide-react";
 import { StepperRecordHeader } from "@/features/loan-application/steppers/StepperRecordHeader";
-import { ApplicationIdProvider, PersistDocumentStepProvider, WizardAnswersProvider } from "@/components/forms/application-context";
+import { ApplicationIdProvider, PersistDocumentStepProvider, WizardAnswersProvider, WizardContinueProvider } from "@/components/forms/application-context";
+import { isConsentAccepted } from "@/utils/consent";
 import { PanVerificationProvider } from "./pan-search-context";
 import { buildWizardSchema } from "@/utils/schema-builder";
 import { isFieldRequired, isFieldVisible } from "@/utils/rule-engine";
@@ -84,6 +85,10 @@ function requiredFieldProgress(
         if (!isFieldVisible(field, record, root, wizardData)) continue;
         if (!isFieldRequired(field, record, root, wizardData)) continue;
         total += 1;
+        if (field.type === "consent") {
+          if (isConsentAccepted(record[field.name], field.consent?.version)) done += 1;
+          continue;
+        }
         if (isFilledValue(record[field.name])) done += 1;
       }
     }
@@ -417,6 +422,7 @@ export function FormWizard({
   return (
     <PanVerificationProvider>
     <WizardAnswersProvider value={stepData}>
+    <WizardContinueProvider onContinue={handleNext}>
     <ApplicationIdProvider applicationId={draftId}>
     <PersistDocumentStepProvider onPersist={persistDocumentStep}>
     <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5 px-4 pb-10 pt-6 sm:px-6">
@@ -557,6 +563,7 @@ export function FormWizard({
     </div>
     </PersistDocumentStepProvider>
     </ApplicationIdProvider>
+    </WizardContinueProvider>
     </WizardAnswersProvider>
     </PanVerificationProvider>
   );

@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Building2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -12,7 +11,6 @@ import {
   Menu,
   Plus,
   Search,
-  UserRound,
   Users,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/EmptyState";
@@ -51,6 +48,7 @@ import { useProfiles } from "../api/queries";
 import { PROFILE_PAGE_SIZE } from "../constants";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { ProfileAvatar, ProfileStatusBadge, ProfileTypeBadge } from "../components/ProfileBadges";
+import { NewProfileMenuItems } from "../components/NewProfileMenuItems";
 import { formatProfileDay, formatProfileTime, showIdentifier } from "../utils/display";
 
 const PAGE_SIZES = [5, 10, 25] as const;
@@ -345,24 +343,7 @@ export function ProfilesPage() {
               align="end"
               className="w-[280px] max-sm:w-[var(--radix-dropdown-menu-trigger-width)]"
             >
-              <DropdownMenuItem onSelect={() => router.push("/profiles/new?type=individual")}>
-                <UserRound className="h-5 w-5 shrink-0 text-primary" />
-                <span className="min-w-0">
-                  <span className="block font-semibold">Individual</span>
-                  <span className="block text-[12.5px] font-normal leading-[18px] text-muted-foreground">
-                    Person with PAN and mobile
-                  </span>
-                </span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => router.push("/profiles/new?type=business")}>
-                <Building2 className="h-5 w-5 shrink-0 text-primary" />
-                <span className="min-w-0">
-                  <span className="block font-semibold">Business</span>
-                  <span className="block text-[12.5px] font-normal leading-[18px] text-muted-foreground">
-                    Company with PAN and GSTIN
-                  </span>
-                </span>
-              </DropdownMenuItem>
+              <NewProfileMenuItems />
             </DropdownMenuContent>
           </DropdownMenu>
         }

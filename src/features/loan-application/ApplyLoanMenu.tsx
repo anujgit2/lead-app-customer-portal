@@ -10,7 +10,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { programService, tenantProgramsQueryKey, type Program } from "@/services/program.service";
+import {
+  programService,
+  programsInCategory,
+  tenantProgramsQueryKey,
+  type Program,
+} from "@/services/program.service";
 import { cn } from "@/lib/utils";
 
 interface ApplyLoanMenuProps {
@@ -37,7 +42,7 @@ export function ApplyLoanMenu({
     retry: 1,
   });
 
-  const available = programs.filter((program) => program.id);
+  const available = programsInCategory(programs, "APPLICATION");
 
   const beginApplication = (program: Program) => {
     const params = new URLSearchParams({ programId: program.id });

@@ -165,7 +165,62 @@ export type FieldType =
   | "file"
   | "document"
   | "hidden"
-  | "address";
+  | "address"
+  | "consent";
+
+/** A schema string, or a map of locale (for example `en`, `hi`) to string. */
+export type LocalizedCopy = string | Record<string, string>;
+
+export type ConsentCapture = "timestamp" | "ipAddress" | "userAgent";
+
+/** Authored `consent` block plus the wording the renderer shows. */
+export interface ConsentFieldConfig {
+  version: string;
+  capture?: ConsentCapture[];
+  withdrawable?: boolean;
+  /** Wording under the label. A string, or locale → string. */
+  text?: LocalizedCopy;
+  /** Label when the schema sends a locale map. `FormField.label` stays the English fallback. */
+  label?: LocalizedCopy;
+  fullTextUrl?: string;
+}
+
+/**
+ * Value stored in the form when a consent is ticked.
+ * `timestamp` is only present after the server returns it. The client never sends it.
+ */
+export interface ConsentFormValue {
+  accepted: true;
+  version: string;
+  timestamp?: string;
+}
+
+/** The only consent shape the client is allowed to submit. */
+export interface ConsentClientValue {
+  accepted: true;
+  version: string;
+}
+
+/** Authored JSON for `type: "consent"`. Wording and keys come from this object. */
+export interface ConsentFieldSchema {
+  key: string;
+  type: "consent";
+  required?: boolean;
+  ui?: {
+    label?: LocalizedCopy;
+    text?: LocalizedCopy;
+    fullTextUrl?: string;
+    errors?: { required?: string };
+  };
+  consent?: {
+    version: string;
+    capture?: ConsentCapture[];
+    withdrawable?: boolean;
+  };
+  sensitivity?: string;
+  visibleIf?: unknown;
+  requiredIf?: unknown;
+}
 
 export interface FieldOption {
   label: string;
@@ -271,6 +326,8 @@ export interface FormField {
   type: FieldType;
   placeholder?: string;
   helpText?: string;
+  /** Short line shown under the label, from `ui.description` (or `ui.subtitle`). */
+  description?: string;
   info?: string;
   /**
    * Backend location inside the template's property value (e.g. `businessFinancial.annualRevenue`).
@@ -304,6 +361,10 @@ export interface FormField {
   documentType?: string;
   /** Display/input formatting. Only consumed when `type === "currency"`. */
   currencyFormat?: CurrencyFormatConfig;
+  /** Present when `type` is `consent`. Version and wording come from the schema. */
+  consent?: ConsentFieldConfig;
+  /** Data classification from the schema, for example `INTERNAL`. */
+  sensitivity?: string;
 }
 
 export interface FieldDependency {
@@ -492,6 +553,9 @@ export interface FieldUIConfig {
   placeholder?: string;
   tooltip?: string;
   helperText?: string;
+  /** Shown directly under the label. `subtitle` is accepted as an alias. */
+  description?: string;
+  subtitle?: string;
   errors?: Record<string, string>;
   sameAsOption?: {
     source: string;

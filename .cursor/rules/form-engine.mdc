@@ -74,6 +74,7 @@ interface FormField {
 | `tel` | `<Input type="tel">` |
 | `phone` | Same as `tel`. `input.transform: "numeric"` keeps digits only while typing. |
 | `checkbox` | `<Checkbox>` |
+| `consent` | Separate checkbox row. Wording, version, and errors come from the schema. See `docs/consent-field.md`. |
 | `select` | `<Select>` (Radix) |
 | `multiselect` | Dropdown with selected values as removable chips. Payload is a string array. |
 | `datetime` | `<Input type="date">` |
@@ -144,6 +145,14 @@ Live typing rules are authored as `input` and applied while the user types (trim
 ```
 
 `allowSpecialCharacters: false` keeps letters and digits, or digits only when `validation.pattern` is numeric (e.g. `^[0-9]+$`).
+
+## Field description
+
+`ui.description` is a short line shown directly under the label (`ui.subtitle` is accepted as an alias). It is different from `ui.helperText`, which renders below the input.
+
+```json
+{ "key": "pan", "type": "text", "ui": { "label": "PAN", "description": "As printed on your PAN card" } }
+```
 
 ## Conditional visibility
 

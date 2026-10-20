@@ -41,6 +41,16 @@ const DEFAULT_API_CONFIG: ApiSourceConfig = {
 
 const EMPTY_RESULT: NormalizedTemplateResult = { templates: [], issues: [], valid: false };
 
+/** Skip inspector updates when a form callback reports the same snapshot again. */
+function sameSnapshot(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+}
+
 type ApiStatus = "idle" | "loading" | "success" | "error";
 
 interface PlaygroundState {
@@ -261,10 +271,10 @@ export function PlaygroundProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const setLiveDataForTemplate = useCallback((code: string, data: unknown) => {
-    setLiveData((prev) => ({ ...prev, [code]: data }));
+    setLiveData((prev) => (sameSnapshot(prev[code], data) ? prev : { ...prev, [code]: data }));
   }, []);
   const setLiveErrorsForTemplate = useCallback((code: string, errors: FieldErrors | FieldErrors[]) => {
-    setLiveErrors((prev) => ({ ...prev, [code]: errors }));
+    setLiveErrors((prev) => (sameSnapshot(prev[code], errors) ? prev : { ...prev, [code]: errors }));
   }, []);
 
   const generateSampleData = useCallback(() => {

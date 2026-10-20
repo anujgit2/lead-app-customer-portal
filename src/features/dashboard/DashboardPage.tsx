@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
-  Building2,
   ChevronRight,
   FileText,
   Files,
@@ -18,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/EmptyState";
@@ -30,6 +28,7 @@ import { UploadDialog } from "@/features/documents/components/UploadDialog";
 import { useDocuments } from "@/features/documents/api/queries";
 import type { PortalDocument } from "@/features/documents/types";
 import { useProfiles } from "@/features/profiles/api/queries";
+import { NewProfileMenuItems } from "@/features/profiles/components/NewProfileMenuItems";
 import { formatProfileDay, formatProfileTime, profileTypeLabel, showIdentifier } from "@/features/profiles/utils/display";
 import { ApplyLoanMenu } from "@/features/loan-application/ApplyLoanMenu";
 import { parseApiError } from "@/lib/api-error";
@@ -620,7 +619,6 @@ function NoticeLine({ message, onRetry }: { message: string; onRetry: () => void
 }
 
 function NewProfileAction() {
-  const router = useRouter();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -631,24 +629,7 @@ function NewProfileAction() {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[280px]">
-        <DropdownMenuItem onSelect={() => router.push("/profiles/new?type=individual")}>
-          <UserRound className="h-5 w-5 shrink-0 text-primary" />
-          <span className="min-w-0">
-            <span className="block font-semibold">Individual</span>
-            <span className="block text-[12.5px] font-normal leading-[18px] text-muted-foreground">
-              Person with PAN and mobile
-            </span>
-          </span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => router.push("/profiles/new?type=business")}>
-          <Building2 className="h-5 w-5 shrink-0 text-primary" />
-          <span className="min-w-0">
-            <span className="block font-semibold">Business</span>
-            <span className="block text-[12.5px] font-normal leading-[18px] text-muted-foreground">
-              Company with PAN and GSTIN
-            </span>
-          </span>
-        </DropdownMenuItem>
+        <NewProfileMenuItems />
       </DropdownMenuContent>
     </DropdownMenu>
   );

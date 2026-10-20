@@ -8,7 +8,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 }
 
 const fieldClass =
-  "flex h-10 w-full rounded-md border bg-card px-3 text-sm text-foreground transition-[border-color,box-shadow] duration-150 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-placeholder hover:border-foreground/55 focus-visible:border-ring focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_hsl(var(--ring)/0.22)] disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground read-only:border-border read-only:bg-muted";
+  "flex h-10 w-full rounded-md border-[0.5px] bg-card px-3 text-sm text-foreground transition-[border-color,box-shadow] duration-150 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-placeholder hover:border-foreground/25 focus-visible:border-ring focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_hsl(var(--ring)/0.22)] disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground read-only:border-border read-only:bg-muted";
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, startAdornment, endAdornment, error, ...props }, ref) => {
@@ -21,7 +21,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           endAdornment && "pr-10",
           error
             ? "border-danger focus-visible:border-danger focus-visible:shadow-[0_0_0_3px_hsl(var(--danger)/0.2)]"
-            : "border-input",
+            : "border-border",
           className
         )}
         ref={ref}

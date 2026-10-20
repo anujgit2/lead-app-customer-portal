@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import type { FormTemplate } from "@/types";
 import { WizardStep } from "@/features/loan-application/WizardStep";
 import { usePlayground } from "../playground-context";
@@ -24,13 +24,23 @@ export function TemplatePreview({ template, sectionCode }: { template: FormTempl
 
   const defaultValues = (testData[template.code] as Record<string, unknown> | undefined) ?? {};
 
+  const handleDataChange = useCallback(
+    (data: unknown) => setLiveDataForTemplate(template.code, data),
+    [setLiveDataForTemplate, template.code]
+  );
+  const handleErrorsChange = useCallback(
+    (errors: Parameters<typeof setLiveErrorsForTemplate>[1]) =>
+      setLiveErrorsForTemplate(template.code, errors),
+    [setLiveErrorsForTemplate, template.code]
+  );
+
   return (
     <WizardStep
       key={`${effectiveTemplate.code}-${sectionCode ?? "all"}-${previewKey}`}
       template={effectiveTemplate}
       defaultValues={defaultValues}
-      onDataChange={(data) => setLiveDataForTemplate(template.code, data)}
-      onErrorsChange={(errors) => setLiveErrorsForTemplate(template.code, errors)}
+      onDataChange={handleDataChange}
+      onErrorsChange={handleErrorsChange}
     />
   );
 }

@@ -30,6 +30,7 @@ import {
   applyWireTransformOutbound,
 } from "@/utils/field-transform";
 import { normalizeApplicationFormData } from "@/utils/prefill-mapper";
+import { consentValueForForm, shouldPersistConsent, toClientConsentValue } from "@/utils/consent";
 
 function toCamelCase(value: string): string {
   return value.toLowerCase().replace(/[_-]+([a-z0-9])/g, (_, c: string) => c.toUpperCase());
@@ -39,7 +40,17 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function normalizeFieldValue(field: FormField, value: unknown): unknown {
+function normalizeFieldValue(
+  field: FormField,
+  value: unknown,
+  direction: "in" | "out" = "out"
+): unknown {
+  if (field.type === "consent") {
+    const version = field.consent?.version;
+    return direction === "in"
+      ? consentValueForForm(value, version)
+      : toClientConsentValue(value, version);
+  }
   if (value === undefined || value === null || value === "") return undefined;
 
   switch (field.type) {
@@ -98,15 +109,18 @@ function sectionPathContext(
 function buildSectionValue(
   template: FormTemplate,
   section: FormSection,
-  data: unknown
+  data: unknown,
+  templateData?: unknown
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   if (!isPlainObject(data)) return result;
   const context = sectionPathContext(template, section);
+  const formScope = isPlainObject(templateData) ? templateData : undefined;
   for (const field of section.fields) {
+    if (field.type === "consent" && !shouldPersistConsent(field, data, formScope)) continue;
     const value = applyWireTransformOutbound(
       field,
-      normalizeFieldValue(field, data[field.name])
+      normalizeFieldValue(field, data[field.name], "out")
     );
     if (value === undefined) continue;
     setByPath(result, fieldPayloadSegments(field, context), value);
@@ -125,7 +139,7 @@ function parseSectionValue(
   for (const field of section.fields) {
     const fromPath = getByPath(data, fieldPayloadSegments(field, context));
     const raw = fromPath !== undefined ? fromPath : data[field.name];
-    const value = normalizeFieldValue(field, applyWireTransformInbound(field, raw));
+    const value = normalizeFieldValue(field, applyWireTransformInbound(field, raw), "in");
     if (value !== undefined) result[field.name] = value;
   }
   return result;
@@ -256,13 +270,13 @@ function buildTemplateValue(
     const sectionData = data[section.code];
     if (section.repeatable) {
       const items = (Array.isArray(sectionData) ? sectionData : [])
-        .map((item) => buildSectionValue(template, section, item))
+        .map((item) => buildSectionValue(template, section, item, data))
         .filter((item) => Object.keys(item).length > 0);
       if (items.length === 0) continue;
       const key = sectionPayloadKey(section);
       result[key] = section.maxInstances === 1 ? items[0] : items;
     } else {
-      assignDeep(result, buildSectionValue(template, section, sectionData));
+      assignDeep(result, buildSectionValue(template, section, sectionData, data));
     }
   }
   return result;

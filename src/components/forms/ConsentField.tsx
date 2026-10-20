@@ -1,0 +1,308 @@
+"use client";
+
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Controller, get, useFormContext } from "react-hook-form";
+import type { FormField } from "@/types";
+import { Button } from "@/components/ui/button";
+import { useWizardAnswers, useWizardContinue } from "@/components/forms/application-context";
+import { useFieldRules } from "@/components/forms/use-field-rules";
+import { cn } from "@/lib/utils";
+import { useWizardStore } from "@/store/wizard.store";
+import {
+  activeLocale,
+  allVisibleConsentsAccepted,
+  consentFieldPath,
+  consentRowsFromSection,
+  consentSummaryShouldClear,
+  consentValuesAfterAction,
+  CONSENT_CONTINUE_ERROR,
+  evaluateConsentContinue,
+  isConsentAccepted,
+  resolveLocalizedCopy,
+  type ConsentCheckRow,
+} from "@/utils/consent";
+
+const ConsentListContext = createContext<{
+  summaryId?: string;
+  summaryVisible: boolean;
+  onAccepted: () => void;
+} | null>(null);
+
+function useConsentRows(fields: FormField[], namePrefix?: string): ConsentCheckRow[] {
+  const { watch } = useFormContext();
+  const formValues = watch();
+  const wizardAnswers = useWizardAnswers();
+  const wizardFormData = useWizardStore((state) => {
+    const id = state.currentDraftId;
+    return id ? state.drafts[id]?.formData : undefined;
+  });
+  const scope = (namePrefix ? get(formValues, namePrefix) : formValues) as
+    | Record<string, unknown>
+    | undefined;
+  return consentRowsFromSection(fields, scope ?? {}, formValues, wizardAnswers, wizardFormData);
+}
+
+function focusConsent(fieldName: string) {
+  document.getElementById(fieldName)?.focus();
+}
+
+function safeFullTextUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith("/") && !url.startsWith("//")) return url;
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === "https:" || parsed.protocol === "http:") return url;
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+export function ConsentAcceptButton({
+  fields,
+  namePrefix,
+}: {
+  fields: FormField[];
+  namePrefix?: string;
+}) {
+  const { getValues, setValue, clearErrors } = useFormContext();
+  const list = useContext(ConsentListContext);
+  const rows = useConsentRows(fields, namePrefix);
+  const visible = rows.filter((row) => row.visible);
+  if (visible.length === 0) return null;
+
+  const allAccepted = allVisibleConsentsAccepted(rows);
+  const apply = (action: "accept" | "clear") => {
+    const scope = (namePrefix ? get(getValues(), namePrefix) : getValues()) as
+      | Record<string, unknown>
+      | undefined;
+    const next = consentValuesAfterAction(rows, scope ?? {}, action);
+    for (const row of rows) {
+      if (!row.visible || row.disabled) continue;
+      const path = consentFieldPath(row.key, namePrefix);
+      setValue(path, next[row.key] ?? null, { shouldDirty: true, shouldTouch: true });
+      if (action === "accept") clearErrors(path);
+    }
+    if (action === "accept") list?.onAccepted();
+  };
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="h-9 shrink-0 rounded-lg bg-card px-3.5 font-medium shadow-none transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98] max-sm:min-h-11"
+      onClick={(event) => {
+        event.stopPropagation();
+        apply(allAccepted ? "clear" : "accept");
+      }}
+    >
+      {allAccepted ? "Clear all" : "Accept all"}
+    </Button>
+  );
+}
+
+export function ConsentRow({ field, namePrefix }: { field: FormField; namePrefix?: string }) {
+  const fieldName = consentFieldPath(field.name, namePrefix);
+  const version = field.consent?.version ?? "";
+  const { control, clearErrors, formState } = useFormContext();
+  const { conditionallyRequired } = useFieldRules(field, namePrefix);
+  const list = useContext(ConsentListContext);
+  const locale = activeLocale();
+  const label = resolveLocalizedCopy(field.consent?.label ?? field.label, locale);
+  const text = resolveLocalizedCopy(field.consent?.text, locale) || field.description || "";
+  const fullTextUrl = safeFullTextUrl(field.consent?.fullTextUrl);
+  const errorNode = get(formState.errors, fieldName) as { message?: string } | undefined;
+  const error = typeof errorNode?.message === "string" ? errorNode.message : undefined;
+  const textId = `${fieldName}-text`;
+  const errorId = `${fieldName}-error`;
+  const describedBy = [
+    text ? textId : undefined,
+    error ? errorId : undefined,
+    list?.summaryVisible ? list.summaryId : undefined,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const required = !!field.validation?.required || conditionallyRequired;
+
+  return (
+    <div className="border-b border-border py-3.5 last:border-b-0">
+      <label
+        htmlFor={fieldName}
+        className={cn(
+          "flex min-h-11 cursor-pointer items-start gap-3 rounded-md transition-colors duration-200 ease-out",
+          "has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring",
+          (field.disabled || field.readonly) && "cursor-not-allowed opacity-60"
+        )}
+      >
+        <Controller
+          name={fieldName}
+          control={control}
+          render={({ field: rhf }) => (
+            <span className="relative mt-0.5 inline-flex h-4 w-4 shrink-0">
+              <input
+                type="checkbox"
+                id={fieldName}
+                name={rhf.name}
+                ref={rhf.ref}
+                checked={isConsentAccepted(rhf.value, version)}
+                disabled={field.disabled || field.readonly}
+                aria-invalid={error ? true : undefined}
+                aria-required={required || undefined}
+                aria-describedby={describedBy || undefined}
+                onBlur={rhf.onBlur}
+                onChange={(event) => {
+                  if (event.target.checked) {
+                    rhf.onChange({ accepted: true, version });
+                    clearErrors(fieldName);
+                    list?.onAccepted();
+                  } else {
+                    rhf.onChange(null);
+                  }
+                }}
+                className="peer h-4 w-4 appearance-none rounded-[4px] border border-input bg-card checked:border-primary checked:bg-primary focus-visible:outline-none disabled:cursor-not-allowed"
+              />
+              <svg
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 hidden h-4 w-4 text-primary-foreground peer-checked:block"
+              >
+                <path
+                  d="M3.5 8.2 6.4 11l6.1-6.2"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          )}
+        />
+        <span className="min-w-0 flex-1">
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold tracking-tight text-foreground">{label}</span>
+            {required ? (
+              <span className="inline-flex items-center rounded-md bg-danger-soft px-1.5 py-0.5 text-[11px] font-medium leading-4 text-danger">
+                Required
+              </span>
+            ) : null}
+            {version ? (
+              <span className="text-xs font-normal text-muted-foreground">v{version}</span>
+            ) : null}
+          </span>
+          {text ? (
+            <span id={textId} className="mt-1 block text-[13px] font-normal leading-5 text-muted-foreground">
+              {text}
+            </span>
+          ) : null}
+        </span>
+      </label>
+      {fullTextUrl ? (
+        <div className="pb-0.5 pl-7">
+          <a
+            href={fullTextUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[13px] font-medium text-primary underline-offset-2 transition-colors duration-200 ease-out hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            Read full text
+          </a>
+        </div>
+      ) : null}
+      {error ? (
+        <p id={errorId} className="mt-1 pl-7 text-xs text-destructive">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export function ConsentList({
+  fields,
+  namePrefix,
+  legend,
+}: {
+  fields: FormField[];
+  namePrefix?: string;
+  legend: string;
+}) {
+  const { setError, formState } = useFormContext();
+  const rows = useConsentRows(fields, namePrefix);
+  const visible = rows.filter((row) => row.visible);
+  const [summary, setSummary] = useState<string | null>(null);
+  const previousRows = useRef(rows);
+  const rowsRef = useRef(rows);
+  const seenSubmit = useRef(0);
+  const onWizardContinue = useWizardContinue();
+  const summaryId = `${namePrefix ?? "consent"}-summary`;
+  const progress = useMemo(() => evaluateConsentContinue(rows), [rows]);
+  rowsRef.current = rows;
+
+  useEffect(() => {
+    if (consentSummaryShouldClear(previousRows.current, rows)) {
+      setSummary(null);
+    }
+    previousRows.current = rows;
+  }, [rows]);
+
+  useEffect(() => {
+    if (formState.submitCount === 0 || formState.submitCount === seenSubmit.current) return;
+    seenSubmit.current = formState.submitCount;
+    const result = evaluateConsentContinue(rowsRef.current);
+    setSummary(result.ok ? null : CONSENT_CONTINUE_ERROR);
+  }, [formState.submitCount]);
+
+  if (visible.length === 0) return null;
+
+  const continueFromList = () => {
+    const result = evaluateConsentContinue(rows);
+    if (result.ok) {
+      setSummary(null);
+      onWizardContinue?.();
+      return;
+    }
+    for (const issue of result.fieldErrors) {
+      setError(consentFieldPath(issue.key, namePrefix), {
+        type: "required",
+        message: issue.message,
+      });
+    }
+    setSummary(result.summary);
+    if (result.focusKey) focusConsent(consentFieldPath(result.focusKey, namePrefix));
+  };
+
+  return (
+    <ConsentListContext.Provider
+      value={{ summaryId, summaryVisible: !!summary, onAccepted: () => setSummary(null) }}
+    >
+      <fieldset className="m-0 min-w-0 border-0 p-0">
+        <legend className="sr-only">{legend}</legend>
+        {visible.map((row) => {
+          const field = fields.find((item) => item.name === row.key);
+          if (!field) return null;
+          return <ConsentRow key={row.key} field={field} namePrefix={namePrefix} />;
+        })}
+        {summary ? (
+          <p id={summaryId} role="alert" className="text-sm text-destructive">
+            {summary}
+          </p>
+        ) : null}
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
+          <p className="text-sm text-muted-foreground">
+            {progress.accepted} of {progress.total} accepted
+          </p>
+          <Button
+            type="button"
+            size="md"
+            className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+            onClick={continueFromList}
+          >
+            Continue
+          </Button>
+        </div>
+      </fieldset>
+    </ConsentListContext.Provider>
+  );
+}

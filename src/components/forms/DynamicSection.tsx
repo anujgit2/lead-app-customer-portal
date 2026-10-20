@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
 import type { FormSection, FormField } from "@/types";
 import { DynamicField } from "./DynamicField";
+import { ConsentAcceptButton, ConsentList } from "./ConsentField";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -39,7 +40,7 @@ function FieldWrapper({
       className={cn(
         field.span === 2 && "sm:col-span-2",
         field.span === 3 && "sm:col-span-2 lg:col-span-3",
-        (field.span === 4 || field.type === "json" || field.type === "textarea" || field.type === "address" || field.type === "file" || field.type === "document") && "col-span-full"
+        (field.span === 4 || field.type === "json" || field.type === "textarea" || field.type === "address" || field.type === "file" || field.type === "document" || field.type === "consent") && "col-span-full"
       )}
     >
       <DynamicField field={field} namePrefix={namePrefix} />
@@ -51,6 +52,25 @@ function isDocumentSection(section: FormSection): boolean {
   return (
     section.fields.length > 0 &&
     section.fields.every((field) => field.type === "document" || field.type === "file")
+  );
+}
+
+function sectionConsentFields(section: FormSection): FormField[] {
+  return section.fields.filter((field) => field.type === "consent");
+}
+
+function SectionFields({ section, namePrefix }: { section: FormSection; namePrefix?: string }) {
+  const consents = sectionConsentFields(section);
+  const rest = section.fields.filter((field) => field.type !== "consent");
+  return (
+    <div className="space-y-4">
+      {rest.length > 0 ? (
+        <FieldGrid section={{ ...section, fields: rest }} namePrefix={namePrefix} />
+      ) : null}
+      {consents.length > 0 ? (
+        <ConsentList fields={consents} namePrefix={namePrefix} legend={section.title} />
+      ) : null}
+    </div>
   );
 }
 
@@ -113,6 +133,12 @@ function RepeatableSectionInstances({
               {section.title} #{index + 1}
             </span>
             <div className="flex items-center gap-2">
+              {sectionConsentFields(section).length > 0 ? (
+                <ConsentAcceptButton
+                  fields={sectionConsentFields(section)}
+                  namePrefix={`${baseName}.${index}`}
+                />
+              ) : null}
               {fields.length > (section.minInstances ?? 0) && (
                 <button
                   type="button"
@@ -135,10 +161,7 @@ function RepeatableSectionInstances({
           {!collapsed[index] && (
             <div className="px-4 pb-4">
               <Separator className="mb-4" />
-              <FieldGrid
-                section={section}
-                namePrefix={`${baseName}.${index}`}
-              />
+              <SectionFields section={section} namePrefix={`${baseName}.${index}`} />
             </div>
           )}
         </div>
@@ -176,6 +199,8 @@ export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
     );
   }
 
+  const consents = sectionConsentFields(section);
+  const consentOnly = consents.length > 0 && consents.length === section.fields.length;
   const panSearchField = findPanSearchField(section);
   const readOnly =
     section.fields.length > 0 && section.fields.every((field) => field.readonly || field.disabled);
@@ -183,7 +208,7 @@ export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
   return (
     <Card className="rounded-xl shadow-[var(--shadow-1)]">
       <CardHeader className="flex-row items-start justify-between gap-3 px-5 pb-1.5 pt-4">
-        <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
+        <div className={cn("flex min-w-0 flex-1 justify-between gap-4", consentOnly ? "items-center" : "items-start")}>
           <div className="min-w-0">
             <CardTitle className="text-[15px] font-semibold leading-[22px] tracking-[-0.01em]">
               {section.title}
@@ -194,6 +219,9 @@ export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
               </CardDescription>
             ) : null}
           </div>
+          {!section.repeatable && consents.length > 0 ? (
+            <ConsentAcceptButton fields={consents} namePrefix={sectionPrefix} />
+          ) : null}
           {panSearchField && readOnly ? (
             <Button type="button" variant="outline" size="sm" disabled className="shrink-0 gap-2">
               <Search className="h-4 w-4" />
@@ -205,11 +233,11 @@ export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
           ) : null}
         </div>
       </CardHeader>
-      <CardContent className="px-5 pb-[22px] pt-3">
+      <CardContent className={cn("px-5 pb-5 pt-3", consentOnly && "pt-2")}>
         {section.repeatable ? (
           <RepeatableSectionInstances section={section} namePrefix={namePrefix} />
         ) : (
-          <FieldGrid section={section} namePrefix={sectionPrefix} />
+          <SectionFields section={section} namePrefix={sectionPrefix} />
         )}
       </CardContent>
     </Card>

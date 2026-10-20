@@ -33,6 +33,7 @@ import { isKnownFieldType } from "@/utils/field-types";
 import { getAddressSubfields } from "@/utils/address-field";
 import { PanVerificationBadge } from "@/features/loan-application/PanVerificationBadge";
 import { isPanSearchField } from "@/utils/pan-search";
+import { ConsentRow } from "./ConsentField";
 
 // ─── Pattern → human-readable example map ────────────────────────────────────
 // Exported for reuse by the dev Form Playground's sample-data generator.
@@ -149,11 +150,22 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
     return null;
   }
 
-  const labelEl = (
+  if (field.type === "consent") {
+    return (
+      <>
+        <ConsentRow field={field} namePrefix={namePrefix} />
+        {debug && (
+          <FieldDebugInfo field={field} fieldName={fieldName} visible={visible} required={isRequired} />
+        )}
+      </>
+    );
+  }
+
+  const labelRow = (
     <div className="flex min-h-6 min-w-0 items-center gap-1.5 pl-1">
       <Label
         htmlFor={fieldName}
-        className="flex min-w-0 items-center text-sm font-medium text-foreground"
+        className="flex min-w-0 items-center text-sm font-medium text-foreground/70"
       >
         <span className="truncate">{field.label}</span>
         {isRequired && (
@@ -181,6 +193,17 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
         </Tooltip>
       )}
     </div>
+  );
+
+  const labelEl = field.description ? (
+    <div className="min-w-0">
+      {labelRow}
+      <p id={`${fieldName}-description`} className="pl-1 text-xs font-normal text-muted-foreground">
+        {field.description}
+      </p>
+    </div>
+  ) : (
+    labelRow
   );
 
   let content: React.ReactNode;

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { FormField, FormSection, FormTemplate, FieldValidation } from "@/types";
+import { isConsentAccepted } from "@/utils/consent";
 import { isFieldRequired, isFieldVisible, isEmptyValue } from "@/utils/rule-engine";
 import { unmask } from "@/utils/mask";
 import {
@@ -79,6 +80,16 @@ function buildFieldSchema(field: FormField): z.ZodTypeAny {
         break;
       }
     }
+  }
+
+  if (field.type === "consent") {
+    const version = field.consent?.version ?? "";
+    const message = v.message ?? "This consent is required to proceed";
+    return z.any().superRefine((val, ctx) => {
+      if (isConsentAccepted(val, version)) return;
+      if (!v.required || deferToRules) return;
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message });
+    });
   }
 
   if (field.type === "checkbox") {
@@ -396,6 +407,18 @@ function withConditionalRuleValidation(
             continue;
           }
 
+          if (field.type === "consent") {
+            if (isConsentAccepted(scope[field.name], field.consent?.version)) continue;
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: field.validation?.message ?? "This consent is required to proceed",
+              path: section.repeatable
+                ? [section.code, index, field.name]
+                : [section.code, field.name],
+            });
+            continue;
+          }
+
           if (!isEmptyValue(scope[field.name])) continue;
 
           ctx.addIssue({
@@ -433,6 +456,10 @@ export function buildTemplateSchema(
 export function buildSectionDefaults(section: FormSection): Record<string, unknown> {
   const defaults: Record<string, unknown> = {};
   for (const f of section.fields) {
+    if (f.type === "consent") {
+      // Never pre-tick, even when a default is authored.
+      continue;
+    }
     if (f.defaultValue !== undefined) {
       defaults[f.name] = f.defaultValue;
     } else if (f.type === "checkbox") {

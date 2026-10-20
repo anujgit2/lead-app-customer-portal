@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { parseApiError } from "@/lib/api-error";
 import { profileService } from "@/services/profile.service";
+import { programService, programsInCategory, tenantProgramsQueryKey } from "@/services/program.service";
 import type {
   CreateCustomerProfileRequest,
   CreateProfileLinkRequest,
@@ -17,6 +18,7 @@ import {
   profileVersionQueryKey,
   profileVersionsQueryKey,
   profilesQueryKey,
+  programFormTemplateQueryKey,
 } from "../query-keys";
 
 function retryProfileQuery(failureCount: number, error: unknown): boolean {
@@ -54,6 +56,24 @@ export function useFormTemplate(code: string, versionNumber?: number) {
         : profileService.getFormTemplateVersion(code, version),
     enabled: code.length > 0,
     retry: retryProfileQuery,
+  });
+}
+
+export function useProgramFormTemplate(programId: string) {
+  return useQuery({
+    queryKey: programFormTemplateQueryKey(programId),
+    queryFn: () => profileService.getProgramFormTemplates(programId),
+    enabled: programId.length > 0,
+    retry: retryProfileQuery,
+  });
+}
+
+export function useProfilePrograms() {
+  return useQuery({
+    queryKey: tenantProgramsQueryKey,
+    queryFn: () => programService.getTenantPrograms(),
+    select: (programs) => programsInCategory(programs, "PROFILE"),
+    retry: 1,
   });
 }
 

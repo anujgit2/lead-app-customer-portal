@@ -85,6 +85,17 @@ function ReviewValue({
   if (typeof value === "boolean") {
     return <span>{value ? "Yes" : "No"}</span>;
   }
+  if (type === "consent") {
+    if (
+      value &&
+      typeof value === "object" &&
+      (value as { accepted?: unknown }).accepted === true &&
+      typeof (value as { version?: unknown }).version === "string"
+    ) {
+      return <span>Accepted (v{(value as { version: string }).version})</span>;
+    }
+    return <NotProvided />;
+  }
   if (type === "currency") {
     const num = typeof value === "number" ? value : Number(value);
     if (Number.isFinite(num)) {

@@ -28,6 +28,7 @@ export const KNOWN_FIELD_TYPES: ReadonlySet<FieldType | string> = new Set<FieldT
   "document",
   "hidden",
   "address",
+  "consent",
 ]);
 
 export function isKnownFieldType(type: string): boolean {

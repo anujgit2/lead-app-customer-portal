@@ -23,6 +23,10 @@ function sampleValueForField(field: FormField): unknown {
   switch (field.type) {
     case "checkbox":
       return true;
+    case "consent":
+      return field.consent?.version
+        ? { accepted: true, version: field.consent.version }
+        : undefined;
     case "select":
     case "radio":
       return field.options?.[0]?.value ?? "";

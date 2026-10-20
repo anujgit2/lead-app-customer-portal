@@ -6,6 +6,7 @@ const ApplicationIdContext = createContext<string | null>(null);
 const WizardAnswersContext = createContext<Record<string, unknown> | undefined>(undefined);
 const SyncFormToWizardContext = createContext<(() => void) | null>(null);
 const PersistDocumentStepContext = createContext<(() => void) | null>(null);
+const WizardContinueContext = createContext<(() => void) | null>(null);
 
 export function ApplicationIdProvider({
   applicationId,
@@ -94,4 +95,31 @@ export function PersistDocumentStepProvider({
 
 export function usePersistDocumentStep(): (() => void) | null {
   return useContext(PersistDocumentStepContext);
+}
+
+/** Lets a consent section's Continue button run the wizard's own Continue. */
+export function WizardContinueProvider({
+  onContinue,
+  children,
+}: {
+  onContinue: () => void;
+  children: React.ReactNode;
+}) {
+  const onContinueRef = useRef(onContinue);
+
+  useEffect(() => {
+    onContinueRef.current = onContinue;
+  }, [onContinue]);
+
+  const continueStep = useCallback(() => {
+    onContinueRef.current();
+  }, []);
+
+  return (
+    <WizardContinueContext.Provider value={continueStep}>{children}</WizardContinueContext.Provider>
+  );
+}
+
+export function useWizardContinue(): (() => void) | null {
+  return useContext(WizardContinueContext);
 }

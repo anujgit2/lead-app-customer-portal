@@ -1,0 +1,3031 @@
+{
+    "ui": {
+        "title": "Business Profile V2 Application",
+        "subtitle": "Complete the sections below to apply. You can save a draft and return at any time."
+    },
+    "name": "Business Profile V2",
+    "forms": [
+        {
+            "ui": {
+                "title": "Business Information",
+                "subtitle": "Tell us about your business. Details must match your registration documents."
+            },
+            "visible": true,
+            "formCode": "company",
+            "formName": "CompanyProperty",
+            "required": true,
+            "sections": [
+                {
+                    "ui": {
+                        "title": "Business Details",
+                        "subtitle": "Legal and registration information about your business"
+                    },
+                    "code": "business_profile",
+                    "fields": [
+                        {
+                            "ui": {
+                                "label": "Company Name",
+                                "errors": {
+                                    "required": "Company Name is required"
+                                },
+                                "placeholder": "Enter legal company name"
+                            },
+                            "key": "companyName",
+                            "type": "text",
+                            "input": {
+                                "trim": true
+                            },
+                            "required": true,
+                            "constraints": {
+                                "maxLength": 255,
+                                "minLength": 2
+                            }
+                        },
+                        {
+                            "ui": {
+                                "label": "Company Type",
+                                "errors": {
+                                    "required": "Company Type is required"
+                                },
+                                "placeholder": "Select company type"
+                            },
+                            "key": "companyType",
+                            "type": "select",
+                            "required": true,
+                            "optionsRef": "COMPANY_TYPE"
+                        },
+                        {
+                            "ui": {
+                                "label": "Doing Business As",
+                                "placeholder": "Enter trade or brand name"
+                            },
+                            "key": "doingBusinessAs",
+                            "type": "text",
+                            "input": {
+                                "trim": true
+                            },
+                            "required": true,
+                            "constraints": {
+                                "maxLength": 255
+                            }
+                        },
+                        {
+                            "ui": {
+                                "label": "Business PAN",
+                                "errors": {
+                                    "verify": "PAN could not be verified",
+                                    "pattern": "Enter a valid 10-character PAN, e.g. ABCDE1234F",
+                                    "required": "Business PAN is required",
+                                    "panEntityMismatch": "PAN 4th character does not match the selected company type"
+                                },
+                                "tooltip": "10-character PAN. 4th character must match the company type (C=Company, F=Firm/LLP, P=Proprietorship).",
+                                "placeholder": "ABCDE1234F"
+                            },
+                            "key": "businessPan",
+                            "mask": {
+                                "pattern": "XXXXX0000X",
+                                "storeUnmasked": true
+                            },
+                            "type": "text",
+                            "input": {
+                                "trim": true,
+                                "transform": "uppercase",
+                                "allowSpaces": false,
+                                "allowSpecialCharacters": false
+                            },
+                            "display": {
+                                "maskAfterEntry": {
+                                    "char": "X",
+                                    "showLast": 5
+                                }
+                            },
+                            "required": true,
+                            "validation": [
+                                {
+                                    "code": "pattern",
+                                    "regex": "^[A-Z]{5}[0-9]{4}[A-Z]{1}$"
+                                },
+                                {
+                                    "op": "eq",
+                                    "code": "panEntityMismatch",
+                                    "left": {
+                                        "fn": "charAt",
+                                        "field": "self",
+                                        "index": 3
+                                    },
+                                    "when": {
+                                        "op": "eq",
+                                        "field": "company.companyType",
+                                        "value": "PROPRIETORSHIP"
+                                    },
+                                    "right": "P"
+                                },
+                                {
+                                    "op": "eq",
+                                    "code": "panEntityMismatch",
+                                    "left": {
+                                        "fn": "charAt",
+                                        "field": "self",
+                                        "index": 3
+                                    },
+                                    "when": {
+                                        "op": "in",
+                                        "field": "company.companyType",
+                                        "value": [
+                                            "PARTNERSHIP",
+                                            "LLP"
+                                        ]
+                                    },
+                                    "right": "F"
+                                },
+                                {
+                                    "op": "eq",
+                                    "code": "panEntityMismatch",
+                                    "left": {
+                                        "fn": "charAt",
+                                        "field": "self",
+                                        "index": 3
+                                    },
+                                    "when": {
+                                        "op": "in",
+                                        "field": "company.companyType",
+                                        "value": [
+                                            "PRIVATE_LIMITED",
+                                            "PUBLIC_LIMITED"
+                                        ]
+                                    },
+                                    "right": "C"
+                                },
+                                {
+                                    "code": "verify",
+                                    "async": {
+                                        "trigger": "onBlur",
+                                        "provider": "PAN_VERIFY"
+                                    }
+                                }
+                            ],
+                            "constraints": {
+                                "maxLength": 10,
+                                "minLength": 10
+                            },
+                            "sensitivity": "CONFIDENTIAL"
+                        },
+                        {
+                            "ui": {
+                                "label": "GST Registered",
+                                "errors": {
+                                    "required": "GST Registered is required"
+                                },
+                                "placeholder": "Select GST registration status"
+                            },
+                            "key": "gstRegistered",
+                            "type": "select",
+                            "input": {
+                                "transform": "boolean"
+                            },
+                            "required": true,
+                            "optionsRef": "YES_NO"
+                        },
+                        {
+                            "ui": {
+                                "label": "GSTIN",
+                                "errors": {
+                                    "pattern": "Enter a valid 15-character GSTIN",
+                                    "required": "GSTIN is required for GST-registered businesses",
+                                    "gstinPanMismatch": "GSTIN characters 3–12 must match the Business PAN"
+                                },
+                                "tooltip": "15-character GSTIN. First 2 digits are the state code; characters 3–12 must match Business PAN.",
+                                "placeholder": "22AAAAA1234A1Z5"
+                            },
+                            "key": "gstin",
+                            "mask": {
+                                "pattern": "00XXXXX0000X0ZX",
+                                "storeUnmasked": true
+                            },
+                            "type": "text",
+                            "input": {
+                                "trim": true,
+                                "transform": "uppercase",
+                                "allowSpaces": false,
+                                "allowSpecialCharacters": false
+                            },
+                            "rules": {
+                                "visibleWhen": {
+                                    "op": "eq",
+                                    "field": "company.gstRegistered",
+                                    "value": "YES"
+                                },
+                                "requiredWhen": {
+                                    "op": "eq",
+                                    "field": "company.gstRegistered",
+                                    "value": "YES"
+                                }
+                            },
+                            "required": false,
+                            "validation": [
+                                {
+                                    "code": "pattern",
+                                    "regex": "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$"
+                                },
+                                {
+                                    "op": "eq",
+                                    "code": "gstinPanMismatch",
+                                    "left": {
+                                        "fn": "substring",
+                                        "end": 12,
+                                        "field": "self",
+                                        "start": 2
+                                    },
+                                    "when": {
+                                        "op": "notEmpty",
+                                        "field": "company.businessPan"
+                                    },
+                                    "right": {
+                                        "field": "company.businessPan"
+                                    }
+                                }
+                            ],
+                            "constraints": {
+                                "maxLength": 15,
+                                "minLength": 15
+                            },
+                            "sensitivity": "CONFIDENTIAL"
+                        },
+                        {
+                            "ui": {
+                                "label": "CIN",
+                                "errors": {
+                                    "pattern": "Enter a valid 21-character CIN, e.g. U12345MH2010PTC123456",
+                                    "required": "CIN is required for companies"
+                                },
+                                "tooltip": "21-character Corporate Identification Number. Required for companies.",
+                                "placeholder": "U12345MH2010PTC123456"
+                            },
+                            "key": "cin",
+                            "mask": {
+                                "pattern": "XXXXXXXXXXXXXXX000000",
+                                "storeUnmasked": true
+                            },
+                            "type": "text",
+                            "input": {
+                                "trim": true,
+                                "transform": "uppercase",
+                                "allowSpaces": false,
+                                "allowSpecialCharacters": false
+                            },
+                            "rules": {
+                                "visibleWhen": {
+                                    "op": "in",
+                                    "field": "company.companyType",
+                                    "value": [
+                                        "PRIVATE_LIMITED",
+                                        "PUBLIC_LIMITED"
+                                    ]
+                                },
+                                "requiredWhen": {
+                                    "op": "in",
+                                    "field": "company.companyType",
+                                    "value": [
+                                        "PRIVATE_LIMITED",
+                                        "PUBLIC_LIMITED"
+                                    ]
+                                }
+                            },
+                            "display": {
+                                "maskAfterEntry": {
+                                    "char": "X",
+                                    "showLast": 6
+                                }
+                            },
+                            "required": false,
+                            "validation": [
+                                {
+                                    "code": "pattern",
+                                    "regex": "^[LU]{1}[0-9]{5}[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{6}$"
+                                }
+                            ],
+                            "constraints": {
+                                "maxLength": 21,
+                                "minLength": 21
+                            },
+                            "sensitivity": "CONFIDENTIAL"
+                        },
+                        {
+                            "ui": {
+                                "label": "LLPIN",
+                                "errors": {
+                                    "pattern": "Enter a valid LLPIN, e.g. AAF-1234",
+                                    "required": "LLPIN is required for LLPs"
+                                },
+                                "tooltip": "LLP identification number. Hyphen is optional (AAF-1234 or AAF1234).",
+                                "placeholder": "AAF-1234"
+                            },
+                            "key": "llpin",
+                            "type": "text",
+                            "input": {
+                                "trim": true,
+                                "transform": "uppercase",
+                                "allowSpaces": false,
+                                "allowSpecialCharacters": true
+                            },
+                            "rules": {
+                                "visibleWhen": {
+                                    "op": "eq",
+                                    "field": "company.companyType",
+                                    "value": "LLP"
+                                },
+                                "requiredWhen": {
+                                    "op": "eq",
+                                    "field": "company.companyType",
+                                    "value": "LLP"
+                                }
+                            },
+                            "required": false,
+                            "validation": [
+                                {
+                                    "code": "pattern",
+                                    "regex": "^[A-Z]{3}-?[0-9]{4}$"
+                                }
+                            ],
+                            "constraints": {
+                                "maxLength": 8,
+                                "minLength": 7
+                            },
+                            "sensitivity": "CONFIDENTIAL"
+                        },
+                        {
+                            "ui": {
+                                "label": "Udyam Registration Number",
+                                "errors": {
+                                    "pattern": "Enter a valid Udyam number, e.g. UDYAM-MH-04-0012345"
+                                },
+                                "tooltip": "19-character MSME number including hyphens.",
+                                "placeholder": "UDYAM-MH-04-0012345"
+                            },
+                            "key": "udyam",
+                            "mask": {
+                                "pattern": "UDYAM-AA-00-0000000",
+                                "storeUnmasked": true
+                            },
+                            "type": "text",
+                            "input": {
+                                "trim": true,
+                                "transform": "uppercase",
+                                "allowSpaces": false,
+                                "allowSpecialCharacters": true
+                            },
+                            "required": false,
+                            "validation": [
+                                {
+                                    "code": "pattern",
+                                    "regex": "^UDYAM-[A-Z]{2}-[0-9]{2}-[0-9]{7}$"
+                                }
+                            ],
+                            "constraints": {
+                                "maxLength": 19,
+                                "minLength": 19
+                            }
+                        },
+                        {
+                            "ui": {
+                                "label": "State of Formation",
+                                "errors": {
+                                    "required": "State of Formation is required"
+                                },
+                                "tooltip": "State or UT in which the business was formed or incorporated.",
+                                "placeholder": "Select state or UT"
+                            },
+                            "key": "stateOfFormation",
+                            "type": "select",
+                            "required": true,
+                            "optionsRef": "IN_STATES_UT"
+                        },
+                        {
+                            "ui": {
+                                "label": "Date of Incorporation",
+                                "errors": {
+                                    "max": "Date of incorporation cannot be in the future",
+                                    "required": "Date of Incorporation is required"
+                                },
+                                "tooltip": "Date on which the business was incorporated or registered.",
+                                "placeholder": "DD/MM/YYYY"
+                            },
+                            "key": "incorporationDate",
+                            "type": "date",
+                            "input": {
+                                "wireFormat": "YYYY-MM-DD",
+                                "displayFormat": "DD/MM/YYYY"
+                            },
+                            "required": false,
+                            "constraints": {
+                                "max": "$today",
+                                "min": "1800-01-01"
+                            }
+                        },
+                        {
+                            "ui": {
+                                "label": "Year Established",
+                                "errors": {
+                                    "max": "Year cannot be in the future",
+                                    "beforeIncorporation": "Year is earlier than the incorporation year. Please confirm."
+                                },
+                                "tooltip": "Year in which the business started operations.",
+                                "placeholder": "YYYY"
+                            },
+                            "key": "yearEstablished",
+                            "type": "number",
+                            "input": {
+                                "transform": "numeric",
+                                "useGrouping": false
+                            },
+                            "required": false,
+                            "validation": [
+                                {
+                                    "op": "gte",
+                                    "code": "beforeIncorporation",
+                                    "left": {
+                                        "field": "self"
+                                    },
+                                    "when": {
+                                        "op": "notEmpty",
+                                        "field": "company.incorporationDate"
+                                    },
+                                    "right": {
+                                        "fn": "year",
+                                        "field": "company.incorporationDate"
+                                    },
+                                    "severity": "warning"
+                                }
+                            ],
+                            "constraints": {
+                                "max": "$currentYear",
+                                "min": 1800,
+                                "integer": true
+                            }
+                        },
+                        {
+                            "ui": {
+                                "label": "Industry Type",
+                                "errors": {
+                                    "required": "Industry Type is required"
+                                },
+                                "tooltip": "Primary industry in which the business operates.",
+                                "placeholder": "Select industry"
+                            },
+                            "key": "industryType",
+                            "type": "select",
+                            "required": true,
+                            "optionsRef": "INDUSTRY_TYPE"
+                        },
+                        {
+                            "ui": {
+                                "label": "Nature of Business",
+                                "errors": {
+                                    "required": "Nature of Business is required"
+                                },
+                                "tooltip": "Primary nature of the business activity.",
+                                "placeholder": "Select nature of business"
+                            },
+                            "key": "natureOfBusiness",
+                            "type": "select",
+                            "required": true,
+                            "optionsRef": "NATURE_OF_BUSINESS"
+                        },
+                        {
+                            "ui": {
+                                "label": "Annual Revenue",
+                                "tooltip": "Annual revenue or turnover of the business.",
+                                "placeholder": "Enter annual revenue"
+                            },
+                            "key": "annualRevenue",
+                            "type": "currency",
+                            "input": {
+                                "decimalSeparator": ".",
+                                "fixedDecimalScale": true,
+                                "thousandSeparator": ","
+                            },
+                            "currency": "INR",
+                            "required": false,
+                            "constraints": {
+                                "min": 0,
+                                "scale": 2,
+                                "precision": 18,
+                                "allowNegative": false
+                            },
+                            "sensitivity": "CONFIDENTIAL"
+                        },
+                        {
+                            "ui": {
+                                "label": "Net Income",
+                                "errors": {
+                                    "exceedsRevenue": "Net income is higher than annual revenue. Please confirm."
+                                },
+                                "tooltip": "Net income of the business. Enter a negative value for a loss.",
+                                "placeholder": "Enter net income"
+                            },
+                            "key": "netIncome",
+                            "type": "currency",
+                            "input": {
+                                "decimalSeparator": ".",
+                                "fixedDecimalScale": true,
+                                "thousandSeparator": ","
+                            },
+                            "currency": "INR",
+                            "required": false,
+                            "validation": [
+                                {
+                                    "op": "lte",
+                                    "code": "exceedsRevenue",
+                                    "left": {
+                                        "field": "self"
+                                    },
+                                    "when": {
+                                        "op": "notEmpty",
+                                        "field": "company.annualRevenue"
+                                    },
+                                    "right": {
+                                        "field": "company.annualRevenue"
+                                    },
+                                    "severity": "warning"
+                                }
+                            ],
+                            "constraints": {
+                                "scale": 2,
+                                "precision": 18,
+                                "allowNegative": true
+                            },
+                            "sensitivity": "CONFIDENTIAL"
+                        }
+                    ],
+                    "displayOrder": 1
+                },
+                {
+                    "ui": {
+                        "title": "Business Address",
+                        "subtitle": "Where your business operates from",
+                        "itemLabel": "Address {index}"
+                    },
+                    "code": "business_address",
+                    "fields": [
+                        {
+                            "key": "address",
+                            "type": "address",
+                            "required": true
+                        }
+                    ],
+                    "maxItems": 5,
+                    "minItems": 1,
+                    "component": "ADDRESS",
+                    "repeatable": false,
+                    "displayOrder": 2
+                }
+            ],
+            "repeatable": false,
+            "displayOrder": 1,
+            "templateVersion": 3
+        }
+    ],
+    "limits": {
+        "loanAmount": {
+            "max": 50000000,
+            "min": 100000
+        },
+        "interestRate": {
+            "max": 36
+        },
+        "loanTermMonths": {
+            "max": 120,
+            "min": 6
+        }
+    },
+    "status": "PUBLISHED",
+    "lookups": {
+        "PAN_4TH_CHAR_BY_ENTITY": {
+            "LLP": [
+                "F"
+            ],
+            "TRUST": [
+                "T"
+            ],
+            "SOCIETY": [
+                "A",
+                "T"
+            ],
+            "PARTNERSHIP": [
+                "F"
+            ],
+            "PROPRIETORSHIP": [
+                "P"
+            ],
+            "PUBLIC_LIMITED": [
+                "C"
+            ],
+            "PRIVATE_LIMITED": [
+                "C"
+            ]
+        }
+    },
+    "version": 1,
+    "currency": "INR",
+    "documents": [
+        {
+            "ui": {
+                "label": "Business PAN Card",
+                "errors": {
+                    "fileSize": "File exceeds {maxFileSizeMB} MB",
+                    "fileType": "Unsupported file type",
+                    "maxFiles": "You can upload at most {maxFiles} file(s)",
+                    "minFiles": "Upload at least {minFiles} file(s)",
+                    "required": "Business PAN Card is required"
+                },
+                "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file",
+                "description": "Upload a clear copy of the business PAN card."
+            },
+            "scope": "APPLICATION",
+            "upload": {
+                "maxFiles": 1,
+                "minFiles": 1,
+                "maxFileSizeMB": 5,
+                "allowedExtensions": [
+                    "pdf",
+                    "jpg",
+                    "jpeg",
+                    "png"
+                ]
+            },
+            "required": true,
+            "sensitivity": "CONFIDENTIAL",
+            "documentType": "BUSINESS_PAN"
+        },
+        {
+            "ui": {
+                "label": "Cancelled Cheque",
+                "errors": {
+                    "fileSize": "File exceeds {maxFileSizeMB} MB",
+                    "fileType": "Unsupported file type",
+                    "maxFiles": "You can upload at most {maxFiles} file(s)",
+                    "minFiles": "Upload at least {minFiles} file(s)",
+                    "required": "Cancelled Cheque is required"
+                },
+                "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file",
+                "description": "Upload a cancelled cheque for this bank account."
+            },
+            "scope": "BANK_ACCOUNT",
+            "upload": {
+                "maxFiles": 1,
+                "minFiles": 1,
+                "maxFileSizeMB": 5,
+                "allowedExtensions": [
+                    "pdf",
+                    "jpg",
+                    "jpeg",
+                    "png"
+                ]
+            },
+            "required": true,
+            "documentType": "CANCELLED_CHEQUE"
+        }
+    ],
+    "components": {
+        "ADDRESS": {
+            "fields": [
+                {
+                    "ui": {
+                        "label": "Address Line 1",
+                        "errors": {
+                            "required": "Address Line 1 is required"
+                        },
+                        "placeholder": "Building, house or street address"
+                    },
+                    "key": "addressLine1",
+                    "type": "text",
+                    "input": {
+                        "trim": true
+                    },
+                    "required": true,
+                    "constraints": {
+                        "maxLength": 255
+                    }
+                },
+                {
+                    "ui": {
+                        "label": "Address Line 2",
+                        "placeholder": "Apartment, suite, landmark, etc."
+                    },
+                    "key": "addressLine2",
+                    "type": "text",
+                    "input": {
+                        "trim": true
+                    },
+                    "required": false,
+                    "constraints": {
+                        "maxLength": 255
+                    }
+                },
+                {
+                    "ui": {
+                        "label": "City",
+                        "errors": {
+                            "required": "City is required"
+                        },
+                        "placeholder": "Enter city"
+                    },
+                    "key": "city",
+                    "type": "text",
+                    "input": {
+                        "trim": true
+                    },
+                    "required": true,
+                    "constraints": {
+                        "maxLength": 100
+                    }
+                },
+                {
+                    "ui": {
+                        "label": "State / UT",
+                        "errors": {
+                            "required": "State / UT is required"
+                        },
+                        "placeholder": "Select state or UT"
+                    },
+                    "key": "state",
+                    "type": "select",
+                    "required": true,
+                    "optionsRef": "IN_STATES_UT"
+                },
+                {
+                    "ui": {
+                        "label": "Pincode",
+                        "errors": {
+                            "pattern": "Enter a valid 6-digit pincode",
+                            "required": "Pincode is required"
+                        },
+                        "placeholder": "201301"
+                    },
+                    "key": "pincode",
+                    "type": "text",
+                    "input": {
+                        "trim": true,
+                        "transform": "numeric",
+                        "allowSpaces": false
+                    },
+                    "required": true,
+                    "validation": [
+                        {
+                            "code": "pattern",
+                            "regex": "^[1-9][0-9]{5}$"
+                        }
+                    ],
+                    "constraints": {
+                        "maxLength": 6,
+                        "minLength": 6
+                    }
+                },
+                {
+                    "ui": {
+                        "label": "Country"
+                    },
+                    "key": "country",
+                    "type": "hidden",
+                    "required": false,
+                    "serverSet": true,
+                    "defaultValue": "India"
+                }
+            ]
+        }
+    },
+    "optionSets": {
+        "TITLE": [
+            {
+                "ui": {
+                    "label": "Mr."
+                },
+                "value": "MR"
+            },
+            {
+                "ui": {
+                    "label": "Mrs."
+                },
+                "value": "MRS"
+            },
+            {
+                "ui": {
+                    "label": "Ms."
+                },
+                "value": "MS"
+            },
+            {
+                "ui": {
+                    "label": "Dr."
+                },
+                "value": "DR"
+            }
+        ],
+        "GENDER": [
+            {
+                "ui": {
+                    "label": "Male"
+                },
+                "value": "MALE"
+            },
+            {
+                "ui": {
+                    "label": "Female"
+                },
+                "value": "FEMALE"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "YES_NO": [
+            {
+                "ui": {
+                    "label": "Yes"
+                },
+                "value": "YES"
+            },
+            {
+                "ui": {
+                    "label": "No"
+                },
+                "value": "NO"
+            }
+        ],
+        "DEBT_TYPE": [
+            {
+                "ui": {
+                    "label": "Term Loan"
+                },
+                "value": "TERM_LOAN"
+            },
+            {
+                "ui": {
+                    "label": "Working Capital"
+                },
+                "value": "WORKING_CAPITAL"
+            },
+            {
+                "ui": {
+                    "label": "Overdraft"
+                },
+                "value": "OVERDRAFT"
+            },
+            {
+                "ui": {
+                    "label": "Credit Card"
+                },
+                "value": "CREDIT_CARD"
+            },
+            {
+                "ui": {
+                    "label": "Equipment Loan"
+                },
+                "value": "EQUIPMENT_LOAN"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "ACCOUNT_TYPE": [
+            {
+                "ui": {
+                    "label": "Current Account"
+                },
+                "value": "CURRENT"
+            },
+            {
+                "ui": {
+                    "label": "Savings Account"
+                },
+                "value": "SAVINGS"
+            },
+            {
+                "ui": {
+                    "label": "Cash Credit"
+                },
+                "value": "CASH_CREDIT"
+            },
+            {
+                "ui": {
+                    "label": "Overdraft"
+                },
+                "value": "OVERDRAFT"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "COMPANY_TYPE": [
+            {
+                "ui": {
+                    "label": "Proprietorship"
+                },
+                "value": "PROPRIETORSHIP"
+            },
+            {
+                "ui": {
+                    "label": "Partnership"
+                },
+                "value": "PARTNERSHIP"
+            },
+            {
+                "ui": {
+                    "label": "LLP"
+                },
+                "value": "LLP"
+            },
+            {
+                "ui": {
+                    "label": "Private Limited"
+                },
+                "value": "PRIVATE_LIMITED"
+            },
+            {
+                "ui": {
+                    "label": "Public Limited"
+                },
+                "value": "PUBLIC_LIMITED"
+            },
+            {
+                "ui": {
+                    "label": "Trust"
+                },
+                "value": "TRUST"
+            },
+            {
+                "ui": {
+                    "label": "Society"
+                },
+                "value": "SOCIETY"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "IN_STATES_UT": [
+            {
+                "ui": {
+                    "label": "Andhra Pradesh"
+                },
+                "value": "ANDHRA_PRADESH"
+            },
+            {
+                "ui": {
+                    "label": "Arunachal Pradesh"
+                },
+                "value": "ARUNACHAL_PRADESH"
+            },
+            {
+                "ui": {
+                    "label": "Assam"
+                },
+                "value": "ASSAM"
+            },
+            {
+                "ui": {
+                    "label": "Bihar"
+                },
+                "value": "BIHAR"
+            },
+            {
+                "ui": {
+                    "label": "Chhattisgarh"
+                },
+                "value": "CHHATTISGARH"
+            },
+            {
+                "ui": {
+                    "label": "Goa"
+                },
+                "value": "GOA"
+            },
+            {
+                "ui": {
+                    "label": "Gujarat"
+                },
+                "value": "GUJARAT"
+            },
+            {
+                "ui": {
+                    "label": "Haryana"
+                },
+                "value": "HARYANA"
+            },
+            {
+                "ui": {
+                    "label": "Himachal Pradesh"
+                },
+                "value": "HIMACHAL_PRADESH"
+            },
+            {
+                "ui": {
+                    "label": "Jharkhand"
+                },
+                "value": "JHARKHAND"
+            },
+            {
+                "ui": {
+                    "label": "Karnataka"
+                },
+                "value": "KARNATAKA"
+            },
+            {
+                "ui": {
+                    "label": "Kerala"
+                },
+                "value": "KERALA"
+            },
+            {
+                "ui": {
+                    "label": "Madhya Pradesh"
+                },
+                "value": "MADHYA_PRADESH"
+            },
+            {
+                "ui": {
+                    "label": "Maharashtra"
+                },
+                "value": "MAHARASHTRA"
+            },
+            {
+                "ui": {
+                    "label": "Manipur"
+                },
+                "value": "MANIPUR"
+            },
+            {
+                "ui": {
+                    "label": "Meghalaya"
+                },
+                "value": "MEGHALAYA"
+            },
+            {
+                "ui": {
+                    "label": "Mizoram"
+                },
+                "value": "MIZORAM"
+            },
+            {
+                "ui": {
+                    "label": "Nagaland"
+                },
+                "value": "NAGALAND"
+            },
+            {
+                "ui": {
+                    "label": "Odisha"
+                },
+                "value": "ODISHA"
+            },
+            {
+                "ui": {
+                    "label": "Punjab"
+                },
+                "value": "PUNJAB"
+            },
+            {
+                "ui": {
+                    "label": "Rajasthan"
+                },
+                "value": "RAJASTHAN"
+            },
+            {
+                "ui": {
+                    "label": "Sikkim"
+                },
+                "value": "SIKKIM"
+            },
+            {
+                "ui": {
+                    "label": "Tamil Nadu"
+                },
+                "value": "TAMIL_NADU"
+            },
+            {
+                "ui": {
+                    "label": "Telangana"
+                },
+                "value": "TELANGANA"
+            },
+            {
+                "ui": {
+                    "label": "Tripura"
+                },
+                "value": "TRIPURA"
+            },
+            {
+                "ui": {
+                    "label": "Uttar Pradesh"
+                },
+                "value": "UTTAR_PRADESH"
+            },
+            {
+                "ui": {
+                    "label": "Uttarakhand"
+                },
+                "value": "UTTARAKHAND"
+            },
+            {
+                "ui": {
+                    "label": "West Bengal"
+                },
+                "value": "WEST_BENGAL"
+            },
+            {
+                "ui": {
+                    "label": "Andaman and Nicobar Islands"
+                },
+                "value": "ANDAMAN_AND_NICOBAR_ISLANDS"
+            },
+            {
+                "ui": {
+                    "label": "Chandigarh"
+                },
+                "value": "CHANDIGARH"
+            },
+            {
+                "ui": {
+                    "label": "Dadra and Nagar Haveli and Daman and Diu"
+                },
+                "value": "DADRA_AND_NAGAR_HAVELI_AND_DAMAN_AND_DIU"
+            },
+            {
+                "ui": {
+                    "label": "Delhi"
+                },
+                "value": "DELHI"
+            },
+            {
+                "ui": {
+                    "label": "Jammu and Kashmir"
+                },
+                "value": "JAMMU_AND_KASHMIR"
+            },
+            {
+                "ui": {
+                    "label": "Ladakh"
+                },
+                "value": "LADAKH"
+            },
+            {
+                "ui": {
+                    "label": "Lakshadweep"
+                },
+                "value": "LAKSHADWEEP"
+            },
+            {
+                "ui": {
+                    "label": "Puducherry"
+                },
+                "value": "PUDUCHERRY"
+            }
+        ],
+        "LOAN_PURPOSE": [
+            {
+                "ui": {
+                    "label": "Working Capital"
+                },
+                "value": "WORKING_CAPITAL"
+            },
+            {
+                "ui": {
+                    "label": "Equipment Purchase"
+                },
+                "value": "EQUIPMENT"
+            },
+            {
+                "ui": {
+                    "label": "Inventory Purchase"
+                },
+                "value": "INVENTORY"
+            },
+            {
+                "ui": {
+                    "label": "Business Expansion"
+                },
+                "value": "EXPANSION"
+            },
+            {
+                "ui": {
+                    "label": "Commercial Real Estate"
+                },
+                "value": "REAL_ESTATE"
+            },
+            {
+                "ui": {
+                    "label": "Refinance Existing Debt"
+                },
+                "value": "DEBT_REFINANCE"
+            },
+            {
+                "ui": {
+                    "label": "Purchase Existing Business"
+                },
+                "value": "BUSINESS_ACQUISITION"
+            },
+            {
+                "ui": {
+                    "label": "Startup Costs"
+                },
+                "value": "STARTUP"
+            },
+            {
+                "ui": {
+                    "label": "Marketing & Advertising"
+                },
+                "value": "MARKETING"
+            },
+            {
+                "ui": {
+                    "label": "Payroll"
+                },
+                "value": "PAYROLL"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "INDUSTRY_TYPE": [
+            {
+                "ui": {
+                    "label": "Agriculture"
+                },
+                "value": "AGRICULTURE"
+            },
+            {
+                "ui": {
+                    "label": "Automobile"
+                },
+                "value": "AUTOMOBILE"
+            },
+            {
+                "ui": {
+                    "label": "Construction"
+                },
+                "value": "CONSTRUCTION"
+            },
+            {
+                "ui": {
+                    "label": "Education"
+                },
+                "value": "EDUCATION"
+            },
+            {
+                "ui": {
+                    "label": "Financial Services"
+                },
+                "value": "FINANCIAL_SERVICES"
+            },
+            {
+                "ui": {
+                    "label": "Healthcare"
+                },
+                "value": "HEALTHCARE"
+            },
+            {
+                "ui": {
+                    "label": "Hospitality"
+                },
+                "value": "HOSPITALITY"
+            },
+            {
+                "ui": {
+                    "label": "Information Technology"
+                },
+                "value": "INFORMATION_TECHNOLOGY"
+            },
+            {
+                "ui": {
+                    "label": "Manufacturing"
+                },
+                "value": "MANUFACTURING"
+            },
+            {
+                "ui": {
+                    "label": "Professional Services"
+                },
+                "value": "PROFESSIONAL_SERVICES"
+            },
+            {
+                "ui": {
+                    "label": "Real Estate"
+                },
+                "value": "REAL_ESTATE"
+            },
+            {
+                "ui": {
+                    "label": "Retail"
+                },
+                "value": "RETAIL"
+            },
+            {
+                "ui": {
+                    "label": "Trading"
+                },
+                "value": "TRADING"
+            },
+            {
+                "ui": {
+                    "label": "Transportation & Logistics"
+                },
+                "value": "TRANSPORTATION_LOGISTICS"
+            },
+            {
+                "ui": {
+                    "label": "Wholesale"
+                },
+                "value": "WHOLESALE"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "QUALIFICATION": [
+            {
+                "ui": {
+                    "label": "Below 10th"
+                },
+                "value": "BELOW_10TH"
+            },
+            {
+                "ui": {
+                    "label": "10th"
+                },
+                "value": "10TH"
+            },
+            {
+                "ui": {
+                    "label": "12th"
+                },
+                "value": "12TH"
+            },
+            {
+                "ui": {
+                    "label": "Graduate"
+                },
+                "value": "GRADUATE"
+            },
+            {
+                "ui": {
+                    "label": "Post Graduate"
+                },
+                "value": "POST_GRADUATE"
+            },
+            {
+                "ui": {
+                    "label": "Professional"
+                },
+                "value": "PROFESSIONAL"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "MARITAL_STATUS": [
+            {
+                "ui": {
+                    "label": "Married"
+                },
+                "value": "MARRIED"
+            },
+            {
+                "ui": {
+                    "label": "Unmarried"
+                },
+                "value": "UNMARRIED"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "RESIDENCE_TYPE": [
+            {
+                "ui": {
+                    "label": "Self Owned"
+                },
+                "value": "SELF_OWNED"
+            },
+            {
+                "ui": {
+                    "label": "Rented"
+                },
+                "value": "RENTED"
+            },
+            {
+                "ui": {
+                    "label": "Parental"
+                },
+                "value": "PARENTAL"
+            },
+            {
+                "ui": {
+                    "label": "Company Provided"
+                },
+                "value": "COMPANY_PROVIDED"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "NATURE_OF_BUSINESS": [
+            {
+                "ui": {
+                    "label": "Agriculture & Allied"
+                },
+                "value": "AGRICULTURE_AND_ALLIED"
+            },
+            {
+                "ui": {
+                    "label": "Manufacturing"
+                },
+                "value": "MANUFACTURING"
+            },
+            {
+                "ui": {
+                    "label": "Retail Trading"
+                },
+                "value": "RETAIL_TRADING"
+            },
+            {
+                "ui": {
+                    "label": "Wholesale Trading"
+                },
+                "value": "WHOLESALE_TRADING"
+            },
+            {
+                "ui": {
+                    "label": "Service"
+                },
+                "value": "SERVICE"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ]
+    },
+    "programCode": "business_profile_v2",
+    "programType": "BUSINESS_PROFILE_V2",
+    "schemaVersion": "1.0",
+    "documentPolicy": {
+        "upload": "PRESIGNED",
+        "encryption": "KMS",
+        "malwareScan": true,
+        "coverageMonths": {
+            "BANK_STATEMENT": 6
+        },
+        "contentSniffing": true,
+        "passwordProtectedPdf": "PROMPT_FOR_PASSWORD"
+    },
+    "sensitivityLevels": [
+        "PUBLIC",
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "RESTRICTED"
+    ]
+}{
+    "ui": {
+        "title": "Business Profile V2 Application",
+        "subtitle": "Complete the sections below to apply. You can save a draft and return at any time."
+    },
+    "name": "Business Profile V2",
+    "forms": [
+        {
+            "ui": {
+                "title": "Business Information",
+                "subtitle": "Tell us about your business. Details must match your registration documents."
+            },
+            "visible": true,
+            "formCode": "company",
+            "formName": "CompanyProperty",
+            "required": true,
+            "sections": [
+                {
+                    "ui": {
+                        "title": "Business Details",
+                        "subtitle": "Legal and registration information about your business"
+                    },
+                    "code": "business_profile",
+                    "fields": [
+                        {
+                            "ui": {
+                                "label": "Company Name",
+                                "errors": {
+                                    "required": "Company Name is required"
+                                },
+                                "placeholder": "Enter legal company name"
+                            },
+                            "key": "companyName",
+                            "type": "text",
+                            "input": {
+                                "trim": true
+                            },
+                            "required": true,
+                            "constraints": {
+                                "maxLength": 255,
+                                "minLength": 2
+                            }
+                        },
+                        {
+                            "ui": {
+                                "label": "Company Type",
+                                "errors": {
+                                    "required": "Company Type is required"
+                                },
+                                "placeholder": "Select company type"
+                            },
+                            "key": "companyType",
+                            "type": "select",
+                            "required": true,
+                            "optionsRef": "COMPANY_TYPE"
+                        },
+                        {
+                            "ui": {
+                                "label": "Doing Business As",
+                                "placeholder": "Enter trade or brand name"
+                            },
+                            "key": "doingBusinessAs",
+                            "type": "text",
+                            "input": {
+                                "trim": true
+                            },
+                            "required": true,
+                            "constraints": {
+                                "maxLength": 255
+                            }
+                        },
+                        {
+                            "ui": {
+                                "label": "Business PAN",
+                                "errors": {
+                                    "verify": "PAN could not be verified",
+                                    "pattern": "Enter a valid 10-character PAN, e.g. ABCDE1234F",
+                                    "required": "Business PAN is required",
+                                    "panEntityMismatch": "PAN 4th character does not match the selected company type"
+                                },
+                                "tooltip": "10-character PAN. 4th character must match the company type (C=Company, F=Firm/LLP, P=Proprietorship).",
+                                "placeholder": "ABCDE1234F"
+                            },
+                            "key": "businessPan",
+                            "mask": {
+                                "pattern": "XXXXX0000X",
+                                "storeUnmasked": true
+                            },
+                            "type": "text",
+                            "input": {
+                                "trim": true,
+                                "transform": "uppercase",
+                                "allowSpaces": false,
+                                "allowSpecialCharacters": false
+                            },
+                            "display": {
+                                "maskAfterEntry": {
+                                    "char": "X",
+                                    "showLast": 5
+                                }
+                            },
+                            "required": true,
+                            "validation": [
+                                {
+                                    "code": "pattern",
+                                    "regex": "^[A-Z]{5}[0-9]{4}[A-Z]{1}$"
+                                },
+                                {
+                                    "op": "eq",
+                                    "code": "panEntityMismatch",
+                                    "left": {
+                                        "fn": "charAt",
+                                        "field": "self",
+                                        "index": 3
+                                    },
+                                    "when": {
+                                        "op": "eq",
+                                        "field": "company.companyType",
+                                        "value": "PROPRIETORSHIP"
+                                    },
+                                    "right": "P"
+                                },
+                                {
+                                    "op": "eq",
+                                    "code": "panEntityMismatch",
+                                    "left": {
+                                        "fn": "charAt",
+                                        "field": "self",
+                                        "index": 3
+                                    },
+                                    "when": {
+                                        "op": "in",
+                                        "field": "company.companyType",
+                                        "value": [
+                                            "PARTNERSHIP",
+                                            "LLP"
+                                        ]
+                                    },
+                                    "right": "F"
+                                },
+                                {
+                                    "op": "eq",
+                                    "code": "panEntityMismatch",
+                                    "left": {
+                                        "fn": "charAt",
+                                        "field": "self",
+                                        "index": 3
+                                    },
+                                    "when": {
+                                        "op": "in",
+                                        "field": "company.companyType",
+                                        "value": [
+                                            "PRIVATE_LIMITED",
+                                            "PUBLIC_LIMITED"
+                                        ]
+                                    },
+                                    "right": "C"
+                                },
+                                {
+                                    "code": "verify",
+                                    "async": {
+                                        "trigger": "onBlur",
+                                        "provider": "PAN_VERIFY"
+                                    }
+                                }
+                            ],
+                            "constraints": {
+                                "maxLength": 10,
+                                "minLength": 10
+                            },
+                            "sensitivity": "CONFIDENTIAL"
+                        },
+                        {
+                            "ui": {
+                                "label": "GST Registered",
+                                "errors": {
+                                    "required": "GST Registered is required"
+                                },
+                                "placeholder": "Select GST registration status"
+                            },
+                            "key": "gstRegistered",
+                            "type": "select",
+                            "input": {
+                                "transform": "boolean"
+                            },
+                            "required": true,
+                            "optionsRef": "YES_NO"
+                        },
+                        {
+                            "ui": {
+                                "label": "GSTIN",
+                                "errors": {
+                                    "pattern": "Enter a valid 15-character GSTIN",
+                                    "required": "GSTIN is required for GST-registered businesses",
+                                    "gstinPanMismatch": "GSTIN characters 3–12 must match the Business PAN"
+                                },
+                                "tooltip": "15-character GSTIN. First 2 digits are the state code; characters 3–12 must match Business PAN.",
+                                "placeholder": "22AAAAA1234A1Z5"
+                            },
+                            "key": "gstin",
+                            "mask": {
+                                "pattern": "00XXXXX0000X0ZX",
+                                "storeUnmasked": true
+                            },
+                            "type": "text",
+                            "input": {
+                                "trim": true,
+                                "transform": "uppercase",
+                                "allowSpaces": false,
+                                "allowSpecialCharacters": false
+                            },
+                            "rules": {
+                                "visibleWhen": {
+                                    "op": "eq",
+                                    "field": "company.gstRegistered",
+                                    "value": "YES"
+                                },
+                                "requiredWhen": {
+                                    "op": "eq",
+                                    "field": "company.gstRegistered",
+                                    "value": "YES"
+                                }
+                            },
+                            "required": false,
+                            "validation": [
+                                {
+                                    "code": "pattern",
+                                    "regex": "^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$"
+                                },
+                                {
+                                    "op": "eq",
+                                    "code": "gstinPanMismatch",
+                                    "left": {
+                                        "fn": "substring",
+                                        "end": 12,
+                                        "field": "self",
+                                        "start": 2
+                                    },
+                                    "when": {
+                                        "op": "notEmpty",
+                                        "field": "company.businessPan"
+                                    },
+                                    "right": {
+                                        "field": "company.businessPan"
+                                    }
+                                }
+                            ],
+                            "constraints": {
+                                "maxLength": 15,
+                                "minLength": 15
+                            },
+                            "sensitivity": "CONFIDENTIAL"
+                        },
+                        {
+                            "ui": {
+                                "label": "CIN",
+                                "errors": {
+                                    "pattern": "Enter a valid 21-character CIN, e.g. U12345MH2010PTC123456",
+                                    "required": "CIN is required for companies"
+                                },
+                                "tooltip": "21-character Corporate Identification Number. Required for companies.",
+                                "placeholder": "U12345MH2010PTC123456"
+                            },
+                            "key": "cin",
+                            "mask": {
+                                "pattern": "XXXXXXXXXXXXXXX000000",
+                                "storeUnmasked": true
+                            },
+                            "type": "text",
+                            "input": {
+                                "trim": true,
+                                "transform": "uppercase",
+                                "allowSpaces": false,
+                                "allowSpecialCharacters": false
+                            },
+                            "rules": {
+                                "visibleWhen": {
+                                    "op": "in",
+                                    "field": "company.companyType",
+                                    "value": [
+                                        "PRIVATE_LIMITED",
+                                        "PUBLIC_LIMITED"
+                                    ]
+                                },
+                                "requiredWhen": {
+                                    "op": "in",
+                                    "field": "company.companyType",
+                                    "value": [
+                                        "PRIVATE_LIMITED",
+                                        "PUBLIC_LIMITED"
+                                    ]
+                                }
+                            },
+                            "display": {
+                                "maskAfterEntry": {
+                                    "char": "X",
+                                    "showLast": 6
+                                }
+                            },
+                            "required": false,
+                            "validation": [
+                                {
+                                    "code": "pattern",
+                                    "regex": "^[LU]{1}[0-9]{5}[A-Z]{2}[0-9]{4}[A-Z]{3}[0-9]{6}$"
+                                }
+                            ],
+                            "constraints": {
+                                "maxLength": 21,
+                                "minLength": 21
+                            },
+                            "sensitivity": "CONFIDENTIAL"
+                        },
+                        {
+                            "ui": {
+                                "label": "LLPIN",
+                                "errors": {
+                                    "pattern": "Enter a valid LLPIN, e.g. AAF-1234",
+                                    "required": "LLPIN is required for LLPs"
+                                },
+                                "tooltip": "LLP identification number. Hyphen is optional (AAF-1234 or AAF1234).",
+                                "placeholder": "AAF-1234"
+                            },
+                            "key": "llpin",
+                            "type": "text",
+                            "input": {
+                                "trim": true,
+                                "transform": "uppercase",
+                                "allowSpaces": false,
+                                "allowSpecialCharacters": true
+                            },
+                            "rules": {
+                                "visibleWhen": {
+                                    "op": "eq",
+                                    "field": "company.companyType",
+                                    "value": "LLP"
+                                },
+                                "requiredWhen": {
+                                    "op": "eq",
+                                    "field": "company.companyType",
+                                    "value": "LLP"
+                                }
+                            },
+                            "required": false,
+                            "validation": [
+                                {
+                                    "code": "pattern",
+                                    "regex": "^[A-Z]{3}-?[0-9]{4}$"
+                                }
+                            ],
+                            "constraints": {
+                                "maxLength": 8,
+                                "minLength": 7
+                            },
+                            "sensitivity": "CONFIDENTIAL"
+                        },
+                        {
+                            "ui": {
+                                "label": "Udyam Registration Number",
+                                "errors": {
+                                    "pattern": "Enter a valid Udyam number, e.g. UDYAM-MH-04-0012345"
+                                },
+                                "tooltip": "19-character MSME number including hyphens.",
+                                "placeholder": "UDYAM-MH-04-0012345"
+                            },
+                            "key": "udyam",
+                            "mask": {
+                                "pattern": "UDYAM-AA-00-0000000",
+                                "storeUnmasked": true
+                            },
+                            "type": "text",
+                            "input": {
+                                "trim": true,
+                                "transform": "uppercase",
+                                "allowSpaces": false,
+                                "allowSpecialCharacters": true
+                            },
+                            "required": false,
+                            "validation": [
+                                {
+                                    "code": "pattern",
+                                    "regex": "^UDYAM-[A-Z]{2}-[0-9]{2}-[0-9]{7}$"
+                                }
+                            ],
+                            "constraints": {
+                                "maxLength": 19,
+                                "minLength": 19
+                            }
+                        },
+                        {
+                            "ui": {
+                                "label": "State of Formation",
+                                "errors": {
+                                    "required": "State of Formation is required"
+                                },
+                                "tooltip": "State or UT in which the business was formed or incorporated.",
+                                "placeholder": "Select state or UT"
+                            },
+                            "key": "stateOfFormation",
+                            "type": "select",
+                            "required": true,
+                            "optionsRef": "IN_STATES_UT"
+                        },
+                        {
+                            "ui": {
+                                "label": "Date of Incorporation",
+                                "errors": {
+                                    "max": "Date of incorporation cannot be in the future",
+                                    "required": "Date of Incorporation is required"
+                                },
+                                "tooltip": "Date on which the business was incorporated or registered.",
+                                "placeholder": "DD/MM/YYYY"
+                            },
+                            "key": "incorporationDate",
+                            "type": "date",
+                            "input": {
+                                "wireFormat": "YYYY-MM-DD",
+                                "displayFormat": "DD/MM/YYYY"
+                            },
+                            "required": false,
+                            "constraints": {
+                                "max": "$today",
+                                "min": "1800-01-01"
+                            }
+                        },
+                        {
+                            "ui": {
+                                "label": "Year Established",
+                                "errors": {
+                                    "max": "Year cannot be in the future",
+                                    "beforeIncorporation": "Year is earlier than the incorporation year. Please confirm."
+                                },
+                                "tooltip": "Year in which the business started operations.",
+                                "placeholder": "YYYY"
+                            },
+                            "key": "yearEstablished",
+                            "type": "number",
+                            "input": {
+                                "transform": "numeric",
+                                "useGrouping": false
+                            },
+                            "required": false,
+                            "validation": [
+                                {
+                                    "op": "gte",
+                                    "code": "beforeIncorporation",
+                                    "left": {
+                                        "field": "self"
+                                    },
+                                    "when": {
+                                        "op": "notEmpty",
+                                        "field": "company.incorporationDate"
+                                    },
+                                    "right": {
+                                        "fn": "year",
+                                        "field": "company.incorporationDate"
+                                    },
+                                    "severity": "warning"
+                                }
+                            ],
+                            "constraints": {
+                                "max": "$currentYear",
+                                "min": 1800,
+                                "integer": true
+                            }
+                        },
+                        {
+                            "ui": {
+                                "label": "Industry Type",
+                                "errors": {
+                                    "required": "Industry Type is required"
+                                },
+                                "tooltip": "Primary industry in which the business operates.",
+                                "placeholder": "Select industry"
+                            },
+                            "key": "industryType",
+                            "type": "select",
+                            "required": true,
+                            "optionsRef": "INDUSTRY_TYPE"
+                        },
+                        {
+                            "ui": {
+                                "label": "Nature of Business",
+                                "errors": {
+                                    "required": "Nature of Business is required"
+                                },
+                                "tooltip": "Primary nature of the business activity.",
+                                "placeholder": "Select nature of business"
+                            },
+                            "key": "natureOfBusiness",
+                            "type": "select",
+                            "required": true,
+                            "optionsRef": "NATURE_OF_BUSINESS"
+                        },
+                        {
+                            "ui": {
+                                "label": "Annual Revenue",
+                                "tooltip": "Annual revenue or turnover of the business.",
+                                "placeholder": "Enter annual revenue"
+                            },
+                            "key": "annualRevenue",
+                            "type": "currency",
+                            "input": {
+                                "decimalSeparator": ".",
+                                "fixedDecimalScale": true,
+                                "thousandSeparator": ","
+                            },
+                            "currency": "INR",
+                            "required": false,
+                            "constraints": {
+                                "min": 0,
+                                "scale": 2,
+                                "precision": 18,
+                                "allowNegative": false
+                            },
+                            "sensitivity": "CONFIDENTIAL"
+                        },
+                        {
+                            "ui": {
+                                "label": "Net Income",
+                                "errors": {
+                                    "exceedsRevenue": "Net income is higher than annual revenue. Please confirm."
+                                },
+                                "tooltip": "Net income of the business. Enter a negative value for a loss.",
+                                "placeholder": "Enter net income"
+                            },
+                            "key": "netIncome",
+                            "type": "currency",
+                            "input": {
+                                "decimalSeparator": ".",
+                                "fixedDecimalScale": true,
+                                "thousandSeparator": ","
+                            },
+                            "currency": "INR",
+                            "required": false,
+                            "validation": [
+                                {
+                                    "op": "lte",
+                                    "code": "exceedsRevenue",
+                                    "left": {
+                                        "field": "self"
+                                    },
+                                    "when": {
+                                        "op": "notEmpty",
+                                        "field": "company.annualRevenue"
+                                    },
+                                    "right": {
+                                        "field": "company.annualRevenue"
+                                    },
+                                    "severity": "warning"
+                                }
+                            ],
+                            "constraints": {
+                                "scale": 2,
+                                "precision": 18,
+                                "allowNegative": true
+                            },
+                            "sensitivity": "CONFIDENTIAL"
+                        }
+                    ],
+                    "displayOrder": 1
+                },
+                {
+                    "ui": {
+                        "title": "Business Address",
+                        "subtitle": "Where your business operates from",
+                        "itemLabel": "Address {index}"
+                    },
+                    "code": "business_address",
+                    "fields": [
+                        {
+                            "key": "address",
+                            "type": "address",
+                            "required": true
+                        }
+                    ],
+                    "maxItems": 5,
+                    "minItems": 1,
+                    "component": "ADDRESS",
+                    "repeatable": false,
+                    "displayOrder": 2
+                }
+            ],
+            "repeatable": false,
+            "displayOrder": 1,
+            "templateVersion": 3
+        }
+    ],
+    "limits": {
+        "loanAmount": {
+            "max": 50000000,
+            "min": 100000
+        },
+        "interestRate": {
+            "max": 36
+        },
+        "loanTermMonths": {
+            "max": 120,
+            "min": 6
+        }
+    },
+    "status": "PUBLISHED",
+    "lookups": {
+        "PAN_4TH_CHAR_BY_ENTITY": {
+            "LLP": [
+                "F"
+            ],
+            "TRUST": [
+                "T"
+            ],
+            "SOCIETY": [
+                "A",
+                "T"
+            ],
+            "PARTNERSHIP": [
+                "F"
+            ],
+            "PROPRIETORSHIP": [
+                "P"
+            ],
+            "PUBLIC_LIMITED": [
+                "C"
+            ],
+            "PRIVATE_LIMITED": [
+                "C"
+            ]
+        }
+    },
+    "version": 1,
+    "currency": "INR",
+    "documents": [
+        {
+            "ui": {
+                "label": "Business PAN Card",
+                "errors": {
+                    "fileSize": "File exceeds {maxFileSizeMB} MB",
+                    "fileType": "Unsupported file type",
+                    "maxFiles": "You can upload at most {maxFiles} file(s)",
+                    "minFiles": "Upload at least {minFiles} file(s)",
+                    "required": "Business PAN Card is required"
+                },
+                "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file",
+                "description": "Upload a clear copy of the business PAN card."
+            },
+            "scope": "APPLICATION",
+            "upload": {
+                "maxFiles": 1,
+                "minFiles": 1,
+                "maxFileSizeMB": 5,
+                "allowedExtensions": [
+                    "pdf",
+                    "jpg",
+                    "jpeg",
+                    "png"
+                ]
+            },
+            "required": true,
+            "sensitivity": "CONFIDENTIAL",
+            "documentType": "BUSINESS_PAN"
+        },
+        {
+            "ui": {
+                "label": "Cancelled Cheque",
+                "errors": {
+                    "fileSize": "File exceeds {maxFileSizeMB} MB",
+                    "fileType": "Unsupported file type",
+                    "maxFiles": "You can upload at most {maxFiles} file(s)",
+                    "minFiles": "Upload at least {minFiles} file(s)",
+                    "required": "Cancelled Cheque is required"
+                },
+                "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file",
+                "description": "Upload a cancelled cheque for this bank account."
+            },
+            "scope": "BANK_ACCOUNT",
+            "upload": {
+                "maxFiles": 1,
+                "minFiles": 1,
+                "maxFileSizeMB": 5,
+                "allowedExtensions": [
+                    "pdf",
+                    "jpg",
+                    "jpeg",
+                    "png"
+                ]
+            },
+            "required": true,
+            "documentType": "CANCELLED_CHEQUE"
+        }
+    ],
+    "components": {
+        "ADDRESS": {
+            "fields": [
+                {
+                    "ui": {
+                        "label": "Address Line 1",
+                        "errors": {
+                            "required": "Address Line 1 is required"
+                        },
+                        "placeholder": "Building, house or street address"
+                    },
+                    "key": "addressLine1",
+                    "type": "text",
+                    "input": {
+                        "trim": true
+                    },
+                    "required": true,
+                    "constraints": {
+                        "maxLength": 255
+                    }
+                },
+                {
+                    "ui": {
+                        "label": "Address Line 2",
+                        "placeholder": "Apartment, suite, landmark, etc."
+                    },
+                    "key": "addressLine2",
+                    "type": "text",
+                    "input": {
+                        "trim": true
+                    },
+                    "required": false,
+                    "constraints": {
+                        "maxLength": 255
+                    }
+                },
+                {
+                    "ui": {
+                        "label": "City",
+                        "errors": {
+                            "required": "City is required"
+                        },
+                        "placeholder": "Enter city"
+                    },
+                    "key": "city",
+                    "type": "text",
+                    "input": {
+                        "trim": true
+                    },
+                    "required": true,
+                    "constraints": {
+                        "maxLength": 100
+                    }
+                },
+                {
+                    "ui": {
+                        "label": "State / UT",
+                        "errors": {
+                            "required": "State / UT is required"
+                        },
+                        "placeholder": "Select state or UT"
+                    },
+                    "key": "state",
+                    "type": "select",
+                    "required": true,
+                    "optionsRef": "IN_STATES_UT"
+                },
+                {
+                    "ui": {
+                        "label": "Pincode",
+                        "errors": {
+                            "pattern": "Enter a valid 6-digit pincode",
+                            "required": "Pincode is required"
+                        },
+                        "placeholder": "201301"
+                    },
+                    "key": "pincode",
+                    "type": "text",
+                    "input": {
+                        "trim": true,
+                        "transform": "numeric",
+                        "allowSpaces": false
+                    },
+                    "required": true,
+                    "validation": [
+                        {
+                            "code": "pattern",
+                            "regex": "^[1-9][0-9]{5}$"
+                        }
+                    ],
+                    "constraints": {
+                        "maxLength": 6,
+                        "minLength": 6
+                    }
+                },
+                {
+                    "ui": {
+                        "label": "Country"
+                    },
+                    "key": "country",
+                    "type": "hidden",
+                    "required": false,
+                    "serverSet": true,
+                    "defaultValue": "India"
+                }
+            ]
+        }
+    },
+    "optionSets": {
+        "TITLE": [
+            {
+                "ui": {
+                    "label": "Mr."
+                },
+                "value": "MR"
+            },
+            {
+                "ui": {
+                    "label": "Mrs."
+                },
+                "value": "MRS"
+            },
+            {
+                "ui": {
+                    "label": "Ms."
+                },
+                "value": "MS"
+            },
+            {
+                "ui": {
+                    "label": "Dr."
+                },
+                "value": "DR"
+            }
+        ],
+        "GENDER": [
+            {
+                "ui": {
+                    "label": "Male"
+                },
+                "value": "MALE"
+            },
+            {
+                "ui": {
+                    "label": "Female"
+                },
+                "value": "FEMALE"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "YES_NO": [
+            {
+                "ui": {
+                    "label": "Yes"
+                },
+                "value": "YES"
+            },
+            {
+                "ui": {
+                    "label": "No"
+                },
+                "value": "NO"
+            }
+        ],
+        "DEBT_TYPE": [
+            {
+                "ui": {
+                    "label": "Term Loan"
+                },
+                "value": "TERM_LOAN"
+            },
+            {
+                "ui": {
+                    "label": "Working Capital"
+                },
+                "value": "WORKING_CAPITAL"
+            },
+            {
+                "ui": {
+                    "label": "Overdraft"
+                },
+                "value": "OVERDRAFT"
+            },
+            {
+                "ui": {
+                    "label": "Credit Card"
+                },
+                "value": "CREDIT_CARD"
+            },
+            {
+                "ui": {
+                    "label": "Equipment Loan"
+                },
+                "value": "EQUIPMENT_LOAN"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "ACCOUNT_TYPE": [
+            {
+                "ui": {
+                    "label": "Current Account"
+                },
+                "value": "CURRENT"
+            },
+            {
+                "ui": {
+                    "label": "Savings Account"
+                },
+                "value": "SAVINGS"
+            },
+            {
+                "ui": {
+                    "label": "Cash Credit"
+                },
+                "value": "CASH_CREDIT"
+            },
+            {
+                "ui": {
+                    "label": "Overdraft"
+                },
+                "value": "OVERDRAFT"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "COMPANY_TYPE": [
+            {
+                "ui": {
+                    "label": "Proprietorship"
+                },
+                "value": "PROPRIETORSHIP"
+            },
+            {
+                "ui": {
+                    "label": "Partnership"
+                },
+                "value": "PARTNERSHIP"
+            },
+            {
+                "ui": {
+                    "label": "LLP"
+                },
+                "value": "LLP"
+            },
+            {
+                "ui": {
+                    "label": "Private Limited"
+                },
+                "value": "PRIVATE_LIMITED"
+            },
+            {
+                "ui": {
+                    "label": "Public Limited"
+                },
+                "value": "PUBLIC_LIMITED"
+            },
+            {
+                "ui": {
+                    "label": "Trust"
+                },
+                "value": "TRUST"
+            },
+            {
+                "ui": {
+                    "label": "Society"
+                },
+                "value": "SOCIETY"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "IN_STATES_UT": [
+            {
+                "ui": {
+                    "label": "Andhra Pradesh"
+                },
+                "value": "ANDHRA_PRADESH"
+            },
+            {
+                "ui": {
+                    "label": "Arunachal Pradesh"
+                },
+                "value": "ARUNACHAL_PRADESH"
+            },
+            {
+                "ui": {
+                    "label": "Assam"
+                },
+                "value": "ASSAM"
+            },
+            {
+                "ui": {
+                    "label": "Bihar"
+                },
+                "value": "BIHAR"
+            },
+            {
+                "ui": {
+                    "label": "Chhattisgarh"
+                },
+                "value": "CHHATTISGARH"
+            },
+            {
+                "ui": {
+                    "label": "Goa"
+                },
+                "value": "GOA"
+            },
+            {
+                "ui": {
+                    "label": "Gujarat"
+                },
+                "value": "GUJARAT"
+            },
+            {
+                "ui": {
+                    "label": "Haryana"
+                },
+                "value": "HARYANA"
+            },
+            {
+                "ui": {
+                    "label": "Himachal Pradesh"
+                },
+                "value": "HIMACHAL_PRADESH"
+            },
+            {
+                "ui": {
+                    "label": "Jharkhand"
+                },
+                "value": "JHARKHAND"
+            },
+            {
+                "ui": {
+                    "label": "Karnataka"
+                },
+                "value": "KARNATAKA"
+            },
+            {
+                "ui": {
+                    "label": "Kerala"
+                },
+                "value": "KERALA"
+            },
+            {
+                "ui": {
+                    "label": "Madhya Pradesh"
+                },
+                "value": "MADHYA_PRADESH"
+            },
+            {
+                "ui": {
+                    "label": "Maharashtra"
+                },
+                "value": "MAHARASHTRA"
+            },
+            {
+                "ui": {
+                    "label": "Manipur"
+                },
+                "value": "MANIPUR"
+            },
+            {
+                "ui": {
+                    "label": "Meghalaya"
+                },
+                "value": "MEGHALAYA"
+            },
+            {
+                "ui": {
+                    "label": "Mizoram"
+                },
+                "value": "MIZORAM"
+            },
+            {
+                "ui": {
+                    "label": "Nagaland"
+                },
+                "value": "NAGALAND"
+            },
+            {
+                "ui": {
+                    "label": "Odisha"
+                },
+                "value": "ODISHA"
+            },
+            {
+                "ui": {
+                    "label": "Punjab"
+                },
+                "value": "PUNJAB"
+            },
+            {
+                "ui": {
+                    "label": "Rajasthan"
+                },
+                "value": "RAJASTHAN"
+            },
+            {
+                "ui": {
+                    "label": "Sikkim"
+                },
+                "value": "SIKKIM"
+            },
+            {
+                "ui": {
+                    "label": "Tamil Nadu"
+                },
+                "value": "TAMIL_NADU"
+            },
+            {
+                "ui": {
+                    "label": "Telangana"
+                },
+                "value": "TELANGANA"
+            },
+            {
+                "ui": {
+                    "label": "Tripura"
+                },
+                "value": "TRIPURA"
+            },
+            {
+                "ui": {
+                    "label": "Uttar Pradesh"
+                },
+                "value": "UTTAR_PRADESH"
+            },
+            {
+                "ui": {
+                    "label": "Uttarakhand"
+                },
+                "value": "UTTARAKHAND"
+            },
+            {
+                "ui": {
+                    "label": "West Bengal"
+                },
+                "value": "WEST_BENGAL"
+            },
+            {
+                "ui": {
+                    "label": "Andaman and Nicobar Islands"
+                },
+                "value": "ANDAMAN_AND_NICOBAR_ISLANDS"
+            },
+            {
+                "ui": {
+                    "label": "Chandigarh"
+                },
+                "value": "CHANDIGARH"
+            },
+            {
+                "ui": {
+                    "label": "Dadra and Nagar Haveli and Daman and Diu"
+                },
+                "value": "DADRA_AND_NAGAR_HAVELI_AND_DAMAN_AND_DIU"
+            },
+            {
+                "ui": {
+                    "label": "Delhi"
+                },
+                "value": "DELHI"
+            },
+            {
+                "ui": {
+                    "label": "Jammu and Kashmir"
+                },
+                "value": "JAMMU_AND_KASHMIR"
+            },
+            {
+                "ui": {
+                    "label": "Ladakh"
+                },
+                "value": "LADAKH"
+            },
+            {
+                "ui": {
+                    "label": "Lakshadweep"
+                },
+                "value": "LAKSHADWEEP"
+            },
+            {
+                "ui": {
+                    "label": "Puducherry"
+                },
+                "value": "PUDUCHERRY"
+            }
+        ],
+        "LOAN_PURPOSE": [
+            {
+                "ui": {
+                    "label": "Working Capital"
+                },
+                "value": "WORKING_CAPITAL"
+            },
+            {
+                "ui": {
+                    "label": "Equipment Purchase"
+                },
+                "value": "EQUIPMENT"
+            },
+            {
+                "ui": {
+                    "label": "Inventory Purchase"
+                },
+                "value": "INVENTORY"
+            },
+            {
+                "ui": {
+                    "label": "Business Expansion"
+                },
+                "value": "EXPANSION"
+            },
+            {
+                "ui": {
+                    "label": "Commercial Real Estate"
+                },
+                "value": "REAL_ESTATE"
+            },
+            {
+                "ui": {
+                    "label": "Refinance Existing Debt"
+                },
+                "value": "DEBT_REFINANCE"
+            },
+            {
+                "ui": {
+                    "label": "Purchase Existing Business"
+                },
+                "value": "BUSINESS_ACQUISITION"
+            },
+            {
+                "ui": {
+                    "label": "Startup Costs"
+                },
+                "value": "STARTUP"
+            },
+            {
+                "ui": {
+                    "label": "Marketing & Advertising"
+                },
+                "value": "MARKETING"
+            },
+            {
+                "ui": {
+                    "label": "Payroll"
+                },
+                "value": "PAYROLL"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "INDUSTRY_TYPE": [
+            {
+                "ui": {
+                    "label": "Agriculture"
+                },
+                "value": "AGRICULTURE"
+            },
+            {
+                "ui": {
+                    "label": "Automobile"
+                },
+                "value": "AUTOMOBILE"
+            },
+            {
+                "ui": {
+                    "label": "Construction"
+                },
+                "value": "CONSTRUCTION"
+            },
+            {
+                "ui": {
+                    "label": "Education"
+                },
+                "value": "EDUCATION"
+            },
+            {
+                "ui": {
+                    "label": "Financial Services"
+                },
+                "value": "FINANCIAL_SERVICES"
+            },
+            {
+                "ui": {
+                    "label": "Healthcare"
+                },
+                "value": "HEALTHCARE"
+            },
+            {
+                "ui": {
+                    "label": "Hospitality"
+                },
+                "value": "HOSPITALITY"
+            },
+            {
+                "ui": {
+                    "label": "Information Technology"
+                },
+                "value": "INFORMATION_TECHNOLOGY"
+            },
+            {
+                "ui": {
+                    "label": "Manufacturing"
+                },
+                "value": "MANUFACTURING"
+            },
+            {
+                "ui": {
+                    "label": "Professional Services"
+                },
+                "value": "PROFESSIONAL_SERVICES"
+            },
+            {
+                "ui": {
+                    "label": "Real Estate"
+                },
+                "value": "REAL_ESTATE"
+            },
+            {
+                "ui": {
+                    "label": "Retail"
+                },
+                "value": "RETAIL"
+            },
+            {
+                "ui": {
+                    "label": "Trading"
+                },
+                "value": "TRADING"
+            },
+            {
+                "ui": {
+                    "label": "Transportation & Logistics"
+                },
+                "value": "TRANSPORTATION_LOGISTICS"
+            },
+            {
+                "ui": {
+                    "label": "Wholesale"
+                },
+                "value": "WHOLESALE"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "QUALIFICATION": [
+            {
+                "ui": {
+                    "label": "Below 10th"
+                },
+                "value": "BELOW_10TH"
+            },
+            {
+                "ui": {
+                    "label": "10th"
+                },
+                "value": "10TH"
+            },
+            {
+                "ui": {
+                    "label": "12th"
+                },
+                "value": "12TH"
+            },
+            {
+                "ui": {
+                    "label": "Graduate"
+                },
+                "value": "GRADUATE"
+            },
+            {
+                "ui": {
+                    "label": "Post Graduate"
+                },
+                "value": "POST_GRADUATE"
+            },
+            {
+                "ui": {
+                    "label": "Professional"
+                },
+                "value": "PROFESSIONAL"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "MARITAL_STATUS": [
+            {
+                "ui": {
+                    "label": "Married"
+                },
+                "value": "MARRIED"
+            },
+            {
+                "ui": {
+                    "label": "Unmarried"
+                },
+                "value": "UNMARRIED"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "RESIDENCE_TYPE": [
+            {
+                "ui": {
+                    "label": "Self Owned"
+                },
+                "value": "SELF_OWNED"
+            },
+            {
+                "ui": {
+                    "label": "Rented"
+                },
+                "value": "RENTED"
+            },
+            {
+                "ui": {
+                    "label": "Parental"
+                },
+                "value": "PARENTAL"
+            },
+            {
+                "ui": {
+                    "label": "Company Provided"
+                },
+                "value": "COMPANY_PROVIDED"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ],
+        "NATURE_OF_BUSINESS": [
+            {
+                "ui": {
+                    "label": "Agriculture & Allied"
+                },
+                "value": "AGRICULTURE_AND_ALLIED"
+            },
+            {
+                "ui": {
+                    "label": "Manufacturing"
+                },
+                "value": "MANUFACTURING"
+            },
+            {
+                "ui": {
+                    "label": "Retail Trading"
+                },
+                "value": "RETAIL_TRADING"
+            },
+            {
+                "ui": {
+                    "label": "Wholesale Trading"
+                },
+                "value": "WHOLESALE_TRADING"
+            },
+            {
+                "ui": {
+                    "label": "Service"
+                },
+                "value": "SERVICE"
+            },
+            {
+                "ui": {
+                    "label": "Other"
+                },
+                "value": "OTHER"
+            }
+        ]
+    },
+    "programCode": "business_profile_v2",
+    "programType": "BUSINESS_PROFILE_V2",
+    "schemaVersion": "1.0",
+    "documentPolicy": {
+        "upload": "PRESIGNED",
+        "encryption": "KMS",
+        "malwareScan": true,
+        "coverageMonths": {
+            "BANK_STATEMENT": 6
+        },
+        "contentSniffing": true,
+        "passwordProtectedPdf": "PROMPT_FOR_PASSWORD"
+    },
+    "sensitivityLevels": [
+        "PUBLIC",
+        "INTERNAL",
+        "CONFIDENTIAL",
+        "RESTRICTED"
+    ]
+}

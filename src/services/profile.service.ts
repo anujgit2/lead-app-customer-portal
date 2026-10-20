@@ -21,6 +21,7 @@ import type {
   UpdateCustomerProfileRequest,
 } from "@/types";
 import { readFormTemplates } from "@/features/profiles/utils/read-form-template";
+import { programService, unwrapPublishedConfig } from "@/services/program.service";
 
 const LINK_ROLES: readonly CustomerProfileLinkRole[] = [
   "PROMOTER",
@@ -303,6 +304,16 @@ export const profileService = {
       `/api/profile-form-templates/code/${encodeURIComponent(code)}/latest`,
       code
     );
+  },
+
+  /** Forms of a PROFILE program, read from GET /api/tenant/programs/{programId}/version. */
+  async getProgramFormTemplates(programCodeOrId: string): Promise<FormTemplate[]> {
+    try {
+      const payload = await programService.getProgramPayload(programCodeOrId);
+      return readFormTemplates(unwrapPublishedConfig(payload), programCodeOrId);
+    } catch (error) {
+      rethrow(error);
+    }
   },
 
   async getFormTemplateVersion(code: string, versionNumber: number): Promise<FormTemplate[]> {

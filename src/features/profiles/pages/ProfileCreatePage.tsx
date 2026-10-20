@@ -7,8 +7,18 @@ import { toast } from "sonner";
 import { ErrorState } from "@/components/ErrorState";
 import { PageHeader, PageShell } from "@/components/PageShell";
 import { parseApiError } from "@/lib/api-error";
-import { useCreateProfile, useFormTemplate } from "../api/queries";
-import { profileTypeFromQuery, templateCodeForType } from "../constants";
+import {
+  useCreateProfile,
+  useFormTemplate,
+  useProfilePrograms,
+  useProgramFormTemplate,
+} from "../api/queries";
+import {
+  newProfileHref,
+  profileTypeForProgram,
+  profileTypeFromQuery,
+  templateCodeForType,
+} from "../constants";
 import { ProfileForm } from "../components/ProfileForm";
 import { profileTypeLabel } from "../utils/display";
 import { safeInternalPath, withProfileReturn } from "../utils/return-path";
@@ -34,14 +44,6 @@ export function ProfileCreateFallback() {
   );
 }
 
-function typeHref(href: string, returnTo: string | null): string {
-  if (!returnTo) return href;
-  const [path, query = ""] = href.split("?");
-  const params = new URLSearchParams(query);
-  params.set("returnTo", returnTo);
-  return `${path}?${params.toString()}`;
-}
-
 const backLinkClass =
   "inline-flex w-fit items-center gap-2 rounded-sm text-sm text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
@@ -53,11 +55,19 @@ export function ProfileCreatePage() {
   const searchParams = useSearchParams();
   const type = profileTypeFromQuery(searchParams?.get("type") ?? null);
   const returnTo = safeInternalPath(searchParams?.get("returnTo") ?? null);
-  const templateCode = type ? templateCodeForType(type) : "";
-  const templateQuery = useFormTemplate(templateCode);
+  const programId = type ? searchParams?.get("programId")?.trim() ?? "" : "";
+  const templateCode = type && !programId ? templateCodeForType(type) : "";
+  const programTemplateQuery = useProgramFormTemplate(programId);
+  const legacyTemplateQuery = useFormTemplate(templateCode);
+  const templateQuery = programId ? programTemplateQuery : legacyTemplateQuery;
   const createProfile = useCreateProfile();
+  const profilePrograms = useProfilePrograms();
+  const program = profilePrograms.data?.find(
+    (item) => item.id === programId || item.programCode === programId
+  );
 
   if (!type) {
+    const programs = profilePrograms.data ?? [];
     return (
       <PageShell width="narrow">
         <Link href={returnTo ?? "/profiles"} className={backLinkClass}>
@@ -65,18 +75,43 @@ export function ProfileCreatePage() {
           Profiles
         </Link>
         <PageHeader title="New profile" description="Choose who this profile is for." />
-        <div className="grid gap-6 sm:grid-cols-2">
-          <Link href={typeHref("/profiles/new?type=individual", returnTo)} className={typeCardClass}>
-            <UserRound className="h-5 w-5 text-primary" />
-            <p className="mt-4 font-semibold tracking-tight text-foreground">Individual</p>
-            <p className="mt-1 text-sm font-normal text-muted-foreground">A person.</p>
-          </Link>
-          <Link href={typeHref("/profiles/new?type=business", returnTo)} className={typeCardClass}>
-            <Building2 className="h-5 w-5 text-primary" />
-            <p className="mt-4 font-semibold tracking-tight text-foreground">Business</p>
-            <p className="mt-1 text-sm font-normal text-muted-foreground">A company or firm.</p>
-          </Link>
-        </div>
+        {profilePrograms.isLoading ? (
+          <div className="grid gap-6 sm:grid-cols-2" aria-busy="true">
+            <div className="h-32 animate-pulse rounded-xl bg-muted" />
+            <div className="h-32 animate-pulse rounded-xl bg-muted" />
+          </div>
+        ) : profilePrograms.isError ? (
+          <ErrorState
+            compact
+            title="Unable to load profile types"
+            message={parseApiError(profilePrograms.error).message}
+            status={parseApiError(profilePrograms.error).status}
+            onRetry={() => {
+              void profilePrograms.refetch();
+            }}
+          />
+        ) : programs.length === 0 ? (
+          <p className="text-sm font-normal text-muted-foreground">
+            No profile types are available right now.
+          </p>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2">
+            {programs.map((program) => {
+              const Icon = profileTypeForProgram(program) === "BUSINESS" ? Building2 : UserRound;
+              return (
+                <Link key={program.id} href={newProfileHref(program, returnTo)} className={typeCardClass}>
+                  <Icon className="h-5 w-5 text-primary" />
+                  <p className="mt-4 font-semibold tracking-tight text-foreground">
+                    {program.displayName || program.name}
+                  </p>
+                  {program.description && (
+                    <p className="mt-1 text-sm font-normal text-muted-foreground">{program.description}</p>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </PageShell>
     );
   }
@@ -88,8 +123,10 @@ export function ProfileCreatePage() {
         Profiles
       </Link>
       <PageHeader
-        title={`New ${profileTypeLabel(type).toLowerCase()} profile`}
-        description={`Each form in the ${templateCode} template opens in its own tab.`}
+        title={program ? `New ${program.displayName || program.name}` : `New ${profileTypeLabel(type).toLowerCase()} profile`}
+        description={
+          program?.description ?? `Each form in the ${templateCode || "selected"} template opens in its own tab.`
+        }
       />
 
       {templateQuery.isLoading ? <CreateSkeleton /> : null}

@@ -4,7 +4,16 @@
  * field authored once (mask, prefix, rules, …) cannot render differently in
  * one place than the other.
  */
-import type { FieldOption, FormField, FormSection, FormTemplate, LoanProduct } from "@/types";
+import type {
+  ConsentCapture,
+  FieldOption,
+  FormField,
+  FormSection,
+  FormTemplate,
+  LoanProduct,
+  LocalizedCopy,
+} from "@/types";
+import { localizedParts } from "@/utils/consent";
 import { parseCurrencyFormat } from "@/utils/currency-format";
 import { collectDefinitionTokens, interpolateTokens, mergeFieldValidation, parseInputFormat } from "@/utils/field-config";
 import { isKnownFieldType } from "@/utils/field-types";
@@ -119,6 +128,35 @@ function mapOptions(raw: unknown): FieldOption[] | undefined {
   });
 }
 
+const CONSENT_CAPTURE: ReadonlySet<string> = new Set<ConsentCapture>([
+  "timestamp",
+  "ipAddress",
+  "userAgent",
+]);
+
+function parseConsentConfig(
+  raw: Raw,
+  ui: Raw,
+  labelCopy: LocalizedCopy | undefined
+): FormField["consent"] | undefined {
+  if (raw.type !== "consent") return undefined;
+  const consent = isPlainObject(raw.consent) ? raw.consent : {};
+  // Already-mapped templates carry wording on `consent` instead of `ui`.
+  const text = localizedParts(ui.text ?? consent.text);
+  const label = isPlainObject(ui.label) ? labelCopy : (localizedParts(consent.label).copy ?? labelCopy);
+  const capture = Array.isArray(consent.capture)
+    ? consent.capture.filter((item): item is ConsentCapture => typeof item === "string" && CONSENT_CAPTURE.has(item))
+    : undefined;
+  return {
+    version: asString(consent.version) ?? "",
+    capture,
+    withdrawable: asBoolean(consent.withdrawable) ?? false,
+    text: text.copy,
+    label,
+    fullTextUrl: asString(ui.fullTextUrl) ?? asString(consent.fullTextUrl),
+  };
+}
+
 function mapField(raw: unknown, path: string, issues: MappingIssue[]): FormField | null {
   if (!isPlainObject(raw)) {
     issues.push({ path, message: "Field must be an object.", severity: "error" });
@@ -127,6 +165,7 @@ function mapField(raw: unknown, path: string, issues: MappingIssue[]): FormField
 
   const ui = isPlainObject(raw.ui) ? raw.ui : {};
   const field: Raw = raw;
+  const labelParts = localizedParts(ui.label ?? field.label);
   const documentSlot = typeof field.documentType === "string";
   const overrides: Raw = documentSlot
     ? {
@@ -136,7 +175,7 @@ function mapField(raw: unknown, path: string, issues: MappingIssue[]): FormField
       }
     : {
         name: asString(field.name) ?? asString(field.key),
-        label: asString(field.label) ?? asString(ui.label),
+        label: labelParts.text,
         placeholder: asString(field.placeholder) ?? asString(ui.placeholder),
         info: asString(field.info) ?? asString(ui.tooltip),
         helpText: field.helpText ?? ui.helperText,
@@ -167,15 +206,27 @@ function mapField(raw: unknown, path: string, issues: MappingIssue[]): FormField
   if (typeof name !== "string" || typeof type !== "string") return null;
 
   const rules = normalizeFieldRules(coerced);
-  if (
-    (raw.visibleWhen !== undefined || (isPlainObject(raw.rules) && raw.rules.visibleWhen !== undefined)) &&
-    !rules?.visibleWhen
-  ) {
+  const authoredVisible =
+    raw.visibleWhen ??
+    raw.visibleIf ??
+    (isPlainObject(raw.rules) ? raw.rules.visibleWhen ?? raw.rules.visibleIf : undefined);
+  if (authoredVisible !== undefined && !rules?.visibleWhen) {
     issues.push({
       path: `${path}.visibleWhen`,
-      message: 'visibleWhen must be { field, operator, value } or shorthand { field, equals: "OTHER" }.',
+      message:
+        'visibleWhen / visibleIf must be { field, op, value }, { anyOf: [...] }, or shorthand { field, equals: "OTHER" }.',
       severity: "warning",
     });
+  }
+  if (type === "consent") {
+    const consent = isPlainObject(raw.consent) ? raw.consent : undefined;
+    if (!consent || typeof consent.version !== "string" || consent.version.length === 0) {
+      issues.push({
+        path: `${path}.consent.version`,
+        message: "consent.version is required.",
+        severity: "warning",
+      });
+    }
   }
 
   const upload = parseUploadConfig(raw.upload);
@@ -194,6 +245,12 @@ function mapField(raw: unknown, path: string, issues: MappingIssue[]): FormField
     label: resolvedLabel && resolvedLabel.length > 0 ? resolvedLabel : humanize(name),
     placeholder: interpolateTokens(asString(raw.placeholder) ?? asString(ui.placeholder), copyVars),
     helpText: interpolateTokens(asString(coerced.helpText), copyVars),
+    description: interpolateTokens(
+      asString(ui.description) ??
+        asString(ui.subtitle) ??
+        (documentSlot ? undefined : asString(raw.description)),
+      copyVars
+    ),
     info: interpolateTokens(asString(raw.info) ?? asString(ui.tooltip), copyVars),
     path: asString(raw.path),
     prefix: asString(raw.prefix),
@@ -214,6 +271,8 @@ function mapField(raw: unknown, path: string, issues: MappingIssue[]): FormField
     maxSize: asNumber(raw.maxSize) ?? upload.maxSize,
     documentType: asString(raw.documentType),
     currencyFormat: type === "currency" ? parseCurrencyFormat(currencySource) : undefined,
+    consent: parseConsentConfig(raw, ui, labelParts.copy),
+    sensitivity: type === "consent" ? asString(raw.sensitivity) : undefined,
   };
 }
 

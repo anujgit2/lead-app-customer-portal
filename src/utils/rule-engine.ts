@@ -279,6 +279,19 @@ const OP_TO_OPERATOR: Record<string, ConditionOperator> = {
 export function normalizeConditionRule(raw: unknown): ConditionRule | undefined {
   if (!isPlainObject(raw)) return undefined;
 
+  if (Array.isArray(raw.anyOf) || Array.isArray(raw.allOf)) {
+    const source = Array.isArray(raw.anyOf) ? raw.anyOf : (raw.allOf as unknown[]);
+    const conditions = source
+      .map((condition) => normalizeConditionRule(condition))
+      .filter((condition): condition is ConditionRule => condition !== undefined);
+    if (conditions.length === 0) return undefined;
+    return {
+      field: "",
+      operator: Array.isArray(raw.anyOf) ? "or" : "and",
+      conditions,
+    };
+  }
+
   const groupOp =
     (typeof raw.op === "string" && raw.op) ||
     (typeof raw.operator === "string" && raw.operator) ||
@@ -334,13 +347,19 @@ export function normalizeConditionRule(raw: unknown): ConditionRule | undefined 
   return undefined;
 }
 
-/** Reads `rules.visibleWhen` / top-level `visibleWhen` (and the requiredWhen equivalents). */
+/** Reads `visibleWhen` / `visibleIf` and `requiredWhen` / `requiredIf`, including `anyOf` groups. */
 export function normalizeFieldRules(raw: Record<string, unknown>): FieldRules | undefined {
   const nested = isPlainObject(raw.rules) ? raw.rules : {};
   const visibleWhen =
-    normalizeConditionRule(nested.visibleWhen) ?? normalizeConditionRule(raw.visibleWhen);
+    normalizeConditionRule(nested.visibleWhen) ??
+    normalizeConditionRule(raw.visibleWhen) ??
+    normalizeConditionRule(nested.visibleIf) ??
+    normalizeConditionRule(raw.visibleIf);
   const requiredWhen =
-    normalizeConditionRule(nested.requiredWhen) ?? normalizeConditionRule(raw.requiredWhen);
+    normalizeConditionRule(nested.requiredWhen) ??
+    normalizeConditionRule(raw.requiredWhen) ??
+    normalizeConditionRule(nested.requiredIf) ??
+    normalizeConditionRule(raw.requiredIf);
   if (!visibleWhen && !requiredWhen) return undefined;
   return { visibleWhen, requiredWhen };
 }

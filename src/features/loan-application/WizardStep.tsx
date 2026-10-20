@@ -82,16 +82,21 @@ function RepeatableInstance({
     shouldUnregister: false,
   });
 
+  const onChangeRef = React.useRef(onChange);
+  const onErrorsRef = React.useRef(onErrors);
+  onChangeRef.current = onChange;
+  onErrorsRef.current = onErrors;
+
   React.useEffect(() => {
     const sub = methods.watch((data) => {
-      onChange(index, data);
-      onErrors?.(index, methods.formState.errors);
+      onChangeRef.current(index, data);
+      onErrorsRef.current?.(index, methods.formState.errors);
     });
     return () => {
-      onChange(index, methods.getValues());
+      onChangeRef.current(index, methods.getValues());
       sub.unsubscribe();
     };
-  }, [methods, index, onChange, onErrors]);
+  }, [methods, index]);
 
   React.useEffect(() => {
     onValidateRef?.(index, () => methods.trigger(undefined, { shouldFocus: true }));
@@ -290,26 +295,33 @@ const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
       validate: () => methods.trigger(undefined, { shouldFocus: true }),
     }));
 
+    const onDataChangeRef = React.useRef(onDataChange);
+    const onValidChangeRef = React.useRef(onValidChange);
+    const onErrorsChangeRef = React.useRef(onErrorsChange);
+    onDataChangeRef.current = onDataChange;
+    onValidChangeRef.current = onValidChange;
+    onErrorsChangeRef.current = onErrorsChange;
+
     const syncForm = React.useCallback(() => {
-      onDataChange?.(methods.getValues());
-    }, [onDataChange, methods]);
+      onDataChangeRef.current?.(methods.getValues());
+    }, [methods]);
 
     const { isValid, errors } = methods.formState;
 
     React.useEffect(() => {
       const subscription = methods.watch((data) => {
-        onDataChange?.(data);
+        onDataChangeRef.current?.(data);
       });
       return () => {
-        onDataChange?.(methods.getValues());
+        onDataChangeRef.current?.(methods.getValues());
         subscription.unsubscribe();
       };
-    }, [methods, onDataChange]);
+    }, [methods]);
 
     React.useEffect(() => {
-      onValidChange?.(isValid);
-      onErrorsChange?.(errors);
-    }, [isValid, errors, onValidChange, onErrorsChange]);
+      onValidChangeRef.current?.(isValid);
+      onErrorsChangeRef.current?.(errors);
+    }, [isValid, errors]);
 
     if (schemaError) {
       return <SchemaBuildError error={schemaError} />;

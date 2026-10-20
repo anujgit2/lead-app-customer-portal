@@ -15,6 +15,8 @@ import {
 } from "@/utils/program-mapper";
 import { detectTemplateFormat, mapNewTemplateToOld } from "@/utils/template-mapper";
 
+export type ProgramCategory = "APPLICATION" | "PROFILE";
+
 export interface Program {
   id: string;
   programCode: string;
@@ -23,6 +25,13 @@ export interface Program {
   status: string;
   displayName?: string;
   formDefinitionId?: string;
+  programType?: string;
+  programCategory?: string;
+}
+
+/** Programs without a `programCategory` are excluded from every category. */
+export function programsInCategory(programs: Program[], category: ProgramCategory): Program[] {
+  return programs.filter((program) => program.id && program.programCategory === category);
 }
 
 interface BackendProgram {
@@ -70,6 +79,10 @@ function normalizeProgram(raw: unknown): Program | null {
     status: asNonEmptyString(nested.status) ?? "PUBLISHED",
     displayName: asNonEmptyString(nested.displayName) ?? asNonEmptyString(nested.name),
     formDefinitionId: asNonEmptyString(nested.formDefinitionId),
+    programType: asNonEmptyString(nested.programType),
+    programCategory: (
+      asNonEmptyString(nested.programCategory) ?? asNonEmptyString(obj.programCategory)
+    )?.toUpperCase(),
   };
 }
 
@@ -101,7 +114,7 @@ function pickMeta(
  * Version API returns `{ program, configuration }`. Prefer configuration for forms
  * and documents, and keep program id/name/code when those config fields are null.
  */
-function unwrapPublishedConfig(data: unknown): unknown {
+export function unwrapPublishedConfig(data: unknown): unknown {
   if (!data || typeof data !== "object" || Array.isArray(data)) return data;
   const obj = data as Record<string, unknown>;
   const programMeta = asPlainObject(obj.program);
@@ -292,7 +305,7 @@ export const programService = {
   },
 
   async getDefaultProgramWithTemplates(): Promise<LoanProduct> {
-    const programs = await fetchTenantPrograms();
+    const programs = programsInCategory(await fetchTenantPrograms(), "APPLICATION");
     if (programs.length === 0) {
       throw { message: "No loan programs available", status: 404 };
     }

@@ -32,6 +32,8 @@ import type {
   DocumentPolicyConfig,
 } from "@/types";
 import { collectDefinitionTokens, interpolateTokens } from "@/utils/field-config";
+import { localizedParts } from "@/utils/consent";
+import { normalizeFieldRules } from "@/utils/rule-engine";
 import { readStepperConfig } from "@/utils/stepper-variant";
 import { extensionsToAccept } from "@/utils/upload-config";
 
@@ -44,14 +46,20 @@ function mapNewFieldToOld(
   program: NewLoanProduct
 ): FormField {
   const copyVars = collectDefinitionTokens(newField, (ref) => resolveProgramRef(ref, program));
+  const labelParts = localizedParts(newField.ui?.label);
   const baseField: FormField = {
     name: newField.key,
-    label: interpolateTokens(newField.ui?.label, copyVars) || newField.key,
+    label: interpolateTokens(labelParts.text, copyVars) || newField.key,
     type: newField.type,
     placeholder: interpolateTokens(newField.ui?.placeholder, copyVars),
     info: interpolateTokens(newField.ui?.tooltip, copyVars),
     helpText: interpolateTokens(newField.ui?.helperText, copyVars),
   };
+  const description = interpolateTokens(
+    newField.ui?.description ?? newField.ui?.subtitle,
+    copyVars
+  );
+  if (description) baseField.description = description;
   if (typeof newField.path === "string" && newField.path.trim()) {
     baseField.path = newField.path.trim();
   }
@@ -115,6 +123,31 @@ function mapNewFieldToOld(
   // Handle rules (conditional visibility/required)
   if (newField.rules) {
     baseField.rules = convertNewRulesToOld(newField.rules);
+  }
+  if (!baseField.rules?.visibleWhen && !baseField.rules?.requiredWhen) {
+    const conditional = normalizeFieldRules(newField as unknown as Record<string, unknown>);
+    if (conditional) baseField.rules = conditional;
+  }
+
+  if (newField.type === "consent") {
+    const raw = newField as unknown as Record<string, unknown>;
+    const ui = isPlainObject(raw.ui) ? raw.ui : {};
+    const consent = isPlainObject(raw.consent) ? raw.consent : {};
+    const capture = Array.isArray(consent.capture)
+      ? consent.capture.filter(
+          (item): item is "timestamp" | "ipAddress" | "userAgent" =>
+            item === "timestamp" || item === "ipAddress" || item === "userAgent"
+        )
+      : undefined;
+    baseField.consent = {
+      version: typeof consent.version === "string" ? consent.version : "",
+      capture,
+      withdrawable: consent.withdrawable === true,
+      text: localizedParts(ui.text).copy,
+      label: labelParts.copy,
+      fullTextUrl: typeof ui.fullTextUrl === "string" ? ui.fullTextUrl : undefined,
+    };
+    if (typeof newField.sensitivity === "string") baseField.sensitivity = newField.sensitivity;
   }
 
   // Handle component reference (e.g., ADDRESS)

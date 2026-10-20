@@ -1,0 +1,2460 @@
+{
+    "ui": {
+      "title": "Individual Profile Application",
+      "subtitle": "Complete the sections below to apply. You can save a draft and return at any time."
+    },
+    "name": "Individual Profile",
+    "forms": [
+      {
+        "ui": {
+          "title": "Individual Profile",
+          "subtitle": "Add each individual applicant. Details must match their identity documents.",
+          "itemLabel": "Individual {index}",
+          "emptyState": "No individuals added yet.",
+          "addButtonLabel": "Add another individual"
+        },
+        "visible": true,
+        "formCode": "individual",
+        "formName": "IndividualProfile",
+        "maxItems": 10,
+        "minItems": 1,
+        "required": true,
+        "repeatable": true,
+        "displayOrder": 1,
+        "templateVersion": 3,
+        "sections": [
+          {
+            "ui": {
+              "title": "Personal Details",
+              "subtitle": "Details must match your PAN and identity documents"
+            },
+            "code": "personal_details",
+            "displayOrder": 1,
+            "fields": [
+              {
+                "ui": {
+                  "label": "Title",
+                  "placeholder": "Select title"
+                },
+                "key": "title",
+                "type": "select",
+                "required": false,
+                "optionsRef": "TITLE",
+                "sensitivity": "INTERNAL"
+              },
+              {
+                "ui": {
+                  "label": "First Name",
+                  "placeholder": "Enter first name",
+                  "tooltip": "First name as it appears on your PAN or official identity document.",
+                  "errors": {
+                    "required": "First Name is required",
+                    "pattern": "Use letters, spaces, . ' - only"
+                  }
+                },
+                "key": "firstName",
+                "type": "text",
+                "required": true,
+                "input": {
+                  "trim": true
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[A-Za-z .'-]+$"
+                  }
+                ],
+                "constraints": {
+                  "maxLength": 100
+                },
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "Middle Name",
+                  "placeholder": "Enter middle name",
+                  "tooltip": "Middle name as it appears on your PAN or official identity document.",
+                  "errors": {
+                    "pattern": "Use letters, spaces, . ' - only"
+                  }
+                },
+                "key": "middleName",
+                "type": "text",
+                "required": false,
+                "input": {
+                  "trim": true
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[A-Za-z .'-]+$"
+                  }
+                ],
+                "constraints": {
+                  "maxLength": 100
+                },
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "Last Name",
+                  "placeholder": "Enter last name",
+                  "tooltip": "Last name as it appears on your PAN or official identity document.",
+                  "errors": {
+                    "required": "Last Name is required",
+                    "pattern": "Use letters, spaces, . ' - only"
+                  }
+                },
+                "key": "lastName",
+                "type": "text",
+                "required": true,
+                "input": {
+                  "trim": true
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[A-Za-z .'-]+$"
+                  }
+                ],
+                "constraints": {
+                  "maxLength": 100
+                },
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "Father's Name",
+                  "placeholder": "Enter father's name",
+                  "tooltip": "Required for CKYC.",
+                  "errors": {
+                    "required": "Father's Name is required",
+                    "pattern": "Use letters, spaces, . ' - only"
+                  }
+                },
+                "key": "fatherName",
+                "type": "text",
+                "required": true,
+                "input": {
+                  "trim": true
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[A-Za-z .'-]+$"
+                  }
+                ],
+                "constraints": {
+                  "maxLength": 255
+                },
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "Mother's Name",
+                  "placeholder": "Enter mother's name",
+                  "errors": {
+                    "pattern": "Use letters, spaces, . ' - only"
+                  }
+                },
+                "key": "motherName",
+                "type": "text",
+                "required": false,
+                "input": {
+                  "trim": true
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[A-Za-z .'-]+$"
+                  }
+                ],
+                "constraints": {
+                  "maxLength": 255
+                },
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "Date of Birth",
+                  "placeholder": "DD/MM/YYYY",
+                  "errors": {
+                    "max": "You must be at least 18 years old",
+                    "min": "Enter a valid date of birth",
+                    "required": "Date of Birth is required"
+                  }
+                },
+                "key": "dateOfBirth",
+                "type": "date",
+                "required": true,
+                "sensitivity": "RESTRICTED",
+                "input": {
+                  "wireFormat": "YYYY-MM-DD",
+                  "displayFormat": "DD/MM/YYYY"
+                },
+                "constraints": {
+                  "max": "$today-18y",
+                  "min": "$today-100y"
+                }
+              },
+              {
+                "ui": {
+                  "label": "Gender",
+                  "placeholder": "Select gender",
+                  "errors": {
+                    "required": "Gender is required"
+                  }
+                },
+                "key": "gender",
+                "type": "select",
+                "required": true,
+                "optionsRef": "GENDER",
+                "sensitivity": "INTERNAL"
+              },
+              {
+                "ui": {
+                  "label": "Marital Status",
+                  "placeholder": "Select marital status"
+                },
+                "key": "maritalStatus",
+                "type": "select",
+                "required": false,
+                "optionsRef": "MARITAL_STATUS",
+                "sensitivity": "INTERNAL"
+              },
+              {
+                "ui": {
+                  "label": "Spouse's Name",
+                  "placeholder": "Enter spouse's name",
+                  "errors": {
+                    "pattern": "Use letters, spaces, . ' - only"
+                  }
+                },
+                "key": "spouseName",
+                "type": "text",
+                "required": false,
+                "input": {
+                  "trim": true
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[A-Za-z .'-]+$"
+                  }
+                ],
+                "constraints": {
+                  "maxLength": 255
+                },
+                "sensitivity": "CONFIDENTIAL",
+                "visibleIf": {
+                  "field": "maritalStatus",
+                  "op": "eq",
+                  "value": "MARRIED"
+                }
+              },
+              {
+                "ui": {
+                  "label": "Nationality",
+                  "placeholder": "Select nationality",
+                  "errors": {
+                    "required": "Nationality is required"
+                  }
+                },
+                "key": "nationality",
+                "type": "select",
+                "required": true,
+                "optionsRef": "NATIONALITY",
+                "sensitivity": "INTERNAL",
+                "defaultValue": "INDIAN"
+              },
+              {
+                "ui": {
+                  "label": "Residential Status",
+                  "placeholder": "Select residential status",
+                  "errors": {
+                    "required": "Residential Status is required"
+                  }
+                },
+                "key": "residentialStatus",
+                "type": "select",
+                "required": true,
+                "optionsRef": "RESIDENTIAL_STATUS",
+                "sensitivity": "INTERNAL",
+                "defaultValue": "RESIDENT_INDIAN"
+              },
+              {
+                "ui": {
+                  "label": "Place of Birth",
+                  "placeholder": "City / town",
+                  "tooltip": "Required for CKYC."
+                },
+                "key": "placeOfBirth",
+                "type": "text",
+                "required": false,
+                "input": {
+                  "trim": true
+                },
+                "constraints": {
+                  "maxLength": 100
+                },
+                "sensitivity": "INTERNAL"
+              },
+              {
+                "ui": {
+                  "label": "Country of Birth",
+                  "placeholder": "India"
+                },
+                "key": "countryOfBirth",
+                "type": "text",
+                "required": false,
+                "input": {
+                  "trim": true
+                },
+                "constraints": {
+                  "maxLength": 100
+                },
+                "sensitivity": "INTERNAL",
+                "defaultValue": "India"
+              },
+              {
+                "ui": {
+                  "label": "Qualification",
+                  "placeholder": "Select qualification"
+                },
+                "key": "qualification",
+                "type": "select",
+                "required": false,
+                "optionsRef": "QUALIFICATION",
+                "sensitivity": "INTERNAL"
+              }
+            ]
+          },
+          {
+            "ui": {
+              "title": "Identity & KYC",
+              "subtitle": "Verified using PAN and Aadhaar. Prefer DigiLocker or offline e-KYC where available."
+            },
+            "code": "identity_kyc",
+            "displayOrder": 2,
+            "fields": [
+              {
+                "ui": {
+                  "label": "PAN",
+                  "placeholder": "ABCDE1234F",
+                  "tooltip": "10-character PAN of the individual.",
+                  "errors": {
+                    "verify": "PAN could not be verified",
+                    "pattern": "Enter a valid 10-character PAN, e.g. ABCDE1234F",
+                    "panNotIndividual": "PAN must be an individual PAN",
+                    "required": "PAN is required"
+                  }
+                },
+                "key": "pan",
+                "type": "text",
+                "required": true,
+                "input": {
+                  "trim": true,
+                  "transform": "uppercase",
+                  "allowSpaces": false
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[A-Z]{5}[0-9]{4}[A-Z]{1}$"
+                  },
+                  {
+                    "op": "eq",
+                    "code": "panNotIndividual",
+                    "left": {
+                      "fn": "charAt",
+                      "field": "self",
+                      "index": 3
+                    },
+                    "right": "P"
+                  },
+                  {
+                    "code": "verify",
+                    "async": {
+                      "trigger": "onBlur",
+                      "provider": "PAN_VERIFY",
+                      "returns": [
+                        "fullName",
+                        "status",
+                        "aadhaarLinkStatus"
+                      ]
+                    }
+                  }
+                ],
+                "constraints": {
+                  "maxLength": 10,
+                  "minLength": 10
+                },
+                "sensitivity": "RESTRICTED",
+                "mask": {
+                  "pattern": "AAAAA0000A",
+                  "storeUnmasked": true
+                },
+                "display": {
+                  "maskAfterEntry": {
+                    "char": "X",
+                    "showLast": 4
+                  }
+                }
+              },
+              {
+                "ui": {
+                  "label": "Aadhaar",
+                  "placeholder": "1234-5678-9012",
+                  "tooltip": "12-digit Aadhaar number. Only the last 4 digits are retained; the full number is held in a secure vault.",
+                  "errors": {
+                    "checksum": "Aadhaar number is not valid",
+                    "required": "Aadhaar is required",
+                    "pattern": "Enter a valid 12-digit Aadhaar number"
+                  }
+                },
+                "key": "aadhaar",
+                "type": "text",
+                "required": true,
+                "input": {
+                  "trim": true,
+                  "transform": "numeric",
+                  "allowSpaces": false
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[2-9][0-9]{11}$"
+                  },
+                  {
+                    "algo": "VERHOEFF",
+                    "code": "checksum"
+                  }
+                ],
+                "constraints": {
+                  "maxLength": 12,
+                  "minLength": 12
+                },
+                "sensitivity": "RESTRICTED",
+                "mask": {
+                  "pattern": "0000-0000-0000",
+                  "storeUnmasked": false
+                },
+                "storage": {
+                  "mode": "VAULT",
+                  "persistLast": 4
+                },
+                "display": {
+                  "maskAfterEntry": {
+                    "char": "X",
+                    "showLast": 4
+                  }
+                }
+              },
+              {
+                "ui": {
+                  "label": "PAN-Aadhaar Link Status",
+                  "placeholder": "Select pan-aadhaar link status"
+                },
+                "key": "panAadhaarLinkStatus",
+                "type": "select",
+                "required": false,
+                "optionsRef": "PAN_LINK_STATUS",
+                "sensitivity": "INTERNAL",
+                "readOnly": true,
+                "serverSet": true
+              },
+              {
+                "ui": {
+                  "label": "CKYC Number",
+                  "placeholder": "14-digit CKYC number",
+                  "tooltip": "Optional. If you have one, we can fetch your KYC from the CKYC registry.",
+                  "errors": {
+                    "pattern": "Enter a valid 14-digit CKYC number"
+                  }
+                },
+                "key": "ckycNumber",
+                "type": "text",
+                "required": false,
+                "input": {
+                  "trim": true,
+                  "transform": "numeric",
+                  "allowSpaces": false
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[0-9]{14}$"
+                  }
+                ],
+                "constraints": {
+                  "maxLength": 14,
+                  "minLength": 14
+                },
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "KYC Mode",
+                  "placeholder": "Select kyc mode",
+                  "errors": {
+                    "required": "KYC Mode is required"
+                  }
+                },
+                "key": "kycMode",
+                "type": "select",
+                "required": true,
+                "optionsRef": "KYC_MODE",
+                "sensitivity": "INTERNAL",
+                "serverSet": true
+              },
+              {
+                "ui": {
+                  "label": "KYC Verification Status",
+                  "placeholder": "Select kyc verification status"
+                },
+                "key": "kycVerificationStatus",
+                "type": "select",
+                "required": false,
+                "optionsRef": "KYC_STATUS",
+                "sensitivity": "INTERNAL",
+                "readOnly": true,
+                "serverSet": true
+              }
+            ]
+          },
+          {
+            "ui": {
+              "title": "Contact Details",
+              "subtitle": "We will verify your email and mobile number with an OTP"
+            },
+            "code": "contact_details",
+            "displayOrder": 3,
+            "fields": [
+              {
+                "ui": {
+                  "label": "Email",
+                  "placeholder": "name@example.com",
+                  "errors": {
+                    "required": "Email is required",
+                    "pattern": "Enter a valid email address"
+                  }
+                },
+                "key": "email",
+                "type": "email",
+                "required": true,
+                "input": {
+                  "trim": true,
+                  "transform": "lowercase",
+                  "allowSpaces": false
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$"
+                  }
+                ],
+                "constraints": {
+                  "maxLength": 255
+                },
+                "sensitivity": "CONFIDENTIAL",
+                "verification": {
+                  "method": "OTP",
+                  "provider": "EMAIL_OTP",
+                  "flagField": "emailVerified"
+                }
+              },
+              {
+                "ui": {
+                  "label": "Email Verified"
+                },
+                "key": "emailVerified",
+                "type": "hidden",
+                "required": false,
+                "serverSet": true,
+                "defaultValue": false
+              },
+              {
+                "ui": {
+                  "label": "Mobile Number",
+                  "placeholder": "98765 43210",
+                  "errors": {
+                    "required": "Mobile Number is required",
+                    "pattern": "Enter a valid 10-digit Indian mobile number"
+                  }
+                },
+                "key": "mobileNumber",
+                "type": "tel",
+                "required": true,
+                "input": {
+                  "trim": true,
+                  "prefix": "+91",
+                  "transform": "numeric",
+                  "allowSpaces": false
+                },
+                "validation": [
+                  {
+                    "code": "pattern",
+                    "regex": "^[6-9][0-9]{9}$"
+                  }
+                ],
+                "constraints": {
+                  "maxLength": 10,
+                  "minLength": 10
+                },
+                "sensitivity": "CONFIDENTIAL",
+                "mask": {
+                  "pattern": "00000 00000",
+                  "storeUnmasked": true
+                },
+                "verification": {
+                  "method": "OTP",
+                  "provider": "SMS_OTP",
+                  "flagField": "mobileVerified"
+                }
+              },
+              {
+                "ui": {
+                  "label": "Mobile Verified"
+                },
+                "key": "mobileVerified",
+                "type": "hidden",
+                "required": false,
+                "serverSet": true,
+                "defaultValue": false
+              }
+            ]
+          },
+          {
+            "ui": {
+              "title": "Address",
+              "subtitle": "Permanent address must match your identity document"
+            },
+            "code": "address_details",
+            "displayOrder": 4,
+            "fields": [
+              {
+                "ui": {
+                  "label": "Permanent Address",
+                  "tooltip": "Address as per your identity document (OVD)."
+                },
+                "key": "permanentAddress",
+                "type": "address",
+                "required": true,
+                "component": "ADDRESS",
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "Current / correspondence address is the same as permanent",
+                  "placeholder": "Select current / correspondence address is the same as permanent",
+                  "errors": {
+                    "required": "Current / correspondence address is the same as permanent is required"
+                  }
+                },
+                "key": "correspondenceSameAsPermanent",
+                "type": "select",
+                "required": true,
+                "optionsRef": "YES_NO",
+                "defaultValue": "YES"
+              },
+              {
+                "ui": {
+                  "label": "Current / Correspondence Address",
+                  "tooltip": "Where you currently live or receive mail."
+                },
+                "key": "correspondenceAddress",
+                "type": "address",
+                "required": false,
+                "component": "ADDRESS",
+                "sensitivity": "CONFIDENTIAL",
+                "visibleIf": {
+                  "field": "correspondenceSameAsPermanent",
+                  "op": "eq",
+                  "value": "NO"
+                },
+                "requiredIf": {
+                  "field": "correspondenceSameAsPermanent",
+                  "op": "eq",
+                  "value": "NO"
+                }
+              },
+              {
+                "ui": {
+                  "label": "Residence Type",
+                  "placeholder": "Select residence type"
+                },
+                "key": "residenceType",
+                "type": "select",
+                "required": false,
+                "optionsRef": "RESIDENCE_TYPE",
+                "sensitivity": "INTERNAL"
+              },
+              {
+                "ui": {
+                  "label": "Years at Current Residence",
+                  "placeholder": "e.g. 3"
+                },
+                "key": "yearsAtCurrentResidence",
+                "type": "number",
+                "required": false,
+                "sensitivity": "INTERNAL",
+                "input": {
+                  "transform": "numeric"
+                },
+                "constraints": {
+                  "min": 0,
+                  "max": 100,
+                  "integer": true
+                }
+              }
+            ]
+          },
+          {
+            "ui": {
+              "title": "Employment & Income",
+              "subtitle": "Used to assess your repayment capacity"
+            },
+            "code": "employment_income",
+            "displayOrder": 5,
+            "fields": [
+              {
+                "ui": {
+                  "label": "Employment Type",
+                  "placeholder": "Select employment type",
+                  "errors": {
+                    "required": "Employment Type is required"
+                  }
+                },
+                "key": "employmentType",
+                "type": "select",
+                "required": true,
+                "optionsRef": "EMPLOYMENT_TYPE",
+                "sensitivity": "INTERNAL"
+              },
+              {
+                "ui": {
+                  "label": "Occupation",
+                  "placeholder": "e.g. Software Engineer, Doctor, Shop Owner"
+                },
+                "key": "occupation",
+                "type": "text",
+                "required": false,
+                "input": {
+                  "trim": true
+                },
+                "constraints": {
+                  "maxLength": 100
+                },
+                "sensitivity": "INTERNAL"
+              },
+              {
+                "ui": {
+                  "label": "Work Experience (Years)",
+                  "placeholder": "e.g. 5"
+                },
+                "key": "workExperienceYears",
+                "type": "number",
+                "required": false,
+                "sensitivity": "INTERNAL",
+                "input": {
+                  "transform": "numeric"
+                },
+                "constraints": {
+                  "min": 0,
+                  "max": 100,
+                  "integer": true
+                }
+              },
+              {
+                "ui": {
+                  "label": "Annual Income",
+                  "placeholder": "Select annual income",
+                  "errors": {
+                    "required": "Annual Income is required"
+                  }
+                },
+                "key": "annualIncomeRange",
+                "type": "select",
+                "required": true,
+                "optionsRef": "ANNUAL_INCOME_RANGE",
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "Net Worth (INR)",
+                  "placeholder": "e.g. 2500000"
+                },
+                "key": "netWorth",
+                "type": "number",
+                "required": false,
+                "sensitivity": "CONFIDENTIAL",
+                "input": {
+                  "transform": "numeric"
+                },
+                "constraints": {
+                  "min": 0,
+                  "integer": true
+                }
+              },
+              {
+                "ui": {
+                  "label": "Number of Dependents",
+                  "placeholder": "e.g. 2"
+                },
+                "key": "numberOfDependents",
+                "type": "number",
+                "required": false,
+                "sensitivity": "INTERNAL",
+                "input": {
+                  "transform": "numeric"
+                },
+                "constraints": {
+                  "min": 0,
+                  "max": 20,
+                  "integer": true
+                }
+              }
+            ]
+          },
+          {
+            "ui": {
+              "title": "Existing Loans & Obligations",
+              "subtitle": "List loans and credit cards you currently repay"
+            },
+            "code": "existing_obligations",
+            "displayOrder": 6,
+            "fields": [
+              {
+                "ui": {
+                  "label": "Do you have any existing loans or credit cards?",
+                  "placeholder": "Select do you have any existing loans or credit cards?",
+                  "errors": {
+                    "required": "Do you have any existing loans or credit cards? is required"
+                  }
+                },
+                "key": "hasExistingLoans",
+                "type": "select",
+                "required": true,
+                "optionsRef": "YES_NO"
+              },
+              {
+                "ui": {
+                  "label": "Existing Loans",
+                  "itemLabel": "Existing Loan {index}",
+                  "addButtonLabel": "Add another"
+                },
+                "key": "existingLoans",
+                "type": "group",
+                "repeatable": true,
+                "minItems": 1,
+                "maxItems": 20,
+                "required": false,
+                "visibleIf": {
+                  "field": "hasExistingLoans",
+                  "op": "eq",
+                  "value": "YES"
+                },
+                "requiredIf": {
+                  "field": "hasExistingLoans",
+                  "op": "eq",
+                  "value": "YES"
+                },
+                "fields": [
+                  {
+                    "ui": {
+                      "label": "Lender Name",
+                      "placeholder": "Bank / NBFC name",
+                      "errors": {
+                        "required": "Lender Name is required"
+                      }
+                    },
+                    "key": "lender",
+                    "type": "text",
+                    "required": true,
+                    "input": {
+                      "trim": true
+                    },
+                    "constraints": {
+                      "maxLength": 150
+                    }
+                  },
+                  {
+                    "ui": {
+                      "label": "Loan Type",
+                      "placeholder": "Select loan type",
+                      "errors": {
+                        "required": "Loan Type is required"
+                      }
+                    },
+                    "key": "loanType",
+                    "type": "select",
+                    "required": true,
+                    "optionsRef": "DEBT_TYPE"
+                  },
+                  {
+                    "ui": {
+                      "label": "Outstanding Amount (INR)",
+                      "placeholder": "e.g. 500000",
+                      "errors": {
+                        "required": "Outstanding Amount (INR) is required"
+                      }
+                    },
+                    "key": "outstandingAmount",
+                    "type": "number",
+                    "required": true,
+                    "input": {
+                      "transform": "numeric"
+                    },
+                    "constraints": {
+                      "min": 0,
+                      "integer": true
+                    }
+                  },
+                  {
+                    "ui": {
+                      "label": "Monthly EMI (INR)",
+                      "placeholder": "e.g. 15000",
+                      "errors": {
+                        "required": "Monthly EMI (INR) is required"
+                      }
+                    },
+                    "key": "monthlyEmi",
+                    "type": "number",
+                    "required": true,
+                    "input": {
+                      "transform": "numeric"
+                    },
+                    "constraints": {
+                      "min": 0,
+                      "integer": true
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "ui": {
+              "title": "Declarations",
+              "subtitle": "Tax residency, PEP and other regulatory declarations"
+            },
+            "code": "compliance_declarations",
+            "displayOrder": 7,
+            "fields": [
+              {
+                "ui": {
+                  "label": "Are you a tax resident of any country other than India?",
+                  "placeholder": "Select are you a tax resident of any country other than india?",
+                  "errors": {
+                    "required": "Are you a tax resident of any country other than India? is required"
+                  }
+                },
+                "key": "taxResidencyOutsideIndia",
+                "type": "select",
+                "required": true,
+                "optionsRef": "YES_NO",
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "Tax Residencies",
+                  "itemLabel": "Tax Residencie {index}",
+                  "addButtonLabel": "Add another"
+                },
+                "key": "taxResidencies",
+                "type": "group",
+                "repeatable": true,
+                "minItems": 1,
+                "maxItems": 5,
+                "required": false,
+                "visibleIf": {
+                  "field": "taxResidencyOutsideIndia",
+                  "op": "eq",
+                  "value": "YES"
+                },
+                "requiredIf": {
+                  "field": "taxResidencyOutsideIndia",
+                  "op": "eq",
+                  "value": "YES"
+                },
+                "fields": [
+                  {
+                    "ui": {
+                      "label": "Country",
+                      "placeholder": "Country of tax residence",
+                      "errors": {
+                        "required": "Country is required"
+                      }
+                    },
+                    "key": "country",
+                    "type": "text",
+                    "required": true,
+                    "input": {
+                      "trim": true
+                    },
+                    "constraints": {
+                      "maxLength": 100
+                    }
+                  },
+                  {
+                    "ui": {
+                      "label": "Tax Identification Number",
+                      "placeholder": "TIN / equivalent",
+                      "errors": {
+                        "required": "Tax Identification Number is required"
+                      }
+                    },
+                    "key": "tin",
+                    "type": "text",
+                    "required": true,
+                    "input": {
+                      "trim": true
+                    },
+                    "constraints": {
+                      "maxLength": 50
+                    }
+                  }
+                ]
+              },
+              {
+                "ui": {
+                  "label": "Are you a Politically Exposed Person (PEP)?",
+                  "placeholder": "Select are you a politically exposed person (pep)?",
+                  "errors": {
+                    "required": "Are you a Politically Exposed Person (PEP)? is required"
+                  }
+                },
+                "key": "isPEP",
+                "type": "select",
+                "required": true,
+                "optionsRef": "YES_NO",
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "Are you related to a Politically Exposed Person?",
+                  "placeholder": "Select are you related to a politically exposed person?",
+                  "errors": {
+                    "required": "Are you related to a Politically Exposed Person? is required"
+                  }
+                },
+                "key": "isRelatedToPEP",
+                "type": "select",
+                "required": true,
+                "optionsRef": "YES_NO",
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "Have you ever defaulted on a loan or been classified as a wilful defaulter / NPA?",
+                  "placeholder": "Select have you ever defaulted on a loan or been classified as a wilful defaulter / npa?",
+                  "errors": {
+                    "required": "Have you ever defaulted on a loan or been classified as a wilful defaulter / NPA? is required"
+                  }
+                },
+                "key": "isDefaulter",
+                "type": "select",
+                "required": true,
+                "optionsRef": "YES_NO",
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "Have you ever been declared insolvent or bankrupt?",
+                  "placeholder": "Select have you ever been declared insolvent or bankrupt?",
+                  "errors": {
+                    "required": "Have you ever been declared insolvent or bankrupt? is required"
+                  }
+                },
+                "key": "hasInsolvency",
+                "type": "select",
+                "required": true,
+                "optionsRef": "YES_NO",
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "Are there any pending criminal or civil proceedings against you?",
+                  "placeholder": "Select are there any pending criminal or civil proceedings against you?",
+                  "errors": {
+                    "required": "Are there any pending criminal or civil proceedings against you? is required"
+                  }
+                },
+                "key": "hasPendingProceedings",
+                "type": "select",
+                "required": true,
+                "optionsRef": "YES_NO",
+                "sensitivity": "CONFIDENTIAL"
+              },
+              {
+                "ui": {
+                  "label": "Details",
+                  "placeholder": "Provide details for any 'Yes' answer above"
+                },
+                "key": "declarationDetails",
+                "type": "textarea",
+                "required": false,
+                "constraints": {
+                  "maxLength": 1000
+                },
+                "sensitivity": "CONFIDENTIAL",
+                "visibleIf": {
+                  "anyOf": [
+                    {
+                      "field": "isDefaulter",
+                      "op": "eq",
+                      "value": "YES"
+                    },
+                    {
+                      "field": "hasInsolvency",
+                      "op": "eq",
+                      "value": "YES"
+                    },
+                    {
+                      "field": "hasPendingProceedings",
+                      "op": "eq",
+                      "value": "YES"
+                    }
+                  ]
+                },
+                "requiredIf": {
+                  "anyOf": [
+                    {
+                      "field": "isDefaulter",
+                      "op": "eq",
+                      "value": "YES"
+                    },
+                    {
+                      "field": "hasInsolvency",
+                      "op": "eq",
+                      "value": "YES"
+                    },
+                    {
+                      "field": "hasPendingProceedings",
+                      "op": "eq",
+                      "value": "YES"
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "ui": {
+              "title": "Consents",
+              "subtitle": "Please review and accept to continue"
+            },
+            "code": "consents",
+            "displayOrder": 8,
+            "fields": [
+              {
+                "ui": {
+                  "label": "KYC / Aadhaar consent",
+                  "description": "I consent to the use of my Aadhaar and PAN for identity verification and KYC, as per applicable law.",
+                  "errors": {
+                    "required": "This consent is required to proceed"
+                  }
+                },
+                "key": "aadhaarKycConsent",
+                "type": "consent",
+                "required": true,
+                "consent": {
+                  "version": "1.0",
+                  "capture": [
+                    "timestamp",
+                    "ipAddress",
+                    "userAgent"
+                  ],
+                  "withdrawable": true
+                },
+                "sensitivity": "INTERNAL"
+              },
+              {
+                "ui": {
+                  "label": "Credit bureau consent",
+                  "text": "I authorise retrieval of my credit information from credit information companies.",
+                  "errors": {
+                    "required": "This consent is required to proceed"
+                  }
+                },
+                "key": "creditBureauConsent",
+                "type": "consent",
+                "required": true,
+                "consent": {
+                  "version": "1.0",
+                  "capture": [
+                    "timestamp",
+                    "ipAddress",
+                    "userAgent"
+                  ],
+                  "withdrawable": true
+                },
+                "sensitivity": "INTERNAL"
+              },
+              {
+                "ui": {
+                  "label": "Data processing consent",
+                  "text": "I consent to the collection and processing of my personal data for the stated purposes under the Digital Personal Data Protection Act, 2023.",
+                  "errors": {
+                    "required": "This consent is required to proceed"
+                  }
+                },
+                "key": "dpdpConsent",
+                "type": "consent",
+                "required": true,
+                "consent": {
+                  "version": "1.0",
+                  "capture": [
+                    "timestamp",
+                    "ipAddress",
+                    "userAgent"
+                  ],
+                  "withdrawable": true
+                },
+                "sensitivity": "INTERNAL"
+              },
+              {
+                "ui": {
+                  "label": "Terms and conditions",
+                  "text": "I have read and agree to the terms and conditions.",
+                  "errors": {
+                    "required": "This consent is required to proceed"
+                  }
+                },
+                "key": "termsConsent",
+                "type": "consent",
+                "required": true,
+                "consent": {
+                  "version": "1.0",
+                  "capture": [
+                    "timestamp",
+                    "ipAddress",
+                    "userAgent"
+                  ],
+                  "withdrawable": true
+                },
+                "sensitivity": "INTERNAL"
+              }
+            ]
+          }
+        ],
+        "rules": [
+          {
+            "code": "uniquePan",
+            "type": "unique",
+            "fields": [
+              "pan"
+            ],
+            "scope": "items",
+            "error": "The same PAN cannot be used twice"
+          },
+          {
+            "code": "uniqueAadhaar",
+            "type": "unique",
+            "fields": [
+              "aadhaar"
+            ],
+            "scope": "items",
+            "error": "The same Aadhaar cannot be used twice"
+          },
+          {
+            "code": "uniqueMobile",
+            "type": "unique",
+            "fields": [
+              "mobileNumber"
+            ],
+            "scope": "items",
+            "error": "The same mobile number cannot be used twice"
+          },
+          {
+            "code": "nameMatchPan",
+            "type": "nameMatch",
+            "fields": [
+              "firstName",
+              "middleName",
+              "lastName"
+            ],
+            "against": "PAN_VERIFY.fullName",
+            "threshold": 0.85,
+            "onFail": "FLAG_FOR_REVIEW"
+          }
+        ]
+      }
+    ],
+    "status": "DRAFT",
+    "version": 2,
+    "schemaVersion": "1.1",
+    "currency": "INR",
+    "programCode": "individual_profile",
+    "programType": "PERSONAL_PROFILE",
+    "documents": [
+      {
+        "ui": {
+          "label": "PAN Card",
+          "description": "Upload the PAN card of this individual.",
+          "errors": {
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "required": "PAN Card is required"
+          },
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file"
+        },
+        "scope": "INDIVIDUAL",
+        "upload": {
+          "maxFiles": 1,
+          "minFiles": 1,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "required": true,
+        "sensitivity": "RESTRICTED",
+        "documentType": "INDIVIDUAL_PAN",
+        "verification": {
+          "ocrMatch": [
+            "pan",
+            "name"
+          ],
+          "against": [
+            "pan",
+            "PAN_VERIFY.fullName"
+          ]
+        }
+      },
+      {
+        "ui": {
+          "label": "Proof of Identity & Address (OVD)",
+          "description": "Aadhaar (masked copy or e-Aadhaar), Passport, Voter ID, Driving Licence or NREGA job card.",
+          "errors": {
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "required": "Proof of Identity & Address (OVD) is required"
+          },
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file"
+        },
+        "scope": "INDIVIDUAL",
+        "upload": {
+          "maxFiles": 2,
+          "minFiles": 1,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "required": true,
+        "sensitivity": "RESTRICTED",
+        "documentType": "INDIVIDUAL_OVD",
+        "optionsRef": "OVD_TYPE",
+        "maskedAadhaarRequired": true
+      },
+      {
+        "ui": {
+          "label": "Photograph / Selfie",
+          "description": "Recent passport-size photo or a live selfie.",
+          "errors": {
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "required": "Photograph / Selfie is required"
+          },
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file"
+        },
+        "scope": "INDIVIDUAL",
+        "upload": {
+          "maxFiles": 1,
+          "minFiles": 1,
+          "maxFileSizeMB": 5,
+          "allowedExtensions": [
+            "jpg",
+            "jpeg",
+            "png",
+            "heic"
+          ]
+        },
+        "required": true,
+        "sensitivity": "RESTRICTED",
+        "documentType": "INDIVIDUAL_PHOTO",
+        "verification": {
+          "liveness": true,
+          "faceMatchAgainst": "INDIVIDUAL_OVD"
+        }
+      },
+      {
+        "ui": {
+          "label": "Current Address Proof",
+          "description": "Utility bill (recent), rent agreement or bank statement showing your current address.",
+          "errors": {
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "required": "Current Address Proof is required"
+          },
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file"
+        },
+        "scope": "INDIVIDUAL",
+        "upload": {
+          "maxFiles": 1,
+          "minFiles": 0,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "required": false,
+        "sensitivity": "RESTRICTED",
+        "documentType": "INDIVIDUAL_ADDRESS_PROOF",
+        "requiredIf": {
+          "field": "correspondenceSameAsPermanent",
+          "op": "eq",
+          "value": "NO"
+        },
+        "visibleIf": {
+          "field": "correspondenceSameAsPermanent",
+          "op": "eq",
+          "value": "NO"
+        }
+      },
+      {
+        "ui": {
+          "label": "Specimen Signature",
+          "description": "Signature on plain white paper.",
+          "errors": {
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "required": "Specimen Signature is required"
+          },
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file"
+        },
+        "scope": "INDIVIDUAL",
+        "upload": {
+          "maxFiles": 1,
+          "minFiles": 0,
+          "maxFileSizeMB": 5,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "required": false,
+        "sensitivity": "RESTRICTED",
+        "documentType": "INDIVIDUAL_SIGNATURE"
+      },
+      {
+        "ui": {
+          "label": "Income Proof",
+          "description": "Salaried: last 3 salary slips and Form 16. Self-employed / professional: ITR for the last 2 to 3 years with computation and Form 26AS / AIS.",
+          "errors": {
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "required": "Income Proof is required"
+          },
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file"
+        },
+        "scope": "INDIVIDUAL",
+        "upload": {
+          "maxFiles": 12,
+          "minFiles": 0,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "required": false,
+        "sensitivity": "RESTRICTED",
+        "documentType": "INDIVIDUAL_INCOME_PROOF",
+        "recommended": true
+      },
+      {
+        "ui": {
+          "label": "Personal Bank Statements",
+          "description": "Last 6 months of statements for your primary salary or business account.",
+          "errors": {
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "required": "Personal Bank Statements is required"
+          },
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file"
+        },
+        "scope": "INDIVIDUAL",
+        "upload": {
+          "maxFiles": 6,
+          "minFiles": 0,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "required": false,
+        "sensitivity": "RESTRICTED",
+        "documentType": "BANK_STATEMENT",
+        "recommended": true
+      },
+      {
+        "ui": {
+          "label": "Net Worth Statement",
+          "description": "Self-declared or CA-certified net worth statement.",
+          "errors": {
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "required": "Net Worth Statement is required"
+          },
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file"
+        },
+        "scope": "INDIVIDUAL",
+        "upload": {
+          "maxFiles": 1,
+          "minFiles": 0,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "required": false,
+        "sensitivity": "RESTRICTED",
+        "documentType": "INDIVIDUAL_NETWORTH"
+      },
+      {
+        "ui": {
+          "label": "Existing Loan Statements",
+          "description": "Latest statements for the loans listed above.",
+          "errors": {
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "required": "Existing Loan Statements is required"
+          },
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file"
+        },
+        "scope": "INDIVIDUAL",
+        "upload": {
+          "maxFiles": 10,
+          "minFiles": 0,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "required": false,
+        "sensitivity": "RESTRICTED",
+        "documentType": "INDIVIDUAL_LOAN_STATEMENT",
+        "visibleIf": {
+          "field": "hasExistingLoans",
+          "op": "eq",
+          "value": "YES"
+        }
+      },
+      {
+        "ui": {
+          "label": "Signed Consent / Declaration",
+          "description": "Only needed if consents were not accepted digitally.",
+          "errors": {
+            "fileSize": "File exceeds {maxFileSizeMB} MB",
+            "fileType": "Unsupported file type",
+            "maxFiles": "You can upload at most {maxFiles} file(s)",
+            "minFiles": "Upload at least {minFiles} file(s)",
+            "required": "Signed Consent / Declaration is required"
+          },
+          "uploadHint": "PDF, JPG, PNG, up to {maxFileSizeMB} MB per file"
+        },
+        "scope": "INDIVIDUAL",
+        "upload": {
+          "maxFiles": 1,
+          "minFiles": 0,
+          "maxFileSizeMB": 10,
+          "allowedExtensions": [
+            "pdf",
+            "jpg",
+            "jpeg",
+            "png"
+          ]
+        },
+        "required": false,
+        "sensitivity": "RESTRICTED",
+        "documentType": "INDIVIDUAL_CONSENT"
+      }
+    ],
+    "components": {
+      "ADDRESS": {
+        "fields": [
+          {
+            "ui": {
+              "label": "Address Line 1",
+              "placeholder": "Building, house or street address",
+              "errors": {
+                "required": "Address Line 1 is required"
+              }
+            },
+            "key": "addressLine1",
+            "type": "text",
+            "required": true,
+            "input": {
+              "trim": true
+            },
+            "constraints": {
+              "maxLength": 255
+            }
+          },
+          {
+            "ui": {
+              "label": "Address Line 2",
+              "placeholder": "Apartment, suite, etc."
+            },
+            "key": "addressLine2",
+            "type": "text",
+            "required": false,
+            "input": {
+              "trim": true
+            },
+            "constraints": {
+              "maxLength": 255
+            }
+          },
+          {
+            "ui": {
+              "label": "Landmark",
+              "placeholder": "Near / opposite..."
+            },
+            "key": "landmark",
+            "type": "text",
+            "required": false,
+            "input": {
+              "trim": true
+            },
+            "constraints": {
+              "maxLength": 255
+            }
+          },
+          {
+            "ui": {
+              "label": "City",
+              "placeholder": "Enter city",
+              "errors": {
+                "required": "City is required"
+              }
+            },
+            "key": "city",
+            "type": "text",
+            "required": true,
+            "input": {
+              "trim": true
+            },
+            "constraints": {
+              "maxLength": 100
+            }
+          },
+          {
+            "ui": {
+              "label": "District",
+              "placeholder": "Enter district"
+            },
+            "key": "district",
+            "type": "text",
+            "required": false,
+            "input": {
+              "trim": true
+            },
+            "constraints": {
+              "maxLength": 100
+            }
+          },
+          {
+            "ui": {
+              "label": "State / UT",
+              "placeholder": "Select state or UT",
+              "errors": {
+                "required": "State / UT is required"
+              }
+            },
+            "key": "state",
+            "type": "select",
+            "required": true,
+            "optionsRef": "IN_STATES_UT"
+          },
+          {
+            "ui": {
+              "label": "Pincode",
+              "placeholder": "201301",
+              "errors": {
+                "required": "Pincode is required",
+                "pattern": "Enter a valid 6-digit pincode"
+              }
+            },
+            "key": "pincode",
+            "type": "text",
+            "required": true,
+            "input": {
+              "trim": true,
+              "transform": "numeric",
+              "allowSpaces": false
+            },
+            "validation": [
+              {
+                "code": "pattern",
+                "regex": "^[1-9][0-9]{5}$"
+              },
+              {
+                "code": "pincodeState",
+                "async": {
+                  "trigger": "onBlur",
+                  "provider": "PINCODE_STATE_MATCH"
+                }
+              }
+            ],
+            "constraints": {
+              "maxLength": 6,
+              "minLength": 6
+            },
+            "autofill": {
+              "provider": "INDIA_POST_PINCODE",
+              "targets": [
+                "city",
+                "district",
+                "state"
+              ]
+            }
+          },
+          {
+            "ui": {
+              "label": "Country"
+            },
+            "key": "country",
+            "type": "hidden",
+            "required": false,
+            "serverSet": true,
+            "defaultValue": "India"
+          }
+        ]
+      }
+    },
+    "optionSets": {
+      "TITLE": [
+        {
+          "ui": {
+            "label": "Mr."
+          },
+          "value": "MR"
+        },
+        {
+          "ui": {
+            "label": "Mrs."
+          },
+          "value": "MRS"
+        },
+        {
+          "ui": {
+            "label": "Ms."
+          },
+          "value": "MS"
+        },
+        {
+          "ui": {
+            "label": "Dr."
+          },
+          "value": "DR"
+        },
+        {
+          "ui": {
+            "label": "Prof."
+          },
+          "value": "PROF"
+        }
+      ],
+      "GENDER": [
+        {
+          "ui": {
+            "label": "Male"
+          },
+          "value": "MALE"
+        },
+        {
+          "ui": {
+            "label": "Female"
+          },
+          "value": "FEMALE"
+        },
+        {
+          "ui": {
+            "label": "Transgender"
+          },
+          "value": "TRANSGENDER"
+        }
+      ],
+      "MARITAL_STATUS": [
+        {
+          "ui": {
+            "label": "Married"
+          },
+          "value": "MARRIED"
+        },
+        {
+          "ui": {
+            "label": "Unmarried"
+          },
+          "value": "UNMARRIED"
+        },
+        {
+          "ui": {
+            "label": "Widowed"
+          },
+          "value": "WIDOWED"
+        },
+        {
+          "ui": {
+            "label": "Divorced"
+          },
+          "value": "DIVORCED"
+        },
+        {
+          "ui": {
+            "label": "Other"
+          },
+          "value": "OTHER"
+        }
+      ],
+      "QUALIFICATION": [
+        {
+          "ui": {
+            "label": "Below 10th"
+          },
+          "value": "BELOW_10TH"
+        },
+        {
+          "ui": {
+            "label": "10th"
+          },
+          "value": "10TH"
+        },
+        {
+          "ui": {
+            "label": "12th"
+          },
+          "value": "12TH"
+        },
+        {
+          "ui": {
+            "label": "Graduate"
+          },
+          "value": "GRADUATE"
+        },
+        {
+          "ui": {
+            "label": "Post Graduate"
+          },
+          "value": "POST_GRADUATE"
+        },
+        {
+          "ui": {
+            "label": "Professional"
+          },
+          "value": "PROFESSIONAL"
+        },
+        {
+          "ui": {
+            "label": "Other"
+          },
+          "value": "OTHER"
+        }
+      ],
+      "NATIONALITY": [
+        {
+          "ui": {
+            "label": "Indian"
+          },
+          "value": "INDIAN"
+        },
+        {
+          "ui": {
+            "label": "Other"
+          },
+          "value": "OTHER"
+        }
+      ],
+      "RESIDENTIAL_STATUS": [
+        {
+          "ui": {
+            "label": "Resident Indian"
+          },
+          "value": "RESIDENT_INDIAN"
+        },
+        {
+          "ui": {
+            "label": "NRI"
+          },
+          "value": "NRI"
+        },
+        {
+          "ui": {
+            "label": "PIO / OCI"
+          },
+          "value": "PIO_OCI"
+        },
+        {
+          "ui": {
+            "label": "Foreign National"
+          },
+          "value": "FOREIGN_NATIONAL"
+        }
+      ],
+      "RESIDENCE_TYPE": [
+        {
+          "ui": {
+            "label": "Self Owned"
+          },
+          "value": "SELF_OWNED"
+        },
+        {
+          "ui": {
+            "label": "Rented"
+          },
+          "value": "RENTED"
+        },
+        {
+          "ui": {
+            "label": "Parental"
+          },
+          "value": "PARENTAL"
+        },
+        {
+          "ui": {
+            "label": "Company Provided"
+          },
+          "value": "COMPANY_PROVIDED"
+        },
+        {
+          "ui": {
+            "label": "Other"
+          },
+          "value": "OTHER"
+        }
+      ],
+      "EMPLOYMENT_TYPE": [
+        {
+          "ui": {
+            "label": "Salaried"
+          },
+          "value": "SALARIED"
+        },
+        {
+          "ui": {
+            "label": "Self-employed"
+          },
+          "value": "SELF_EMPLOYED"
+        },
+        {
+          "ui": {
+            "label": "Professional"
+          },
+          "value": "PROFESSIONAL"
+        },
+        {
+          "ui": {
+            "label": "Retired"
+          },
+          "value": "RETIRED"
+        },
+        {
+          "ui": {
+            "label": "Homemaker"
+          },
+          "value": "HOMEMAKER"
+        },
+        {
+          "ui": {
+            "label": "Student"
+          },
+          "value": "STUDENT"
+        },
+        {
+          "ui": {
+            "label": "Other"
+          },
+          "value": "OTHER"
+        }
+      ],
+      "ANNUAL_INCOME_RANGE": [
+        {
+          "ui": {
+            "label": "Below ₹3 lakh"
+          },
+          "value": "BELOW_3L"
+        },
+        {
+          "ui": {
+            "label": "₹3 lakh to ₹6 lakh"
+          },
+          "value": "3L_6L"
+        },
+        {
+          "ui": {
+            "label": "₹6 lakh to ₹12 lakh"
+          },
+          "value": "6L_12L"
+        },
+        {
+          "ui": {
+            "label": "₹12 lakh to ₹24 lakh"
+          },
+          "value": "12L_24L"
+        },
+        {
+          "ui": {
+            "label": "₹24 lakh to ₹50 lakh"
+          },
+          "value": "24L_50L"
+        },
+        {
+          "ui": {
+            "label": "Above ₹50 lakh"
+          },
+          "value": "ABOVE_50L"
+        }
+      ],
+      "YES_NO": [
+        {
+          "ui": {
+            "label": "Yes"
+          },
+          "value": "YES"
+        },
+        {
+          "ui": {
+            "label": "No"
+          },
+          "value": "NO"
+        }
+      ],
+      "DEBT_TYPE": [
+        {
+          "ui": {
+            "label": "Home Loan"
+          },
+          "value": "HOME_LOAN"
+        },
+        {
+          "ui": {
+            "label": "Personal Loan"
+          },
+          "value": "PERSONAL_LOAN"
+        },
+        {
+          "ui": {
+            "label": "Vehicle Loan"
+          },
+          "value": "VEHICLE_LOAN"
+        },
+        {
+          "ui": {
+            "label": "Education Loan"
+          },
+          "value": "EDUCATION_LOAN"
+        },
+        {
+          "ui": {
+            "label": "Business Loan"
+          },
+          "value": "BUSINESS_LOAN"
+        },
+        {
+          "ui": {
+            "label": "Credit Card"
+          },
+          "value": "CREDIT_CARD"
+        },
+        {
+          "ui": {
+            "label": "Overdraft"
+          },
+          "value": "OVERDRAFT"
+        },
+        {
+          "ui": {
+            "label": "Other"
+          },
+          "value": "OTHER"
+        }
+      ],
+      "KYC_MODE": [
+        {
+          "ui": {
+            "label": "DigiLocker"
+          },
+          "value": "DIGILOCKER"
+        },
+        {
+          "ui": {
+            "label": "Aadhaar OTP e-KYC"
+          },
+          "value": "AADHAAR_OTP"
+        },
+        {
+          "ui": {
+            "label": "Aadhaar Offline XML"
+          },
+          "value": "OFFLINE_XML"
+        },
+        {
+          "ui": {
+            "label": "Video KYC (V-CIP)"
+          },
+          "value": "VCIP"
+        },
+        {
+          "ui": {
+            "label": "Physical"
+          },
+          "value": "PHYSICAL"
+        }
+      ],
+      "KYC_STATUS": [
+        {
+          "ui": {
+            "label": "Pending"
+          },
+          "value": "PENDING"
+        },
+        {
+          "ui": {
+            "label": "Verified"
+          },
+          "value": "VERIFIED"
+        },
+        {
+          "ui": {
+            "label": "Failed"
+          },
+          "value": "FAILED"
+        }
+      ],
+      "PAN_LINK_STATUS": [
+        {
+          "ui": {
+            "label": "Linked"
+          },
+          "value": "LINKED"
+        },
+        {
+          "ui": {
+            "label": "Not linked"
+          },
+          "value": "NOT_LINKED"
+        },
+        {
+          "ui": {
+            "label": "Unknown"
+          },
+          "value": "UNKNOWN"
+        }
+      ],
+      "OVD_TYPE": [
+        {
+          "ui": {
+            "label": "Aadhaar (masked) / e-Aadhaar"
+          },
+          "value": "AADHAAR"
+        },
+        {
+          "ui": {
+            "label": "Passport"
+          },
+          "value": "PASSPORT"
+        },
+        {
+          "ui": {
+            "label": "Voter ID"
+          },
+          "value": "VOTER_ID"
+        },
+        {
+          "ui": {
+            "label": "Driving Licence"
+          },
+          "value": "DRIVING_LICENCE"
+        },
+        {
+          "ui": {
+            "label": "NREGA Job Card"
+          },
+          "value": "NREGA"
+        }
+      ],
+      "IN_STATES_UT": [
+        {
+          "ui": {
+            "label": "Andhra Pradesh"
+          },
+          "value": "ANDHRA_PRADESH"
+        },
+        {
+          "ui": {
+            "label": "Arunachal Pradesh"
+          },
+          "value": "ARUNACHAL_PRADESH"
+        },
+        {
+          "ui": {
+            "label": "Assam"
+          },
+          "value": "ASSAM"
+        },
+        {
+          "ui": {
+            "label": "Bihar"
+          },
+          "value": "BIHAR"
+        },
+        {
+          "ui": {
+            "label": "Chhattisgarh"
+          },
+          "value": "CHHATTISGARH"
+        },
+        {
+          "ui": {
+            "label": "Goa"
+          },
+          "value": "GOA"
+        },
+        {
+          "ui": {
+            "label": "Gujarat"
+          },
+          "value": "GUJARAT"
+        },
+        {
+          "ui": {
+            "label": "Haryana"
+          },
+          "value": "HARYANA"
+        },
+        {
+          "ui": {
+            "label": "Himachal Pradesh"
+          },
+          "value": "HIMACHAL_PRADESH"
+        },
+        {
+          "ui": {
+            "label": "Jharkhand"
+          },
+          "value": "JHARKHAND"
+        },
+        {
+          "ui": {
+            "label": "Karnataka"
+          },
+          "value": "KARNATAKA"
+        },
+        {
+          "ui": {
+            "label": "Kerala"
+          },
+          "value": "KERALA"
+        },
+        {
+          "ui": {
+            "label": "Madhya Pradesh"
+          },
+          "value": "MADHYA_PRADESH"
+        },
+        {
+          "ui": {
+            "label": "Maharashtra"
+          },
+          "value": "MAHARASHTRA"
+        },
+        {
+          "ui": {
+            "label": "Manipur"
+          },
+          "value": "MANIPUR"
+        },
+        {
+          "ui": {
+            "label": "Meghalaya"
+          },
+          "value": "MEGHALAYA"
+        },
+        {
+          "ui": {
+            "label": "Mizoram"
+          },
+          "value": "MIZORAM"
+        },
+        {
+          "ui": {
+            "label": "Nagaland"
+          },
+          "value": "NAGALAND"
+        },
+        {
+          "ui": {
+            "label": "Odisha"
+          },
+          "value": "ODISHA"
+        },
+        {
+          "ui": {
+            "label": "Punjab"
+          },
+          "value": "PUNJAB"
+        },
+        {
+          "ui": {
+            "label": "Rajasthan"
+          },
+          "value": "RAJASTHAN"
+        },
+        {
+          "ui": {
+            "label": "Sikkim"
+          },
+          "value": "SIKKIM"
+        },
+        {
+          "ui": {
+            "label": "Tamil Nadu"
+          },
+          "value": "TAMIL_NADU"
+        },
+        {
+          "ui": {
+            "label": "Telangana"
+          },
+          "value": "TELANGANA"
+        },
+        {
+          "ui": {
+            "label": "Tripura"
+          },
+          "value": "TRIPURA"
+        },
+        {
+          "ui": {
+            "label": "Uttar Pradesh"
+          },
+          "value": "UTTAR_PRADESH"
+        },
+        {
+          "ui": {
+            "label": "Uttarakhand"
+          },
+          "value": "UTTARAKHAND"
+        },
+        {
+          "ui": {
+            "label": "West Bengal"
+          },
+          "value": "WEST_BENGAL"
+        },
+        {
+          "ui": {
+            "label": "Andaman and Nicobar Islands"
+          },
+          "value": "ANDAMAN_AND_NICOBAR_ISLANDS"
+        },
+        {
+          "ui": {
+            "label": "Chandigarh"
+          },
+          "value": "CHANDIGARH"
+        },
+        {
+          "ui": {
+            "label": "Dadra and Nagar Haveli and Daman and Diu"
+          },
+          "value": "DADRA_AND_NAGAR_HAVELI_AND_DAMAN_AND_DIU"
+        },
+        {
+          "ui": {
+            "label": "Delhi"
+          },
+          "value": "DELHI"
+        },
+        {
+          "ui": {
+            "label": "Jammu and Kashmir"
+          },
+          "value": "JAMMU_AND_KASHMIR"
+        },
+        {
+          "ui": {
+            "label": "Ladakh"
+          },
+          "value": "LADAKH"
+        },
+        {
+          "ui": {
+            "label": "Lakshadweep"
+          },
+          "value": "LAKSHADWEEP"
+        },
+        {
+          "ui": {
+            "label": "Puducherry"
+          },
+          "value": "PUDUCHERRY"
+        }
+      ]
+    },
+    "documentPolicy": {
+      "upload": "PRESIGNED",
+      "encryption": "KMS",
+      "malwareScan": true,
+      "contentSniffing": true,
+      "passwordProtectedPdf": "PROMPT_FOR_PASSWORD",
+      "maxPdfPages": 30,
+      "coverageMonths": {
+        "BANK_STATEMENT": 6
+      },
+      "retention": {
+        "approvedDocsYears": null,
+        "rejectedDocsDays": null,
+        "note": "Set per your compliance policy"
+      }
+    },
+    "sensitivityLevels": [
+      "PUBLIC",
+      "INTERNAL",
+      "CONFIDENTIAL",
+      "RESTRICTED"
+    ]
+  }
