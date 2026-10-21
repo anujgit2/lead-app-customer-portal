@@ -266,6 +266,7 @@ export const profileService = {
     try {
       const { data } = await apiClient.post<unknown>("/api/customer-profiles", {
         type: body.type,
+        ...(body.programId ? { programId: body.programId } : {}),
         data: body.data,
         ...optionalNote(body.changeNote),
       });

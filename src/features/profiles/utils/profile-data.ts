@@ -81,14 +81,15 @@ function buildSectionValue(
   template: FormTemplate,
   section: FormSection,
   data: unknown,
-  templateData?: unknown
+  templateData?: unknown,
+  allForms?: Record<string, unknown>
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   if (!isPlainObject(data)) return result;
   const context = sectionPathContext(template, section);
   const formScope = isPlainObject(templateData) ? templateData : undefined;
   for (const field of section.fields) {
-    if (field.type === "consent" && !shouldPersistConsent(field, data, formScope)) continue;
+    if (field.type === "consent" && !shouldPersistConsent(field, data, formScope, allForms)) continue;
     const value = applyWireTransformOutbound(
       field,
       normalizeFieldValue(field, data[field.name], "out")
@@ -123,15 +124,23 @@ export function mergeProfileFormValues(
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const template of templates) {
-    assignDeep(result, formValuesToProfileData(template, valuesByTemplate[template.code]));
+    assignDeep(
+      result,
+      formValuesToProfileData(template, valuesByTemplate[template.code], valuesByTemplate)
+    );
   }
   return result;
 }
 
-/** Form-engine values (keyed by section code) → the profile `data` object. */
+/**
+ * Form-engine values (keyed by section code) → the profile `data` object.
+ * `allForms` holds every form's values so cross-form `visibleIf` rules resolve
+ * the same way they did on screen.
+ */
 export function formValuesToProfileData(
   template: FormTemplate,
-  values: unknown
+  values: unknown,
+  allForms?: Record<string, unknown>
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   if (!isPlainObject(values)) return result;
@@ -140,13 +149,13 @@ export function formValuesToProfileData(
     const sectionData = values[section.code];
     if (section.repeatable) {
       const items = (Array.isArray(sectionData) ? sectionData : [])
-        .map((item) => buildSectionValue(template, section, item, values))
+        .map((item) => buildSectionValue(template, section, item, values, allForms))
         .filter((item) => Object.keys(item).length > 0);
       if (items.length === 0) continue;
       const key = sectionPayloadKey(section);
       result[key] = section.maxInstances === 1 ? items[0] : items;
     } else {
-      assignDeep(result, buildSectionValue(template, section, sectionData, values));
+      assignDeep(result, buildSectionValue(template, section, sectionData, values, allForms));
     }
   }
 

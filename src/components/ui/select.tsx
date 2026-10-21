@@ -16,8 +16,8 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "group flex h-10 w-full items-center justify-between gap-2 rounded-md border-[0.5px] bg-card px-3 text-left text-sm text-foreground transition-[border-color,box-shadow] duration-150 hover:border-foreground/25 focus:outline-none focus:border-ring focus:shadow-[0_0_0_3px_hsl(var(--ring)/0.22)] disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground data-[state=open]:border-ring data-[state=open]:shadow-[0_0_0_3px_hsl(var(--ring)/0.22)] [&>span]:line-clamp-1",
-      error ? "border-danger focus:border-danger focus:shadow-[0_0_0_3px_hsl(var(--danger)/0.2)]" : "border-border",
+      "group flex h-10 w-full items-center justify-between gap-2 rounded-md border bg-card px-3 text-left text-sm text-foreground transition-[border-color,box-shadow] duration-150 hover:border-foreground/55 focus:outline-none focus:border-ring focus:shadow-[0_0_0_3px_hsl(var(--ring)/0.22)] disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground data-[state=open]:border-ring data-[state=open]:shadow-[0_0_0_3px_hsl(var(--ring)/0.22)] [&>span]:line-clamp-1",
+      error ? "border-danger focus:border-danger focus:shadow-[0_0_0_3px_hsl(var(--danger)/0.2)]" : "border-input",
       className
     )}
     aria-invalid={error || undefined}

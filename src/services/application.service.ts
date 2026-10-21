@@ -1,9 +1,11 @@
+import { isAxiosError } from "axios";
 import { apiClient } from "@/lib/axios";
 import { parseApiError } from "@/lib/api-error";
 import { sleep } from "@/lib/utils";
 import { isDemoEnabled } from "@/lib/demo";
 import type {
   LoanApplication,
+  ApplicationMemoStatus,
   ApplicationSummary,
   ApplicationProperty,
   LoanProduct,
@@ -110,14 +112,15 @@ function buildSectionValue(
   template: FormTemplate,
   section: FormSection,
   data: unknown,
-  templateData?: unknown
+  templateData?: unknown,
+  wizardData?: Record<string, unknown>
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   if (!isPlainObject(data)) return result;
   const context = sectionPathContext(template, section);
   const formScope = isPlainObject(templateData) ? templateData : undefined;
   for (const field of section.fields) {
-    if (field.type === "consent" && !shouldPersistConsent(field, data, formScope)) continue;
+    if (field.type === "consent" && !shouldPersistConsent(field, data, formScope, wizardData)) continue;
     const value = applyWireTransformOutbound(
       field,
       normalizeFieldValue(field, data[field.name], "out")
@@ -261,7 +264,8 @@ function sectionPayloadKey(section: FormSection): string {
  */
 function buildTemplateValue(
   template: FormTemplate,
-  data: unknown
+  data: unknown,
+  wizardData?: Record<string, unknown>
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   if (!isPlainObject(data)) return result;
@@ -270,13 +274,13 @@ function buildTemplateValue(
     const sectionData = data[section.code];
     if (section.repeatable) {
       const items = (Array.isArray(sectionData) ? sectionData : [])
-        .map((item) => buildSectionValue(template, section, item, data))
+        .map((item) => buildSectionValue(template, section, item, data, wizardData))
         .filter((item) => Object.keys(item).length > 0);
       if (items.length === 0) continue;
       const key = sectionPayloadKey(section);
       result[key] = section.maxInstances === 1 ? items[0] : items;
     } else {
-      assignDeep(result, buildSectionValue(template, section, sectionData, data));
+      assignDeep(result, buildSectionValue(template, section, sectionData, data, wizardData));
     }
   }
   return result;
@@ -440,12 +444,12 @@ function formDataToApplicationProperties(
     let value: unknown;
     if (template.repeatable) {
       const instances = (Array.isArray(data) ? data : [data])
-        .map((instance) => buildTemplateValue(template, instance))
+        .map((instance) => buildTemplateValue(template, instance, formData))
         .filter((instance) => Object.keys(instance).length > 0);
       if (instances.length === 0) continue;
       value = instances;
     } else {
-      const single = buildTemplateValue(template, data);
+      const single = buildTemplateValue(template, data, formData);
       if (Object.keys(single).length === 0) continue;
       value = sendsValueAsArray(template) ? [single] : single;
     }
@@ -486,6 +490,42 @@ interface BackendApplication {
   tenantId?: string;
   customerProfileId?: string;
   customerProfileVersionNo?: number;
+  memoFileId?: string | null;
+  memoStatus?: string | null;
+  memoGeneratedAt?: string | null;
+}
+
+function mapMemoStatus(status: string | null | undefined): ApplicationMemoStatus | undefined {
+  const normalized = status?.toUpperCase();
+  return normalized === "PENDING" || normalized === "GENERATED" || normalized === "FAILED"
+    ? normalized
+    : undefined;
+}
+
+/** Blob requests return error bodies as a Blob, which hides `{ message }` from `parseApiError`. */
+async function decodeBlobError(error: unknown): Promise<never> {
+  if (isAxiosError(error) && error.response?.data instanceof Blob) {
+    try {
+      error.response.data = JSON.parse(await error.response.data.text());
+    } catch {
+      // Error body was not JSON.
+    }
+  }
+  throw error;
+}
+
+function memoFileName(header: unknown, fallback: string): string {
+  if (typeof header !== "string") return fallback;
+  const encoded = /filename\*\s*=\s*(?:UTF-8''|utf-8'')([^;]+)/i.exec(header);
+  if (encoded?.[1]) {
+    try {
+      return decodeURIComponent(encoded[1].trim().replace(/^"|"$/g, ""));
+    } catch {
+      // Fall through to the plain filename.
+    }
+  }
+  const plain = /filename\s*=\s*"?([^";]+)"?/i.exec(header);
+  return plain?.[1]?.trim() || fallback;
 }
 
 function mapStatus(status: string): ApplicationStatus {
@@ -559,6 +599,11 @@ function mapApplication(app: BackendApplication, loanType?: string): LoanApplica
       : {}),
     ...(typeof app.customerProfileVersionNo === "number" && Number.isFinite(app.customerProfileVersionNo)
       ? { customerProfileVersionNo: app.customerProfileVersionNo }
+      : {}),
+    ...(typeof app.memoFileId === "string" && app.memoFileId ? { memoFileId: app.memoFileId } : {}),
+    ...(mapMemoStatus(app.memoStatus) ? { memoStatus: mapMemoStatus(app.memoStatus) } : {}),
+    ...(typeof app.memoGeneratedAt === "string" && app.memoGeneratedAt
+      ? { memoGeneratedAt: app.memoGeneratedAt }
       : {}),
   };
 }
@@ -801,6 +846,39 @@ export const applicationService = {
         ? await this.getLoanProductByProgramId(draft.programId)
         : (await this.getLoanProducts())[0];
       return mapApplication(data, product.name);
+    } catch (error) {
+      throw parseApiError(error);
+    }
+  },
+
+  /** Rejected for drafts: "Memo is generated only after the application is submitted". */
+  async regenerateMemo(applicationId: string): Promise<LoanApplication> {
+    try {
+      const { data } = await apiClient.post<BackendApplication>(
+        `/api/applications/${encodeURIComponent(applicationId)}/memo/regenerate`,
+        undefined,
+        { timeout: 120_000 }
+      );
+      const catalog = await programNameCatalog();
+      return mapApplication(data, catalogLoanType(data, catalog));
+    } catch (error) {
+      throw parseApiError(error);
+    }
+  },
+
+  /** 404 when the application doesn't exist or no memo has been generated yet. */
+  async downloadMemo(applicationId: string): Promise<{ blob: Blob; fileName: string }> {
+    try {
+      const response = await apiClient
+        .get<Blob>(`/api/applications/${encodeURIComponent(applicationId)}/memo`, {
+          responseType: "blob",
+          timeout: 120_000,
+        })
+        .catch(decodeBlobError);
+      return {
+        blob: response.data,
+        fileName: memoFileName(response.headers["content-disposition"], "memo.pdf"),
+      };
     } catch (error) {
       throw parseApiError(error);
     }

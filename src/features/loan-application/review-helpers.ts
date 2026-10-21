@@ -1,6 +1,7 @@
 import type { FieldOption, FormData, FormField, FormTemplate, StoredFileReference } from "@/types";
 import { getAddressSubfields, isPlainObject } from "@/utils/address-field";
 import { isFieldVisible } from "@/utils/rule-engine";
+import { isConsentAccepted } from "@/utils/consent";
 import { isStoredFileReference } from "@/services/file-storage.service";
 import { isDocumentFieldType, isDocumentTemplate } from "@/utils/document-template";
 
@@ -107,7 +108,8 @@ export function collectReviewItems(fields: FormField[], data: Scope, ...scopes: 
     items.push({
       key: field.name,
       label: field.label,
-      value,
+      value:
+        field.type === "consent" && !isConsentAccepted(value, field.consent?.version) ? undefined : value,
       type: field.type,
       options: field.options,
     });

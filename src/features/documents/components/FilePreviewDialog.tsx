@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { downloadDocumentFile } from "../api/documentsApi";
+import { downloadDocumentFile, fileErrorMessage } from "../api/documentsApi";
 import { useObjectUrl } from "../hooks/useObjectUrl";
 import { DOCUMENT_DIALOG_CLASS } from "../utils/constants";
 import { previewKind } from "../utils/format";
@@ -64,7 +64,7 @@ export function FilePreviewDialog({
         {file.isError ? (
           <div className="space-y-3">
             <p className="text-sm text-destructive" role="alert">
-              We couldn&apos;t open the preview.
+              {fileErrorMessage(file.error, "preview")}
             </p>
             <Button type="button" variant="outline" onClick={() => void file.refetch()} size="sm">
               Try again

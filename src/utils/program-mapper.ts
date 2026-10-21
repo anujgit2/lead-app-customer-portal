@@ -224,7 +224,7 @@ function mapField(raw: unknown, path: string, issues: MappingIssue[]): FormField
       issues.push({
         path: `${path}.consent.version`,
         message: "consent.version is required.",
-        severity: "warning",
+        severity: "error",
       });
     }
   }

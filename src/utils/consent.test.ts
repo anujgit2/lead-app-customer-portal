@@ -5,15 +5,18 @@ import { buildSectionDefaults, buildTemplateSchema } from "@/utils/schema-builde
 import { normalizeTemplateJson } from "@/utils/program-mapper";
 import {
   CONSENT_CONTINUE_ERROR,
-  allVisibleConsentsAccepted,
+  allRequiredConsentsAccepted,
   consentRowsFromSection,
   consentSummaryShouldClear,
   consentValuesAfterAction,
+  consentWording,
   consentsForClient,
   evaluateConsentContinue,
   hashConsentText,
   isConsentAccepted,
+  isConsentRecorded,
   resolveLocalizedCopy,
+  shouldPersistConsent,
   toClientConsentValue,
   type ConsentCheckRow,
 } from "@/utils/consent";
@@ -95,6 +98,15 @@ describe("consent acceptance", () => {
     assert.equal(toClientConsentValue({ accepted: true, version: "0.9" }, "1.0"), undefined);
   });
 
+  it("keeps the locale and wording hash as evidence on submit", () => {
+    const submitted = toClientConsentValue(
+      { accepted: true, version: "1.0", locale: "hi", textHash: "abc123", timestamp: "1999-01-01T00:00:00.000Z" },
+      "1.0"
+    );
+    assert.deepEqual(submitted, { accepted: true, version: "1.0", locale: "hi", textHash: "abc123" });
+    assert.equal(consentWording(consentField({ consent: { version: "1.0", text: wording } }), "hi"), wording.hi);
+  });
+
   it("hashes the exact wording that was shown", async () => {
     const hash = await hashConsentText("abc");
     assert.equal(hash, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
@@ -130,17 +142,41 @@ describe("consent continue validation", () => {
     assert.equal(consentSummaryShouldClear(before, before), false);
   });
 
-  it("accepts all visible consents and clear all removes only those entries", () => {
+  it("bulk accept ticks required consents only, and clear removes only those entries", () => {
     const hidden = row({ key: "hiddenConsent", visible: false, value: { accepted: true, version: "1.0" } });
     const current = { hiddenConsent: { accepted: true, version: "1.0" } };
-    const accepted = consentValuesAfterAction([required, hidden], current, "accept");
-    assert.deepEqual(accepted.dpdpConsent, { accepted: true, version: "1.0" });
+    const accepted = consentValuesAfterAction([required, optional, hidden], current, "accept", "hi");
+    assert.deepEqual(accepted.dpdpConsent, { accepted: true, version: "1.0", locale: "hi" });
+    assert.equal("terms" in accepted, false);
     assert.deepEqual(accepted.hiddenConsent, current.hiddenConsent);
-    assert.equal(allVisibleConsentsAccepted([row({ value: accepted.dpdpConsent }), hidden]), true);
+    assert.equal(
+      allRequiredConsentsAccepted([row({ value: accepted.dpdpConsent }), optional, hidden]),
+      true
+    );
 
     const cleared = consentValuesAfterAction([required, hidden], accepted, "clear");
     assert.equal("dpdpConsent" in cleared, false);
     assert.deepEqual(cleared.hiddenConsent, current.hiddenConsent);
+  });
+
+  it("never bulk-changes a consent the server already recorded", () => {
+    const recordedValue = { accepted: true, version: "1.0", timestamp: "2026-10-20T09:00:00.000Z" };
+    const [recorded] = consentRowsFromSection([consentField()], { dpdpConsent: recordedValue });
+    assert.equal(recorded?.locked, true);
+    assert.equal(isConsentRecorded(recordedValue, "1.0"), true);
+    assert.equal(isConsentRecorded({ accepted: true, version: "1.0" }, "1.0"), false);
+    const cleared = consentValuesAfterAction([recorded!], { dpdpConsent: recordedValue }, "clear");
+    assert.deepEqual(cleared.dpdpConsent, recordedValue);
+  });
+
+  it("disables a consent whose schema has no version", () => {
+    const [unversioned] = consentRowsFromSection(
+      [consentField({ consent: { version: "", text: wording.en } })],
+      {}
+    );
+    assert.equal(unversioned?.disabled, true);
+    assert.equal(allRequiredConsentsAccepted([unversioned!]), false);
+    assert.equal(evaluateConsentContinue([unversioned!]).ok, false);
   });
 
   it("does not validate or save a hidden consent", () => {
@@ -161,6 +197,16 @@ describe("consent continue validation", () => {
     assert.deepEqual(consentsForClient([hidden, visible]), {
       dpdpConsent: { accepted: true, version: "1.0" },
     });
+  });
+
+  it("persists a consent whose visibleIf points at another wizard step", () => {
+    const field = consentField({
+      rules: { visibleWhen: { field: "shareWithBureau", operator: "equals", value: "YES" } },
+    });
+    const section = { dpdpConsent: { accepted: true, version: "1.0" } };
+    const otherStep = { BUREAU: { preferences: { shareWithBureau: "YES" } } };
+    assert.equal(shouldPersistConsent(field, section, {}), false);
+    assert.equal(shouldPersistConsent(field, section, {}, otherStep), true);
   });
 
   it("follows visibleIf and requiredIf, including anyOf", () => {

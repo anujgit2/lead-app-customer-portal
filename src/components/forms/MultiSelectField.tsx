@@ -85,9 +85,9 @@ export function MultiSelectField({
             }
           }}
           className={cn(
-            "flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-sm border-[0.5px] bg-background px-3 py-1.5 text-sm shadow-sm transition-all duration-200 ease-out",
+            "flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-sm border bg-background px-3 py-1.5 text-sm shadow-sm transition-all duration-200 ease-out",
             "focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20",
-            error ? "border-destructive" : "border-border",
+            error ? "border-destructive" : "border-input",
             disabled && "cursor-not-allowed opacity-50",
             readOnly && "cursor-default"
           )}

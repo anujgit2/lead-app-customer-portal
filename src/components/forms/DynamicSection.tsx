@@ -59,7 +59,15 @@ function sectionConsentFields(section: FormSection): FormField[] {
   return section.fields.filter((field) => field.type === "consent");
 }
 
-function SectionFields({ section, namePrefix }: { section: FormSection; namePrefix?: string }) {
+function SectionFields({
+  section,
+  namePrefix,
+  showContinue = true,
+}: {
+  section: FormSection;
+  namePrefix?: string;
+  showContinue?: boolean;
+}) {
   const consents = sectionConsentFields(section);
   const rest = section.fields.filter((field) => field.type !== "consent");
   return (
@@ -68,7 +76,12 @@ function SectionFields({ section, namePrefix }: { section: FormSection; namePref
         <FieldGrid section={{ ...section, fields: rest }} namePrefix={namePrefix} />
       ) : null}
       {consents.length > 0 ? (
-        <ConsentList fields={consents} namePrefix={namePrefix} legend={section.title} />
+        <ConsentList
+          fields={consents}
+          namePrefix={namePrefix}
+          legend={section.title}
+          showContinue={showContinue}
+        />
       ) : null}
     </div>
   );
@@ -161,7 +174,11 @@ function RepeatableSectionInstances({
           {!collapsed[index] && (
             <div className="px-4 pb-4">
               <Separator className="mb-4" />
-              <SectionFields section={section} namePrefix={`${baseName}.${index}`} />
+              <SectionFields
+                section={section}
+                namePrefix={`${baseName}.${index}`}
+                showContinue={false}
+              />
             </div>
           )}
         </div>

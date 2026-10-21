@@ -1,4 +1,4 @@
-import type { AxiosRequestConfig, AxiosResponse } from "axios";
+import { isAxiosError, type AxiosRequestConfig, type AxiosResponse } from "axios";
 import { parseApiError } from "@/lib/api-error";
 import apiClient from "@/lib/axios";
 import type { DocumentProfileRelation } from "@/types";
@@ -121,15 +121,42 @@ export async function uploadDocument(
   return normalizeDocumentList([response.data])[0] ?? null;
 }
 
+/** Blob requests return error bodies as a Blob, which hides `{ code, message }` from `parseApiError`. */
+async function decodeBlobError(error: unknown): Promise<never> {
+  if (isAxiosError(error) && error.response?.data instanceof Blob) {
+    try {
+      error.response.data = JSON.parse(await error.response.data.text());
+    } catch {
+      // Error body was not JSON.
+    }
+  }
+  throw error;
+}
+
+export function fileErrorMessage(error: unknown, action: "download" | "preview"): string {
+  const parsed = parseApiError(error);
+  if (parsed.status === 402 || parsed.code === "PLAN_LIMIT_REACHED") {
+    return "You've reached your monthly document download limit. Previews count toward this limit too.";
+  }
+  if (parsed.status === 404) {
+    return "This file is no longer available.";
+  }
+  return action === "download"
+    ? "Download failed. Please try again."
+    : "We couldn't open the preview.";
+}
+
 export async function downloadDocumentFile(
   documentId: string,
   version: number,
   fallbackName = "document"
 ): Promise<FilePayload> {
-  const response = await apiClient.get(
-    `/api/documents/${encodeURIComponent(documentId)}/versions/${encodeURIComponent(String(version))}/download`,
-    { responseType: "blob", timeout: 120_000 }
-  );
+  const response = await apiClient
+    .get<Blob>(
+      `/api/documents/${encodeURIComponent(documentId)}/versions/${encodeURIComponent(String(version))}/download`,
+      { responseType: "blob", timeout: 120_000 }
+    )
+    .catch(decodeBlobError);
   return readFile(response, fallbackName);
 }
 

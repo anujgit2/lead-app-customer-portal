@@ -53,18 +53,22 @@ const typeCardClass =
 export function ProfileCreatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const type = profileTypeFromQuery(searchParams?.get("type") ?? null);
+  const queryType = profileTypeFromQuery(searchParams?.get("type") ?? null);
   const returnTo = safeInternalPath(searchParams?.get("returnTo") ?? null);
-  const programId = type ? searchParams?.get("programId")?.trim() ?? "" : "";
-  const templateCode = type && !programId ? templateCodeForType(type) : "";
-  const programTemplateQuery = useProgramFormTemplate(programId);
-  const legacyTemplateQuery = useFormTemplate(templateCode);
-  const templateQuery = programId ? programTemplateQuery : legacyTemplateQuery;
-  const createProfile = useCreateProfile();
+  const requestedProgramId = queryType ? searchParams?.get("programId")?.trim() ?? "" : "";
   const profilePrograms = useProfilePrograms();
-  const program = profilePrograms.data?.find(
-    (item) => item.id === programId || item.programCode === programId
-  );
+  const program = requestedProgramId
+    ? profilePrograms.data?.find(
+        (item) => item.id === requestedProgramId || item.programCode === requestedProgramId
+      )
+    : undefined;
+  const programUnavailable = !!requestedProgramId && profilePrograms.isSuccess && !program;
+  const type = program ? profileTypeForProgram(program) : queryType;
+  const templateCode = queryType && !requestedProgramId ? templateCodeForType(queryType) : "";
+  const programTemplateQuery = useProgramFormTemplate(program?.id ?? "");
+  const legacyTemplateQuery = useFormTemplate(templateCode);
+  const templateQuery = requestedProgramId ? programTemplateQuery : legacyTemplateQuery;
+  const createProfile = useCreateProfile();
 
   if (!type) {
     const programs = profilePrograms.data ?? [];
@@ -129,7 +133,33 @@ export function ProfileCreatePage() {
         }
       />
 
-      {templateQuery.isLoading ? <CreateSkeleton /> : null}
+      {templateQuery.isLoading || (requestedProgramId && profilePrograms.isLoading) ? (
+        <CreateSkeleton />
+      ) : null}
+
+      {requestedProgramId && profilePrograms.isError ? (
+        <ErrorState
+          compact
+          title="Unable to load profile types"
+          message={parseApiError(profilePrograms.error).message}
+          status={parseApiError(profilePrograms.error).status}
+          onRetry={() => {
+            void profilePrograms.refetch();
+          }}
+        />
+      ) : null}
+
+      {programUnavailable ? (
+        <p role="alert" className="text-sm font-normal text-muted-foreground">
+          This profile type isn&apos;t available.{" "}
+          <Link
+            href={returnTo ? `/profiles/new?returnTo=${encodeURIComponent(returnTo)}` : "/profiles/new"}
+            className="font-medium text-primary underline-offset-2 hover:underline"
+          >
+            Choose another
+          </Link>
+        </p>
+      ) : null}
 
       {templateQuery.isError ? (
         <ErrorState
@@ -151,7 +181,7 @@ export function ProfileCreatePage() {
           onCancel={() => router.push(returnTo ?? "/profiles")}
           onSubmit={(input) => {
             createProfile.mutate(
-              { type, data: input.data, changeNote: input.changeNote },
+              { type, programId: program?.id, data: input.data, changeNote: input.changeNote },
               {
                 onSuccess: (created) => {
                   toast.success("Profile created");

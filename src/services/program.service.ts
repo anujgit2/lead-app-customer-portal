@@ -29,9 +29,11 @@ export interface Program {
   programCategory?: string;
 }
 
-/** Programs without a `programCategory` are excluded from every category. */
+/** Programs without a `programCategory` predate categories and count as APPLICATION. */
 export function programsInCategory(programs: Program[], category: ProgramCategory): Program[] {
-  return programs.filter((program) => program.id && program.programCategory === category);
+  return programs.filter(
+    (program) => program.id && (program.programCategory ?? "APPLICATION") === category
+  );
 }
 
 interface BackendProgram {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, FileText } from "lucide-react";
 import { ApplicationFormSummary } from "@/features/loan-application/ReviewScreen";
 import { ApplicationStatusBadge } from "@/features/applications/ApplicationStatusBadge";
+import { ApplicationMemoPanel } from "@/features/applications/ApplicationMemoPanel";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatDate } from "@/lib/utils";
 import type { FormData, LoanApplication, LoanProduct } from "@/types";
@@ -92,6 +93,8 @@ export function ApplicationViewScreen({
             </label>
           )}
         </div>
+
+        <ApplicationMemoPanel application={application} />
 
         {hasFormData ? (
           <ApplicationFormSummary

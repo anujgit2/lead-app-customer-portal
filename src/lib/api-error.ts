@@ -26,6 +26,7 @@ function readErrorPayload(data: unknown): { message?: string; code?: string; err
   }
 
   return {
+    code: typeof rec.code === "string" ? rec.code : undefined,
     message: typeof rec.message === "string" ? rec.message : undefined,
     errors:
       rec.errors && typeof rec.errors === "object"

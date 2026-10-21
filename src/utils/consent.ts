@@ -1,7 +1,8 @@
 /**
  * Schema-driven consent checks. Pure: no React, no clock, no request data.
- * The client may store `accepted` and `version` only. Timestamp, IP, and
- * user agent are server-owned and are stripped before a value is submitted.
+ * The client may submit `accepted`, `version`, `locale`, and `textHash` only.
+ * Timestamp, IP, and user agent are server-owned and are stripped before a
+ * value is submitted.
  */
 import type {
   ConsentClientValue,
@@ -22,6 +23,8 @@ export interface ConsentCheckRow {
   value: unknown;
   requiredMessage?: string;
   disabled?: boolean;
+  /** Already recorded by the server. Withdrawal goes through a separate flow, not this form. */
+  locked?: boolean;
 }
 
 export interface ConsentContinueResult {
@@ -89,6 +92,33 @@ export function isConsentAccepted(value: unknown, version: string | undefined): 
   return value.accepted === true && value.version === version;
 }
 
+function nonEmptyString(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+/** A current-version acceptance that carries a server timestamp, so it is already on record. */
+export function isConsentRecorded(value: unknown, version: string | undefined): boolean {
+  return isConsentAccepted(value, version) && !!nonEmptyString((value as Record<string, unknown>).timestamp);
+}
+
+/** The wording the row shows for `locale`. This exact string is what gets hashed. */
+export function consentWording(field: FormField, locale: string): string {
+  return resolveLocalizedCopy(field.consent?.text, locale) || field.description || "";
+}
+
+/** Value written when the user ticks a consent. `textHash` is added once hashing finishes. */
+export function acceptedConsentValue(version: string, locale: string): ConsentFormValue {
+  return { accepted: true, version, locale };
+}
+
+function withEvidence<T extends ConsentClientValue>(target: T, record: Record<string, unknown>): T {
+  const locale = nonEmptyString(record.locale);
+  const textHash = nonEmptyString(record.textHash);
+  if (locale) target.locale = locale;
+  if (textHash) target.textHash = textHash;
+  return target;
+}
+
 /** Form value after the server returns a record. Drops IP and user agent. */
 export function consentValueForForm(
   value: unknown,
@@ -96,10 +126,9 @@ export function consentValueForForm(
 ): ConsentFormValue | undefined {
   if (!isConsentAccepted(value, version)) return undefined;
   const record = value as Record<string, unknown>;
-  const stored: ConsentFormValue = { accepted: true, version: version as string };
-  if (typeof record.timestamp === "string" && record.timestamp.length > 0) {
-    stored.timestamp = record.timestamp;
-  }
+  const stored = withEvidence<ConsentFormValue>({ accepted: true, version: version as string }, record);
+  const timestamp = nonEmptyString(record.timestamp);
+  if (timestamp) stored.timestamp = timestamp;
   return stored;
 }
 
@@ -112,7 +141,10 @@ export function toClientConsentValue(
   version: string | undefined
 ): ConsentClientValue | undefined {
   if (!isConsentAccepted(value, version)) return undefined;
-  return { accepted: true, version: version as string };
+  return withEvidence<ConsentClientValue>(
+    { accepted: true, version: version as string },
+    value as Record<string, unknown>
+  );
 }
 
 export function consentFieldPath(key: string, namePrefix?: string): string {
@@ -150,22 +182,30 @@ export function consentSummaryShouldClear(previous: ConsentCheckRow[], next: Con
   });
 }
 
-export function allVisibleConsentsAccepted(rows: ConsentCheckRow[]): boolean {
-  const actionable = rows.filter((row) => row.visible && !row.disabled);
+/**
+ * Rows the bulk button may change: visible, required, editable, and not yet recorded.
+ * Optional consents are never bulk-ticked, so each one stays a separate choice.
+ */
+export function bulkConsentRows(rows: ConsentCheckRow[]): ConsentCheckRow[] {
+  return rows.filter((row) => row.visible && row.required && !row.disabled && !row.locked);
+}
+
+export function allRequiredConsentsAccepted(rows: ConsentCheckRow[]): boolean {
+  const actionable = bulkConsentRows(rows);
   return actionable.length > 0 && actionable.every((row) => isConsentAccepted(row.value, row.version));
 }
 
-/** Accept all ticks each visible consent. Clear all removes those entries. Hidden rows stay untouched. */
+/** Accept ticks each bulk row. Clear removes those entries. Every other row stays untouched. */
 export function consentValuesAfterAction(
   rows: ConsentCheckRow[],
   current: Record<string, unknown>,
-  action: "accept" | "clear"
+  action: "accept" | "clear",
+  locale = "en"
 ): Record<string, unknown> {
   const next: Record<string, unknown> = { ...current };
-  for (const row of rows) {
-    if (!row.visible || row.disabled) continue;
+  for (const row of bulkConsentRows(rows)) {
     if (action === "accept") {
-      next[row.key] = { accepted: true, version: row.version };
+      next[row.key] = acceptedConsentValue(row.version, locale);
     } else {
       delete next[row.key];
     }
@@ -191,15 +231,20 @@ export function consentRowsFromSection(
 ): ConsentCheckRow[] {
   return fields
     .filter((field) => field.type === "consent")
-    .map((field) => ({
-      key: field.name,
-      version: field.consent?.version ?? "",
-      visible: isFieldVisible(field, scope, ...extraScopes),
-      required: isFieldRequired(field, scope, ...extraScopes),
-      value: scope?.[field.name],
-      requiredMessage: field.validation?.message,
-      disabled: !!(field.disabled || field.readonly),
-    }));
+    .map((field) => {
+      const version = field.consent?.version ?? "";
+      const value = scope?.[field.name];
+      return {
+        key: field.name,
+        version,
+        visible: isFieldVisible(field, scope, ...extraScopes),
+        required: isFieldRequired(field, scope, ...extraScopes),
+        value,
+        requiredMessage: field.validation?.message,
+        disabled: !!(field.disabled || field.readonly) || version.length === 0,
+        locked: isConsentRecorded(value, version),
+      };
+    });
 }
 
 /** Hidden consents are not part of the saved section. */

@@ -134,7 +134,12 @@ export interface LoanApplication {
   properties?: ApplicationProperty[];
   customerProfileId?: string;
   customerProfileVersionNo?: number;
+  memoFileId?: string;
+  memoStatus?: ApplicationMemoStatus;
+  memoGeneratedAt?: string;
 }
+
+export type ApplicationMemoStatus = "PENDING" | "GENERATED" | "FAILED";
 
 export interface ApplicationSummary {
   draft: number;
@@ -189,16 +194,20 @@ export interface ConsentFieldConfig {
  * Value stored in the form when a consent is ticked.
  * `timestamp` is only present after the server returns it. The client never sends it.
  */
-export interface ConsentFormValue {
-  accepted: true;
-  version: string;
+export interface ConsentFormValue extends ConsentClientValue {
   timestamp?: string;
 }
 
-/** The only consent shape the client is allowed to submit. */
+/**
+ * The only consent shape the client is allowed to submit.
+ * `locale` and `textHash` (SHA-256 hex of the wording shown) are evidence the
+ * server checks against the published schema; it must not trust them blindly.
+ */
 export interface ConsentClientValue {
   accepted: true;
   version: string;
+  locale?: string;
+  textHash?: string;
 }
 
 /** Authored JSON for `type: "consent"`. Wording and keys come from this object. */
@@ -856,6 +865,8 @@ export interface CustomerProfileListFilters {
 
 export interface CreateCustomerProfileRequest {
   type: CustomerProfileType;
+  /** PROFILE program whose form (and consent wording) the user filled in. */
+  programId?: string;
   data: Record<string, unknown>;
   changeNote?: string;
 }

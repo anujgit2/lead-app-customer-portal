@@ -165,7 +165,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
     <div className="flex min-h-6 min-w-0 items-center gap-1.5 pl-1">
       <Label
         htmlFor={fieldName}
-        className="flex min-w-0 items-center text-sm font-medium text-foreground/70"
+        className="flex min-w-0 items-center text-sm font-medium text-foreground"
       >
         <span className="truncate">{field.label}</span>
         {isRequired && (
