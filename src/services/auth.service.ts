@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/axios";
 import { parseApiError } from "@/lib/api-error";
 import {
+  clearAccessCredentials,
   clearFullSession,
   suppressSessionExpiredRedirect,
 } from "@/lib/session";
@@ -180,6 +181,20 @@ export const authService = {
       password: registerData.password,
       rememberMe: true,
     });
+  },
+
+  /**
+   * Revokes the server session and drops the access token without wiping the
+   * open page, wizard draft, or cached queries. The idle lock calls this.
+   */
+  async suspendSession(): Promise<void> {
+    suppressSessionExpiredRedirect();
+    try {
+      await apiClient.post("/auth/logout", undefined, { skipAuthRedirect: true });
+    } catch {
+      // The screen stays locked even when the revoke call fails.
+    }
+    clearAccessCredentials();
   },
 
   async logout(): Promise<void> {

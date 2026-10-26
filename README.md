@@ -22,7 +22,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `NEXT_PUBLIC_API_URL` | yes | Base URL for the backend API. | 
+| `NEXT_PUBLIC_API_URL` | yes | Base URL for the backend API. A trailing `/accounts` is the user-service context path: login, registration, profile, password, and tenant UI use it, and other API calls use the host without that suffix. | 
 | `NEXT_PUBLIC_TENANT_BASE_DOMAIN` | local multi-tenant hosts | When the page host is `{name}` under this domain, API calls go to `{name}-services.{domain}` so the backend host route selects the tenant. |
 | `NEXT_PUBLIC_APP_PUBLIC_URL` | yes for shared links | Public portal origin used in copied share links (`https://portal.example.com`). Never the API host. |
 | `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | production | reCAPTCHA v2 ("I'm not a robot") site key used by the human check on self-serve signup. |
@@ -57,7 +57,7 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_site_key_here
 
 If the variable is unset, signup falls back to Google's public test key so the flow stays clickable locally. That key accepts everyone, so it must not reach production.
 
-The signup form only obtains the token. **The matching secret key must be verified server side** via `https://www.google.com/recaptcha/api/siteverify` on the `/auth/register` endpoint — the client-side widget alone blocks nothing. The token is sent to the API as `recaptchaToken`.
+The signup form only obtains the token. **The matching secret key must be verified server side** via `https://www.google.com/recaptcha/api/siteverify` on the `/accounts/auth/register` endpoint — the client-side widget alone blocks nothing. The token is sent to the API as `recaptchaToken`.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 

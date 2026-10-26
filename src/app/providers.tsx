@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/query-client";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "sonner";
+import { IdleLock } from "@/features/auth/IdleLock";
 import { TenantUiProvider } from "@/features/tenant-ui/TenantUiProvider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <TenantUiProvider>
         <TooltipProvider delayDuration={250}>
           {children}
+          <IdleLock />
           <Toaster
             position="top-right"
             expand={false}

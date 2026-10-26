@@ -21,7 +21,8 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
 import { getInitials } from "@/lib/utils";
-import { clearFullSession, hasAccessToken } from "@/lib/session";
+import { isIdleLocked, subscribeIdleLock } from "@/lib/idle-lock";
+import { clearFullSession, hasAccessToken, subscribeAuthStorage } from "@/lib/session";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,11 +41,6 @@ const NAV_ITEMS = [
   { label: "Documents", href: "/documents", icon: Files },
 ];
 
-function subscribeToStorage(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  return () => window.removeEventListener("storage", onChange);
-}
-
 interface AppLayoutProps {
   children: React.ReactNode;
 }
@@ -54,14 +50,16 @@ export function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const { user } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const authorized = useSyncExternalStore(subscribeToStorage, hasAccessToken, () => false);
+  const authorized = useSyncExternalStore(subscribeAuthStorage, hasAccessToken, () => false);
+  const sessionLocked = useSyncExternalStore(subscribeIdleLock, isIdleLocked, () => false);
 
   useEffect(() => {
     // Read storage directly: the hydration snapshot is always `false`.
-    if (hasAccessToken()) return;
+    // A locked session has no token on purpose — keep this page mounted.
+    if (sessionLocked || hasAccessToken()) return;
     clearFullSession();
     router.replace("/auth/login");
-  }, [router, authorized]);
+  }, [router, authorized, sessionLocked]);
 
   const handleLogout = async () => {
     await authService.logout();
@@ -71,7 +69,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const initials = user ? getInitials(user.firstName, user.lastName) : "U";
 
-  if (!authorized) {
+  if (!authorized && !sessionLocked) {
     return (
       <div className="grid min-h-screen place-items-center bg-background" aria-busy="true">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

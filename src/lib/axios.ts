@@ -1,9 +1,10 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import { isIdleLocked } from "@/lib/idle-lock";
 import {
   handleSessionExpired,
   isSessionExpiredRedirectSuppressed,
 } from "@/lib/session";
-import { resolveApiBaseUrl } from "@/lib/api-base-url";
+import { isAccountsApiPath, resolveApiBaseUrl, resolveAuthApiBaseUrl } from "@/lib/api-base-url";
 import { getTenantId } from "@/lib/tenant";
 
 declare module "axios" {
@@ -27,6 +28,10 @@ function getAccessToken(): string | null {
 
 export function getApiBaseUrl(): string {
   return resolveApiBaseUrl();
+}
+
+export function getAuthApiBaseUrl(): string {
+  return resolveAuthApiBaseUrl();
 }
 
 export function getApiAuthHeaders(options?: {
@@ -53,7 +58,7 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    config.baseURL = getApiBaseUrl();
+    config.baseURL = isAccountsApiPath(config.url) ? getAuthApiBaseUrl() : getApiBaseUrl();
     if (config.headers) {
       Object.entries(
         getApiAuthHeaders({
@@ -84,6 +89,9 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
+      if (isIdleLocked()) {
+        return Promise.reject(error);
+      }
       if (
         typeof window !== "undefined" &&
         !error.config?.skipAuthRedirect &&

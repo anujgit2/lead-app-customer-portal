@@ -9,7 +9,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
  *   E2E_CUSTOMER_EMAIL=... E2E_CUSTOMER_PASSWORD=... \
  *     npx playwright test e2e/business-application.spec.ts
  */
-const PROGRAM_ID = "a1b49881-4f8b-4080-974f-9b933486a035";
+const PROGRAM_ID = "5c864551-6a59-4f22-9a32-325f08c13272";
 
 test.setTimeout(300_000);
 
