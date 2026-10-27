@@ -1,0 +1,66 @@
+- generic [ref=f1e3]:
+  - banner [ref=f1e4]:
+    - generic [ref=f1e5]:
+      - link [ref=f1e7] [cursor=pointer]:
+        - /url: .
+      - navigation [ref=f1e8]:
+        - generic [ref=f1e10]:
+          - link " Home" [ref=f1e11] [cursor=pointer]:
+            - /url: .
+            - generic [ref=f1e12]: 
+            - text: Home
+          - link " Donate" [ref=f1e13] [cursor=pointer]:
+            - /url: donate
+            - generic [ref=f1e14]: 
+            - text: Donate
+          - link " Domains" [ref=f1e15] [cursor=pointer]:
+            - /url: add-domain
+            - generic [ref=f1e16]: 
+            - text: Domains
+          - link " Random" [ref=f1e17] [cursor=pointer]:
+            - /url: email-generator
+            - generic [ref=f1e18]: 
+            - text: Random
+        - generic [ref=f1e23]:
+          - generic [ref=f1e24]:
+            - img "Temporary Email" [ref=f1e25]
+            - text: English
+          - generic [ref=f1e26]: 
+  - main [ref=f1e31]:
+    - generic [ref=f1e33]:
+      - generic [ref=f1e34]: e2e.reg.271731@yopmail.com
+      - generic [ref=f1e35]:
+        - generic [ref=f1e36]:
+          - text: Alias
+          - button "" [ref=f1e37] [cursor=pointer]
+          - text: ":"
+        - generic [ref=f1e39]:
+          - emphasis [ref=f1e40]: alt.vm-dofqwpl6
+          - text: "@yopmail.com"
+        - button "" [ref=f1e42] [cursor=pointer]
+    - generic [ref=f1e44]:
+      - generic [ref=f1e46]:
+        - generic [ref=f1e47]:
+          - button "" [ref=f1e49] [cursor=pointer]
+          - button "" [disabled] [ref=f1e52]
+          - button "" [ref=f1e56] [cursor=pointer]
+          - generic [ref=f1e58]:
+            - button "" [disabled] [ref=f1e60]
+            - generic [ref=f1e62]: page 1
+            - button "" [disabled] [ref=f1e64]
+          - generic [ref=f1e66]: 1 mail
+          - button "" [ref=f1e69] [cursor=pointer]
+        - iframe [ref=f1e72]:
+          - generic [ref=f2e2]:
+            - generic [ref=f2e3]: today
+            - generic [ref=f2e4]:
+              - checkbox [ref=f2e6]
+              - button "18:05 BizLoan Dev Your verification code" [ref=f2e7] [cursor=pointer]:
+                - generic [ref=f2e8]:
+                  - generic [ref=f2e9]: 18:05
+                  - generic [ref=f2e10]: BizLoan Dev
+                - generic [ref=f2e11]: Your verification code
+      - iframe [ref=f1e78]:
+        - banner [ref=f4e2]:
+          - generic [ref=f4e3]: Please confirm you're human to continue
+  - contentinfo [ref=f1e81]

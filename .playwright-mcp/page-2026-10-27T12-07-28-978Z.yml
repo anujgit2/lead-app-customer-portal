@@ -1,0 +1,49 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e7] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=f2e8]
+    - generic [ref=f2e12]:
+      - button "Open issues overlay" [ref=f2e13]:
+        - generic [ref=f2e14]:
+          - generic [aria-hidden] [ref=f2e15]: "0"
+          - generic [ref=f2e16]: "1"
+        - generic [ref=f2e17]: Insight
+      - button "Collapse issues badge" [ref=f2e18]
+  - alert [ref=f2e21]
+  - generic [ref=f2e23]:
+    - main [ref=f2e24]:
+      - generic [ref=f2e25]:
+        - link "Lender name" [ref=f2e26] [cursor=pointer]:
+          - /url: /
+        - paragraph [ref=f2e31]:
+          - text: Have an account?
+          - link "Sign in" [ref=f2e32] [cursor=pointer]:
+            - /url: /auth/login/
+      - generic [ref=f2e34]:
+        - list "Sign-up progress" [ref=f2e35]:
+          - listitem [ref=f2e36]: Your details
+          - listitem [ref=f2e38]: Verify email
+          - listitem [ref=f2e41]: Ready
+        - generic [ref=f2e133]:
+          - generic [ref=f2e138]:
+            - heading "Your account is ready" [level=1] [ref=f2e139]
+            - paragraph [ref=f2e140]: Next, set up your profile so your details are ready for every application.
+          - generic [ref=f2e141]:
+            - link "Set up my profile" [ref=f2e142] [cursor=pointer]:
+              - /url: /profiles/new/
+            - link "Go to dashboard" [ref=f2e143] [cursor=pointer]:
+              - /url: /dashboard/
+    - contentinfo [ref=f2e101]:
+      - generic [ref=f2e102]: © 2026 LoanPortal · [LEGAL ENTITY NAME]
+      - navigation "Support and legal" [ref=f2e103]:
+        - link "Help centre" [ref=f2e104] [cursor=pointer]:
+          - /url: /#faq
+        - link "Contact us" [ref=f2e105] [cursor=pointer]:
+          - /url: /#faq
+        - link "Privacy policy" [ref=f2e106] [cursor=pointer]:
+          - /url: /privacy/
+        - link "Terms of use" [ref=f2e107] [cursor=pointer]:
+          - /url: /terms/
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=f2e144]:
+        - generic [ref=f2e148]: Verification complete. Your account is now active.

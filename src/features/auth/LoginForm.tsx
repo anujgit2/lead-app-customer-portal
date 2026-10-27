@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
+import { clearFullSession } from "@/lib/session";
 import { toast } from "sonner";
 import {
   AuthScreen,
@@ -66,6 +67,11 @@ export function LoginForm() {
   const { config } = useTenantUi();
   const formCopy = config.forms.signin;
   const [showPassword, setShowPassword] = useState(false);
+
+  // Clear all tokens and cookies when landing on login page
+  useEffect(() => {
+    clearFullSession();
+  }, []);
 
   const {
     register,

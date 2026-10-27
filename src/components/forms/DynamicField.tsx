@@ -34,6 +34,7 @@ import { getAddressSubfields } from "@/utils/address-field";
 import { PanVerificationBadge } from "@/features/loan-application/PanVerificationBadge";
 import { isPanSearchField } from "@/utils/pan-search";
 import { ConsentRow } from "./ConsentField";
+import { AddressInputWithAutocomplete } from "./AddressInputWithAutocomplete";
 
 // ─── Pattern → human-readable example map ────────────────────────────────────
 // Exported for reuse by the dev Form Playground's sample-data generator.
@@ -488,12 +489,23 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
     content = (
       <>
         {labelEl}
-        <div className="grid grid-cols-1 items-start gap-x-6 gap-y-5 sm:grid-cols-2">
-          {subfields.map((sub) => (
-            <div key={sub.name}>
-              <DynamicField field={sub} namePrefix={fieldName} />
-            </div>
-          ))}
+        <div className="space-y-4">
+          {/* Autocomplete address input */}
+          <AddressInputWithAutocomplete
+            fieldName={fieldName}
+            error={!!error}
+            disabled={field.disabled}
+            readonly={field.readonly}
+            placeholder="Start typing to search for your address..."
+          />
+          {/* Structured address fields */}
+          <div className="grid grid-cols-1 items-start gap-x-6 gap-y-5 sm:grid-cols-2">
+            {subfields.map((sub) => (
+              <div key={sub.name}>
+                <DynamicField field={sub} namePrefix={fieldName} />
+              </div>
+            ))}
+          </div>
         </div>
         <FieldHint text={field.helpText} />
       </>

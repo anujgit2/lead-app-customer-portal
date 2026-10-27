@@ -26,6 +26,7 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 | `NEXT_PUBLIC_TENANT_BASE_DOMAIN` | local multi-tenant hosts | When the page host is `{name}` under this domain, API calls go to `{name}-services.{domain}` so the backend host route selects the tenant. |
 | `NEXT_PUBLIC_APP_PUBLIC_URL` | yes for shared links | Public portal origin used in copied share links (`https://portal.example.com`). Never the API host. |
 | `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` | production | reCAPTCHA v2 ("I'm not a robot") site key used by the human check on self-serve signup. |
+| `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | optional (address autocomplete) | Google Maps API key for address autocomplete in address fields. Restrict to HTTP referrers in Google Cloud Console. See [Google Places Integration](./docs/google-places-integration.md). |
 
 This app builds as a static export (`output: "export"` in `next.config.ts`) — there is no Next.js server at runtime, so `NEXT_PUBLIC_*` vars are baked into the JS bundle at build time and the browser calls the backend directly. **Changing an environment's backend URL always requires a rebuild.**
 
@@ -58,6 +59,23 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your_site_key_here
 If the variable is unset, signup falls back to Google's public test key so the flow stays clickable locally. That key accepts everyone, so it must not reach production.
 
 The signup form only obtains the token. **The matching secret key must be verified server side** via `https://www.google.com/recaptcha/api/siteverify` on the `/accounts/auth/register` endpoint — the client-side widget alone blocks nothing. The token is sent to the API as `recaptchaToken`.
+
+### Google Places Address Autocomplete
+
+To enable address autocomplete in address fields, create a Google Maps API key at the [Google Cloud Console](https://console.cloud.google.com/):
+
+1. Create a new project or select an existing one
+2. Enable the **Places API** and **Maps JavaScript API**
+3. Create a browser API key
+4. Set **API Key Restrictions** to **HTTP referrers** and add your deployment domains (e.g., `localhost:3000` for local, `portal.example.com` for production)
+5. Add the key to your environment file:
+
+```bash
+# .env.local
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
+```
+
+**Important:** This key is exposed to the browser but restricted by HTTP referrer in Google Cloud Console. Never commit real keys to the repository. See [Google Places Integration](./docs/google-places-integration.md) for detailed setup and troubleshooting.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { InvitationRegisterFlow } from "@/features/auth/InvitationRegisterFlow";
 import { SelfServeRegisterFlow } from "@/features/auth/SelfServeRegisterFlow";
 import { invitationService } from "@/services/invitation.service";
+import { clearFullSession } from "@/lib/session";
 import type { InvitationDetails } from "@/types";
 import {
   AuthScreen,
@@ -32,6 +33,11 @@ export function RegisterPageClient() {
   // downgrade an invited user into a self-serve account.
   const isSelfServe = !token && !tenant;
   const isBrokenInvitationLink = !isSelfServe && (!token || !tenant);
+
+  // Clear all tokens and cookies when landing on register page
+  useEffect(() => {
+    clearFullSession();
+  }, []);
 
   useEffect(() => {
     async function loadInvitation() {
