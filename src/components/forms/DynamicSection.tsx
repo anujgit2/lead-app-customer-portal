@@ -14,6 +14,7 @@ import { buildSectionDefaults } from "@/utils/schema-builder";
 import { useFieldRules } from "./use-field-rules";
 import { PanSearchDialog } from "@/features/loan-application/PanSearchDialog";
 import { findPanSearchField, getPanSearchVariant } from "@/utils/pan-search";
+import { usePanSearchVisible } from "./form-chrome";
 
 interface DynamicSectionProps {
   section: FormSection;
@@ -201,6 +202,7 @@ function RepeatableSectionInstances({
 }
 
 export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
+  const panSearchVisible = usePanSearchVisible();
   const sectionPrefix = namePrefix
     ? `${namePrefix}.${section.code}`
     : section.code;
@@ -218,7 +220,7 @@ export function DynamicSection({ section, namePrefix }: DynamicSectionProps) {
 
   const consents = sectionConsentFields(section);
   const consentOnly = consents.length > 0 && consents.length === section.fields.length;
-  const panSearchField = findPanSearchField(section);
+  const panSearchField = panSearchVisible ? findPanSearchField(section) : undefined;
   const readOnly =
     section.fields.length > 0 && section.fields.every((field) => field.readonly || field.disabled);
 

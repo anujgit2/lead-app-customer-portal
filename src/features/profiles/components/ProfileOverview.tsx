@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { FormField, FormSection, FormTemplate } from "@/types";
 import { DynamicForm } from "@/components/forms/DynamicForm";
+import { PanSearchVisibilityProvider } from "@/components/forms/form-chrome";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { OverflowTabList } from "./OverflowTabList";
 import { mergeTemplateDefaults } from "@/utils/schema-builder";
@@ -35,7 +36,9 @@ function LockedProfileForm({ template, data }: { template: FormTemplate; data: R
 
   return (
     <div aria-readonly="true">
-      <DynamicForm chrome="profile" template={locked} defaultValues={defaults} onSubmit={() => undefined} />
+      <PanSearchVisibilityProvider visible={false}>
+        <DynamicForm chrome="profile" template={locked} defaultValues={defaults} onSubmit={() => undefined} />
+      </PanSearchVisibilityProvider>
     </div>
   );
 }

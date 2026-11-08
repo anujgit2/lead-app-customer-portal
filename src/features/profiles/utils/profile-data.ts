@@ -1,4 +1,4 @@
-import type { FormField, FormSection, FormTemplate } from "@/types";
+import type { FormData, FormField, FormSection, FormTemplate, TemplateData } from "@/types";
 import { normalizeAddressValue } from "@/utils/address-field";
 import {
   assignDeep,
@@ -204,4 +204,11 @@ export function profileDataToFormValues(
   }
 
   return result;
+}
+
+/** Per-template form values for the application-style review summary. */
+export function profileReviewFormData(templates: FormTemplate[], data: unknown): FormData {
+  return Object.fromEntries(
+    templates.map((template) => [template.code, profileDataToFormValues(template, data) as TemplateData])
+  ) as FormData;
 }

@@ -47,7 +47,7 @@ export function AddressInputWithAutocomplete({
 
   // Refs for cleanup and debouncing
   const suggestionsRef = useRef<HTMLDivElement>(null);
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const debounceTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const previousInputRef = useRef<string>("");

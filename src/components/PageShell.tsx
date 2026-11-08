@@ -5,6 +5,8 @@ const WIDTHS = {
   list: "max-w-[1200px]",
   detail: "max-w-[1120px]",
   narrow: "max-w-3xl",
+  /** Same column as the loan application form wizard. */
+  form: "max-w-[880px]",
 } as const;
 
 interface PageShellProps {

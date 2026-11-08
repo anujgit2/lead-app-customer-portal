@@ -31,7 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const PAGE_SIZES = [10, 25, 50] as const;
+// One page holds 25 documents. The pager appears only when there are more than that.
+const PAGE_SIZE = 25;
 
 function shownCount(loading: boolean, count: number): string {
   return loading ? "–" : String(count);
@@ -61,7 +62,7 @@ export function DocumentsPage() {
   const [profileId, setProfileId] = useState("ALL");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState<number>(10);
+  const size = PAGE_SIZE;
   const [sort, setSort] = useState<DocumentSortKey>("updated");
   const [dir, setDir] = useState<DocumentSortDir>("desc");
   const deferredSearch = useDebouncedValue(search, 300);
@@ -147,6 +148,7 @@ export function DocumentsPage() {
   }, [visible, sort, dir]);
 
   const pageCount = Math.max(1, Math.ceil(sorted.length / size));
+  const showPagination = sorted.length >= PAGE_SIZE;
   const pageIndex = Math.min(page, pageCount - 1);
   const pageDocuments = sorted.slice(pageIndex * size, pageIndex * size + size);
   const pageIds = new Set(pageDocuments.map((document) => document.id));
@@ -214,16 +216,7 @@ export function DocumentsPage() {
 
   return (
     <PageShell>
-      <PageHeader
-        title="Documents"
-        description="Upload, find and share files for your application."
-        actions={
-          <Button type="button" className="w-full sm:w-auto" onClick={() => openUpload()} size="sm">
-            <Upload className="h-4 w-4" />
-            Upload document
-          </Button>
-        }
-      />
+      <PageHeader title="Documents" description="Upload, find and share files for your application." />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1 basis-full sm:max-w-[420px] sm:basis-[280px]">
@@ -241,8 +234,12 @@ export function DocumentsPage() {
             className="h-8 text-[13px]"
           />
         </div>
+        <Button type="button" size="sm" className="h-8 w-full sm:w-auto" onClick={() => openUpload()}>
+          <Upload className="h-4 w-4" />
+          Upload document
+        </Button>
         <Select
-          value={typeId}
+          value={typeId === "ALL" ? "" : typeId}
           onValueChange={(value) => {
             setTypeId(value);
             setPage(0);
@@ -252,10 +249,9 @@ export function DocumentsPage() {
             className="h-8 w-auto min-w-[140px] flex-1 basis-[140px] rounded-md px-3 text-[13px] font-medium sm:w-auto sm:min-w-[168px] sm:flex-none"
             aria-label="Filter by type"
           >
-            <SelectValue placeholder="All types" />
+            <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All types ({shownCount(loading, typeScope.length)})</SelectItem>
             {typeOptions.map((type) => (
               <SelectItem key={type.id} value={type.id}>
                 {type.name} ({shownCount(loading, typeScope.filter((document) => document.typeId === type.id).length)})
@@ -264,7 +260,7 @@ export function DocumentsPage() {
           </SelectContent>
         </Select>
         <Select
-          value={profileId}
+          value={profileId === "ALL" ? "" : profileId}
           onValueChange={(value) => {
             setProfileId(value);
             setPage(0);
@@ -274,12 +270,9 @@ export function DocumentsPage() {
             className="h-8 w-auto min-w-[140px] flex-1 basis-[140px] rounded-md px-3 text-[13px] font-medium sm:w-auto sm:min-w-[180px] sm:flex-none"
             aria-label="Filter by profile"
           >
-            <SelectValue placeholder="All profiles" />
+            <SelectValue placeholder="Profile" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">
-              All profiles ({shownCount(loading, profileScope.length)})
-            </SelectItem>
             {profileOptions.map((profile) => (
               <SelectItem key={profile.id} value={profile.id}>
                 {profile.name} (
@@ -378,25 +371,8 @@ export function DocumentsPage() {
           <p className="text-[13px] text-muted-foreground" role="status">
             {loading ? "Loading documents" : listCount(sorted.length, pageIndex, size, pageDocuments.length)}
           </p>
+          {showPagination ? (
           <div className="flex flex-wrap items-center gap-2">
-            <Select
-              value={String(size)}
-              onValueChange={(value) => {
-                setSize(Number(value));
-                setPage(0);
-              }}
-            >
-              <SelectTrigger className="h-8 w-auto rounded-md px-3 text-[13px] font-medium" aria-label="Rows per page">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PAGE_SIZES.map((option) => (
-                  <SelectItem key={option} value={String(option)}>
-                    {option} per page
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <div className="flex items-center gap-2">
               <Button
                 type="button"
@@ -426,6 +402,7 @@ export function DocumentsPage() {
               </Button>
             </div>
           </div>
+          ) : null}
         </div>
       </section>
 

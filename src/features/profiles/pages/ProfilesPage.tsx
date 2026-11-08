@@ -7,8 +7,6 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  LayoutGrid,
-  Menu,
   Plus,
   Search,
   Users,
@@ -43,7 +41,7 @@ import {
 } from "@/components/ui/table";
 import { parseApiError } from "@/lib/api-error";
 import { cn } from "@/lib/utils";
-import type { CustomerProfileListFilters, CustomerProfileStatus, CustomerProfileSummary, CustomerProfileType } from "@/types";
+import type { CustomerProfileListFilters, CustomerProfileSummary, CustomerProfileType } from "@/types";
 import { useProfiles } from "../api/queries";
 import { PROFILE_PAGE_SIZE } from "../constants";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -51,22 +49,20 @@ import { ProfileAvatar, ProfileStatusBadge, ProfileTypeBadge } from "../componen
 import { NewProfileMenuItems } from "../components/NewProfileMenuItems";
 import { formatProfileDay, formatProfileTime, showIdentifier } from "../utils/display";
 
-const PAGE_SIZES = [5, 10, 25] as const;
-
 type TypeFilter = "ALL" | CustomerProfileType;
-type StatusFilter = "ALL" | CustomerProfileStatus;
 type SortKey = "name" | "updated";
 type SortDir = SortDirection;
 type ProfileView = "table" | "cards";
 
+// The list always shows the table; the card/grid toggle is hidden for the first release.
+const VIEW: ProfileView = "table";
+
 function facetFilters(
   type: TypeFilter,
-  status: StatusFilter,
   query: string
 ): Omit<CustomerProfileListFilters, "page" | "size"> {
   return {
     ...(type === "ALL" ? {} : { type }),
-    ...(status === "ALL" ? {} : { status }),
     ...(query ? { q: query } : {}),
   };
 }
@@ -221,48 +217,32 @@ function ProfileCards({
 export function ProfilesPage() {
   const router = useRouter();
   const [type, setType] = useState<TypeFilter>("ALL");
-  const [status, setStatus] = useState<StatusFilter>("ALL");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState<number>(PROFILE_PAGE_SIZE);
+  const size = PROFILE_PAGE_SIZE;
   const [sort, setSort] = useState<SortKey>("updated");
   const [dir, setDir] = useState<SortDir>("desc");
-  const [view, setView] = useState<ProfileView>("table");
+  const view = VIEW;
   const deferredSearch = useDebouncedValue(search, 300);
   const query = deferredSearch.trim();
 
   const filters = useMemo(
-    () => ({ page, size, ...facetFilters(type, status, query) }),
-    [page, size, type, status, query]
+    () => ({ page, size, ...facetFilters(type, query) }),
+    [page, size, type, query]
   );
-  const typeCountFilters = useMemo(() => facetFilters("ALL", status, query), [status, query]);
-  const individualCountFilters = useMemo(
-    () => facetFilters("INDIVIDUAL", status, query),
-    [status, query]
-  );
-  const businessCountFilters = useMemo(
-    () => facetFilters("BUSINESS", status, query),
-    [status, query]
-  );
-  const statusCountFilters = useMemo(() => facetFilters(type, "ALL", query), [type, query]);
-  const activeCountFilters = useMemo(() => facetFilters(type, "COMPLETE", query), [type, query]);
-  const archivedCountFilters = useMemo(
-    () => facetFilters(type, "ARCHIVED", query),
-    [type, query]
-  );
+  const individualCountFilters = useMemo(() => facetFilters("INDIVIDUAL", query), [query]);
+  const businessCountFilters = useMemo(() => facetFilters("BUSINESS", query), [query]);
 
   const profiles = useProfiles(filters);
-  const typeAll = useProfiles({ page: 0, size: 1, ...typeCountFilters });
   const typeIndividual = useProfiles({ page: 0, size: 1, ...individualCountFilters });
   const typeBusiness = useProfiles({ page: 0, size: 1, ...businessCountFilters });
-  const statusAll = useProfiles({ page: 0, size: 1, ...statusCountFilters });
-  const statusActive = useProfiles({ page: 0, size: 1, ...activeCountFilters });
-  const statusArchived = useProfiles({ page: 0, size: 1, ...archivedCountFilters });
 
-  const filtered = type !== "ALL" || status !== "ALL" || query.length > 0;
+  const filtered = type !== "ALL" || query.length > 0;
   const total = profiles.data?.totalElements ?? 0;
-  const totalPages = Math.max(1, Math.ceil((profiles.data?.totalElements ?? 0) / size));
+  const totalPages = Math.max(1, Math.ceil(total / size));
   const currentPage = Math.min(totalPages, (profiles.data?.page ?? page) + 1);
+  // Pagination appears only when there are more records than one page can show.
+  const showPagination = total >= PROFILE_PAGE_SIZE;
 
   const rows = useMemo(() => {
     const content = [...(profiles.data?.content ?? [])];
@@ -284,7 +264,6 @@ export function ProfilesPage() {
 
   const clearFilters = () => {
     setType("ALL");
-    setStatus("ALL");
     setSearch("");
     setPage(0);
   };
@@ -327,27 +306,7 @@ export function ProfilesPage() {
 
   return (
     <PageShell>
-      <PageHeader
-        title="Profiles"
-        description="Individual and business customers."
-        actions={
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button type="button" size="sm" className="group w-full data-[state=open]:bg-primary-hover sm:w-auto">
-                <Plus />
-                New profile
-                <ChevronDown className="transition-transform duration-150 group-data-[state=open]:rotate-180" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-[280px] max-sm:w-[var(--radix-dropdown-menu-trigger-width)]"
-            >
-              <NewProfileMenuItems />
-            </DropdownMenuContent>
-          </DropdownMenu>
-        }
-      />
+      <PageHeader title="Profiles" description="Individual and business customers." />
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         <div className="min-w-0 flex-1 basis-full sm:max-w-[420px] sm:basis-[280px]">
@@ -365,18 +324,32 @@ export function ProfilesPage() {
             className="h-8 text-[13px]"
           />
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" size="sm" className="group h-8 w-full data-[state=open]:bg-primary-hover sm:w-auto">
+              <Plus />
+              New profile
+              <ChevronDown className="transition-transform duration-150 group-data-[state=open]:rotate-180" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="w-[280px] max-sm:w-[var(--radix-dropdown-menu-trigger-width)]"
+          >
+            <NewProfileMenuItems />
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Select
-          value={type}
+          value={type === "ALL" ? "" : type}
           onValueChange={(value) => {
             setType(value as TypeFilter);
             setPage(0);
           }}
         >
           <SelectTrigger className="h-8 w-full rounded-md px-3 text-[13px] font-medium sm:w-auto sm:min-w-[150px]" aria-label="Filter by type">
-            <SelectValue />
+            <SelectValue placeholder="Type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All types ({shownCount(typeAll.data?.totalElements)})</SelectItem>
             <SelectItem value="INDIVIDUAL">
               Individual ({shownCount(typeIndividual.data?.totalElements)})
             </SelectItem>
@@ -385,64 +358,6 @@ export function ProfilesPage() {
             </SelectItem>
           </SelectContent>
         </Select>
-        <div className="flex gap-2 overflow-x-auto" role="group" aria-label="Filter by status">
-          {(
-            [
-              ["ALL", "All statuses", statusAll.data?.totalElements],
-              ["COMPLETE", "Complete", statusActive.data?.totalElements],
-              ["ARCHIVED", "Archived", statusArchived.data?.totalElements],
-            ] as const
-          ).map(([id, label, count]) => {
-            const active = status === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                aria-pressed={active}
-                onClick={() => {
-                  setStatus(id);
-                  setPage(0);
-                }}
-                className={cn(
-                  "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border px-3 text-[13px] font-medium transition-[background,border-color,color] duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-                  active
-                    ? "border-transparent bg-primary text-primary-foreground"
-                    : "border-input/70 bg-card text-foreground hover:bg-muted"
-                )}
-              >
-                {label}
-                <span className="text-xs tabular-nums opacity-70">{shownCount(count)}</span>
-              </button>
-            );
-          })}
-        </div>
-        <span className="hidden min-w-0 flex-1 sm:block" aria-hidden />
-        <div className="inline-flex h-8 items-center gap-0.5 rounded-md bg-muted p-0.5" role="group" aria-label="View">
-          <button
-            type="button"
-            aria-pressed={view === "table"}
-            aria-label="Table view"
-            onClick={() => setView("table")}
-            className={cn(
-              "inline-flex h-7 w-[34px] items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150",
-              view === "table" && "bg-card text-foreground shadow-sm"
-            )}
-          >
-            <Menu className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            aria-pressed={view === "cards"}
-            aria-label="Card view"
-            onClick={() => setView("cards")}
-            className={cn(
-              "inline-flex h-7 w-[34px] items-center justify-center rounded-sm text-muted-foreground transition-colors duration-150",
-              view === "cards" && "bg-card text-foreground shadow-sm"
-            )}
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </button>
-        </div>
       </div>
 
       <section
@@ -573,25 +488,8 @@ export function ProfilesPage() {
           <p className="text-[13px] text-muted-foreground" role="status">
             {loading ? "Loading profiles" : listCount(total, page, size, rows.length)}
           </p>
+          {showPagination ? (
           <div className="flex flex-wrap items-center gap-2">
-            <Select
-              value={String(size)}
-              onValueChange={(value) => {
-                setSize(Number(value));
-                setPage(0);
-              }}
-            >
-              <SelectTrigger className="h-8 w-auto rounded-md px-3 text-[13px] font-medium" aria-label="Rows per page">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PAGE_SIZES.map((option) => (
-                  <SelectItem key={option} value={String(option)}>
-                    {option} per page
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
             <div className="flex items-center gap-1.5">
               <Button
                 type="button"
@@ -621,6 +519,7 @@ export function ProfilesPage() {
               </Button>
             </div>
           </div>
+          ) : null}
         </div>
       </section>
     </PageShell>

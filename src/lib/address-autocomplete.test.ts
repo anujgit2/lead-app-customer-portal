@@ -1,4 +1,5 @@
-import { describe, it, assert, beforeEach, afterEach, mock } from "node:test";
+import assert from "node:assert";
+import { describe, it, beforeEach, afterEach, mock } from "node:test";
 
 /**
  * Tests for address-autocomplete utility functions

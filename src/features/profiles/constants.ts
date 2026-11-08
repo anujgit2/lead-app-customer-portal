@@ -1,7 +1,10 @@
 import type { CustomerProfileType } from "@/types";
 import type { Program } from "@/services/program.service";
 
-export const PROFILE_PAGE_SIZE = 5;
+export const PROFILE_PAGE_SIZE = 25;
+
+/** Versions feature is kept in code but hidden from the UI for the first release. */
+export const SHOW_PROFILE_VERSIONS = false;
 
 export function profileTypeFromQuery(value: string | null): CustomerProfileType | null {
   if (value === "individual") return "INDIVIDUAL";

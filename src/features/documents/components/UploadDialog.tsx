@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useDropzone } from "react-dropzone";
 import { FileText, Info, Upload, X } from "lucide-react";
 import { toast } from "sonner";
@@ -13,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -23,11 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useProfiles } from "@/features/profiles/api/queries";
-import { profileTypeLabel, showIdentifier } from "@/features/profiles/utils/display";
 import { cn, formatFileSize } from "@/lib/utils";
 import { toDropzoneAccept } from "@/utils/upload-config";
-import type { CustomerProfileSummary, DocumentProfileRelation } from "@/types";
+import type { DocumentProfileRelation } from "@/types";
 import { useDocumentTypes, useVersionPreview } from "../api/queries";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { uploadFailureMessage, useUpload } from "../hooks/useUpload";
@@ -72,11 +69,6 @@ function friendlyFileError(problem: string): string {
 function fileMeta(file: File): string {
   const extension = file.name.includes(".") ? file.name.split(".").pop()?.toUpperCase() : "";
   return [formatFileSize(file.size), extension].filter(Boolean).join(" · ");
-}
-
-function profileOptionLabel(profile: Pick<CustomerProfileSummary, "displayName" | "type" | "identifiers">): string {
-  const name = profile.displayName || "Untitled profile";
-  return `${name} · ${profileTypeLabel(profile.type)} · PAN ${showIdentifier(profile.identifiers.pan)}`;
 }
 
 function Field({
@@ -124,25 +116,21 @@ export function UploadDialog({ open, onOpenChange, locked, presetProfile }: Uplo
 function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDialogProps, "open">) {
   const upload = useUpload();
   const types = useDocumentTypes(!locked);
-  const profileFilters = useMemo(() => ({ page: 0, size: 100, status: "COMPLETE" as const }), []);
-  const profilesQuery = useProfiles(profileFilters);
   const [category, setCategory] = useState(locked ? categoryKey(locked.category) : "");
   const [typeId, setTypeId] = useState(locked?.typeId ?? "");
-  const [label, setLabel] = useState(locked?.label ?? "");
+  // The label field is hidden. Updating an existing document keeps its stored label.
+  const label = locked?.label ?? "";
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [asNew, setAsNew] = useState(false);
-  const [profile, setProfile] = useState<CustomerProfileSummary | null>(null);
 
   const markChanged = () => {
     upload.rotateKey();
     upload.reset();
   };
 
-  const selectedType = types.data?.find((type) => type.id === typeId);
-  const requiresLabel = locked ? false : !!selectedType?.requiresLabel;
   const debouncedLabel = useDebouncedValue(label.trim(), 400);
-  const previewEnabled = !asNew && !!typeId && (!requiresLabel || debouncedLabel.length > 0);
+  const previewEnabled = !asNew && !!typeId;
   const preview = useVersionPreview(
     {
       typeId,
@@ -156,7 +144,8 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
     (item) => item.id !== "ALL"
   );
   const visibleTypes = (types.data ?? []).filter((type) => !category || categoryKey(type.category) === category);
-  const profiles = profilesQuery.data?.content ?? [];
+  // Type is only mandatory when there is a list to choose from. A failed load still blocks upload.
+  const typeListEmpty = !locked && !types.isLoading && !types.isError && visibleTypes.length === 0;
 
   const acceptFile = (next: File | undefined) => {
     if (!next) return;
@@ -185,11 +174,7 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
     },
   });
 
-  const canSubmit =
-    !!file &&
-    !!typeId &&
-    (!requiresLabel || label.trim().length > 0) &&
-    !upload.isPending;
+  const canSubmit = !!file && (!!typeId || typeListEmpty) && !upload.isPending;
 
   const submit = (submission: UploadSubmission) => {
     upload.mutate(submission, {
@@ -201,18 +186,14 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
   };
 
   const buildSubmission = (): UploadSubmission | null => {
-    if (!file || !typeId) return null;
+    if (!file || (!typeId && !typeListEmpty)) return null;
     return {
       file,
       typeId,
       label: label.trim(),
       documentId: locked?.documentId,
       asNewDocument: asNew,
-      ...(presetProfile
-        ? { profileId: presetProfile.profileId, relation: presetProfile.relation }
-        : profile
-          ? { profileId: profile.id, relation: "RELATED_TO" as const }
-          : {}),
+      ...(presetProfile ? { profileId: presetProfile.profileId, relation: presetProfile.relation } : {}),
     };
   };
 
@@ -232,15 +213,10 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
         ? "Document types couldn’t be loaded."
         : !locked && !category
           ? "Choose a category."
-          : !locked && !typeId
+          : !locked && !typeId && !typeListEmpty
             ? "Choose a document type."
-            : !locked && requiresLabel && !label.trim()
-              ? "Add a label."
-              : "Ready to upload.";
+            : "Ready to upload.";
 
-  const selectedProfileId = presetProfile?.profileId ?? profile?.id;
-  const presetMissing =
-    !!presetProfile && !profiles.some((item) => item.id === presetProfile.profileId);
   const lockedCategory = locked ? categoryKey(locked.category) : "";
   const typePlaceholder = !category
     ? "Select a category first"
@@ -366,27 +342,16 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
                       </SelectContent>
                     </Select>
                   </Field>
-                  <div className="grid grid-cols-1 items-start gap-3.5 sm:grid-cols-2">
-                    <Field id="document-type" label="Type" required>
-                      <Select value={locked.typeId} disabled>
-                        <SelectTrigger id="document-type" className={controlClass}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={locked.typeId}>{locked.typeName || "Document"}</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </Field>
-                    <Field id="document-label" label="Label" optional={!locked.label}>
-                      <Input
-                        id="document-label"
-                        value={locked.label}
-                        readOnly
-                        disabled
-                        className={controlClass}
-                      />
-                    </Field>
-                  </div>
+                  <Field id="document-type" label="Type" required>
+                    <Select value={locked.typeId} disabled>
+                      <SelectTrigger id="document-type" className={controlClass}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={locked.typeId}>{locked.typeName || "Document"}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </Field>
                 </>
               ) : (
                 <>
@@ -429,51 +394,37 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
                       </SelectContent>
                     </Select>
                   </Field>
-                  <div className="grid grid-cols-1 items-start gap-3.5 sm:grid-cols-2">
-                    <Field
-                      id="document-type"
-                      label="Type"
-                      required
-                      hint={
-                        category && visibleTypes.length === 0 && !types.isLoading
-                          ? "No types in this category yet."
-                          : undefined
-                      }
+                  <Field
+                    id="document-type"
+                    label="Type"
+                    required={!typeListEmpty}
+                    optional={typeListEmpty}
+                    hint={
+                      category && visibleTypes.length === 0 && !types.isLoading
+                        ? "No types in this category yet."
+                        : undefined
+                    }
+                  >
+                    <Select
+                      value={typeId || undefined}
+                      onValueChange={(next) => {
+                        setTypeId(next);
+                        markChanged();
+                      }}
+                      disabled={upload.isPending || !category || visibleTypes.length === 0}
                     >
-                      <Select
-                        value={typeId || undefined}
-                        onValueChange={(next) => {
-                          setTypeId(next);
-                          markChanged();
-                        }}
-                        disabled={upload.isPending || !category || visibleTypes.length === 0}
-                      >
-                        <SelectTrigger id="document-type" className={controlClass}>
-                          <SelectValue placeholder={typePlaceholder} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {visibleTypes.map((type) => (
-                            <SelectItem key={type.id} value={type.id}>
-                              {type.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </Field>
-                    <Field id="document-label" label="Label" required={requiresLabel} optional={!requiresLabel}>
-                      <Input
-                        id="document-label"
-                        value={label}
-                        disabled={upload.isPending || !typeId}
-                        placeholder={selectedType?.labelHint || "e.g. FY 2025-26"}
-                        onChange={(event) => {
-                          setLabel(event.target.value);
-                          markChanged();
-                        }}
-                        className={controlClass}
-                      />
-                    </Field>
-                  </div>
+                      <SelectTrigger id="document-type" className={controlClass}>
+                        <SelectValue placeholder={typePlaceholder} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {visibleTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </Field>
                 </>
               )}
 
@@ -498,53 +449,6 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
                 <p className="text-[13px] leading-[18px] text-muted-foreground" role="status">
                   {versionHint}
                 </p>
-              ) : null}
-            </section>
-
-            <section className="flex flex-col gap-3.5">
-              <Field
-                id="upload-profile"
-                label="Related to"
-                optional
-                hint={
-                  profilesQuery.isError
-                    ? undefined
-                    : "Choose the person or business this document belongs to."
-                }
-              >
-                <Select
-                  value={selectedProfileId}
-                  onValueChange={(next) => {
-                    const match = profiles.find((item) => item.id === next) ?? null;
-                    setProfile(match);
-                    markChanged();
-                  }}
-                  disabled={upload.isPending || !!presetProfile || profilesQuery.isLoading || profilesQuery.isError}
-                >
-                  <SelectTrigger id="upload-profile" className={controlClass}>
-                    <SelectValue
-                      placeholder={profilesQuery.isLoading ? "Loading profiles…" : "Select a profile"}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {presetMissing && presetProfile ? (
-                      <SelectItem value={presetProfile.profileId}>
-                        {presetProfile.displayName || "Untitled profile"}
-                      </SelectItem>
-                    ) : null}
-                    {profiles.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {profileOptionLabel(item)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-              {profilesQuery.isError ? (
-                <FieldError>We couldn&apos;t load profiles.</FieldError>
-              ) : null}
-              {!profilesQuery.isLoading && !profilesQuery.isError && profiles.length === 0 && !presetProfile ? (
-                <p className="text-[13px] leading-[18px] text-muted-foreground">No active profiles yet.</p>
               ) : null}
             </section>
 

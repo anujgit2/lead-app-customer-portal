@@ -7,13 +7,17 @@ import { ArrowLeft, Building2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ErrorState";
 import { PageHeader, PageShell } from "@/components/PageShell";
+import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { parseApiError } from "@/lib/api-error";
 import { profileService } from "@/services/profile.service";
+import { ApplicationFormSummary } from "@/features/loan-application/ReviewScreen";
+import { LoadingProgressDialog } from "@/features/loan-application/LoadingProgressDialog";
 import { useProfileForm, useProfilePrograms } from "../api/queries";
 import { newProfileHref, profileTypeForProgram, profileTypeFromQuery } from "../constants";
 import { ProfileForm } from "../components/ProfileForm";
 import { profileTypeLabel } from "../utils/display";
+import { profileReviewFormData } from "../utils/profile-data";
 import { safeInternalPath, withProfileReturn } from "../utils/return-path";
 import type { ApiError } from "@/types";
 import type { Program } from "@/services/program.service";
@@ -88,6 +92,12 @@ export function ProfileCreatePage() {
   const [saving, setSaving] = useState(false);
   const queryClient = useQueryClient();
   const versionRef = useRef(0);
+  // Save & complete opens the review step with this data; nothing is sent until Submit.
+  const [reviewInput, setReviewInput] = useState<{
+    data: Record<string, unknown>;
+    changeNote?: string;
+  } | null>(null);
+  const [progress, setProgress] = useState<{ title: string; message: string } | null>(null);
 
   useEffect(() => {
     if (draft) versionRef.current = draft.currentVersionNo;
@@ -183,8 +193,52 @@ export function ProfileCreatePage() {
     );
   };
 
+  const openSavedProfile = (saved: { id: string; currentVersionNo: number }) => {
+    router.push(
+      returnTo
+        ? withProfileReturn(returnTo, saved.id, saved.currentVersionNo)
+        : `/profiles/view?profileId=${encodeURIComponent(saved.id)}`
+    );
+  };
+
+  const saveDraftAndOpen = async (input: { data: Record<string, unknown>; changeNote?: string }) => {
+    if (saving) return;
+    setSaving(true);
+    setProgress({ title: "Saving your profile", message: "Please wait while we save your changes." });
+    try {
+      const saved = await saveVersion(input);
+      await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      openSavedProfile(saved);
+    } catch (error) {
+      setProgress(null);
+      setSaving(false);
+      reportSaveError(error);
+    }
+  };
+
+  const submitProfile = async () => {
+    if (!draft || !reviewInput || saving) return;
+    setSaving(true);
+    setProgress({ title: "Creating your profile", message: "Please wait while we complete your profile." });
+    try {
+      const saved = await saveVersion(reviewInput);
+      const completed = await profileService.complete(draft.id, saved.currentVersionNo);
+      await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      toast.success("Profile created");
+      openSavedProfile(completed);
+    } catch (error) {
+      setProgress(null);
+      setSaving(false);
+      reportSaveError(error);
+    }
+  };
+
+  const reviewFormData = reviewInput
+    ? profileReviewFormData(formsQuery.data ?? [], reviewInput.data)
+    : {};
+
   return (
-    <PageShell width="detail">
+    <PageShell width="form">
       <Link href={returnTo ?? "/profiles"} className={backLinkClass}>
         <ArrowLeft className="h-4 w-4" />
         Profiles
@@ -250,48 +304,65 @@ export function ProfileCreatePage() {
       ) : null}
 
       {formsQuery.data && draft ? (
-        <ProfileForm
-          templates={formsQuery.data}
-          submitLabel="Save & complete"
-          draftLabel="Save draft"
-          pending={saving}
-          onCancel={() => router.push(returnTo ?? "/profiles")}
-          onSaveDraft={(input) => {
-            if (saving) return;
-            setSaving(true);
-            void (async () => {
-              try {
-                await saveVersion(input);
-                toast.success("Draft saved");
-              } catch (error) {
-                reportSaveError(error);
-              } finally {
-                setSaving(false);
-              }
-            })();
-          }}
-          onSubmit={(input) => {
-            if (saving) return;
-            setSaving(true);
-            void (async () => {
-              try {
-                const saved = await saveVersion(input);
-                const completed = await profileService.complete(draft.id, saved.currentVersionNo);
-                await queryClient.invalidateQueries({ queryKey: ["profiles"] });
-                toast.success("Profile created");
-                router.push(
-                  returnTo
-                    ? withProfileReturn(returnTo, completed.id, completed.currentVersionNo)
-                    : `/profiles/view?profileId=${encodeURIComponent(completed.id)}`
-                );
-              } catch (error) {
-                reportSaveError(error);
-              } finally {
-                setSaving(false);
-              }
-            })();
-          }}
-        />
+        // Kept mounted while reviewing so the typed values are still there when the user goes back.
+        <div hidden={reviewInput !== null}>
+          <ProfileForm
+            templates={formsQuery.data}
+            submitLabel="Save & complete"
+            draftLabel="Save draft"
+            pending={saving}
+            onCancel={() => router.push(returnTo ?? "/profiles")}
+            onSaveDraft={(input) => {
+              void saveDraftAndOpen(input);
+            }}
+            onSubmit={(input) => {
+              if (saving) return;
+              setReviewInput(input);
+            }}
+          />
+        </div>
+      ) : null}
+
+      {reviewInput && formsQuery.data ? (
+        <section className="flex flex-col gap-5" aria-label="Review profile">
+          <div>
+            <h2 className="text-2xl font-semibold leading-8 tracking-tight text-foreground">
+              Review your profile
+            </h2>
+            <p className="mt-0.5 text-sm leading-5 text-muted-foreground">
+              Check the details below. Go back to make changes, or submit to finish.
+            </p>
+          </div>
+
+          <ApplicationFormSummary templates={formsQuery.data} formData={reviewFormData} mode="review" />
+
+          <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <p className="text-sm leading-5 text-foreground">
+              <b className="font-semibold">Heads up:</b> once you submit, this profile is locked and you
+              won&apos;t be able to edit it. If you need to change anything later, create a new copy of this
+              profile and make the changes in that copy. This profile will stay exactly as you submitted it.
+            </p>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={saving}
+                onClick={() => setReviewInput(null)}
+              >
+                <ArrowLeft />
+                Back to edit
+              </Button>
+              <Button type="button" size="sm" loading={saving} disabled={saving} onClick={() => void submitProfile()}>
+                Submit
+              </Button>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {progress ? (
+        <LoadingProgressDialog open title={progress.title} message={progress.message} />
       ) : null}
     </PageShell>
   );

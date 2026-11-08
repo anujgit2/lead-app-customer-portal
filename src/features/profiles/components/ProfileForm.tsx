@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import type { FormTemplate } from "@/types";
 import { DynamicForm } from "@/components/forms/DynamicForm";
+import { PanSearchVisibilityProvider } from "@/components/forms/form-chrome";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -131,16 +132,18 @@ export function ProfileForm({
 
       {templates.map((template) => (
         <div key={template.code} hidden={template.code !== selected}>
-          <DynamicForm
-            chrome={saveBar ? "profile" : "default"}
-            template={template}
-            defaultValues={defaults[template.code]}
-            formRef={(node) => {
-              formRefs.current[template.code] = node;
-            }}
-            onSubmit={(values) => settle(template.code, values)}
-            onInvalid={() => settle(template.code, null)}
-          />
+          <PanSearchVisibilityProvider visible={false}>
+            <DynamicForm
+              chrome={saveBar ? "profile" : "default"}
+              template={template}
+              defaultValues={defaults[template.code]}
+              formRef={(node) => {
+                formRefs.current[template.code] = node;
+              }}
+              onSubmit={(values) => settle(template.code, values)}
+              onInvalid={() => settle(template.code, null)}
+            />
+          </PanSearchVisibilityProvider>
         </div>
       ))}
 

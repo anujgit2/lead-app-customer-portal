@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Archive, ChevronRight, Download, Pencil } from "lucide-react";
+import { ChevronRight, Download, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ErrorState";
@@ -14,7 +14,6 @@ import { listDocuments } from "@/features/documents/api/documentsApi";
 import { parseApiError } from "@/lib/api-error";
 import { applicationService } from "@/services/application.service";
 import {
-  useArchiveProfile,
   useCompleteProfile,
   useProfile,
   useProfileForm,
@@ -22,14 +21,15 @@ import {
   useUpdateProfile,
 } from "../api/queries";
 import { useProfileRouteId } from "@/features/documents/hooks/usePathSegment";
-import { ArchiveProfileDialog } from "../components/ArchiveProfileDialog";
 import { OverflowTabList, type OverflowTabItem } from "../components/OverflowTabList";
 import { ProfileForm } from "../components/ProfileForm";
 import { ProfileMemoDialog } from "../components/ProfileMemoDialog";
-import { ProfileOverview } from "../components/ProfileOverview";
 import { ProfileVersionsTab } from "../components/ProfileVersionsTab";
 import { VersionConflictDialog } from "../components/VersionConflictDialog";
 import { ProfileAvatar } from "../components/ProfileBadges";
+import { SHOW_PROFILE_VERSIONS } from "../constants";
+import { profileReviewFormData } from "../utils/profile-data";
+import { ApplicationFormSummary } from "@/features/loan-application/ReviewScreen";
 import { formatProfileWhen, profileStatusLabel, profileTypeLabel, showIdentifier } from "../utils/display";
 
 export function ProfileDetailSkeleton() {
@@ -67,9 +67,10 @@ export function ProfileDetailPage() {
   const searchParams = useSearchParams();
   const route = useProfileRouteId();
   const id = route.value ?? "";
-  const editing = searchParams?.get("edit") === "1";
   const profileQuery = useProfile(id);
   const profile = profileQuery.data;
+  // Only drafts can be edited; once a profile is complete the edit route shows the read-only view.
+  const editing = searchParams?.get("edit") === "1" && profile?.status === "DRAFT";
   // Viewing renders the snapshot with the program version it was saved against; editing
   // uses the latest published version so new fields appear.
   const templateQuery = useProfileForm(
@@ -79,10 +80,8 @@ export function ProfileDetailPage() {
   );
   const updateProfile = useUpdateProfile(id);
   const completeProfile = useCompleteProfile(id);
-  const archiveProfile = useArchiveProfile(id);
   const [conflictOpen, setConflictOpen] = useState(false);
   const [reloading, setReloading] = useState(false);
-  const [archiveOpen, setArchiveOpen] = useState(false);
   const [memoOpen, setMemoOpen] = useState(false);
   const [tab, setTab] = useState("");
   const [formEpoch, setFormEpoch] = useState(0);
@@ -154,9 +153,10 @@ export function ProfileDetailPage() {
   const updatedBy = profile.updatedBy || "Unknown";
   const templates = templateQuery.data ?? [];
   const formTab = templates.some((item) => item.code === tab) ? tab : (templates[0]?.code ?? "");
-  const selectedTab = editing ? formTab : tab || formTab;
+  const selectedTab = editing ? formTab : tab || "details";
   const sections = templates.flatMap((item) => item.sections);
-  const archived = profile.status === "ARCHIVED";
+  const canEdit = profile.status === "DRAFT";
+  const viewData = profileReviewFormData(templates, profile.data);
   const pan = profile.identifiers.pan;
   const gstin = profile.identifiers.gstin;
   const identifierLabel = pan ? "PAN" : gstin ? "GSTIN" : "PAN";
@@ -236,9 +236,6 @@ export function ProfileDetailPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
               {profileStatusLabel(profile.status)}
             </span>
-            <span className="inline-flex h-[22px] items-center rounded-full bg-primary-foreground/15 px-2 text-xs font-semibold">
-              Version {profile.currentVersionNo}
-            </span>
           </div>
           <h1 id="profile-name" className="text-[22px] font-semibold leading-7 tracking-[-0.02em] sm:text-[26px] sm:leading-8">
             {name}
@@ -251,7 +248,7 @@ export function ProfileDetailPage() {
               <Download className="h-4 w-4" />
               Download memo
             </Button>
-            {archived || editing ? (
+            {editing ? (
               <Button
                 type="button"
                 size="sm"
@@ -261,7 +258,7 @@ export function ProfileDetailPage() {
                 <Pencil className="h-4 w-4" />
                 Edit
               </Button>
-            ) : (
+            ) : canEdit ? (
               <Button
                 asChild
                 size="sm"
@@ -272,13 +269,7 @@ export function ProfileDetailPage() {
                   Edit
                 </Link>
               </Button>
-            )}
-            {archived ? null : (
-              <Button type="button" variant="outline" size="sm" className={onHero} onClick={() => setArchiveOpen(true)}>
-                <Archive className="h-4 w-4" />
-                Archive
-              </Button>
-            )}
+            ) : null}
           </div>
         </div>
         <div className="relative z-[1] flex flex-col gap-3 rounded-lg bg-card p-4 text-foreground shadow-[var(--shadow-3)]">
@@ -324,19 +315,13 @@ export function ProfileDetailPage() {
           }}
         />
       ) : null}
-      {templates.length > 0 ? (
-      <Tabs value={selectedTab} onValueChange={setTab} className="flex flex-col gap-4">
-        <OverflowTabList
-          ariaLabel="Profile sections"
-          activeValue={selectedTab}
-          tabs={[
-            ...templates.map((item) => ({ value: item.code, label: item.title })),
-            ...(editing
-              ? []
-              : ([{ value: "versions", label: "Versions", count: versionCount }] satisfies OverflowTabItem[])),
-          ]}
-        />
-        {editing ? (
+      {templates.length > 0 && editing ? (
+        <Tabs value={selectedTab} onValueChange={setTab} className="flex flex-col gap-4">
+          <OverflowTabList
+            ariaLabel="Profile sections"
+            activeValue={selectedTab}
+            tabs={templates.map((item) => ({ value: item.code, label: item.title }))}
+          />
           <div className="flex flex-col gap-4">
             <ProfileForm
               saveBar
@@ -351,23 +336,34 @@ export function ProfileDetailPage() {
               onCancel={() =>
                 router.push(`/profiles/view?profileId=${encodeURIComponent(profile.id)}`)
               }
-              onSaveDraft={profile.status === "DRAFT" ? saveDraft : undefined}
+              onSaveDraft={saveDraft}
               onSubmit={saveAndComplete}
             />
           </div>
-        ) : (
-          templates.map((item) => (
-            <TabsContent key={item.code} value={item.code} className="pt-0">
-              <ProfileOverview template={item} data={profile.data} />
-            </TabsContent>
-          ))
-        )}
-        {editing ? null : (
+        </Tabs>
+      ) : null}
+
+      {templates.length > 0 && !editing && SHOW_PROFILE_VERSIONS ? (
+        <Tabs value={selectedTab} onValueChange={setTab} className="flex flex-col gap-4">
+          <OverflowTabList
+            ariaLabel="Profile sections"
+            activeValue={selectedTab}
+            tabs={[
+              { value: "details", label: "Details" },
+              { value: "versions", label: "Versions", count: versionCount },
+            ] satisfies OverflowTabItem[]}
+          />
+          <TabsContent value="details" className="pt-0">
+            <ApplicationFormSummary templates={templates} formData={viewData} mode="review" />
+          </TabsContent>
           <TabsContent value="versions" className="flex flex-col gap-4 pt-0">
             <ProfileVersionsTab profile={profile} />
           </TabsContent>
-        )}
-      </Tabs>
+        </Tabs>
+      ) : null}
+
+      {templates.length > 0 && !editing && !SHOW_PROFILE_VERSIONS ? (
+        <ApplicationFormSummary templates={templates} formData={viewData} mode="review" />
       ) : null}
 
       <VersionConflictDialog
@@ -376,23 +372,6 @@ export function ProfileDetailPage() {
         onOpenChange={setConflictOpen}
         onReload={() => {
           void reloadLatest();
-        }}
-      />
-      <ArchiveProfileDialog
-        open={archiveOpen}
-        name={profile.displayName}
-        pending={archiveProfile.isPending}
-        onOpenChange={setArchiveOpen}
-        onConfirm={() => {
-          archiveProfile.mutate(undefined, {
-            onSuccess: () => {
-              setArchiveOpen(false);
-              toast.success("Profile archived");
-            },
-            onError: (error) => {
-              toast.error(parseApiError(error).message);
-            },
-          });
         }}
       />
       <ProfileMemoDialog
