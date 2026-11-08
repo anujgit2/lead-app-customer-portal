@@ -258,7 +258,7 @@ export function DashboardPage() {
       title: profile.displayName || "Untitled profile",
       verb: "profile updated",
       meta: `${profileTypeLabel(profile.type)} · ${showIdentifier(profile.identifiers.pan)}`,
-      href: `/profiles/${profile.id}`,
+      href: `/profiles/view?profileId=${encodeURIComponent(profile.id)}`,
       tone: "tone-info",
       icon: UserRound,
     }));

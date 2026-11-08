@@ -13,14 +13,18 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { listDocuments } from "@/features/documents/api/documentsApi";
 import { parseApiError } from "@/lib/api-error";
 import { applicationService } from "@/services/application.service";
-import { useArchiveProfile, useFormTemplate, useProfile, useProfileVersions, useUpdateProfile } from "../api/queries";
+import {
+  useArchiveProfile,
+  useCompleteProfile,
+  useProfile,
+  useProfileForm,
+  useProfileVersions,
+  useUpdateProfile,
+} from "../api/queries";
 import { useProfileRouteId } from "@/features/documents/hooks/usePathSegment";
 import { ArchiveProfileDialog } from "../components/ArchiveProfileDialog";
-import { ProfileApplicationsTab } from "../components/ProfileApplicationsTab";
-import { ProfileDocumentsTab } from "../components/ProfileDocumentsTab";
 import { OverflowTabList, type OverflowTabItem } from "../components/OverflowTabList";
 import { ProfileForm } from "../components/ProfileForm";
-import { ProfileLinksTab } from "../components/ProfileLinksTab";
 import { ProfileMemoDialog } from "../components/ProfileMemoDialog";
 import { ProfileOverview } from "../components/ProfileOverview";
 import { ProfileVersionsTab } from "../components/ProfileVersionsTab";
@@ -66,8 +70,15 @@ export function ProfileDetailPage() {
   const editing = searchParams?.get("edit") === "1";
   const profileQuery = useProfile(id);
   const profile = profileQuery.data;
-  const templateQuery = useFormTemplate(profile?.templateCode ?? "", profile?.templateVersion);
+  // Viewing renders the snapshot with the program version it was saved against; editing
+  // uses the latest published version so new fields appear.
+  const templateQuery = useProfileForm(
+    id,
+    editing ? null : (profile?.currentVersionNo ?? null),
+    editing || profile !== undefined
+  );
   const updateProfile = useUpdateProfile(id);
+  const completeProfile = useCompleteProfile(id);
   const archiveProfile = useArchiveProfile(id);
   const [conflictOpen, setConflictOpen] = useState(false);
   const [reloading, setReloading] = useState(false);
@@ -158,6 +169,44 @@ export function ProfileDetailPage() {
   const onHero =
     "border-primary-foreground/55 bg-transparent text-primary-foreground hover:bg-primary-foreground/10";
 
+  // Editing mirrors the create form: Save draft keeps the profile DRAFT, Save & complete also
+  // marks it COMPLETE. Only DRAFT and COMPLETE profiles can be edited, so both show the completion.
+  const saveChanges = (input: { data: Record<string, unknown>; changeNote?: string }) =>
+    updateProfile.mutateAsync({
+      data: input.data,
+      changeNote: input.changeNote,
+      expectedVersionNo: profile.currentVersionNo,
+    });
+
+  const handleSaveError = (error: unknown) => {
+    const apiError = parseApiError(error);
+    if (apiError.status === 409) {
+      setConflictOpen(true);
+      return;
+    }
+    toast.error(apiError.message);
+  };
+
+  const saveDraft = async (input: { data: Record<string, unknown>; changeNote?: string }) => {
+    try {
+      await saveChanges(input);
+      toast.success("Draft saved");
+    } catch (error) {
+      handleSaveError(error);
+    }
+  };
+
+  const saveAndComplete = async (input: { data: Record<string, unknown>; changeNote?: string }) => {
+    try {
+      const saved = await saveChanges(input);
+      await completeProfile.mutateAsync(saved.currentVersionNo);
+      toast.success("Profile completed");
+      router.push(`/profiles/view?profileId=${encodeURIComponent(profile.id)}`);
+    } catch (error) {
+      handleSaveError(error);
+    }
+  };
+
   return (
     <PageShell width="detail" className={editing ? "gap-6 pb-28 sm:pb-28" : "gap-6 pb-20 sm:pb-20"}>
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -218,7 +267,7 @@ export function ProfileDetailPage() {
                 size="sm"
                 className="border-transparent bg-primary-foreground text-primary hover:bg-primary-foreground/90"
               >
-                <Link href={`/profiles/${profile.id}?edit=1`}>
+                <Link href={`/profiles/view?profileId=${encodeURIComponent(profile.id)}&edit=1`}>
                   <Pencil className="h-4 w-4" />
                   Edit
                 </Link>
@@ -282,16 +331,9 @@ export function ProfileDetailPage() {
           activeValue={selectedTab}
           tabs={[
             ...templates.map((item) => ({ value: item.code, label: item.title })),
-            ...(editing || profile.type !== "BUSINESS"
-              ? []
-              : [{ value: "people", label: "People", count: profile.links.length }]),
             ...(editing
               ? []
-              : ([
-                  { value: "documents", label: "Documents", count: documentCount },
-                  { value: "applications", label: "Applications", count: applicationCount },
-                  { value: "versions", label: "Versions", count: versionCount },
-                ] satisfies OverflowTabItem[])),
+              : ([{ value: "versions", label: "Versions", count: versionCount }] satisfies OverflowTabItem[])),
           ]}
         />
         {editing ? (
@@ -303,32 +345,14 @@ export function ProfileDetailPage() {
               data={profile.data}
               activeCode={formTab}
               onActiveCodeChange={setTab}
-              submitLabel="Save changes"
-              pending={updateProfile.isPending}
-              onCancel={() => router.push(`/profiles/${profile.id}`)}
-              onSubmit={(input) => {
-                updateProfile.mutate(
-                  {
-                    data: input.data,
-                    changeNote: input.changeNote,
-                    expectedVersionNo: profile.currentVersionNo,
-                  },
-                  {
-                    onSuccess: () => {
-                      toast.success("Profile saved");
-                      router.push(`/profiles/${profile.id}`);
-                    },
-                    onError: (error) => {
-                      const apiError = parseApiError(error);
-                      if (apiError.status === 409) {
-                        setConflictOpen(true);
-                        return;
-                      }
-                      toast.error(apiError.message);
-                    },
-                  }
-                );
-              }}
+              submitLabel="Save & complete"
+              draftLabel="Save draft"
+              pending={updateProfile.isPending || completeProfile.isPending}
+              onCancel={() =>
+                router.push(`/profiles/view?profileId=${encodeURIComponent(profile.id)}`)
+              }
+              onSaveDraft={profile.status === "DRAFT" ? saveDraft : undefined}
+              onSubmit={saveAndComplete}
             />
           </div>
         ) : (
@@ -339,22 +363,9 @@ export function ProfileDetailPage() {
           ))
         )}
         {editing ? null : (
-          <>
-            {profile.type === "BUSINESS" ? (
-              <TabsContent value="people" className="pt-0">
-                <ProfileLinksTab profile={profile} />
-              </TabsContent>
-            ) : null}
-            <TabsContent value="documents" className="flex flex-col gap-4 pt-0">
-              <ProfileDocumentsTab profile={profile} />
-            </TabsContent>
-            <TabsContent value="applications" className="pt-0">
-              <ProfileApplicationsTab profile={profile} />
-            </TabsContent>
-            <TabsContent value="versions" className="flex flex-col gap-4 pt-0">
-              <ProfileVersionsTab profile={profile} />
-            </TabsContent>
-          </>
+          <TabsContent value="versions" className="flex flex-col gap-4 pt-0">
+            <ProfileVersionsTab profile={profile} />
+          </TabsContent>
         )}
       </Tabs>
       ) : null}

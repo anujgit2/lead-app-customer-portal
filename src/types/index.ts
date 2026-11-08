@@ -783,7 +783,7 @@ export interface NewLoanProduct {
 // ─── Customer profiles ─────────────────────────────────────────────────────────
 export type CustomerProfileType = "INDIVIDUAL" | "BUSINESS";
 
-export type CustomerProfileStatus = "ACTIVE" | "ARCHIVED";
+export type CustomerProfileStatus = "DRAFT" | "COMPLETE" | "ARCHIVED";
 
 export type CustomerProfileLinkRole =
   | "PROMOTER"
@@ -817,8 +817,10 @@ export interface CustomerProfileLink {
 }
 
 export interface CustomerProfileDetail extends CustomerProfileSummary {
-  templateCode: string;
-  templateVersion: number;
+  /** Profile program, and the program version this snapshot was saved against. */
+  programId: string | null;
+  programVersionId: string;
+  programVersionNumber: number;
   data: Record<string, unknown>;
   links: CustomerProfileLink[];
 }
@@ -831,8 +833,7 @@ export interface CustomerProfileVersionItem {
 }
 
 export interface CustomerProfileVersion extends CustomerProfileVersionItem {
-  templateCode: string;
-  templateVersion: number;
+  programVersionId: string;
   data: Record<string, unknown>;
 }
 
@@ -864,11 +865,14 @@ export interface CustomerProfileListFilters {
 }
 
 export interface CreateCustomerProfileRequest {
-  type: CustomerProfileType;
-  /** PROFILE program whose form (and consent wording) the user filled in. */
-  programId?: string;
+  programId: string;
   data: Record<string, unknown>;
   changeNote?: string;
+}
+
+export interface ProfileDraft {
+  id: string;
+  currentVersionNo: number;
 }
 
 export interface UpdateCustomerProfileRequest {

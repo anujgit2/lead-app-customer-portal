@@ -23,6 +23,9 @@ interface ProfileFormProps {
   /** Floating save bar used on the profile detail page. */
   saveBar?: boolean;
   onCancel?: () => void;
+  /** Optional second action that saves without completing the profile. */
+  onSaveDraft?: (input: { data: Record<string, unknown>; changeNote?: string }) => void;
+  draftLabel?: string;
   onSubmit: (input: { data: Record<string, unknown>; changeNote?: string }) => void;
 }
 
@@ -41,6 +44,8 @@ export function ProfileForm({
   pending = false,
   saveBar = false,
   onCancel,
+  onSaveDraft,
+  draftLabel = "Save draft",
   onSubmit,
 }: ProfileFormProps) {
   const [internalCode, setInternalCode] = useState(templates[0]?.code ?? "");
@@ -58,6 +63,7 @@ export function ProfileForm({
     [templates, data]
   );
   const collector = useRef<SubmitCollector | null>(null);
+  const intent = useRef<"draft" | "complete">("complete");
   const controlled = activeCode !== undefined;
   const selected = activeCode ?? internalCode;
   const showTabs = !controlled && templates.length > 0;
@@ -76,7 +82,8 @@ export function ProfileForm({
       return;
     }
     const note = changeNote.trim();
-    onSubmit({
+    const handler = intent.current === "draft" && onSaveDraft ? onSaveDraft : onSubmit;
+    handler({
       data: mergeProfileFormValues(templates, current.collected),
       ...(note ? { changeNote: note } : {}),
     });
@@ -91,8 +98,9 @@ export function ProfileForm({
     finish(current);
   };
 
-  const submitAll = () => {
+  const submitAll = (next: "draft" | "complete") => {
     if (checking || pending || templates.length === 0) return;
+    intent.current = next;
     const current: SubmitCollector = {
       pending: new Set(templates.map((template) => template.code)),
       collected: {},
@@ -169,7 +177,12 @@ export function ProfileForm({
               Cancel
             </Button>
           ) : null}
-          <Button type="button" size="sm" loading={pending || checking} onClick={submitAll}>
+          {onSaveDraft ? (
+            <Button type="button" variant="ghost" size="sm" disabled={pending || checking} onClick={() => submitAll("draft")}>
+              {draftLabel}
+            </Button>
+          ) : null}
+          <Button type="button" size="sm" loading={pending || checking} onClick={() => submitAll("complete")}>
             {submitLabel}
           </Button>
         </div>
@@ -187,12 +200,24 @@ export function ProfileForm({
               Cancel
             </Button>
           ) : null}
+          {onSaveDraft ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+              disabled={pending || checking}
+              onClick={() => submitAll("draft")}
+            >
+              {draftLabel}
+            </Button>
+          ) : null}
           <Button
             type="button"
             size="sm"
             className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
             loading={pending || checking}
-            onClick={submitAll}
+            onClick={() => submitAll("complete")}
           >
             {submitLabel}
           </Button>

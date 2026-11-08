@@ -1,7 +1,6 @@
 import { apiClient } from "@/lib/axios";
 import { parseApiError } from "@/lib/api-error";
 import type {
-  CreateCustomerProfileRequest,
   CreateProfileLinkRequest,
   CustomerProfileDetail,
   CustomerProfileDiff,
@@ -14,6 +13,7 @@ import type {
   CustomerProfileType,
   CustomerProfileVersion,
   CustomerProfileVersionItem,
+  ProfileDraft,
   FormTemplate,
   ProfileMemoSelection,
   RestoreProfileVersionRequest,
@@ -21,7 +21,7 @@ import type {
   UpdateCustomerProfileRequest,
 } from "@/types";
 import { readFormTemplates } from "@/features/profiles/utils/read-form-template";
-import { programService, unwrapPublishedConfig } from "@/services/program.service";
+import { unwrapPublishedConfig } from "@/services/program.service";
 
 const LINK_ROLES: readonly CustomerProfileLinkRole[] = [
   "PROMOTER",
@@ -52,7 +52,7 @@ function isProfileType(value: unknown): value is CustomerProfileType {
 }
 
 function isProfileStatus(value: unknown): value is CustomerProfileStatus {
-  return value === "ACTIVE" || value === "ARCHIVED";
+  return value === "DRAFT" || value === "COMPLETE" || value === "ARCHIVED";
 }
 
 function isLinkRole(value: unknown): value is CustomerProfileLinkRole {
@@ -107,18 +107,19 @@ function readLink(value: unknown): CustomerProfileLink {
 function readDetail(value: unknown): CustomerProfileDetail {
   const summary = readSummary(value);
   if (!isRecord(value)) mismatch("a profile");
-  if (typeof value.templateCode !== "string" || value.templateCode.trim().length === 0) {
-    mismatch("templateCode");
+  if (typeof value.programVersionId !== "string" || value.programVersionId.length === 0) {
+    mismatch("programVersionId");
   }
-  if (typeof value.templateVersion !== "number" || !Number.isFinite(value.templateVersion)) {
-    mismatch("templateVersion");
+  if (typeof value.programVersionNumber !== "number" || !Number.isFinite(value.programVersionNumber)) {
+    mismatch("programVersionNumber");
   }
   if (!isRecord(value.data)) mismatch("data");
   if (value.links !== undefined && !Array.isArray(value.links)) mismatch("links");
   return {
     ...summary,
-    templateCode: value.templateCode,
-    templateVersion: value.templateVersion,
+    programId: typeof value.programId === "string" ? value.programId : null,
+    programVersionId: value.programVersionId,
+    programVersionNumber: value.programVersionNumber,
     data: value.data,
     links: Array.isArray(value.links) ? value.links.map(readLink) : [],
   };
@@ -161,17 +162,13 @@ function readVersionItem(value: unknown): CustomerProfileVersionItem {
 function readVersion(value: unknown): CustomerProfileVersion {
   const item = readVersionItem(value);
   if (!isRecord(value)) mismatch("a profile version");
-  if (typeof value.templateCode !== "string" || value.templateCode.trim().length === 0) {
-    mismatch("templateCode");
-  }
-  if (typeof value.templateVersion !== "number" || !Number.isFinite(value.templateVersion)) {
-    mismatch("templateVersion");
+  if (typeof value.programVersionId !== "string" || value.programVersionId.length === 0) {
+    mismatch("programVersionId");
   }
   if (!isRecord(value.data)) mismatch("data");
   return {
     ...item,
-    templateCode: value.templateCode,
-    templateVersion: value.templateVersion,
+    programVersionId: value.programVersionId,
     data: value.data,
   };
 }
@@ -224,19 +221,10 @@ function optionalNote(note?: string): { changeNote: string } | Record<string, ne
   return changeNote ? { changeNote } : {};
 }
 
-async function loadProfileFormTemplate(path: string, code: string): Promise<FormTemplate[]> {
-  try {
-    const { data } = await apiClient.get<unknown>(path);
-    return readFormTemplates(data, code);
-  } catch (error) {
-    rethrow(error);
-  }
-}
-
 export const profileService = {
   async list(filters: CustomerProfileListFilters): Promise<CustomerProfilePage> {
     try {
-      const { data } = await apiClient.get<unknown>("/api/customer-profiles", {
+      const { data } = await apiClient.get<unknown>("/api/profiles", {
         params: {
           page: filters.page,
           size: filters.size,
@@ -254,7 +242,7 @@ export const profileService = {
   async get(id: string): Promise<CustomerProfileDetail> {
     try {
       const { data } = await apiClient.get<unknown>(
-        `/api/customer-profiles/${encodeURIComponent(id)}`
+        `/api/profiles/${encodeURIComponent(id)}`
       );
       return readDetail(data);
     } catch (error) {
@@ -262,15 +250,22 @@ export const profileService = {
     }
   },
 
-  async create(body: CreateCustomerProfileRequest): Promise<CustomerProfileDetail> {
+  async createDraft(programId: string): Promise<ProfileDraft> {
     try {
-      const { data } = await apiClient.post<unknown>("/api/customer-profiles", {
-        type: body.type,
-        ...(body.programId ? { programId: body.programId } : {}),
-        data: body.data,
-        ...optionalNote(body.changeNote),
-      });
-      return readDetail(data);
+      const { data } = await apiClient.post<unknown>("/api/profiles/drafts", { programId });
+      if (
+        !isRecord(data) ||
+        (typeof data.id !== "string" && typeof data.profileId !== "string") ||
+        typeof data.currentVersionNo !== "number"
+      ) {
+        mismatch("a profile draft");
+      }
+      const id = typeof data.id === "string" ? data.id : data.profileId;
+      if (typeof id !== "string") mismatch("a profile draft id");
+      return {
+        id,
+        currentVersionNo: data.currentVersionNo,
+      };
     } catch (error) {
       rethrow(error);
     }
@@ -279,7 +274,7 @@ export const profileService = {
   async update(id: string, body: UpdateCustomerProfileRequest): Promise<CustomerProfileDetail> {
     try {
       const { data } = await apiClient.put<unknown>(
-        `/api/customer-profiles/${encodeURIComponent(id)}`,
+        `/api/profiles/${encodeURIComponent(id)}`,
         {
           data: body.data,
           expectedVersionNo: body.expectedVersionNo,
@@ -292,42 +287,46 @@ export const profileService = {
     }
   },
 
+  async complete(id: string, expectedVersionNo: number): Promise<CustomerProfileDetail> {
+    try {
+      const { data } = await apiClient.post<unknown>(
+        `/api/profiles/${encodeURIComponent(id)}/complete`,
+        { expectedVersionNo }
+      );
+      return readDetail(data);
+    } catch (error) {
+      rethrow(error);
+    }
+  },
+
   async archive(id: string): Promise<void> {
     try {
-      await apiClient.post(`/api/customer-profiles/${encodeURIComponent(id)}/archive`);
+      await apiClient.post(`/api/profiles/${encodeURIComponent(id)}/archive`);
     } catch (error) {
       rethrow(error);
     }
   },
 
-  async getFormTemplate(code: string): Promise<FormTemplate[]> {
-    return loadProfileFormTemplate(
-      `/api/profile-form-templates/code/${encodeURIComponent(code)}/latest`,
-      code
-    );
-  },
-
-  /** Forms of a PROFILE program, read from GET /api/tenant/programs/{programId}/version. */
-  async getProgramFormTemplates(programCodeOrId: string): Promise<FormTemplate[]> {
+  /**
+   * Forms for a profile, read from a program version's configuration.
+   * Without `versionNo` the backend returns the latest published program version (for editing);
+   * with it, the program version that snapshot was saved against (for viewing history).
+   */
+  async getProfileForm(id: string, versionNo?: number): Promise<FormTemplate[]> {
     try {
-      const payload = await programService.getProgramPayload(programCodeOrId);
-      return readFormTemplates(unwrapPublishedConfig(payload), programCodeOrId);
+      const { data } = await apiClient.get<unknown>(`/api/profiles/${encodeURIComponent(id)}/form`, {
+        params: versionNo === undefined ? undefined : { versionNo },
+      });
+      return readFormTemplates(unwrapPublishedConfig(data), id);
     } catch (error) {
       rethrow(error);
     }
-  },
-
-  async getFormTemplateVersion(code: string, versionNumber: number): Promise<FormTemplate[]> {
-    return loadProfileFormTemplate(
-      `/api/profile-form-templates/code/${encodeURIComponent(code)}/versions/${encodeURIComponent(String(versionNumber))}`,
-      code
-    );
   },
 
   async listVersions(id: string): Promise<CustomerProfileVersionItem[]> {
     try {
       const { data } = await apiClient.get<unknown>(
-        `/api/customer-profiles/${encodeURIComponent(id)}/versions`
+        `/api/profiles/${encodeURIComponent(id)}/versions`
       );
       if (!Array.isArray(data)) mismatch("profile versions");
       return data.map(readVersionItem);
@@ -339,7 +338,7 @@ export const profileService = {
   async getVersion(id: string, versionNo: number): Promise<CustomerProfileVersion> {
     try {
       const { data } = await apiClient.get<unknown>(
-        `/api/customer-profiles/${encodeURIComponent(id)}/versions/${encodeURIComponent(String(versionNo))}`
+        `/api/profiles/${encodeURIComponent(id)}/versions/${encodeURIComponent(String(versionNo))}`
       );
       return readVersion(data);
     } catch (error) {
@@ -350,7 +349,7 @@ export const profileService = {
   async diff(id: string, fromVersion: number, toVersion: number): Promise<CustomerProfileDiff> {
     try {
       const { data } = await apiClient.get<unknown>(
-        `/api/customer-profiles/${encodeURIComponent(id)}/versions/${encodeURIComponent(String(fromVersion))}/diff/${encodeURIComponent(String(toVersion))}`
+        `/api/profiles/${encodeURIComponent(id)}/versions/${encodeURIComponent(String(fromVersion))}/diff/${encodeURIComponent(String(toVersion))}`
       );
       return readDiff(data);
     } catch (error) {
@@ -365,7 +364,7 @@ export const profileService = {
   ): Promise<CustomerProfileDetail> {
     try {
       const { data } = await apiClient.post<unknown>(
-        `/api/customer-profiles/${encodeURIComponent(id)}/versions/${encodeURIComponent(String(versionNo))}/restore`,
+        `/api/profiles/${encodeURIComponent(id)}/versions/${encodeURIComponent(String(versionNo))}/restore`,
         optionalNote(body.changeNote)
       );
       return readDetail(data);
@@ -376,7 +375,7 @@ export const profileService = {
 
   async createLink(id: string, body: CreateProfileLinkRequest): Promise<void> {
     try {
-      await apiClient.post(`/api/customer-profiles/${encodeURIComponent(id)}/links`, {
+      await apiClient.post(`/api/profiles/${encodeURIComponent(id)}/links`, {
         childProfileId: body.childProfileId,
         role: body.role,
         ...(typeof body.ownershipPct === "number" ? { ownershipPct: body.ownershipPct } : {}),
@@ -389,7 +388,7 @@ export const profileService = {
   async deleteLink(id: string, linkId: string): Promise<void> {
     try {
       await apiClient.delete(
-        `/api/customer-profiles/${encodeURIComponent(id)}/links/${encodeURIComponent(linkId)}`
+        `/api/profiles/${encodeURIComponent(id)}/links/${encodeURIComponent(linkId)}`
       );
     } catch (error) {
       rethrow(error);
@@ -399,7 +398,7 @@ export const profileService = {
   async downloadMemo(id: string, selection: ProfileMemoSelection = {}): Promise<{ blob: Blob; fileName: string }> {
     try {
       const response = await apiClient.get<Blob>(
-        `/api/customer-profiles/${encodeURIComponent(id)}/memo.pdf`,
+        `/api/profiles/${encodeURIComponent(id)}/memo.pdf`,
         { params: memoParams(selection), responseType: "blob", timeout: 120_000 }
       );
       const contentType = String(response.headers["content-type"] ?? response.data.type ?? "");
@@ -418,7 +417,7 @@ export const profileService = {
   async saveMemo(id: string, selection: ProfileMemoSelection = {}): Promise<SavedProfileMemo> {
     try {
       const { data } = await apiClient.post<unknown>(
-        `/api/customer-profiles/${encodeURIComponent(id)}/memo/save`,
+        `/api/profiles/${encodeURIComponent(id)}/memo/save`,
         {
           ...(typeof selection.versionNo === "number" ? { versionNo: selection.versionNo } : {}),
           ...(selection.sections && selection.sections.length > 0 ? { sections: selection.sections } : {}),

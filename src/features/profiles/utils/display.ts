@@ -6,7 +6,8 @@ export function profileTypeLabel(type: CustomerProfileType): string {
 }
 
 export function profileStatusLabel(status: CustomerProfileStatus): string {
-  return status === "ARCHIVED" ? "Archived" : "Active";
+  if (status === "DRAFT") return "Draft";
+  return status === "ARCHIVED" ? "Archived" : "Complete";
 }
 
 const ROLE_LABELS: Record<string, string> = {

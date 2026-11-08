@@ -22,7 +22,7 @@ export function ProfileStatusBadge({
   size?: BadgeSize;
 }) {
   return (
-    <Badge variant={status === "ACTIVE" ? "success" : "secondary"} size={size}>
+    <Badge variant={status === "COMPLETE" ? "success" : "secondary"} size={size}>
       {profileStatusLabel(status)}
     </Badge>
   );

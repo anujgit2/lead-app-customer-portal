@@ -245,7 +245,7 @@ export function ProfilesPage() {
     [status, query]
   );
   const statusCountFilters = useMemo(() => facetFilters(type, "ALL", query), [type, query]);
-  const activeCountFilters = useMemo(() => facetFilters(type, "ACTIVE", query), [type, query]);
+  const activeCountFilters = useMemo(() => facetFilters(type, "COMPLETE", query), [type, query]);
   const archivedCountFilters = useMemo(
     () => facetFilters(type, "ARCHIVED", query),
     [type, query]
@@ -279,7 +279,7 @@ export function ProfilesPage() {
   }, [profiles.data?.content, sort, dir]);
 
   const openProfile = (profile: CustomerProfileSummary) => {
-    router.push(`/profiles/${profile.id}`);
+    router.push(`/profiles/view?profileId=${encodeURIComponent(profile.id)}`);
   };
 
   const clearFilters = () => {
@@ -389,7 +389,7 @@ export function ProfilesPage() {
           {(
             [
               ["ALL", "All statuses", statusAll.data?.totalElements],
-              ["ACTIVE", "Active", statusActive.data?.totalElements],
+              ["COMPLETE", "Complete", statusActive.data?.totalElements],
               ["ARCHIVED", "Archived", statusArchived.data?.totalElements],
             ] as const
           ).map(([id, label, count]) => {
@@ -505,7 +505,7 @@ export function ProfilesPage() {
                           <ProfileAvatar name={name} />
                           <div className="min-w-0">
                             <Link
-                              href={`/profiles/${profile.id}`}
+                              href={`/profiles/view?profileId=${encodeURIComponent(profile.id)}`}
                               className="block truncate font-semibold leading-5 text-foreground hover:underline"
                               onClick={(event) => event.stopPropagation()}
                             >

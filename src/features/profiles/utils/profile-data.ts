@@ -100,17 +100,36 @@ function buildSectionValue(
   return result;
 }
 
+/**
+ * Saved profile data is grouped by section: the backend stores a section's fields under
+ * the section code (e.g. `identity`, `current_address`). Older or hand-built data may use
+ * the camelCase payload key instead.
+ */
+function sectionBucket(data: Record<string, unknown>, section: FormSection): unknown {
+  if (isPlainObject(data[section.code])) return data[section.code];
+  const key = sectionPayloadKey(section);
+  return isPlainObject(data[key]) ? data[key] : undefined;
+}
+
+function sectionItems(data: Record<string, unknown>, section: FormSection): unknown {
+  return data[section.code] !== undefined ? data[section.code] : data[sectionPayloadKey(section)];
+}
+
 function parseSectionValue(
   template: FormTemplate,
   section: FormSection,
-  data: unknown
+  data: unknown,
+  bucket?: unknown
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   if (!isPlainObject(data)) return result;
   const context = sectionPathContext(template, section);
+  const scoped = isPlainObject(bucket) ? bucket : undefined;
   for (const field of section.fields) {
     const fromPath = getByPath(data, fieldPayloadSegments(field, context));
-    const raw = fromPath !== undefined ? fromPath : data[field.name];
+    const fromSection = scoped && field.name in scoped ? scoped[field.name] : undefined;
+    const raw =
+      fromPath !== undefined ? fromPath : fromSection !== undefined ? fromSection : data[field.name];
     const value = normalizeFieldValue(field, applyWireTransformInbound(field, raw), "in");
     if (value !== undefined) result[field.name] = value;
   }
@@ -172,14 +191,14 @@ export function profileDataToFormValues(
 
   for (const section of template.sections) {
     if (section.repeatable) {
-      const raw = data[sectionPayloadKey(section)];
+      const raw = sectionItems(data, section);
       const items = Array.isArray(raw) ? raw : raw == null ? [] : [raw];
       const mapped = items
         .map((item) => parseSectionValue(template, section, item))
         .filter((item) => Object.keys(item).length > 0);
       if (mapped.length > 0) result[section.code] = mapped;
     } else {
-      const fields = parseSectionValue(template, section, data);
+      const fields = parseSectionValue(template, section, data, sectionBucket(data, section));
       if (Object.keys(fields).length > 0) result[section.code] = fields;
     }
   }

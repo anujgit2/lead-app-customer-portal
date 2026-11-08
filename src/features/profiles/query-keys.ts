@@ -20,11 +20,7 @@ export function profileDiffQueryKey(id: string, fromVersion: number, toVersion: 
   return ["profile", id, "diff", fromVersion, toVersion] as const;
 }
 
-export function programFormTemplateQueryKey(programId: string) {
-  return ["form-template", "program", programId] as const;
-}
-
-export function formTemplateQueryKey(code: string, versionNumber?: number) {
-  if (versionNumber === undefined) return ["form-template", code] as const;
-  return ["form-template", code, versionNumber] as const;
+/** `versionNo` null is the latest published program version; a number pins that snapshot's version. */
+export function profileFormQueryKey(id: string, versionNo: number | null) {
+  return ["profile-form", id, versionNo ?? "latest"] as const;
 }

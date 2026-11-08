@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useSyncExternalStore } from "react";
 
 const STATIC_SHARE_TOKEN = "link";
@@ -87,5 +87,8 @@ export function useDocumentRouteId(): RouteSegment {
 }
 
 export function useProfileRouteId(): RouteSegment {
-  return useResolvedSegment("profiles", STATIC_PLACEHOLDER);
+  const route = useResolvedSegment("profiles", STATIC_PLACEHOLDER);
+  const searchParams = useSearchParams();
+  const queryId = searchParams?.get("profileId")?.trim() ?? "";
+  return queryId ? { ready: true, value: queryId } : route;
 }

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "local:dev": "env-cmd -f .env.local next dev",
+    "local:linux": "env-cmd -f .env.linux next dev",
     "dev:dev": "env-cmd -f .env.dev next dev",
     "build": "next build",
     "build:dev": "env-cmd -f .env.dev next build",

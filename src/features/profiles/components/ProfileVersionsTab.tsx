@@ -33,7 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { parseApiError } from "@/lib/api-error";
 import type { CustomerProfileDetail } from "@/types";
 import {
-  useFormTemplate,
+  useProfileForm,
   useProfileDiff,
   useProfileVersion,
   useProfileVersions,
@@ -295,7 +295,7 @@ function VersionReader({
   onBack: () => void;
 }) {
   const version = useProfileVersion(profileId, versionNo);
-  const template = useFormTemplate(version.data?.templateCode ?? "", version.data?.templateVersion);
+  const template = useProfileForm(profileId, versionNo);
   const current = versionNo === currentVersionNo;
 
   return (

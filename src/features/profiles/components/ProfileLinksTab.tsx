@@ -90,7 +90,7 @@ export function ProfileLinksTab({ profile }: ProfileLinksTabProps) {
             >
               <div>
                 <Link
-                  href={`/profiles/${link.profile.id}`}
+                  href={`/profiles/view?profileId=${encodeURIComponent(link.profile.id)}`}
                   className="font-semibold tracking-tight text-slate-900 transition-colors hover:text-primary focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 >
                   {link.profile.displayName || "Untitled profile"}

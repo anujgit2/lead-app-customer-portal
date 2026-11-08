@@ -55,6 +55,7 @@ interface SelfServeRegisterFormProps {
   onSuccess: (result: {
     userId: string;
     registerData: RegisterApiRequest;
+    activated: boolean;
     emailVerificationPending: boolean;
     accessToken: string | null;
   }) => void;
@@ -239,6 +240,7 @@ export function SelfServeRegisterForm({ onSuccess }: SelfServeRegisterFormProps)
       onSuccess({
         userId: res.userId,
         registerData,
+        activated: res.activated,
         emailVerificationPending: res.emailVerificationPending,
         accessToken: res.accessToken,
       });

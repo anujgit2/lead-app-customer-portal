@@ -39,42 +39,6 @@ function failure(message: string): never {
   throw { message, status: 502 };
 }
 
-function isSectionSchemaItem(value: Record<string, unknown>): boolean {
-  return Array.isArray(value.fields) && !Array.isArray(value.sections) && typeof value.formCode !== "string";
-}
-
-function sectionUsesNewFields(section: Record<string, unknown>): boolean {
-  if (!Array.isArray(section.fields)) return false;
-  const field = section.fields.find(isRecord);
-  if (!field) return false;
-  return typeof field.key === "string" && typeof field.name !== "string";
-}
-
-/**
- * Profile template versions return `{ type, name, schema }`.
- * `schema` is either the form's sections or a list of forms.
- */
-function rootFromProfileSchema(payload: unknown, code: string): unknown | null {
-  if (!isRecord(payload) || !Array.isArray(payload.schema) || payload.schema.length === 0) return null;
-  if (!payload.schema.every(isRecord)) return null;
-  const items = payload.schema;
-  const templateCode = typeof payload.type === "string" && payload.type.trim() ? payload.type.trim() : code;
-  const title = typeof payload.name === "string" && payload.name.trim() ? payload.name.trim() : templateCode;
-
-  if (items.every(isSectionSchemaItem)) {
-    if (items.some(sectionUsesNewFields)) {
-      return { formCode: templateCode, ui: { title }, sections: items };
-    }
-    return { code: templateCode, title, sections: items };
-  }
-
-  if (items.length > 1 && items.every((item) => Array.isArray(item.sections))) {
-    return { programCode: templateCode, name: title, forms: items };
-  }
-
-  return null;
-}
-
 /** Visible program forms only. The wizard's extra documents step stays out of profile tabs. */
 function formTemplatesFromProgram(program: NewLoanProduct): FormTemplate[] {
   const formCodes = new Set(
@@ -86,13 +50,11 @@ function formTemplatesFromProgram(program: NewLoanProduct): FormTemplate[] {
 }
 
 /**
- * Reads a profile template version into one template per form.
- * Latest: GET /api/profile-form-templates/code/{code}/latest
- * One version: GET /api/profile-form-templates/code/{code}/versions/{versionNumber}
- * A single form payload still returns a one-item list.
+ * Reads a program version configuration (or a single form) into one template per visible form.
+ * Profile forms come from `GET /api/profiles/{id}/form`.
  */
 export function readFormTemplates(payload: unknown, code: string): FormTemplate[] {
-  const root = rootFromProfileSchema(payload, code) ?? unwrapTemplatePayload(payload);
+  const root = unwrapTemplatePayload(payload);
 
   if (detectTemplateFormat(root) === "new" || isNewFormatForm(root)) {
     const program = isNewFormatForm(root)

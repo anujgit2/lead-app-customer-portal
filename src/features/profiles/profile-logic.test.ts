@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import type { CustomerProfileListFilters, FormTemplate } from "@/types";
 import { buildTemplateSchema } from "@/utils/schema-builder";
 import {
-  formTemplateQueryKey,
+  profileFormQueryKey,
   profileDiffQueryKey,
   profileQueryKey,
   profileVersionQueryKey,
@@ -59,7 +59,7 @@ describe("profile query keys", () => {
   const filters: CustomerProfileListFilters = {
     type: "INDIVIDUAL",
     q: "ada",
-    status: "ACTIVE",
+    status: "COMPLETE",
     page: 0,
     size: 10,
   };
@@ -68,13 +68,13 @@ describe("profile query keys", () => {
     assert.deepEqual(profilesQueryKey(filters), ["profiles", filters]);
   });
 
-  it("keys a profile, its versions, one version, a diff, and a form template", () => {
+  it("keys a profile, its versions, one version, a diff, and a profile form", () => {
     assert.deepEqual(profileQueryKey("profile-1"), ["profile", "profile-1"]);
     assert.deepEqual(profileVersionsQueryKey("profile-1"), ["profile", "profile-1", "versions"]);
     assert.deepEqual(profileVersionQueryKey("profile-1", 3), ["profile", "profile-1", 3]);
     assert.deepEqual(profileDiffQueryKey("profile-1", 1, 3), ["profile", "profile-1", "diff", 1, 3]);
-    assert.deepEqual(formTemplateQueryKey("customer-business"), ["form-template", "customer-business"]);
-    assert.deepEqual(formTemplateQueryKey("customer-business", 1), ["form-template", "customer-business", 1]);
+    assert.deepEqual(profileFormQueryKey("p1", null), ["profile-form", "p1", "latest"]);
+    assert.deepEqual(profileFormQueryKey("p1", 3), ["profile-form", "p1", 3]);
   });
 });
 
@@ -136,6 +136,58 @@ describe("profile data mapping", () => {
   });
 });
 
+describe("saved profile data shape", () => {
+  // The backend returns data grouped by section code (snake_case), not flat field names.
+  const addressTemplate: FormTemplate = {
+    code: "customer-business",
+    title: "Business customer",
+    sections: [
+      {
+        code: "identity",
+        title: "Identity",
+        fields: [
+          { name: "legalName", label: "Legal Name", type: "text", validation: { required: true } },
+          { name: "pan", label: "PAN", type: "text" },
+        ],
+      },
+      {
+        code: "current_address",
+        title: "Current address",
+        fields: [
+          { name: "addressLine1", label: "Address Line 1", type: "text" },
+          { name: "city", label: "City", type: "text" },
+        ],
+      },
+      {
+        code: "bank_accounts",
+        title: "Bank accounts",
+        repeatable: true,
+        fields: [{ name: "bankName", label: "Bank", type: "text" }],
+      },
+    ],
+  } as FormTemplate;
+
+  it("reads values saved under their section code", () => {
+    const saved = {
+      identity: { legalName: "Northwind Traders", pan: "AABCP1234F" },
+      current_address: { addressLine1: "12 MG Road", city: "Pune" },
+      bank_accounts: [{ bankName: "HDFC" }],
+    };
+    assert.deepEqual(profileDataToFormValues(addressTemplate, saved), {
+      identity: { legalName: "Northwind Traders", pan: "AABCP1234F" },
+      current_address: { addressLine1: "12 MG Road", city: "Pune" },
+      bank_accounts: [{ bankName: "HDFC" }],
+    });
+  });
+
+  it("still reads a camelCase payload key for repeatable sections", () => {
+    assert.deepEqual(
+      profileDataToFormValues(addressTemplate, { bankAccounts: [{ bankName: "ICICI" }] }),
+      { bank_accounts: [{ bankName: "ICICI" }] }
+    );
+  });
+});
+
 describe("form template payload", () => {
   it("reads an old template object", () => {
     const template = readFormTemplate(
@@ -176,73 +228,6 @@ describe("form template payload", () => {
     assert.equal(template.code, "customer-individual");
     assert.equal(template.sections[0]?.fields[0]?.name, "fullName");
     assert.equal(template.sections[0]?.fields[0]?.label, "Full name");
-  });
-
-  it("reads a published profile template whose schema is sections", () => {
-    const template = readFormTemplate(
-      {
-        id: "version-uuid",
-        tenantId: "leads",
-        type: "customer-business",
-        name: "Customer Business",
-        version: 1,
-        status: "PUBLISHED",
-        schema: [
-          {
-            code: "company",
-            title: "Company",
-            fields: [{ name: "legalName", label: "Legal name", type: "text" }],
-          },
-        ],
-        createdAt: "2026-10-11T00:00:00Z",
-        updatedAt: "2026-10-11T00:00:00Z",
-        createdBy: null,
-        updatedBy: null,
-      },
-      "customer-business"
-    );
-    assert.equal(template.code, "customer-business");
-    assert.equal(template.title, "Customer Business");
-    assert.equal(template.sections[0]?.code, "company");
-    assert.equal(template.sections[0]?.fields[0]?.name, "legalName");
-  });
-
-  it("reads every form inside a profile template schema", () => {
-    const templates = readFormTemplates(
-      {
-        type: "customer-individual",
-        name: "Customer Individual",
-        schema: [
-          {
-            formCode: "identity",
-            ui: { title: "Identity" },
-            sections: [
-              {
-                code: "person",
-                ui: { title: "Person" },
-                fields: [{ key: "fullName", type: "text", ui: { label: "Full name" } }],
-              },
-            ],
-          },
-          {
-            formCode: "contact",
-            ui: { title: "Contact" },
-            sections: [
-              {
-                code: "phone",
-                ui: { title: "Phone" },
-                fields: [{ key: "mobile", type: "text", ui: { label: "Mobile" } }],
-              },
-            ],
-          },
-        ],
-      },
-      "customer-individual"
-    );
-    assert.deepEqual(
-      templates.map((template) => template.code),
-      ["identity", "contact"]
-    );
   });
 
   it("keeps each visible form and drops the documents step", () => {

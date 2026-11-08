@@ -5,20 +5,18 @@ import { parseApiError } from "@/lib/api-error";
 import { profileService } from "@/services/profile.service";
 import { programService, programsInCategory, tenantProgramsQueryKey } from "@/services/program.service";
 import type {
-  CreateCustomerProfileRequest,
   CreateProfileLinkRequest,
   CustomerProfileListFilters,
   ProfileMemoSelection,
   UpdateCustomerProfileRequest,
 } from "@/types";
 import {
-  formTemplateQueryKey,
   profileDiffQueryKey,
   profileQueryKey,
   profileVersionQueryKey,
   profileVersionsQueryKey,
   profilesQueryKey,
-  programFormTemplateQueryKey,
+  profileFormQueryKey,
 } from "../query-keys";
 
 function retryProfileQuery(failureCount: number, error: unknown): boolean {
@@ -45,25 +43,12 @@ export function useProfile(id: string) {
   });
 }
 
-export function useFormTemplate(code: string, versionNumber?: number) {
-  const version =
-    typeof versionNumber === "number" && Number.isFinite(versionNumber) ? versionNumber : null;
+/** Forms for a profile from its program version: latest published when `versionNo` is null. */
+export function useProfileForm(id: string, versionNo: number | null, enabled = true) {
   return useQuery({
-    queryKey: formTemplateQueryKey(code, version ?? undefined),
-    queryFn: () =>
-      version === null
-        ? profileService.getFormTemplate(code)
-        : profileService.getFormTemplateVersion(code, version),
-    enabled: code.length > 0,
-    retry: retryProfileQuery,
-  });
-}
-
-export function useProgramFormTemplate(programId: string) {
-  return useQuery({
-    queryKey: programFormTemplateQueryKey(programId),
-    queryFn: () => profileService.getProgramFormTemplates(programId),
-    enabled: programId.length > 0,
+    queryKey: profileFormQueryKey(id, versionNo),
+    queryFn: () => profileService.getProfileForm(id, versionNo ?? undefined),
+    enabled: enabled && id.length > 0,
     retry: retryProfileQuery,
   });
 }
@@ -77,12 +62,23 @@ export function useProfilePrograms() {
   });
 }
 
-export function useCreateProfile() {
+export function useCreateProfileDraft() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (body: CreateCustomerProfileRequest) => profileService.create(body),
+    mutationFn: (programId: string) => profileService.createDraft(programId),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+    },
+  });
+}
+
+export function useCompleteProfile(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (expectedVersionNo: number) => profileService.complete(id, expectedVersionNo),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      await queryClient.invalidateQueries({ queryKey: profileQueryKey(id) });
     },
   });
 }

@@ -81,7 +81,8 @@ function normalizeProgram(raw: unknown): Program | null {
     status: asNonEmptyString(nested.status) ?? "PUBLISHED",
     displayName: asNonEmptyString(nested.displayName) ?? asNonEmptyString(nested.name),
     formDefinitionId: asNonEmptyString(nested.formDefinitionId),
-    programType: asNonEmptyString(nested.programType),
+    programType:
+      asNonEmptyString(nested.programType) ?? asNonEmptyString(obj.programType),
     programCategory: (
       asNonEmptyString(nested.programCategory) ?? asNonEmptyString(obj.programCategory)
     )?.toUpperCase(),

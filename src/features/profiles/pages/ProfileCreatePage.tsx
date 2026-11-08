@@ -2,26 +2,21 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Building2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ErrorState";
 import { PageHeader, PageShell } from "@/components/PageShell";
+import { useQueryClient } from "@tanstack/react-query";
 import { parseApiError } from "@/lib/api-error";
-import {
-  useCreateProfile,
-  useFormTemplate,
-  useProfilePrograms,
-  useProgramFormTemplate,
-} from "../api/queries";
-import {
-  newProfileHref,
-  profileTypeForProgram,
-  profileTypeFromQuery,
-  templateCodeForType,
-} from "../constants";
+import { profileService } from "@/services/profile.service";
+import { useProfileForm, useProfilePrograms } from "../api/queries";
+import { newProfileHref, profileTypeForProgram, profileTypeFromQuery } from "../constants";
 import { ProfileForm } from "../components/ProfileForm";
 import { profileTypeLabel } from "../utils/display";
 import { safeInternalPath, withProfileReturn } from "../utils/return-path";
+import type { ApiError } from "@/types";
+import type { Program } from "@/services/program.service";
 
 function CreateSkeleton() {
   return (
@@ -53,22 +48,69 @@ const typeCardClass =
 export function ProfileCreatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryProgramType = searchParams?.get("programType")?.trim() ?? "";
   const queryType = profileTypeFromQuery(searchParams?.get("type") ?? null);
   const returnTo = safeInternalPath(searchParams?.get("returnTo") ?? null);
-  const requestedProgramId = queryType ? searchParams?.get("programId")?.trim() ?? "" : "";
+  const requestedProgramId =
+    queryProgramType || queryType ? searchParams?.get("programId")?.trim() ?? "" : "";
   const profilePrograms = useProfilePrograms();
-  const program = requestedProgramId
+  const listedProgram = requestedProgramId
     ? profilePrograms.data?.find(
         (item) => item.id === requestedProgramId || item.programCode === requestedProgramId
       )
     : undefined;
-  const programUnavailable = !!requestedProgramId && profilePrograms.isSuccess && !program;
-  const type = program ? profileTypeForProgram(program) : queryType;
-  const templateCode = queryType && !requestedProgramId ? templateCodeForType(queryType) : "";
-  const programTemplateQuery = useProgramFormTemplate(program?.id ?? "");
-  const legacyTemplateQuery = useFormTemplate(templateCode);
-  const templateQuery = requestedProgramId ? programTemplateQuery : legacyTemplateQuery;
-  const createProfile = useCreateProfile();
+  const program: Program | undefined =
+    listedProgram ??
+    (requestedProgramId
+      ? {
+          id: requestedProgramId,
+          programCode: requestedProgramId,
+          name: queryProgramType || "Profile",
+          programType: queryProgramType || undefined,
+          programCategory: "PROFILE",
+          status: "PUBLISHED",
+        }
+      : undefined);
+  const programUnavailable = false;
+  const queryProgramProfileType =
+    queryProgramType.toUpperCase().includes("BUSINESS") ? "BUSINESS" : queryProgramType ? "INDIVIDUAL" : null;
+  const type = queryType ?? (program ? profileTypeForProgram(program) : queryProgramProfileType);
+  // Without a programId in the URL, fall back to the listed program of the same type.
+  const formProgram =
+    program ?? profilePrograms.data?.find((item) => type !== null && profileTypeForProgram(item) === type);
+  const [draft, setDraft] = useState<{ id: string; currentVersionNo: number } | null>(null);
+  const [draftPending, setDraftPending] = useState(false);
+  const [draftError, setDraftError] = useState<ApiError | null>(null);
+  const [draftAttempt, setDraftAttempt] = useState(0);
+  // The forms come from the draft's program version (program_versions), latest published.
+  const formsQuery = useProfileForm(draft?.id ?? "", null);
+  const startedDraftFor = useRef("");
+  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
+  const versionRef = useRef(0);
+
+  useEffect(() => {
+    if (draft) versionRef.current = draft.currentVersionNo;
+  }, [draft]);
+
+  // Draft creation runs as a plain request rather than a React Query mutation:
+  // the mutation's completion never reached this component, which left the
+  // skeleton on screen indefinitely.
+  useEffect(() => {
+    if (!formProgram?.id || startedDraftFor.current === formProgram.id || draft) return;
+    startedDraftFor.current = formProgram.id;
+    setDraftPending(true);
+    setDraftError(null);
+    profileService
+      .createDraft(formProgram.id)
+      .then((created) => setDraft(created))
+      .catch((error) => {
+        const apiError = parseApiError(error);
+        setDraftError(apiError);
+        toast.error(apiError.message);
+      })
+      .finally(() => setDraftPending(false));
+  }, [draft, draftAttempt, formProgram?.id]);
 
   if (!type) {
     const programs = profilePrograms.data ?? [];
@@ -120,6 +162,27 @@ export function ProfileCreatePage() {
     );
   }
 
+  const saveVersion = async (input: { data: Record<string, unknown>; changeNote?: string }) => {
+    if (!draft) throw { message: "The profile draft is not ready yet.", status: 409 };
+    const saved = await profileService.update(draft.id, {
+      data: input.data,
+      expectedVersionNo: versionRef.current,
+      changeNote: input.changeNote,
+    });
+    versionRef.current = saved.currentVersionNo;
+    await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+    return saved;
+  };
+
+  const reportSaveError = (error: unknown) => {
+    const apiError = parseApiError(error);
+    toast.error(
+      apiError.status === 409
+        ? "This profile changed elsewhere. Please reload and try again."
+        : apiError.message
+    );
+  };
+
   return (
     <PageShell width="detail">
       <Link href={returnTo ?? "/profiles"} className={backLinkClass}>
@@ -129,12 +192,25 @@ export function ProfileCreatePage() {
       <PageHeader
         title={program ? `New ${program.displayName || program.name}` : `New ${profileTypeLabel(type).toLowerCase()} profile`}
         description={
-          program?.description ?? `Each form in the ${templateCode || "selected"} template opens in its own tab.`
+          program?.description ?? "Each form in this profile opens in its own tab."
         }
       />
 
-      {templateQuery.isLoading || (requestedProgramId && profilePrograms.isLoading) ? (
+      {formsQuery.isLoading || draftPending ? (
         <CreateSkeleton />
+      ) : null}
+
+      {draftError ? (
+        <ErrorState
+          compact
+          title="Unable to start this profile"
+          message={draftError.message}
+          status={draftError.status}
+          onRetry={() => {
+            startedDraftFor.current = "";
+            setDraftAttempt((attempt) => attempt + 1);
+          }}
+        />
       ) : null}
 
       {requestedProgramId && profilePrograms.isError ? (
@@ -161,41 +237,59 @@ export function ProfileCreatePage() {
         </p>
       ) : null}
 
-      {templateQuery.isError ? (
+      {formsQuery.isError ? (
         <ErrorState
           compact
           title="Unable to load the form"
-          message={parseApiError(templateQuery.error).message}
-          status={parseApiError(templateQuery.error).status}
+          message={parseApiError(formsQuery.error).message}
+          status={parseApiError(formsQuery.error).status}
           onRetry={() => {
-            void templateQuery.refetch();
+            void formsQuery.refetch();
           }}
         />
       ) : null}
 
-      {templateQuery.data ? (
+      {formsQuery.data && draft ? (
         <ProfileForm
-          templates={templateQuery.data}
-          submitLabel="Save profile"
-          pending={createProfile.isPending}
+          templates={formsQuery.data}
+          submitLabel="Save & complete"
+          draftLabel="Save draft"
+          pending={saving}
           onCancel={() => router.push(returnTo ?? "/profiles")}
-          onSubmit={(input) => {
-            createProfile.mutate(
-              { type, programId: program?.id, data: input.data, changeNote: input.changeNote },
-              {
-                onSuccess: (created) => {
-                  toast.success("Profile created");
-                  router.push(
-                    returnTo
-                      ? withProfileReturn(returnTo, created.id, created.currentVersionNo)
-                      : `/profiles/${created.id}`
-                  );
-                },
-                onError: (error) => {
-                  toast.error(parseApiError(error).message);
-                },
+          onSaveDraft={(input) => {
+            if (saving) return;
+            setSaving(true);
+            void (async () => {
+              try {
+                await saveVersion(input);
+                toast.success("Draft saved");
+              } catch (error) {
+                reportSaveError(error);
+              } finally {
+                setSaving(false);
               }
-            );
+            })();
+          }}
+          onSubmit={(input) => {
+            if (saving) return;
+            setSaving(true);
+            void (async () => {
+              try {
+                const saved = await saveVersion(input);
+                const completed = await profileService.complete(draft.id, saved.currentVersionNo);
+                await queryClient.invalidateQueries({ queryKey: ["profiles"] });
+                toast.success("Profile created");
+                router.push(
+                  returnTo
+                    ? withProfileReturn(returnTo, completed.id, completed.currentVersionNo)
+                    : `/profiles/view?profileId=${encodeURIComponent(completed.id)}`
+                );
+              } catch (error) {
+                reportSaveError(error);
+              } finally {
+                setSaving(false);
+              }
+            })();
           }}
         />
       ) : null}

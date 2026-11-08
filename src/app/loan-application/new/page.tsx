@@ -291,7 +291,7 @@ function humanizeProgramCode(code: string | null): string | undefined {
 async function prefillFromProfile(applicationId: string, profileId: string, programKey: string) {
   const profile = await profileService.get(profileId);
   const [profileTemplates, product] = await Promise.all([
-    profileService.getFormTemplateVersion(profile.templateCode, profile.templateVersion),
+    profileService.getProfileForm(profile.id, profile.currentVersionNo),
     applicationService.getLoanProductByProgramId(programKey),
   ]);
   const formData = prefillWizardFormData(

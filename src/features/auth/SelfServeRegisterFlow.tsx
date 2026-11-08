@@ -31,13 +31,16 @@ export function SelfServeRegisterFlow() {
   const handleRegisterSuccess = (result: {
     userId: string;
     registerData: RegisterApiRequest;
+    activated: boolean;
     emailVerificationPending: boolean;
     accessToken: string | null;
   }) => {
     setUserId(result.userId);
     setRegisterData(result.registerData);
 
-    if (result.emailVerificationPending) {
+    // An inactive account cannot sign in yet. Send it to OTP verification even
+    // when the OTP dispatch failed and emailVerificationPending came back false.
+    if (!result.activated || result.emailVerificationPending) {
       setStep("verify-email");
       return;
     }

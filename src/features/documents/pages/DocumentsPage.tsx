@@ -78,7 +78,7 @@ export function DocumentsPage() {
   const query = deferredSearch.trim();
   const documents = useDocuments({});
   const documentTypes = useDocumentTypes();
-  const profiles = useProfiles({ page: 0, size: 100, status: "ACTIVE" });
+  const profiles = useProfiles({ page: 0, size: 100, status: "COMPLETE" });
   const allDocuments = documents.data;
 
   const typeScope = useMemo(

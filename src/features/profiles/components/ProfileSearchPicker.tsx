@@ -22,7 +22,7 @@ export function ProfileSearchPicker({ excludeIds = [], onSelect, selectedId }: P
     () => ({
       page: 0,
       size: 8,
-      status: "ACTIVE" as const,
+      status: "COMPLETE" as const,
       ...(query ? { q: query } : {}),
     }),
     [query]

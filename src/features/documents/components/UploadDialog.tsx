@@ -124,7 +124,7 @@ export function UploadDialog({ open, onOpenChange, locked, presetProfile }: Uplo
 function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDialogProps, "open">) {
   const upload = useUpload();
   const types = useDocumentTypes(!locked);
-  const profileFilters = useMemo(() => ({ page: 0, size: 100, status: "ACTIVE" as const }), []);
+  const profileFilters = useMemo(() => ({ page: 0, size: 100, status: "COMPLETE" as const }), []);
   const profilesQuery = useProfiles(profileFilters);
   const [category, setCategory] = useState(locked ? categoryKey(locked.category) : "");
   const [typeId, setTypeId] = useState(locked?.typeId ?? "");
