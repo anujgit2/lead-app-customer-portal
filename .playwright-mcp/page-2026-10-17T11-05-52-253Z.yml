@@ -1,0 +1,34 @@
+- generic:
+  - button "Open Next.js Dev Tools" [ref=f1e6] [cursor=pointer]
+  - alert
+  - generic [aria-hidden]:
+    - banner:
+      - generic:
+        - link:
+          - /url: /dashboard/
+          - generic: LoanPortal
+        - navigation:
+          - link:
+            - /url: /dashboard/
+            - text: Dashboard
+          - link:
+            - /url: /applications/
+            - text: Applications
+          - link:
+            - /url: /profiles/
+            - text: Profiles
+          - link:
+            - /url: /documents/
+            - text: Documents
+      - generic:
+        - button
+        - button:
+          - generic: SJ
+          - generic: Steve
+  - region "Notifications alt+T"
+  - dialog [active] [ref=f1e11]:
+    - generic [ref=f1e12]:
+      - heading "Starting your application" [level=2] [ref=f1e13]
+      - paragraph [ref=f1e14]: Checking profiles…
+    - progressbar [ref=f1e15]
+    - paragraph [ref=f1e17]: Please wait

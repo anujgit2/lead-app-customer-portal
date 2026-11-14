@@ -1,0 +1,8 @@
+[     253ms] [LOG] [Fast Refresh] rebuilding @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[     301ms] [LOG] [Fast Refresh] done in 148ms @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[     508ms] [LOG] [Fast Refresh] rebuilding @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[    2120ms] [LOG] [Fast Refresh] done in 1713ms @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[    3001ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[    3197ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[   13328ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://leads-services.local/api/programs/a1b49881-4f8b-4080-974f-9b933486a035/profile-options:0
+[   14433ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://leads-services.local/api/programs/a1b49881-4f8b-4080-974f-9b933486a035/profile-options:0

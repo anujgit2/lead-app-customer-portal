@@ -1,0 +1,369 @@
+- generic:
+  - button "Open Next.js Dev Tools" [ref=f1e6] [cursor=pointer]
+  - alert
+  - generic:
+    - banner [aria-hidden]:
+      - generic:
+        - link:
+          - /url: /dashboard/
+          - generic: LoanPortal
+        - navigation:
+          - link:
+            - /url: /dashboard/
+            - text: Dashboard
+          - link:
+            - /url: /applications/
+            - text: Applications
+          - link:
+            - /url: /profiles/
+            - text: Profiles
+          - link:
+            - /url: /documents/
+            - text: Documents
+      - generic:
+        - button
+        - button:
+          - generic: SJ
+          - generic: Steve
+    - main:
+      - generic:
+        - generic:
+          - region "Application progress":
+            - generic:
+              - heading [level=1] [aria-hidden]:
+                - text: Business Loan
+                - generic: 9HYXG0N7
+              - generic:
+                - generic [aria-hidden]: Step 1 of 9
+                - generic: Draft
+            - generic [aria-hidden]:
+              - generic:
+                - generic:
+                  - button:
+                    - generic: "1"
+                    - generic: Business Information
+                  - button [disabled]:
+                    - generic: "2"
+                    - generic: Owners / Partners / Directors
+                  - button [disabled]:
+                    - generic: "3"
+                    - generic: Loan Requirement
+                  - button [disabled]:
+                    - generic: "4"
+                    - generic: Existing Loans
+                  - button [disabled]:
+                    - generic: "5"
+                    - generic: Bank Account Details
+                  - button [disabled]:
+                    - generic: "6"
+                    - generic: Financials
+                  - button [disabled]:
+                    - generic: "7"
+                    - generic: Consents & Declarations
+                  - button [disabled]:
+                    - generic: "8"
+                    - generic: Business documents
+                  - generic:
+                    - generic: "9"
+                    - generic: Review
+          - generic [aria-hidden]:
+            - heading [level=2]: Business Information
+            - paragraph: Tell us about your business. Details must match your registration documents.
+          - generic:
+            - generic [aria-hidden]:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - heading [level=3]: Business Details
+                          - paragraph: Legal and registration information about your business
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Company Name
+                                - generic: "*"
+                            - textbox:
+                              - /placeholder: Enter legal company name
+                              - text: Horizon Trade Pvt Ltd
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Company Type
+                                - generic: "*"
+                            - combobox [expanded]:
+                              - generic: Select company type
+                            - combobox [aria-hidden]
+                        - generic:
+                          - generic:
+                            - generic: Doing Business As
+                            - textbox:
+                              - /placeholder: Enter trade or brand name
+                              - text: Horizon Trade
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Industry Type
+                                - generic: "*"
+                              - button
+                            - combobox:
+                              - generic: Select industry
+                            - combobox [aria-hidden]
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Nature of Business
+                                - generic: "*"
+                              - button
+                            - combobox:
+                              - generic: Select nature of business
+                            - combobox [aria-hidden]
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: State of Formation
+                                - generic: "*"
+                              - button
+                            - combobox:
+                              - generic: Select state or UT
+                            - combobox [aria-hidden]
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Date of Incorporation
+                                - generic: "*"
+                              - button
+                            - textbox: 2016-04-12
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic: Year Established
+                              - button
+                            - spinbutton
+                        - generic:
+                          - generic:
+                            - generic: Business Vintage (years)
+                            - spinbutton
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Annual Revenue
+                                - generic: "*"
+                              - button
+                            - generic:
+                              - generic: ₹
+                              - textbox:
+                                - /placeholder: Enter annual revenue
+                                - text: 12,500,000.00
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic: Net Income
+                              - button
+                            - generic:
+                              - generic: ₹
+                              - textbox:
+                                - /placeholder: Enter net income
+                                - text: 1,800,000.00
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - heading [level=3]: Registrations
+                          - paragraph: Tax and registration numbers
+                        - button: Search PAN
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Business PAN
+                                - generic: "*"
+                              - button
+                            - textbox:
+                              - /placeholder: ABCDE1234F
+                              - text: AABCH1234F
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: GST Registered
+                                - generic: "*"
+                            - combobox:
+                              - generic: Select GST registration status
+                            - combobox [aria-hidden]
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic: Udyam Registration Number
+                              - button
+                            - textbox:
+                              - /placeholder: UDYAM-MH-04-0012345
+                              - text: UDYAM-MH-04-0012345
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic: TAN
+                              - button
+                            - textbox:
+                              - /placeholder: ABCD12345E
+                              - text: MUMH12345E
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic: Import Export Code (IEC)
+                              - button
+                            - textbox:
+                              - /placeholder: "0123456789"
+                              - text: "0123456789"
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - heading [level=3]: Contact & Operations
+                          - paragraph: How we reach you and how you operate
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Business Email
+                                - generic: "*"
+                            - textbox:
+                              - /placeholder: accounts@yourbusiness.com
+                              - text: accounts@horizontrade.example
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Business Mobile
+                                - generic: "*"
+                            - textbox:
+                              - /placeholder: "9876543210"
+                              - text: "9876543210"
+                        - generic:
+                          - generic:
+                            - generic: Website
+                            - textbox:
+                              - /placeholder: https://www.example.com
+                              - text: https://www.horizontrade.example
+                        - generic:
+                          - generic:
+                            - generic: Number of Employees
+                            - spinbutton
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic: NIC Code
+                              - button
+                            - textbox:
+                              - /placeholder: e.g. 47111
+                              - text: "47111"
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic: Business Premises
+                                - generic: "*"
+                            - combobox:
+                              - generic: Select premises ownership
+                            - combobox [aria-hidden]
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - heading [level=3]: Business Address
+                          - paragraph: Where your business operates from
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic: "Business Address #1"
+                          - generic:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - generic: Address Type
+                                      - generic: "*"
+                                  - combobox:
+                                    - generic: Select address type
+                                  - combobox [aria-hidden]
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - generic: Address Line 1
+                                      - generic: "*"
+                                  - textbox:
+                                    - /placeholder: Building, house or street address
+                                    - text: 42 Andheri Industrial Estate
+                              - generic:
+                                - generic:
+                                  - generic: Address Line 2
+                                  - textbox:
+                                    - /placeholder: Apartment, suite, landmark, etc.
+                                    - text: Near Western Express Highway
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - generic: City
+                                      - generic: "*"
+                                  - textbox:
+                                    - /placeholder: Enter city
+                                    - text: Mumbai
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - generic: State / UT
+                                      - generic: "*"
+                                  - combobox:
+                                    - generic: Select state or UT
+                                  - combobox [aria-hidden]
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - generic: Pincode
+                                      - generic: "*"
+                                  - textbox:
+                                    - /placeholder: "201301"
+                                    - text: "400053"
+                        - button: Add Business Address
+            - generic:
+              - generic:
+                - generic:
+                  - generic: Required fields
+                  - generic: 8 of 16
+                - progressbar "Required fields completed"
+              - generic [aria-hidden]:
+                - button: Save draft
+                - button: Continue
+  - region "Notifications alt+T"
+  - listbox [ref=f1e421]:
+    - option "Proprietorship" [active] [ref=f1e422]
+    - option "Partnership" [ref=f1e425]
+    - option "LLP" [ref=f1e428]
+    - option "Private Limited" [ref=f1e431]
+    - option "Public Limited" [ref=f1e434]
+    - option "One Person Company (OPC)" [ref=f1e437]
+    - option "Section 8 Company" [ref=f1e440]
+    - option "HUF" [ref=f1e443]
+    - option "AOP / BOI" [ref=f1e446]
+    - option "Trust" [ref=f1e449]
+    - option "Society" [ref=f1e452]
+    - option "Other" [ref=f1e455]

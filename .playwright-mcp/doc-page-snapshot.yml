@@ -1,0 +1,122 @@
+- generic [ref=f4e1]:
+  - button "Open Next.js Dev Tools" [ref=f4e7] [cursor=pointer]
+  - alert [ref=f4e11]
+  - generic [ref=f4e12]:
+    - banner [ref=f4e13]:
+      - generic [ref=f4e14]:
+        - link "LoanPortal" [ref=f4e15] [cursor=pointer]:
+          - /url: /dashboard/
+        - navigation "Main" [ref=f4e22]:
+          - link "Dashboard" [ref=f4e23] [cursor=pointer]:
+            - /url: /dashboard/
+          - link "Applications" [ref=f4e29] [cursor=pointer]:
+            - /url: /applications/
+          - link "Profiles" [ref=f4e33] [cursor=pointer]:
+            - /url: /profiles/
+          - link "Documents" [ref=f4e39] [cursor=pointer]:
+            - /url: /documents/
+      - generic [ref=f4e44]:
+        - button "Notifications" [ref=f4e45] [cursor=pointer]
+        - button "SJ Steve" [ref=f4e50] [cursor=pointer]:
+          - generic [ref=f4e51]: SJ
+          - generic [ref=f4e53]: Steve
+    - main [ref=f4e56]:
+      - generic [ref=f4e58]:
+        - region "Application progress" [ref=f4e59]:
+          - generic [ref=f4e60]:
+            - heading "Business Loan 9HYXG0N7" [level=1] [ref=f4e61]:
+              - text: Business Loan
+              - generic [ref=f4e62]: 9HYXG0N7
+            - generic [ref=f4e63]:
+              - generic [ref=f4e64]: Step 8 of 9
+              - generic [ref=f4e65]: Draft saved · 1:09 pm
+          - generic "Application steps" [ref=f4e71]:
+            - button "Business Information" [ref=f4e72] [cursor=pointer]
+            - button "Owners / Partners / Directors" [ref=f4e77] [cursor=pointer]
+            - button "Loan Requirement" [ref=f4e82] [cursor=pointer]
+            - button "Existing Loans" [ref=f4e87] [cursor=pointer]
+            - button "Bank Account Details" [ref=f4e92] [cursor=pointer]
+            - button "Financials" [ref=f4e97] [cursor=pointer]
+            - button "Consents & Declarations" [ref=f4e102] [cursor=pointer]
+            - button "8 Business documents" [ref=f4e107] [cursor=pointer]:
+              - generic [ref=f4e108]: "8"
+              - generic [ref=f4e109]: Business documents
+            - generic [ref=f4e110]:
+              - generic [ref=f4e111]: "9"
+              - generic [ref=f4e112]: Review
+        - generic [ref=f4e113]:
+          - heading "Business documents" [level=2] [ref=f4e114]
+          - paragraph [ref=f4e115]: Upload what you have now. Only items marked required block submission.
+        - generic [ref=f4e116]:
+          - alert [ref=f4e117]:
+            - generic [ref=f4e120]: Udyam Certificate is required when a Udyam number is entered. Certificate of Incorporation is required. MOA & AOA is required (+2 more)
+          - generic [ref=f4e123]:
+            - generic [ref=f4e124]:
+              - paragraph [ref=f4e125]: 2 of 2 required
+              - paragraph [ref=f4e128]: Ready to continue
+            - generic [ref=f4e129]:
+              - heading "Application documents" [level=3] [ref=f4e130]
+              - generic [ref=f4e131]:
+                - generic [ref=f4e134]:
+                  - generic [ref=f4e135]:
+                    - generic [ref=f4e136]:
+                      - paragraph [ref=f4e138]: Business PAN Card
+                      - paragraph [ref=f4e139]: Upload a clear copy of the business PAN card.
+                    - generic [ref=f4e140]: 1 uploaded
+                  - list [ref=f4e143]:
+                    - listitem [ref=f4e144]:
+                      - generic [ref=f4e148]:
+                        - paragraph [ref=f4e149]: business-pan.png
+                        - paragraph [ref=f4e150]: 70 B
+                      - generic [ref=f4e151]:
+                        - button "Download business-pan.png" [ref=f4e152] [cursor=pointer]: Download
+                        - button "Remove business-pan.png" [ref=f4e156] [cursor=pointer]: ×
+                - generic [ref=f4e159]:
+                  - generic [ref=f4e160]:
+                    - generic [ref=f4e161]:
+                      - generic [ref=f4e162]:
+                        - paragraph [ref=f4e163]: Business Address Proof
+                        - button "Information about Business Address Proof" [ref=f4e164] [cursor=pointer]
+                      - paragraph [ref=f4e167]: Utility bill, rent agreement or property tax receipt for the business address.
+                    - generic [ref=f4e168]: 1 uploaded
+                  - generic [ref=f4e170]:
+                    - generic [ref=f4e171] [cursor=pointer]:
+                      - button "Choose File" [ref=f4e172]
+                      - generic [ref=f4e177]:
+                        - paragraph [ref=f4e178]: Drop files or browse
+                        - paragraph [ref=f4e179]: PDF, JPG, JPEG, PNG · up to 5 MB · up to 2 files · at least 1 required
+                    - list [ref=f4e180]:
+                      - listitem [ref=f4e181]:
+                        - generic [ref=f4e185]:
+                          - paragraph [ref=f4e186]: address-proof.png
+                          - paragraph [ref=f4e187]: 70 B
+                        - generic [ref=f4e188]:
+                          - button "Download address-proof.png" [ref=f4e189] [cursor=pointer]: Download
+                          - button "Remove address-proof.png" [ref=f4e193] [cursor=pointer]: ×
+                - generic [ref=f4e196]:
+                  - generic [ref=f4e197]:
+                    - generic [ref=f4e198]:
+                      - generic [ref=f4e199]:
+                        - paragraph [ref=f4e200]: Business Existence Proof
+                        - button "Information about Business Existence Proof" [ref=f4e201] [cursor=pointer]
+                      - paragraph [ref=f4e204]: Shops & Establishment certificate or trade licence.
+                    - generic [ref=f4e205]: 1 uploaded
+                  - list [ref=f4e208]:
+                    - listitem [ref=f4e209]:
+                      - generic [ref=f4e213]:
+                        - paragraph [ref=f4e214]: address-proof.png
+                        - paragraph [ref=f4e215]: 70 B
+                      - generic [ref=f4e216]:
+                        - button "Download address-proof.png" [ref=f4e217] [cursor=pointer]: Download
+                        - button "Remove address-proof.png" [ref=f4e221] [cursor=pointer]: ×
+          - generic [ref=f4e222]:
+            - generic [ref=f4e223]:
+              - generic [ref=f4e224]:
+                - generic [ref=f4e225]: Required fields
+                - generic [ref=f4e226]: 2 of 2
+              - progressbar "Required fields completed" [ref=f4e227]
+            - generic [ref=f4e229]:
+              - button "Back" [ref=f4e230] [cursor=pointer]
+              - button "Save draft" [ref=f4e233] [cursor=pointer]
+              - button "Continue" [active] [ref=f4e238] [cursor=pointer]
+  - region "Notifications alt+T"

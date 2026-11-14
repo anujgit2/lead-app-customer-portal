@@ -1,0 +1,51 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e8] [cursor=pointer]
+  - alert [ref=e12]
+  - generic [ref=e13]:
+    - banner [ref=e14]:
+      - generic [ref=e15]:
+        - link "LoanPortal" [ref=e16] [cursor=pointer]:
+          - /url: /dashboard/
+        - navigation "Main" [ref=e23]:
+          - link "Dashboard" [ref=e24] [cursor=pointer]:
+            - /url: /dashboard/
+          - link "Applications" [ref=e30] [cursor=pointer]:
+            - /url: /applications/
+          - link "Profiles" [ref=e34] [cursor=pointer]:
+            - /url: /profiles/
+          - link "Documents" [ref=e40] [cursor=pointer]:
+            - /url: /documents/
+      - generic [ref=e45]:
+        - button "Notifications" [ref=e46] [cursor=pointer]
+        - button "SJ Steve" [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]: SJ
+          - generic [ref=e54]: Steve
+    - main [ref=e57]:
+      - generic [ref=e59]:
+        - region "Application progress" [ref=e60]:
+          - generic [ref=e61]:
+            - heading "Business Loan 2J30Q158" [level=1] [ref=e62]
+            - generic [ref=e64]
+          - generic "Application steps" [ref=e69]:
+            - button "1 Business Information" [ref=e70] [cursor=pointer]
+            - button "2 Owners / Partners / Directors" [disabled] [ref=e73]
+            - button "3 Loan Requirement" [disabled] [ref=e76]
+            - button "4 Existing Loans" [disabled] [ref=e79]
+            - button "5 Bank Account Details" [disabled] [ref=e82]
+            - button "6 Financials" [disabled] [ref=e85]
+            - button "7 Consents & Declarations" [disabled] [ref=e88]
+            - button "8 Business documents" [disabled] [ref=e91]
+            - button "9 Review" [disabled] [ref=e94]
+        - generic [ref=e97]:
+          - heading "Business Information" [level=2] [ref=e98]
+          - paragraph [ref=e99]: Tell us about your business. Details must match your registration documents.
+        - generic [ref=e100]:
+          - generic [ref=e103]:
+            - generic [ref=e104]
+            - generic [ref=e220]
+            - generic [ref=e279]
+            - generic [ref=e332]
+          - generic [ref=e397]:
+            - generic [ref=e398]
+            - generic [ref=e403]
+  - region "Notifications alt+T"

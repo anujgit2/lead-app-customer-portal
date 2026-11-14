@@ -1,0 +1,60 @@
+- generic [active] [ref=f2e1]:
+  - generic [ref=f2e7] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=f2e8]
+    - generic [ref=f2e12]:
+      - button "Open issues overlay" [ref=f2e13]:
+        - generic [ref=f2e14]:
+          - generic [aria-hidden] [ref=f2e15]: "0"
+          - generic [ref=f2e16]: "1"
+        - generic [ref=f2e17]: Insight
+      - button "Collapse issues badge" [ref=f2e18]
+  - alert [ref=f2e21]
+  - generic [ref=f2e23]:
+    - main [ref=f2e24]:
+      - generic [ref=f2e25]:
+        - link "Lender name" [ref=f2e26] [cursor=pointer]:
+          - /url: /
+        - paragraph [ref=f2e31]:
+          - text: Have an account?
+          - link "Sign in" [ref=f2e32] [cursor=pointer]:
+            - /url: /auth/login/
+      - generic [ref=f2e34]:
+        - list "Sign-up progress" [ref=f2e35]:
+          - listitem [ref=f2e36]: Your details
+          - listitem [ref=f2e38]:
+            - generic [ref=f2e40]: "2"
+            - text: Verify email
+          - listitem [ref=f2e41]:
+            - generic [ref=f2e43]: "3"
+            - text: Ready
+        - generic [ref=f2e110]:
+          - generic [ref=f2e111]:
+            - heading "Verify your email" [level=1] [ref=f2e112]
+            - paragraph [ref=f2e113]: Enter the 6-digit code we sent
+          - generic [ref=f2e114]:
+            - group "Verification code" [ref=f2e115]:
+              - generic [ref=f2e117]:
+                - textbox "Digit 1" [ref=f2e118]
+                - textbox "Digit 2" [ref=f2e119]
+                - textbox "Digit 3" [ref=f2e120]
+                - textbox "Digit 4" [ref=f2e121]
+                - textbox "Digit 5" [ref=f2e122]
+                - textbox "Digit 6" [ref=f2e123]
+              - paragraph [ref=f2e124]:
+                - text: Did not get it? Check your spam folder or
+                - button "Resend code" [ref=f2e125] [cursor=pointer]
+            - generic [ref=f2e126]:
+              - button "Verify" [ref=f2e127] [cursor=pointer]
+              - button "Change email address" [ref=f2e128] [cursor=pointer]
+    - contentinfo [ref=f2e101]:
+      - generic [ref=f2e102]: © 2026 LoanPortal · [LEGAL ENTITY NAME]
+      - navigation "Support and legal" [ref=f2e103]:
+        - link "Help centre" [ref=f2e104] [cursor=pointer]:
+          - /url: /#faq
+        - link "Contact us" [ref=f2e105] [cursor=pointer]:
+          - /url: /#faq
+        - link "Privacy policy" [ref=f2e106] [cursor=pointer]:
+          - /url: /privacy/
+        - link "Terms of use" [ref=f2e107] [cursor=pointer]:
+          - /url: /terms/
+  - region "Notifications alt+T"

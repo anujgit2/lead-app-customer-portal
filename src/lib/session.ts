@@ -1,6 +1,11 @@
-import { useAuthStore } from "@/store/auth.store";
-import { invitationService } from "@/services/invitation.service";
+import { isIdleLocked } from "@/lib/idle-lock";
 import { queryClient } from "@/lib/query-client";
+import { clearTenantId } from "@/lib/tenant";
+import { invitationService } from "@/services/invitation.service";
+import { useAuthStore } from "@/store/auth.store";
+import { useWizardStore } from "@/store/wizard.store";
+
+const AUTH_STORAGE_EVENT = "lead-auth-storage";
 
 export type AuthErrorCode =
   | "SESSION_EXPIRED"
@@ -47,6 +52,35 @@ export function hasAuthArtifacts(): boolean {
   );
 }
 
+export function hasAccessToken(): boolean {
+  if (typeof window === "undefined") return false;
+  return !!(localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken"));
+}
+
+export function subscribeAuthStorage(onChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener("storage", onChange);
+  window.addEventListener(AUTH_STORAGE_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(AUTH_STORAGE_EVENT, onChange);
+  };
+}
+
+export function emitAuthStorageChange() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
+}
+
+/** Drops the access token and leaves profile, drafts, and cached pages in place. */
+export function clearAccessCredentials() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("refreshToken");
+  sessionStorage.removeItem("accessToken");
+  emitAuthStorageChange();
+}
+
 export function clearAuthTokens() {
   if (typeof window === "undefined") return;
   localStorage.removeItem("accessToken");
@@ -58,7 +92,9 @@ export function clearAuthTokens() {
 export function clearFullSession() {
   clearAuthTokens();
   useAuthStore.getState().logout();
+  useWizardStore.getState().reset();
   invitationService.clearStoredInvitation();
+  clearTenantId();
   queryClient.clear();
   if (typeof window !== "undefined") {
     sessionStorage.removeItem(AUTH_ERROR_KEY);
@@ -70,9 +106,13 @@ export function saveAuthError(context: AuthErrorContext) {
   sessionStorage.setItem(AUTH_ERROR_KEY, JSON.stringify(context));
 }
 
-export function getAuthError(): AuthErrorContext | null {
+/** Raw stored value; a string is a stable snapshot for `useSyncExternalStore`. */
+export function readStoredAuthError(): string | null {
   if (typeof window === "undefined") return null;
-  const stored = sessionStorage.getItem(AUTH_ERROR_KEY);
+  return sessionStorage.getItem(AUTH_ERROR_KEY);
+}
+
+export function parseAuthError(stored: string | null): AuthErrorContext | null {
   if (!stored) return null;
   try {
     return JSON.parse(stored) as AuthErrorContext;
@@ -81,13 +121,18 @@ export function getAuthError(): AuthErrorContext | null {
   }
 }
 
+export function getAuthError(): AuthErrorContext | null {
+  return parseAuthError(readStoredAuthError());
+}
+
 export function clearAuthError() {
   if (typeof window === "undefined") return;
   sessionStorage.removeItem(AUTH_ERROR_KEY);
 }
 
 export function handleSessionExpired(from?: string) {
-  clearAuthTokens();
+  if (isIdleLocked()) return;
+  clearFullSession();
   saveAuthError({
     code: "SESSION_EXPIRED",
     message: "Your session has expired. Please sign in again to continue.",

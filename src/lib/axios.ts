@@ -1,26 +1,22 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import { isIdleLocked } from "@/lib/idle-lock";
 import {
   handleSessionExpired,
   isSessionExpiredRedirectSuppressed,
 } from "@/lib/session";
+import { isAccountsApiPath, resolveApiBaseUrl, resolveAuthApiBaseUrl } from "@/lib/api-base-url";
 import { getTenantId } from "@/lib/tenant";
 
 declare module "axios" {
   export interface AxiosRequestConfig {
     /** Opt a request out of the automatic session-expired redirect on 401. */
     skipAuthRedirect?: boolean;
+    /** Leave tenant resolution to the API host. Do not send X-Tenant-ID. */
+    skipTenantHeader?: boolean;
+    /** Public request. Do not send Authorization. */
+    skipAuthHeader?: boolean;
   }
 }
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api";
-console.log("NEXT_PUBLIC_API_URL =", process.env.NEXT_PUBLIC_API_URL);
-console.log("BASE_URL =", BASE_URL);
-
-export const apiClient = axios.create({
-  baseURL: BASE_URL,
-  headers: { "Content-Type": "application/json" },
-  timeout: 30000,
-});
 
 function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -30,17 +26,48 @@ function getAccessToken(): string | null {
   );
 }
 
+export function getApiBaseUrl(): string {
+  return resolveApiBaseUrl();
+}
+
+export function getAuthApiBaseUrl(): string {
+  return resolveAuthApiBaseUrl();
+}
+
+export function getApiAuthHeaders(options?: {
+  skipTenantHeader?: boolean;
+  skipAuthHeader?: boolean;
+}): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (!options?.skipAuthHeader) {
+    const token = getAccessToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+  if (!options?.skipTenantHeader) {
+    const tenantId = getTenantId();
+    if (tenantId) headers["X-Tenant-ID"] = tenantId;
+  }
+  return headers;
+}
+
+export const apiClient = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "/api",
+  headers: { "Content-Type": "application/json" },
+  timeout: 30000,
+});
+
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = getAccessToken();
+    config.baseURL = isAccountsApiPath(config.url) ? getAuthApiBaseUrl() : getApiBaseUrl();
     if (config.headers) {
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      const tenantId = getTenantId();
-      if (tenantId) {
-        config.headers["X-Tenant-ID"] = tenantId;
-      }
+      Object.entries(
+        getApiAuthHeaders({
+          skipTenantHeader: config.skipTenantHeader,
+          skipAuthHeader: config.skipAuthHeader,
+        })
+      ).forEach(([name, value]) => {
+        config.headers[name] = value;
+      });
     }
     return config;
   },
@@ -62,19 +89,27 @@ apiClient.interceptors.response.use(
   },
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
+      if (isIdleLocked()) {
+        return Promise.reject(error);
+      }
       if (
         typeof window !== "undefined" &&
         !error.config?.skipAuthRedirect &&
         !isSessionExpiredRedirectSuppressed()
       ) {
         const path = window.location.pathname;
-        const isAuthPage =
+        const isPublicPage =
+          path === "/" ||
+          path.startsWith("/t/") ||
           path.startsWith("/auth/login") ||
           path.startsWith("/auth/register") ||
           path.startsWith("/auth/session-expired") ||
-          path.startsWith("/apply");
+          path.startsWith("/apply") ||
+          path.startsWith("/lead-invite") ||
+          path.startsWith("/s/") ||
+          path.startsWith("/shared");
 
-        if (!isAuthPage) {
+        if (!isPublicPage) {
           handleSessionExpired(path);
           window.location.href = "/auth/session-expired";
         }

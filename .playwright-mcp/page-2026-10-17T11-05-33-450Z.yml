@@ -1,0 +1,247 @@
+- generic [active] [ref=e1]:
+  - button "Open Next.js Dev Tools" [ref=e8] [cursor=pointer]
+  - alert [ref=e12]: Good afternoon, Steve 👋
+  - generic [ref=e98]:
+    - banner [ref=e99]:
+      - generic [ref=e100]:
+        - link "LoanPortal" [ref=e101] [cursor=pointer]:
+          - /url: /dashboard/
+        - navigation "Main" [ref=e108]:
+          - link "Dashboard" [ref=e109] [cursor=pointer]:
+            - /url: /dashboard/
+          - link "Applications" [ref=e115] [cursor=pointer]:
+            - /url: /applications/
+          - link "Profiles" [ref=e119] [cursor=pointer]:
+            - /url: /profiles/
+          - link "Documents" [ref=e125] [cursor=pointer]:
+            - /url: /documents/
+      - generic [ref=e130]:
+        - button "Notifications" [ref=e131] [cursor=pointer]
+        - button "SJ Steve" [ref=e136] [cursor=pointer]:
+          - generic [ref=e137]: SJ
+          - generic [ref=e139]: Steve
+    - main [ref=e142]:
+      - generic [ref=e144]:
+        - region [ref=e145]:
+          - generic [ref=e146]:
+            - heading "Good afternoon, Steve 👋" [level=1] [ref=e147]
+            - paragraph [ref=e148]: Here’s an overview of your loan applications.
+            - generic [ref=e149]:
+              - button "Apply for a loan" [ref=e150] [cursor=pointer]
+              - button "Upload document" [ref=e153] [cursor=pointer]
+          - generic [ref=e157]:
+            - generic [ref=e158]:
+              - generic [ref=e163]:
+                - generic [ref=e164]: 2J30Q158
+                - generic [ref=e165]: Business Application Details
+              - generic [ref=e166]: Draft
+            - 'generic "Progress: Draft" [ref=e167]':
+              - generic [ref=e168]: Draft
+              - generic [ref=e171]: Submitted
+              - generic [ref=e174]: In review
+              - generic [ref=e177]: Approved
+            - generic [ref=e180]:
+              - generic [ref=e181]: Updated 17 Oct 2026
+              - button "Continue" [ref=e182] [cursor=pointer]
+        - generic [ref=e185]:
+          - region [ref=e186]:
+            - generic [ref=e187]:
+              - heading "Recent activity" [level=2] [ref=e188]
+              - group "Filter activity" [ref=e189]:
+                - button "All 19" [pressed] [ref=e190] [cursor=pointer]:
+                  - text: All
+                  - generic [ref=e191]: "19"
+                - button "Applications 11" [ref=e192] [cursor=pointer]:
+                  - text: Applications
+                  - generic [ref=e193]: "11"
+                - button "Profiles 2" [ref=e194] [cursor=pointer]:
+                  - text: Profiles
+                  - generic [ref=e195]: "2"
+                - button "Documents 6" [ref=e196] [cursor=pointer]:
+                  - text: Documents
+                  - generic [ref=e197]: "6"
+            - generic [ref=e198]:
+              - heading "17 Oct 2026" [level=3] [ref=e199]
+              - list [ref=e200]:
+                - listitem [ref=e201]:
+                  - button "2J30Q158 draft created Business Application Details 3:56 pm" [ref=e202] [cursor=pointer]:
+                    - generic [ref=e207]:
+                      - generic [ref=e208]: 2J30Q158 draft created
+                      - generic [ref=e209]: Business Application Details
+                    - time [ref=e210]: 3:56 pm
+                - listitem [ref=e211]:
+                  - button "9HYXG0N7 draft created Business Application Details 1:42 pm" [ref=e212] [cursor=pointer]:
+                    - generic [ref=e217]:
+                      - generic [ref=e218]: 9HYXG0N7 draft created
+                      - generic [ref=e219]: Business Application Details
+                    - time [ref=e220]: 1:42 pm
+                - listitem [ref=e221]:
+                  - button "SGRRHBXE draft created Business Application Details 8:15 am" [ref=e222] [cursor=pointer]:
+                    - generic [ref=e227]:
+                      - generic [ref=e228]: SGRRHBXE draft created
+                      - generic [ref=e229]: Business Application Details
+                    - time [ref=e230]: 8:15 am
+            - generic [ref=e231]:
+              - heading "16 Oct 2026" [level=3] [ref=e232]
+              - list [ref=e233]:
+                - listitem [ref=e234]:
+                  - button "GQPJYJZ1 draft created Loan 10:38 pm" [ref=e235] [cursor=pointer]:
+                    - generic [ref=e240]:
+                      - generic [ref=e241]: GQPJYJZ1 draft created
+                      - generic [ref=e242]: Loan
+                    - time [ref=e243]: 10:38 pm
+            - generic [ref=e244]:
+              - heading "15 Oct 2026" [level=3] [ref=e245]
+              - list [ref=e246]:
+                - listitem [ref=e247]:
+                  - button "LEADS-20261015-000001 submitted for review Loan 11:39 pm" [ref=e248] [cursor=pointer]:
+                    - generic [ref=e253]:
+                      - generic [ref=e254]: LEADS-20261015-000001 submitted for review
+                      - generic [ref=e255]: Loan
+                    - time [ref=e256]: 11:39 pm
+                - listitem [ref=e257]:
+                  - button "LEADS-20261015-000002 draft created Loan 9:43 am" [ref=e258] [cursor=pointer]:
+                    - generic [ref=e263]:
+                      - generic [ref=e264]: LEADS-20261015-000002 draft created
+                      - generic [ref=e265]: Loan
+                    - time [ref=e266]: 9:43 am
+            - generic [ref=e267]:
+              - heading "14 Oct 2026" [level=3] [ref=e268]
+              - list [ref=e269]:
+                - listitem [ref=e270]:
+                  - button "LEADS-20261014-000003 draft created Loan 11:37 pm" [ref=e271] [cursor=pointer]:
+                    - generic [ref=e276]:
+                      - generic [ref=e277]: LEADS-20261014-000003 draft created
+                      - generic [ref=e278]: Loan
+                    - time [ref=e279]: 11:37 pm
+                - listitem [ref=e280]:
+                  - button "LEADS-20261014-000002 draft created Loan 11:35 pm" [ref=e281] [cursor=pointer]:
+                    - generic [ref=e286]:
+                      - generic [ref=e287]: LEADS-20261014-000002 draft created
+                      - generic [ref=e288]: Loan
+                    - time [ref=e289]: 11:35 pm
+                - listitem [ref=e290]:
+                  - button "LEADS-20261014-000001 draft created Loan 5:54 pm" [ref=e291] [cursor=pointer]:
+                    - generic [ref=e296]:
+                      - generic [ref=e297]: LEADS-20261014-000001 draft created
+                      - generic [ref=e298]: Loan
+                    - time [ref=e299]: 5:54 pm
+            - generic [ref=e300]:
+              - heading "13 Oct 2026" [level=3] [ref=e301]
+              - list [ref=e302]:
+                - listitem [ref=e303]:
+                  - button "sample_new.pdf uploaded Statement · Mukesah 10:07 pm" [ref=e304] [cursor=pointer]:
+                    - generic [ref=e309]:
+                      - generic [ref=e310]: sample_new.pdf uploaded
+                      - generic [ref=e311]: Statement · Mukesah
+                    - time [ref=e312]: 10:07 pm
+                - listitem [ref=e313]:
+                  - button "LEADS-20261013-000001 draft created Loan 9:40 pm" [ref=e314] [cursor=pointer]:
+                    - generic [ref=e319]:
+                      - generic [ref=e320]: LEADS-20261013-000001 draft created
+                      - generic [ref=e321]: Loan
+                    - time [ref=e322]: 9:40 pm
+            - generic [ref=e323]:
+              - heading "12 Oct 2026" [level=3] [ref=e324]
+              - list [ref=e325]:
+                - listitem [ref=e326]:
+                  - button "LEADS-20261008-000002 submitted for review Loan 10:18 am" [ref=e327] [cursor=pointer]:
+                    - generic [ref=e332]:
+                      - generic [ref=e333]: LEADS-20261008-000002 submitted for review
+                      - generic [ref=e334]: Loan
+                    - time [ref=e335]: 10:18 am
+                - listitem [ref=e336]:
+                  - button "credit-memo.pdf uploaded Owner PAN · Mukesah 12:13 am" [ref=e337] [cursor=pointer]:
+                    - generic [ref=e342]:
+                      - generic [ref=e343]: credit-memo.pdf uploaded
+                      - generic [ref=e344]: Owner PAN · Mukesah
+                    - time [ref=e345]: 12:13 am
+            - generic [ref=e346]:
+              - heading "10 Oct 2026" [level=3] [ref=e347]
+              - list [ref=e348]:
+                - listitem [ref=e349]:
+                  - button "Mukesah profile updated Individual · XXXXXX234F 12:40 pm" [ref=e350] [cursor=pointer]:
+                    - generic [ref=e355]:
+                      - generic [ref=e356]: Mukesah profile updated
+                      - generic [ref=e357]: Individual · XXXXXX234F
+                    - time [ref=e358]: 12:40 pm
+                - listitem [ref=e359]:
+                  - button "gdgdgdg profile updated Business · XXXXXX234F 12:35 pm" [ref=e360] [cursor=pointer]:
+                    - generic [ref=e365]:
+                      - generic [ref=e366]: gdgdgdg profile updated
+                      - generic [ref=e367]: Business · XXXXXX234F
+                    - time [ref=e368]: 12:35 pm
+                - listitem [ref=e369]:
+                  - button "business-loans-application-form.pdf uploaded Statement · gdgdgdg 1:31 am" [ref=e370] [cursor=pointer]:
+                    - generic [ref=e375]:
+                      - generic [ref=e376]: business-loans-application-form.pdf uploaded
+                      - generic [ref=e377]: Statement · gdgdgdg
+                    - time [ref=e378]: 1:31 am
+            - generic [ref=e379]:
+              - heading "9 Oct 2026" [level=3] [ref=e380]
+              - list [ref=e381]:
+                - listitem [ref=e382]:
+                  - button "sample.pdf uploaded Cheque 11:59 pm" [ref=e383] [cursor=pointer]:
+                    - generic [ref=e388]:
+                      - generic [ref=e389]: sample.pdf uploaded
+                      - generic [ref=e390]: Cheque
+                    - time [ref=e391]: 11:59 pm
+                - listitem [ref=e392]:
+                  - button "sample.pdf uploaded PAN 9:41 am" [ref=e393] [cursor=pointer]:
+                    - generic [ref=e398]:
+                      - generic [ref=e399]: sample.pdf uploaded
+                      - generic [ref=e400]: PAN
+                    - time [ref=e401]: 9:41 am
+                - listitem [ref=e402]:
+                  - button "business-loans-application-form.pdf uploaded Statement 9:22 am" [ref=e403] [cursor=pointer]:
+                    - generic [ref=e408]:
+                      - generic [ref=e409]: business-loans-application-form.pdf uploaded
+                      - generic [ref=e410]: Statement
+                    - time [ref=e411]: 9:22 am
+          - complementary "Overview and shortcuts" [ref=e412]:
+            - region [ref=e413]:
+              - heading "Overview" [level=2] [ref=e414]
+              - list [ref=e415]:
+                - listitem [ref=e416]:
+                  - link "Applications 9 drafts · 2 in review 11" [ref=e417] [cursor=pointer]:
+                    - /url: /applications/
+                    - generic [ref=e422]:
+                      - generic [ref=e423]: Applications
+                      - generic [ref=e424]: 9 drafts · 2 in review
+                    - generic [ref=e425]: "11"
+                - listitem [ref=e428]:
+                  - link "Profiles 1 individual · 1 business 2" [ref=e429] [cursor=pointer]:
+                    - /url: /profiles/
+                    - generic [ref=e436]:
+                      - generic [ref=e437]: Profiles
+                      - generic [ref=e438]: 1 individual · 1 business
+                    - generic [ref=e439]: "2"
+                - listitem [ref=e442]:
+                  - link "Documents Latest 13 Oct 2026 6" [ref=e443] [cursor=pointer]:
+                    - /url: /documents/
+                    - generic [ref=e449]:
+                      - generic [ref=e450]: Documents
+                      - generic [ref=e451]: Latest 13 Oct 2026
+                    - generic [ref=e452]: "6"
+            - region [ref=e455]:
+              - heading "Quick actions" [level=2] [ref=e456]
+              - list [ref=e457]:
+                - listitem [ref=e458]:
+                  - button "Apply for a loan" [ref=e459] [cursor=pointer]:
+                    - generic [ref=e462]:
+                      - generic [ref=e463]: Apply for a loan
+                      - generic [ref=e464]: Start a new application
+                - listitem [ref=e467]:
+                  - button "Upload document Add a file to a profile" [ref=e468] [cursor=pointer]:
+                    - generic [ref=e473]:
+                      - generic [ref=e474]: Upload document
+                      - generic [ref=e475]: Add a file to a profile
+                - listitem [ref=e478]:
+                  - button "New profile Individual or business" [ref=e479] [cursor=pointer]:
+                    - generic [ref=e484]:
+                      - generic [ref=e485]: New profile
+                      - generic [ref=e486]: Individual or business
+  - region "Notifications alt+T":
+    - list:
+      - listitem [ref=e489]:
+        - generic [ref=e493]: Welcome back, Steve!

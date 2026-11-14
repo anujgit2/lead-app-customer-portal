@@ -1,10 +1,12 @@
 import { apiClient } from "@/lib/axios";
 import { parseApiError } from "@/lib/api-error";
 import {
+  clearAccessCredentials,
   clearFullSession,
   suppressSessionExpiredRedirect,
 } from "@/lib/session";
 import { sleep } from "@/lib/utils";
+import { isDemoEnabled } from "@/lib/demo";
 import type {
   AuthResponse,
   LoginRequest,
@@ -16,16 +18,23 @@ import type {
 } from "@/types";
 import { MOCK_USER } from "./mock-data";
 
-function persistTokens(accessToken: string, refreshToken?: string, rememberMe = true) {
+function registrationIdempotencyKey(): string {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  return `reg-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+}
+
+/** No refresh flow exists, so refresh tokens are never written to web storage. */
+function persistTokens(accessToken: string, rememberMe = true) {
   if (typeof window === "undefined") return;
+  localStorage.removeItem("refreshToken");
   if (rememberMe) {
     localStorage.setItem("accessToken", accessToken);
-    if (refreshToken) localStorage.setItem("refreshToken", refreshToken);
     sessionStorage.removeItem("accessToken");
   } else {
     sessionStorage.setItem("accessToken", accessToken);
     localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
   }
 }
 
@@ -77,7 +86,7 @@ export const authService = {
           lastName: "",
         });
 
-      persistTokens(accessToken, response.refreshToken, data.rememberMe);
+      persistTokens(accessToken, data.rememberMe);
       persistUser(user);
       return {
         user,
@@ -88,17 +97,20 @@ export const authService = {
       };
     } catch (error) {
       const apiError = parseApiError(error);
-      if (apiError.status === 401 || apiError.status === 404) {
+      if (
+        isDemoEnabled() &&
+        (apiError.status === 401 || apiError.status === 404) &&
+        data.email === "demo@example.com" &&
+        data.password === "Password@123"
+      ) {
         await sleep(300);
-        if (data.email === "demo@example.com" && data.password === "Password@123") {
-          const tokens = {
-            accessToken: "mock-access-token-" + Date.now(),
-            refreshToken: "mock-refresh-token-" + Date.now(),
-          };
-          persistTokens(tokens.accessToken, tokens.refreshToken, data.rememberMe);
-          persistUser(MOCK_USER);
-          return { user: MOCK_USER, tokens };
-        }
+        const tokens = {
+          accessToken: "mock-access-token-" + Date.now(),
+          refreshToken: "",
+        };
+        persistTokens(tokens.accessToken, data.rememberMe);
+        persistUser(MOCK_USER);
+        return { user: MOCK_USER, tokens };
       }
       throw apiError;
     }
@@ -110,7 +122,8 @@ export const authService = {
     try {
       const { data: response } = await apiClient.post<RegisterApiResponse>(
         "/auth/register",
-        data
+        data,
+        { headers: { "Idempotency-Key": registrationIdempotencyKey() } }
       );
       return response;
     } catch (error) {
@@ -124,7 +137,8 @@ export const authService = {
     try {
       const { data: response } = await apiClient.post<RegisterApiResponse>(
         "/auth/register",
-        data
+        data,
+        { headers: { "Idempotency-Key": registrationIdempotencyKey() } }
       );
       return response;
     } catch (error) {
@@ -154,7 +168,7 @@ export const authService = {
     const user = buildUserFromRegistration(userId, registerData);
 
     if (accessToken) {
-      persistTokens(accessToken, undefined, true);
+      persistTokens(accessToken, true);
       persistUser(user);
       return {
         user,
@@ -167,6 +181,20 @@ export const authService = {
       password: registerData.password,
       rememberMe: true,
     });
+  },
+
+  /**
+   * Revokes the server session and drops the access token without wiping the
+   * open page, wizard draft, or cached queries. The idle lock calls this.
+   */
+  async suspendSession(): Promise<void> {
+    suppressSessionExpiredRedirect();
+    try {
+      await apiClient.post("/auth/logout", undefined, { skipAuthRedirect: true });
+    } catch {
+      // The screen stays locked even when the revoke call fails.
+    }
+    clearAccessCredentials();
   },
 
   async logout(): Promise<void> {
@@ -186,12 +214,16 @@ export const authService = {
       const { data } = await apiClient.get<User>("/auth/profile");
       persistUser(data);
       return data;
-    } catch {
-      if (typeof window !== "undefined") {
-        const stored = localStorage.getItem("user");
-        if (stored) return JSON.parse(stored) as User;
+    } catch (error) {
+      const apiError = parseApiError(error);
+      if (isDemoEnabled() && apiError.status !== 401 && apiError.status !== 403) {
+        if (typeof window !== "undefined") {
+          const stored = localStorage.getItem("user");
+          if (stored) return JSON.parse(stored) as User;
+        }
+        return MOCK_USER;
       }
-      return MOCK_USER;
+      throw apiError;
     }
   },
 

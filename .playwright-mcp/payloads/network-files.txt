@@ -1,0 +1,5 @@
+52. [POST] http://leads-services.local/api/files?applicationId=497b67d9-3f9a-458e-a0dd-8dcd3a47e6bf => [201] Created
+53. [POST] http://leads-services.local/api/files?applicationId=497b67d9-3f9a-458e-a0dd-8dcd3a47e6bf => [201] Created
+56. [POST] http://leads-services.local/api/files?applicationId=497b67d9-3f9a-458e-a0dd-8dcd3a47e6bf => [201] Created
+
+Note: 36 static requests not shown, run with "static" option to see them.

@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+/e2e/results
+/playwright-report
+/test-results
 
 # next.js
 /.next/
@@ -30,6 +33,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# Local Playwright skill. Contains the business-application test password.
+.cursor/skills/playwright/SKILL.md
+
+# Runner for the business-application spec. Holds the same test password.
+/e2e/run-business-application.sh
+
 # env files
 # .env / .env.local are personal/machine-specific and never committed.
 # .env.example, .env.development, .env.uat, .env.production hold shared,
@@ -47,3 +56,6 @@ next-env.d.ts
 .env.dev
 .env.uat
 .env.prod
+deploy/.env
+deploy/.env.*
+!deploy/.env.example

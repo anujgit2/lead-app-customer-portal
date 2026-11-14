@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import type { LoanProduct, FormData, WizardStepStatus } from "@/types";
+import type { DraftApplication, FormTemplate, LoanProduct, FormData, WizardStepStatus } from "@/types";
 import { WizardProgress } from "./WizardProgress";
 import { WizardStep, type WizardStepHandle } from "./WizardStep";
 import { ReviewScreen } from "./ReviewScreen";
@@ -11,36 +11,117 @@ import { applicationService } from "@/services/application.service";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Save,
-  SaveAll,
-  CheckCircle2,
-  AlertCircle,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertCircle, Save } from "lucide-react";
+import { StepperRecordHeader } from "@/features/loan-application/steppers/StepperRecordHeader";
+import { ApplicationIdProvider, PersistDocumentStepProvider, WizardAnswersProvider, WizardContinueProvider } from "@/components/forms/application-context";
+import { isConsentAccepted } from "@/utils/consent";
+import { PanVerificationProvider } from "./pan-search-context";
 import { buildWizardSchema } from "@/utils/schema-builder";
+import { isFieldRequired, isFieldVisible } from "@/utils/rule-engine";
 import { parseApiError } from "@/lib/api-error";
 import type { ApiError } from "@/types";
+
+/**
+ * Where the wizard saves drafts and submits. Defaults to the application API. Lead pages pass
+ * their own backend so the same wizard renders a lead's form.
+ */
+export interface WizardBackend {
+  saveDraft(draft: DraftApplication, templates: FormTemplate[]): Promise<unknown>;
+  submitApplication(draft: DraftApplication): Promise<unknown>;
+  /** Lead pages set this: the review page then asks for one consent covering data sharing. */
+  requiresDataSharingConsent?: boolean;
+}
 
 interface FormWizardProps {
   product: LoanProduct;
   draftId?: string;
   initialFormData?: FormData;
   programId?: string;
+  applicationNumber?: string;
+  backend?: WizardBackend;
+  /** Called after a successful submit or save-and-close. Defaults to the dashboard. */
+  onExit?: () => void;
+}
+
+function isEmptyFormValue(value: unknown): boolean {
+  if (value == null || value === "") return true;
+  if (Array.isArray(value)) return value.length === 0 || value.every(isEmptyFormValue);
+  if (typeof value === "object") {
+    const entries = Object.values(value as Record<string, unknown>);
+    return entries.length === 0 || entries.every(isEmptyFormValue);
+  }
+  return false;
+}
+
+function mergeWizardFormData(
+  local: Record<string, unknown>,
+  incoming: Record<string, unknown>
+): Record<string, unknown> {
+  if (Object.keys(local).length === 0) return { ...incoming };
+  const merged: Record<string, unknown> = { ...incoming, ...local };
+  for (const [key, incomingValue] of Object.entries(incoming)) {
+    if (isEmptyFormValue(local[key]) && !isEmptyFormValue(incomingValue)) {
+      merged[key] = incomingValue;
+    }
+  }
+  return merged;
+}
+
+function isFilledValue(value: unknown): boolean {
+  if (value == null || value === "") return false;
+  if (Array.isArray(value)) return value.some(isFilledValue);
+  if (typeof value === "object") return Object.values(value as Record<string, unknown>).some(isFilledValue);
+  return true;
+}
+
+function requiredFieldProgress(
+  template: FormTemplate | null,
+  data: unknown,
+  wizardData?: Record<string, unknown>
+): { done: number; total: number } {
+  if (!template) return { done: 0, total: 0 };
+  const root = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
+  let done = 0;
+  let total = 0;
+
+  for (const section of template.sections) {
+    const sectionValue = root[section.code];
+    const rows = section.repeatable
+      ? Array.isArray(sectionValue) && sectionValue.length > 0
+        ? sectionValue
+        : [{}]
+      : [sectionValue];
+
+    for (const row of rows) {
+      const record = row && typeof row === "object" ? (row as Record<string, unknown>) : {};
+      for (const field of section.fields) {
+        if (field.type === "hidden") continue;
+        if (!isFieldVisible(field, record, root, wizardData)) continue;
+        if (!isFieldRequired(field, record, root, wizardData)) continue;
+        total += 1;
+        if (field.type === "consent") {
+          if (isConsentAccepted(record[field.name], field.consent?.version)) done += 1;
+          continue;
+        }
+        if (isFilledValue(record[field.name])) done += 1;
+      }
+    }
+  }
+
+  return { done, total };
+}
+
+function formatSavedTime(date: Date): string {
+  return date.toLocaleTimeString("en-GB", { hour: "numeric", minute: "2-digit", hour12: true });
 }
 
 function formatValidationErrors(result: {
   success: false;
   error: { issues: { path: (string | number)[]; message: string }[] };
 }): string {
-  const messages = result.error.issues
-    .slice(0, 3)
-    .map((issue) => issue.message);
-  const suffix =
-    result.error.issues.length > 3
-      ? ` (+${result.error.issues.length - 3} more)`
-      : "";
+  const unique = [...new Set(result.error.issues.map((issue) => issue.message))];
+  const messages = unique.slice(0, 3);
+  const suffix = unique.length > 3 ? ` (+${unique.length - 3} more)` : "";
   return messages.join(". ") + suffix;
 }
 
@@ -49,12 +130,17 @@ export function FormWizard({
   draftId: initialDraftId,
   initialFormData,
   programId,
+  applicationNumber,
+  backend = applicationService,
+  onExit,
 }: FormWizardProps) {
   const router = useRouter();
+  const exit = onExit ?? (() => router.push("/dashboard"));
   const queryClient = useQueryClient();
   const { initDraft, setCurrentStep, updateFormData, setStepStatus, getDraft } =
     useWizardStore();
   const stepRef = useRef<WizardStepHandle>(null);
+  const stepDataRef = useRef<Record<string, unknown>>({});
 
   const templates = product.templates;
   const totalSteps = templates.length;
@@ -73,6 +159,10 @@ export function FormWizard({
       (draft?.formData as Record<string, unknown>) ??
       {}
   );
+
+  useEffect(() => {
+    stepDataRef.current = stepData;
+  }, [stepData]);
   const [stepStatuses, setStepStatuses] = useState<WizardStepStatus[]>(
     draft?.stepStatuses ??
       templates.map((t) => ({
@@ -85,13 +175,13 @@ export function FormWizard({
   const [savingMode, setSavingMode] = useState<"draft" | "close" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
 
   useEffect(() => {
-    if (initialFormData && Object.keys(initialFormData).length > 0) {
-      // Keep the wizard state aligned when an existing application loads after mount.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setStepData(initialFormData as Record<string, unknown>);
-    }
+    if (!initialFormData || Object.keys(initialFormData).length === 0) return;
+    // Fill in server data without wiping values the user already entered in this session.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setStepData((prev) => mergeWizardFormData(prev, initialFormData as Record<string, unknown>));
   }, [initialFormData]);
 
   const navigateToStep = (step: number) => {
@@ -104,13 +194,56 @@ export function FormWizard({
     (data: unknown) => {
       if (currentStep >= totalSteps) return;
       const template = templates[currentStep];
-      const updated = { ...stepData, [template.code]: data };
+      const updated = { ...stepDataRef.current, [template.code]: data };
+      stepDataRef.current = updated;
       setStepData(updated);
       updateFormData(draftId, template.code, data);
       setStepError(null);
     },
-    [currentStep, totalSteps, templates, stepData, draftId, updateFormData]
+    [currentStep, totalSteps, templates, draftId, updateFormData]
   );
+
+  const persistDocumentStep = useCallback(() => {
+    const template = templates[currentStep];
+    
+    if (!template || template.propertyType !== "DocumentProperty") {
+      return;
+    }
+    
+    const stepData = stepDataRef.current[template.code];
+    
+    if (stepData === undefined) {
+      return;
+    }
+
+    void backend
+      .saveDraft(
+        {
+          applicationId: draftId,
+          productCode: product.code,
+          programId,
+          currentStep,
+          formData: stepDataRef.current as FormData,
+          stepStatuses,
+        },
+        [template]
+      )
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["applications"] });
+      })
+      .catch((err: unknown) => {
+        toast.error(parseApiError(err).message);
+      });
+  }, [
+    templates,
+    currentStep,
+    draftId,
+    product.code,
+    programId,
+    stepStatuses,
+    queryClient,
+    backend,
+  ]);
 
   const handleValidChange = useCallback(
     (valid: boolean) => {
@@ -134,7 +267,7 @@ export function FormWizard({
     if (isReviewStep(currentStep)) return true;
 
     const template = templates[currentStep];
-    const data = stepData[template.code];
+    const data = stepDataRef.current[template.code];
 
     if (stepRef.current) {
       const valid = await stepRef.current.validate();
@@ -144,7 +277,11 @@ export function FormWizard({
       }
     }
 
-    const schema = buildWizardSchema(template, template.repeatable ?? false);
+    const schema = buildWizardSchema(
+      template,
+      template.repeatable ?? false,
+      stepDataRef.current
+    );
     const result = schema.safeParse(data ?? (template.repeatable ? [] : {}));
     if (!result.success) {
       setStepError(formatValidationErrors(result));
@@ -171,7 +308,29 @@ export function FormWizard({
       };
       setStepStatuses(updatedStatuses);
       setStepStatus(draftId, currentStep, { completed: true, valid: true });
+
+      // Save current step data to backend via PATCH API
+      try {
+        setSavingMode("draft");
+        await backend.saveDraft({
+          applicationId: draftId,
+          productCode: product.code,
+          programId,
+          currentStep,
+          formData: stepDataRef.current as FormData,
+          stepStatuses: updatedStatuses,
+        }, [templates[currentStep]]);
+        queryClient.invalidateQueries({ queryKey: ["applications"] });
+        setSavedAt(new Date());
+      } catch (err) {
+        showApiValidationErrors(parseApiError(err));
+        setSavingMode(null);
+        return;
+      } finally {
+        setSavingMode(null);
+      }
     }
+
     navigateToStep(currentStep + 1);
   };
 
@@ -193,23 +352,25 @@ export function FormWizard({
   const handleSaveDraft = async (closeAfterSave = false) => {
     setSavingMode(closeAfterSave ? "close" : "draft");
     try {
-      await applicationService.saveDraft({
+      await backend.saveDraft({
         applicationId: draftId,
         productCode: product.code,
         programId,
         currentStep,
-        formData: stepData as FormData,
+        formData: stepDataRef.current as FormData,
         stepStatuses,
-      });
+      }, isReviewStep(currentStep) ? [] : [templates[currentStep]]);
       // Refresh the dashboard and applications lists so the saved draft is current.
       queryClient.invalidateQueries({ queryKey: ["applications"] });
 
+      const saved = new Date();
+      setSavedAt(saved);
       if (closeAfterSave) {
         toast.success("Draft saved. You can pick up where you left off anytime.");
-        router.push("/dashboard");
+        exit();
         return;
       }
-      toast.success("Draft saved successfully");
+      toast.success("Draft saved");
     } catch (err) {
       showApiValidationErrors(parseApiError(err));
     } finally {
@@ -222,9 +383,13 @@ export function FormWizard({
     try {
       for (let i = 0; i < templates.length; i++) {
         const template = templates[i];
-        const schema = buildWizardSchema(template, template.repeatable ?? false);
+        const schema = buildWizardSchema(
+          template,
+          template.repeatable ?? false,
+          stepDataRef.current
+        );
         const result = schema.safeParse(
-          stepData[template.code] ?? (template.repeatable ? [] : {})
+          stepDataRef.current[template.code] ?? (template.repeatable ? [] : {})
         );
         if (!result.success) {
           navigateToStep(i);
@@ -235,18 +400,18 @@ export function FormWizard({
         }
       }
 
-      await applicationService.submitApplication({
+      await backend.submitApplication({
         applicationId: draftId,
         productCode: product.code,
         programId,
         currentStep,
-        formData: stepData as FormData,
+        formData: stepDataRef.current as FormData,
         stepStatuses,
         lastSavedAt: new Date().toISOString(),
       });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       toast.success("Application submitted successfully!");
-      router.push("/dashboard");
+      exit();
     } catch (err) {
       showApiValidationErrors(parseApiError(err));
     } finally {
@@ -254,166 +419,171 @@ export function FormWizard({
     }
   };
 
-  const currentTemplate = !isReviewStep(currentStep) ? templates[currentStep] : null;
-  const currentDefaultValues = currentTemplate
-    ? (stepData[currentTemplate.code] as Record<string, unknown>)
+  const reviewing = isReviewStep(currentStep);
+  const currentTemplate = !reviewing ? templates[currentStep] : null;
+  const mountedTemplate = currentTemplate ?? templates[totalSteps - 1] ?? null;
+  const currentDefaultValues = mountedTemplate
+    ? (stepData[mountedTemplate.code] as Record<string, unknown>)
     : undefined;
+  const required = requiredFieldProgress(
+    currentTemplate,
+    currentTemplate ? stepData[currentTemplate.code] : undefined,
+    stepData
+  );
+  const requiredPct = required.total === 0 ? 100 : Math.round((required.done / required.total) * 100);
+  const savedLabel = savingMode === "draft" || savingMode === "close"
+    ? "Saving…"
+    : savedAt
+      ? `Draft saved · ${formatSavedTime(savedAt)}`
+      : "Draft";
 
   return (
-    <div className="min-h-screen bg-slate-50/70">
-      {/* ── Sticky header ── */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-slate-100 sticky top-0 z-30 shadow-[0_2px_12px_rgb(0,0,0,0.04)]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex flex-col gap-0.5">
-              <h1 className="text-base font-semibold tracking-tight text-slate-900 leading-snug">
-                {product.name}
-              </h1>
-              <p className="text-xs text-slate-400 font-normal">{product.description}</p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleSaveDraft(false)}
-                loading={savingMode === "draft"}
-                disabled={savingMode !== null || isSubmitting}
-                className="gap-1.5 text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 active:scale-[0.98]"
-              >
-                <Save className="h-3.5 w-3.5" />
-                Save Draft
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleSaveDraft(true)}
-                loading={savingMode === "close"}
-                disabled={savingMode !== null || isSubmitting}
-                className="gap-1.5 transition-all duration-200 active:scale-[0.98]"
-              >
-                <SaveAll className="h-3.5 w-3.5" />
-                Save &amp; Close
-              </Button>
-            </div>
-          </div>
-          <WizardProgress
-            templates={templates}
-            currentStep={currentStep}
-            stepStatuses={stepStatuses}
-            onStepClick={navigateToStep}
-          />
+    <PanVerificationProvider>
+    <WizardAnswersProvider value={stepData}>
+    <WizardContinueProvider onContinue={handleNext}>
+    <ApplicationIdProvider applicationId={draftId}>
+    <PersistDocumentStepProvider onPersist={persistDocumentStep}>
+    <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5 px-4 pb-10 pt-6 sm:px-6">
+      <section
+        aria-label="Application progress"
+        className="relative z-10 overflow-visible rounded-2xl border border-slate-200 bg-white px-6 pb-6 pt-[22px] shadow-[0_5px_18px_rgba(29,58,94,0.055)] max-[600px]:rounded-xl max-[600px]:px-2.5 max-[600px]:pb-4 max-[600px]:pt-4"
+      >
+        <StepperRecordHeader
+          title={product.name}
+          applicationNumber={applicationNumber}
+          applicationId={draftId}
+          savedLabel={savedLabel}
+          saved={Boolean(savedAt && savingMode === null)}
+        />
+        <WizardProgress
+          variant={product.stepper}
+          templates={templates}
+          currentStep={currentStep}
+          stepStatuses={stepStatuses}
+          onStepClick={navigateToStep}
+        />
+      </section>
+
+      <div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h2 className="text-2xl font-semibold leading-8 tracking-tight text-slate-900">
+            {currentTemplate?.title ?? "Review"}
+          </h2>
+          <span className="whitespace-nowrap text-sm font-normal text-slate-500">
+            Step {currentStep + 1} of {totalSteps + 1}
+          </span>
         </div>
+        {currentTemplate?.description ? (
+          <p className="mt-0.5 max-w-2xl text-sm leading-5 text-muted-foreground">
+            {currentTemplate.description}
+          </p>
+        ) : null}
       </div>
 
-      {/* ── Main content ── */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        {currentTemplate && (
-          <div className="mb-8">
-            <p className="text-xs font-medium tracking-widest text-slate-400 uppercase mb-2">
-              Step {currentStep + 1} of {totalSteps + 1}
-            </p>
-            <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-              {currentTemplate.title}
-            </h2>
-            {currentTemplate.description && (
-              <p className="text-sm text-slate-500 mt-1.5 leading-relaxed max-w-2xl">
-                {currentTemplate.description}
-              </p>
-            )}
-          </div>
-        )}
-
+      <div className="flex flex-col gap-5">
         {stepError && !isReviewStep(currentStep) && (
           <div
             role="alert"
-            className="mb-6 flex items-start gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3.5 text-sm text-destructive shadow-sm"
+            className="flex items-start gap-3 rounded-lg border border-danger/30 bg-danger-soft px-4 py-3.5 text-sm text-danger-strong"
           >
-            <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span>{stepError}</span>
           </div>
         )}
 
         <div className="animate-fade-in">
-          {isReviewStep(currentStep) ? (
-            <ReviewScreen
-              templates={templates}
-              formData={stepData as FormData}
-              onEditStep={navigateToStep}
-              onSubmit={handleSubmit}
-              isSubmitting={isSubmitting}
-            />
-          ) : (
-            currentTemplate && (
+          {mountedTemplate && (
+            <div className={isReviewStep(currentStep) ? "hidden" : undefined}>
               <WizardStep
-                key={currentTemplate.code}
+                key={mountedTemplate.code}
                 ref={stepRef}
-                template={currentTemplate}
+                template={mountedTemplate}
                 defaultValues={currentDefaultValues}
                 onValidChange={handleValidChange}
                 onDataChange={handleDataChange}
               />
-            )
+            </div>
+          )}
+          {isReviewStep(currentStep) && (
+            <ReviewScreen
+              templates={templates}
+              formData={stepData as FormData}
+              onEditStep={navigateToStep}
+              onBack={handlePrev}
+              onSubmit={handleSubmit}
+              onSaveClose={() => handleSaveDraft(true)}
+              isSubmitting={isSubmitting}
+              isSaving={savingMode === "close"}
+              requiresDataSharingConsent={backend?.requiresDataSharingConsent === true}
+            />
           )}
         </div>
 
-        {/* ── Navigation footer ── */}
         {!isReviewStep(currentStep) && (
-          <div className="flex items-center justify-between mt-10 pt-6 border-t border-slate-100">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handlePrev}
-              disabled={currentStep === 0}
-              className="gap-2 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-40 transition-all duration-200 active:scale-[0.98]"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Previous
-            </Button>
-
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => handleSaveDraft(false)}
-                loading={savingMode === "draft"}
-                disabled={savingMode !== null}
-                className="gap-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all duration-200 active:scale-[0.98]"
+          <div className="sticky bottom-[calc(12px+env(safe-area-inset-bottom,0px))] z-30 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-[14px] border border-border bg-card py-2.5 pl-4 pr-3 shadow-[var(--shadow-2)]">
+            <div className="min-w-[200px] flex-1" aria-live="polite">
+              <div className="mb-1.5 flex justify-between text-[12.5px] tabular-nums text-muted-foreground">
+                <span>Required fields</span>
+                <b className="font-semibold text-foreground">
+                  {required.total === 0 ? "None" : `${required.done} of ${required.total}`}
+                </b>
+              </div>
+              <div
+                className="h-1.5 overflow-hidden rounded-full bg-muted"
+                role="progressbar"
+                aria-label="Required fields completed"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={requiredPct}
               >
-                <Save className="h-4 w-4" />
-                Save Draft
-              </Button>
+                <div
+                  className="h-full rounded-full bg-primary transition-[width] duration-300"
+                  style={{ width: `${requiredPct}%` }}
+                />
+              </div>
+            </div>
+            <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+              {currentStep > 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handlePrev}
+                  disabled={savingMode !== null || isSubmitting}
+                  className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98] max-sm:flex-1"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Back
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => handleSaveDraft(true)}
-                loading={savingMode === "close"}
-                disabled={savingMode !== null}
-                className="gap-2 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200 active:scale-[0.98]"
+                onClick={() => handleSaveDraft(false)}
+                loading={savingMode === "draft"}
+                disabled={savingMode !== null || isSubmitting}
+                className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98] max-sm:flex-1"
               >
-                <SaveAll className="h-4 w-4" />
-                Save &amp; Close
+                <Save className="h-4 w-4" />
+                Save draft
               </Button>
               <Button
                 type="button"
                 onClick={handleNext}
-                className="gap-2 min-w-[130px] shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 active:scale-[0.98]"
+                disabled={savingMode !== null || isSubmitting}
+                className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98] max-sm:flex-1"
               >
-                {currentStep === totalSteps - 1 ? (
-                  <>
-                    Review
-                    <CheckCircle2 className="h-4 w-4" />
-                  </>
-                ) : (
-                  <>
-                    Next
-                    <ArrowRight className="h-4 w-4" />
-                  </>
-                )}
+                Continue
+                <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
           </div>
         )}
       </div>
     </div>
+    </PersistDocumentStepProvider>
+    </ApplicationIdProvider>
+    </WizardContinueProvider>
+    </WizardAnswersProvider>
+    </PanVerificationProvider>
   );
 }

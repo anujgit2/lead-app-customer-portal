@@ -1,14 +1,22 @@
 "use client";
 
 import React, { useState, useCallback, useImperativeHandle, forwardRef } from "react";
-import { FormProvider, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { FormProvider, useForm, type FieldErrors } from "react-hook-form";
+import { z } from "zod";
 import type { FormTemplate } from "@/types";
-import { buildTemplateSchema } from "@/utils/schema-builder";
+import { buildTemplateSchema, mergeTemplateDefaults } from "@/utils/schema-builder";
+import { createFieldLevelResolver } from "@/utils/form-resolver";
+import { SyncFormToWizardProvider } from "@/components/forms/application-context";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DynamicSection } from "@/components/forms/DynamicSection";
+import {
+  DocumentUploadProgress,
+  isDocumentTemplate,
+} from "@/components/forms/DocumentUploadProgress";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronUp, FileWarning } from "lucide-react";
+import { PanSearchScopeProvider, PanVerificationProvider } from "./pan-search-context";
 
 export interface WizardStepHandle {
   validate: () => Promise<boolean>;
@@ -19,7 +27,30 @@ interface WizardStepProps {
   defaultValues?: unknown;
   onValidChange?: (valid: boolean) => void;
   onDataChange?: (data: unknown) => void;
+  /** Optional — surfaces the live RHF error tree (e.g. for a dev inspector). Unused in production. */
+  onErrorsChange?: (errors: FieldErrors) => void;
   formRef?: React.RefObject<HTMLFormElement | null>;
+}
+
+function SchemaBuildError({ error }: { error: string }) {
+  return (
+    <Alert variant="destructive">
+      <FileWarning className="h-4 w-4" />
+      <AlertTitle>Could not build form validation</AlertTitle>
+      <AlertDescription className="font-mono text-xs">{error}</AlertDescription>
+    </Alert>
+  );
+}
+
+function buildSchemaSafe(template: FormTemplate): { schema: z.ZodTypeAny; error: string | null } {
+  try {
+    return { schema: buildTemplateSchema(template), error: null };
+  } catch (err) {
+    return {
+      schema: z.object({}),
+      error: err instanceof Error ? err.message : "Failed to build validation schema",
+    };
+  }
 }
 
 function RepeatableInstance({
@@ -30,6 +61,7 @@ function RepeatableInstance({
   onRemove,
   onChange,
   onValidateRef,
+  onErrors,
 }: {
   template: FormTemplate;
   index: number;
@@ -38,23 +70,41 @@ function RepeatableInstance({
   onRemove: () => void;
   onChange: (index: number, data: unknown) => void;
   onValidateRef?: (index: number, validate: () => Promise<boolean>) => void;
+  onErrors?: (index: number, errors: FieldErrors) => void;
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const schema = buildTemplateSchema(template);
+  const { schema, error: schemaError } = React.useMemo(() => buildSchemaSafe(template), [template]);
+  const resolver = React.useMemo(() => createFieldLevelResolver(schema), [schema]);
   const methods = useForm({
-    resolver: zodResolver(schema),
-    defaultValues: (defaultValues as Record<string, unknown>) ?? {},
-    mode: "onChange",
+    resolver,
+    defaultValues: mergeTemplateDefaults(template, defaultValues),
+    mode: "onBlur",
+    shouldUnregister: false,
   });
 
-  React.useEffect(() => {
-    const sub = methods.watch((data) => onChange(index, data));
-    return () => sub.unsubscribe();
-  }, [methods, index, onChange]);
+  const onChangeRef = React.useRef(onChange);
+  const onErrorsRef = React.useRef(onErrors);
+  onChangeRef.current = onChange;
+  onErrorsRef.current = onErrors;
 
   React.useEffect(() => {
-    onValidateRef?.(index, () => methods.trigger());
+    const sub = methods.watch((data) => {
+      onChangeRef.current(index, data);
+      onErrorsRef.current?.(index, methods.formState.errors);
+    });
+    return () => {
+      onChangeRef.current(index, methods.getValues());
+      sub.unsubscribe();
+    };
+  }, [methods, index]);
+
+  React.useEffect(() => {
+    onValidateRef?.(index, () => methods.trigger(undefined, { shouldFocus: true }));
   }, [methods, index, onValidateRef]);
+
+  const syncForm = React.useCallback(() => {
+    onChange(index, methods.getValues());
+  }, [index, onChange, methods]);
 
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
@@ -89,13 +139,21 @@ function RepeatableInstance({
       {!collapsed && (
         <div className="px-5 pb-5">
           <Separator className="mb-5" />
-          <FormProvider {...methods}>
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
-              {template.sections.map((section) => (
-                <DynamicSection key={section.code} section={section} />
-              ))}
-            </form>
-          </FormProvider>
+          {schemaError ? (
+            <SchemaBuildError error={schemaError} />
+          ) : (
+            <PanSearchScopeProvider scopeId={`${template.code}:${index}`}>
+              <SyncFormToWizardProvider onSync={syncForm}>
+                <FormProvider {...methods}>
+                  <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                    {template.sections.map((section) => (
+                      <DynamicSection key={section.code} section={section} />
+                    ))}
+                  </form>
+                </FormProvider>
+              </SyncFormToWizardProvider>
+            </PanSearchScopeProvider>
+          )}
         </div>
       )}
     </div>
@@ -106,11 +164,13 @@ function RepeatableTemplateInstances({
   template,
   defaultValues,
   onDataChange,
+  onErrorsChange,
   validateRef,
 }: {
   template: FormTemplate;
   defaultValues?: unknown;
   onDataChange?: (data: unknown) => void;
+  onErrorsChange?: (errors: FieldErrors) => void;
   validateRef?: React.RefObject<WizardStepHandle | null>;
 }) {
   const initData =
@@ -119,13 +179,27 @@ function RepeatableTemplateInstances({
       : [{}];
 
   const [instances, setInstances] = useState<unknown[]>(initData);
+  const instancesRef = React.useRef(instances);
   const validatorsRef = React.useRef<Map<number, () => Promise<boolean>>>(new Map());
+  const errorsRef = React.useRef<Map<number, FieldErrors>>(new Map());
+
+  React.useEffect(() => {
+    instancesRef.current = instances;
+  }, [instances]);
 
   const handleValidateRef = useCallback(
     (index: number, validate: () => Promise<boolean>) => {
       validatorsRef.current.set(index, validate);
     },
     []
+  );
+
+  const handleInstanceErrors = useCallback(
+    (index: number, errors: FieldErrors) => {
+      errorsRef.current.set(index, errors);
+      onErrorsChange?.(Array.from(errorsRef.current.values()) as unknown as FieldErrors);
+    },
+    [onErrorsChange]
   );
 
   useImperativeHandle(validateRef, () => ({
@@ -139,119 +213,156 @@ function RepeatableTemplateInstances({
 
   const handleChange = useCallback(
     (index: number, data: unknown) => {
-      setInstances((prev) => {
-        const updated = [...prev];
-        updated[index] = data;
-        onDataChange?.(updated);
-        return updated;
-      });
+      const updated = [...instancesRef.current];
+      updated[index] = data;
+      instancesRef.current = updated;
+      setInstances(updated);
+      onDataChange?.(updated);
     },
     [onDataChange]
   );
 
   const addInstance = () => {
-    setInstances((prev) => {
-      const updated = [...prev, {}];
-      onDataChange?.(updated);
-      return updated;
-    });
+    const updated = [...instancesRef.current, {}];
+    instancesRef.current = updated;
+    setInstances(updated);
+    onDataChange?.(updated);
   };
 
   const removeInstance = (index: number) => {
     validatorsRef.current.delete(index);
-    setInstances((prev) => {
-      const updated = prev.filter((_, i) => i !== index);
-      onDataChange?.(updated);
-      return updated;
-    });
+    const updated = instancesRef.current.filter((_, i) => i !== index);
+    instancesRef.current = updated;
+    setInstances(updated);
+    onDataChange?.(updated);
   };
 
   const minInstances = template.minInstances ?? 1;
   const maxInstances = template.maxInstances;
 
-  return (
-    <div className="space-y-4">
-      {instances.map((inst, index) => (
-        <RepeatableInstance
-          key={index}
-          template={template}
-          index={index}
-          defaultValues={inst}
-          canRemove={instances.length > minInstances}
-          onRemove={() => removeInstance(index)}
-          onChange={handleChange}
-          onValidateRef={handleValidateRef}
-        />
-      ))}
+  const syncAllInstances = React.useCallback(() => {
+    onDataChange?.(instancesRef.current);
+  }, [onDataChange]);
 
-      {(!maxInstances || instances.length < maxInstances) && (
-        <Button
-          type="button"
-          variant="outline"
-          onClick={addInstance}
-          className="gap-2 w-full border-dashed"
-        >
-          <Plus className="h-4 w-4" />
-          Add Another {template.title}
-        </Button>
-      )}
-    </div>
+  return (
+    <SyncFormToWizardProvider onSync={syncAllInstances}>
+      <div className="space-y-4">
+        {instances.map((inst, index) => (
+          <RepeatableInstance
+            key={index}
+            template={template}
+            index={index}
+            defaultValues={inst}
+            canRemove={instances.length > minInstances}
+            onRemove={() => removeInstance(index)}
+            onChange={handleChange}
+            onValidateRef={handleValidateRef}
+            onErrors={handleInstanceErrors}
+          />
+        ))}
+
+        {(!maxInstances || instances.length < maxInstances) && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={addInstance}
+            className="gap-2 w-full border-dashed"
+          >
+            <Plus className="h-4 w-4" />
+            Add Another {template.title}
+          </Button>
+        )}
+      </div>
+    </SyncFormToWizardProvider>
   );
 }
 
 const SingleTemplateForm = forwardRef<WizardStepHandle, WizardStepProps>(
   function SingleTemplateForm(
-    { template, defaultValues, onValidChange, onDataChange, formRef },
+    { template, defaultValues, onValidChange, onDataChange, onErrorsChange, formRef },
     ref
   ) {
-    const schema = buildTemplateSchema(template);
+    const { schema, error: schemaError } = React.useMemo(() => buildSchemaSafe(template), [template]);
+    const resolver = React.useMemo(() => createFieldLevelResolver(schema), [schema]);
     const methods = useForm({
-      resolver: zodResolver(schema),
-      defaultValues: (defaultValues as Record<string, unknown>) ?? {},
-      mode: "onChange",
+      resolver,
+      defaultValues: mergeTemplateDefaults(template, defaultValues),
+      mode: "onBlur",
+      shouldUnregister: false,
     });
 
     useImperativeHandle(ref, () => ({
-      validate: () => methods.trigger(),
+      validate: () => methods.trigger(undefined, { shouldFocus: true }),
     }));
+
+    const onDataChangeRef = React.useRef(onDataChange);
+    const onValidChangeRef = React.useRef(onValidChange);
+    const onErrorsChangeRef = React.useRef(onErrorsChange);
+    onDataChangeRef.current = onDataChange;
+    onValidChangeRef.current = onValidChange;
+    onErrorsChangeRef.current = onErrorsChange;
+
+    const syncForm = React.useCallback(() => {
+      onDataChangeRef.current?.(methods.getValues());
+    }, [methods]);
+
+    const { isValid, errors } = methods.formState;
 
     React.useEffect(() => {
       const subscription = methods.watch((data) => {
-        onDataChange?.(data);
-        methods.trigger().then((valid) => onValidChange?.(valid));
+        onDataChangeRef.current?.(data);
       });
-      return () => subscription.unsubscribe();
-    }, [methods, onDataChange, onValidChange]);
+      return () => {
+        onDataChangeRef.current?.(methods.getValues());
+        subscription.unsubscribe();
+      };
+    }, [methods]);
+
+    React.useEffect(() => {
+      onValidChangeRef.current?.(isValid);
+      onErrorsChangeRef.current?.(errors);
+    }, [isValid, errors]);
+
+    if (schemaError) {
+      return <SchemaBuildError error={schemaError} />;
+    }
 
     return (
-      <FormProvider {...methods}>
-        <form
-          ref={formRef}
-          className="space-y-6"
-          noValidate
-          onSubmit={(e) => e.preventDefault()}
-        >
-          {template.sections.map((section) => (
-            <DynamicSection key={section.code} section={section} />
-          ))}
-        </form>
-      </FormProvider>
+      <PanSearchScopeProvider scopeId={template.code}>
+        <SyncFormToWizardProvider onSync={syncForm}>
+          <FormProvider {...methods}>
+            <form
+              ref={formRef}
+              className="space-y-5"
+              noValidate
+              onSubmit={(e) => e.preventDefault()}
+            >
+              {isDocumentTemplate(template) && <DocumentUploadProgress template={template} />}
+              {template.sections.map((section) => (
+                <DynamicSection key={section.code} section={section} />
+              ))}
+            </form>
+          </FormProvider>
+        </SyncFormToWizardProvider>
+      </PanSearchScopeProvider>
     );
   }
 );
 
 export const WizardStep = forwardRef<WizardStepHandle, WizardStepProps>(
   function WizardStep(props, ref) {
-    if (props.template.repeatable) {
-      return (
-        <RepeatableTemplateInstances
-          template={props.template}
-          defaultValues={props.defaultValues}
-          onDataChange={props.onDataChange}
-          validateRef={ref as React.RefObject<WizardStepHandle | null>}
-        />
-      );
-    }
-    return <SingleTemplateForm {...props} ref={ref} />;
+    const step = props.template.repeatable ? (
+      <RepeatableTemplateInstances
+        template={props.template}
+        defaultValues={props.defaultValues}
+        onDataChange={props.onDataChange}
+        onErrorsChange={props.onErrorsChange}
+        validateRef={ref as React.RefObject<WizardStepHandle | null>}
+      />
+    ) : (
+      <SingleTemplateForm {...props} ref={ref} />
+    );
+
+    return <PanVerificationProvider>{step}</PanVerificationProvider>;
   }
 );

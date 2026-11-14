@@ -1,201 +1,383 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { Upload, X, FileText, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn, formatFileSize } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { FileDownloadButton } from "@/components/forms/FileDownloadButton";
+import {
+  clampUploadMaxMb,
+  formatAcceptLabel,
+  restrictUploadAccept,
+  toDropzoneAccept,
+} from "@/utils/upload-config";
+import { fileStorageService, isStoredFileReference } from "@/services/file-storage.service";
+import { useApplicationId, usePersistDocumentStep, useSyncFormToWizard } from "@/components/forms/application-context";
+import { parseApiError } from "@/lib/api-error";
+import { toast } from "sonner";
+import type { StoredFileReference } from "@/types";
 
 interface FileItem {
-  file: File;
-  progress: number;
+  id: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
   status: "pending" | "uploading" | "success" | "error";
   preview?: string;
+  storageFile?: StoredFileReference;
+  error?: string;
 }
 
 interface FileUploadFieldProps {
-  value?: File[];
-  onChange?: (files: File[]) => void;
+  value?: unknown;
+  onChange?: (files: StoredFileReference[]) => void;
+  documentType?: string;
   accept?: string;
   maxFiles?: number;
+  minFiles?: number;
   maxSizeMB?: number;
   error?: boolean;
 }
 
 export function FileUploadField({
-  value = [],
+  value,
   onChange,
+  documentType,
   accept,
   maxFiles = 1,
-  maxSizeMB = 5,
+  minFiles = 0,
+  maxSizeMB,
   error,
 }: FileUploadFieldProps) {
-  const [fileItems, setFileItems] = useState<FileItem[]>(
-    value.map((f) => ({ file: f, progress: 100, status: "success" as const }))
+  const sizeLimitMb = clampUploadMaxMb(maxSizeMB);
+  const acceptList = restrictUploadAccept(accept);
+  const storedItems = toItems(
+    (Array.isArray(value) ? value : []).flatMap((item) => {
+      const file = asStoredFile(item);
+      return file ? [file] : [];
+    })
   );
+  const storedKey = storedItems.map((item) => item.id).join("\0");
+  const [transientItems, setTransientItems] = useState<FileItem[]>([]);
+  const [syncedKey, setSyncedKey] = useState(storedKey);
+  const [rejectMessage, setRejectMessage] = useState<string | null>(null);
+  const uploadsRef = useRef(new Map<string, AbortController>());
+  const previewUrlsRef = useRef(new Set<string>());
+  const transientItemsRef = useRef(transientItems);
+  const publishedItemsRef = useRef<Set<string>>(new Set());
+  const applicationId = useApplicationId();
+  const syncFormToWizard = useSyncFormToWizard();
+  const persistDocumentStep = usePersistDocumentStep();
+  const onChangeRef = useRef(onChange);
+  const storedItemsRef = useRef(storedItems);
 
-  const simulateUpload = (item: FileItem) => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 30;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setFileItems((prev) =>
-          prev.map((f) =>
-            f.file.name === item.file.name
-              ? { ...f, progress: 100, status: "success" }
-              : f
-          )
-        );
-      } else {
-        setFileItems((prev) =>
-          prev.map((f) =>
-            f.file.name === item.file.name
-              ? { ...f, progress, status: "uploading" }
-              : f
-          )
-        );
-      }
-    }, 200);
-  };
+  if (syncedKey !== storedKey) {
+    setSyncedKey(storedKey);
+    setTransientItems((current) =>
+      current.filter((item) => item.status === "uploading" || item.status === "error")
+    );
+  }
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+    storedItemsRef.current = storedItems;
+    transientItemsRef.current = transientItems;
+  }, [onChange, storedItems, transientItems]);
+
+  useEffect(() => {
+    const previews = previewUrlsRef.current;
+    const live = new Set(transientItems.flatMap((item) => (item.preview ? [item.preview] : [])));
+    previews.forEach((url) => {
+      if (live.has(url)) return;
+      URL.revokeObjectURL(url);
+      previews.delete(url);
+    });
+  }, [transientItems]);
+
+  useEffect(() => {
+    const uploads = uploadsRef.current;
+    const previews = previewUrlsRef.current;
+    return () => {
+      uploads.forEach((controller) => controller.abort());
+      previews.forEach((url) => URL.revokeObjectURL(url));
+      previews.clear();
+    };
+  }, []);
+
+  const fileItems = [
+    ...storedItems,
+    ...transientItems.filter(
+      (item) => !item.storageFile || !storedItems.some((stored) => stored.id === item.storageFile?.id)
+    ),
+  ];
+
+  const notifyWizard = useCallback(() => {
+    syncFormToWizard?.();
+    // Delay persist to ensure form data has been synced to the wizard
+    queueMicrotask(() => {
+      persistDocumentStep?.();
+    });
+  }, [syncFormToWizard, persistDocumentStep]);
+
+  const publish = useCallback((transient: FileItem[]) => {
+    const stored = storedItemsRef.current;
+    const extras = transient.filter(
+      (item) => item.storageFile && !stored.some((storedItem) => storedItem.id === item.storageFile?.id)
+    );
+    onChangeRef.current?.(
+      [...stored, ...extras].flatMap((item) => (item.storageFile ? [item.storageFile] : []))
+    );
+    notifyWizard();
+  }, [notifyWizard]);
+
+  const remaining = Math.max(maxFiles - fileItems.length, 0);
 
   const onDrop = useCallback(
     (accepted: File[]) => {
-      const newItems: FileItem[] = accepted.map((f) => ({
-        file: f,
-        progress: 0,
+      if (accepted.length === 0) return;
+      setRejectMessage(null);
+      const newItems: FileItem[] = accepted.slice(0, remaining).map((f) => ({
+        id: newLocalId(),
+        fileName: f.name,
+        contentType: f.type,
+        sizeBytes: f.size,
         status: "uploading" as const,
         preview: f.type.startsWith("image/") ? URL.createObjectURL(f) : undefined,
       }));
-
-      setFileItems((prev) => {
-        const combined = [...prev, ...newItems].slice(0, maxFiles);
-        return combined;
+      newItems.forEach((item) => {
+        if (item.preview) previewUrlsRef.current.add(item.preview);
       });
 
-      newItems.forEach((item) => simulateUpload(item));
+      const nextTransient = [...transientItemsRef.current, ...newItems];
+      transientItemsRef.current = nextTransient;
+      setTransientItems(nextTransient);
 
-      const allFiles = [...fileItems, ...newItems]
-        .slice(0, maxFiles)
-        .map((i) => i.file);
-      onChange?.(allFiles);
+      accepted.slice(0, remaining).forEach((file, index) => {
+        const item = newItems[index];
+        const controller = new AbortController();
+        uploadsRef.current.set(item.id, controller);
+        void fileStorageService
+          .upload(file, { applicationId: applicationId ?? "", signal: controller.signal })
+          .then((storageFile) => {
+            if (!storageFile) {
+              return;
+            }
+            const storedFile = { ...storageFile, type: documentType ?? "" };
+            const prev = transientItemsRef.current;
+            const nextItems = prev.map((entry) =>
+              entry.id === item.id
+                ? { ...entry, status: "success" as const, storageFile: storedFile }
+                : entry
+            );
+            transientItemsRef.current = nextItems;
+            setTransientItems(nextItems);
+
+            const publishKey = `${item.id}-${storageFile.id}`;
+            if (!publishedItemsRef.current.has(publishKey)) {
+              publishedItemsRef.current.add(publishKey);
+              publish(nextItems);
+            }
+          })
+          .catch((uploadError: unknown) => {
+            if (isAbortError(uploadError)) return;
+            setTransientItems((prev) => prev.map((entry) => entry.id === item.id
+              ? { ...entry, status: "error" as const, error: errorMessage(uploadError) }
+              : entry
+            ));
+          })
+          .finally(() => {
+            uploadsRef.current.delete(item.id);
+          });
+      });
     },
-    [fileItems, maxFiles, onChange]
+    [applicationId, documentType, publish, remaining]
   );
 
-  const removeFile = (index: number) => {
-    setFileItems((prev) => {
-      const updated = prev.filter((_, i) => i !== index);
-      onChange?.(updated.map((i) => i.file));
-      return updated;
-    });
+  const removeFile = (item: FileItem) => {
+    uploadsRef.current.get(item.id)?.abort();
+    uploadsRef.current.delete(item.id);
+    if (item.storageFile) {
+      void fileStorageService.delete(item.storageFile.id).catch((deleteError: unknown) => {
+        toast.error(parseApiError(deleteError).message);
+      });
+    }
+    const nextTransient = transientItems.filter(
+      (entry) => entry.id !== item.id && entry.storageFile?.id !== item.storageFile?.id
+    );
+    setTransientItems(nextTransient);
+    const nextStored = storedItems.filter((entry) => entry.id !== item.id);
+    onChangeRef.current?.(
+      [...nextStored, ...nextTransient].flatMap((entry) => (entry.storageFile ? [entry.storageFile] : []))
+    );
+    notifyWizard();
   };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: accept
-      ? Object.fromEntries(
-          accept.split(",").map((ext) => {
-            const mime = ext.trim() === ".pdf" ? "application/pdf" :
-              ext.trim() === ".xlsx" ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" :
-              ext.trim() === ".csv" ? "text/csv" :
-              "image/*";
-            return [mime, []];
-          })
-        )
-      : undefined,
-    maxSize: maxSizeMB * 1024 * 1024,
-    maxFiles: maxFiles - fileItems.length,
-    disabled: fileItems.length >= maxFiles,
+    onDropRejected: (rejections) => {
+      const code = rejections[0]?.errors[0]?.code;
+      if (code === "file-too-large") {
+        setRejectMessage(`Each file must be under ${sizeLimitMb}MB`);
+      } else if (code === "file-invalid-type") {
+        setRejectMessage(`Allowed types: ${formatAcceptLabel(acceptList)}`);
+      } else if (code === "too-many-files") {
+        setRejectMessage(`You can upload up to ${maxFiles} file${maxFiles === 1 ? "" : "s"}`);
+      } else {
+        setRejectMessage(rejections[0]?.errors[0]?.message ?? "File could not be uploaded");
+      }
+    },
+    accept: toDropzoneAccept(acceptList),
+    maxSize: sizeLimitMb * 1024 * 1024,
+    maxFiles: remaining,
+    disabled: remaining <= 0,
   });
 
   return (
-    <div className="space-y-3">
-      {fileItems.length < maxFiles && (
+    <div className="space-y-2">
+      {remaining > 0 && (
         <div
           {...getRootProps()}
           className={cn(
-            "border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-200",
-            isDragActive
-              ? "border-primary bg-primary/5 scale-[1.01]"
-              : "border-border hover:border-primary/50 hover:bg-muted/30",
-            error && "border-destructive",
-            fileItems.length >= maxFiles && "opacity-50 cursor-not-allowed"
+            "flex cursor-pointer items-center gap-3.5 rounded-lg border-[1.5px] border-dashed border-input bg-card px-4 py-4 transition-[border-color,background] duration-150 hover:border-primary hover:bg-primary-soft/50",
+            isDragActive && "border-primary bg-primary-soft/50",
+            error && "border-danger bg-danger-soft"
           )}
         >
           <input {...getInputProps()} />
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Upload className="h-5 w-5 text-primary" />
-            </div>
-            {isDragActive ? (
-              <p className="text-sm font-medium text-primary">Drop files here</p>
-            ) : (
-              <>
-                <p className="text-sm font-medium">
-                  Drag & drop or{" "}
-                  <span className="text-primary underline">browse</span>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {accept ?? "All files"} · Max {maxSizeMB}MB
-                  {maxFiles > 1 && ` · Up to ${maxFiles} files`}
-                </p>
-              </>
-            )}
+          <div className="tone-brand grid h-10 w-10 shrink-0 place-items-center rounded-md">
+            <Upload className="h-4 w-4" />
           </div>
+          {isDragActive ? (
+            <p className="text-sm font-medium text-primary">Drop files here</p>
+          ) : (
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-foreground">
+                Drop files or <span className="text-primary underline underline-offset-[3px]">browse</span>
+              </p>
+              <p className="truncate text-[13px] leading-[18px] text-muted-foreground">
+                {formatAcceptLabel(acceptList)} · up to {sizeLimitMb} MB
+                {maxFiles > 1 ? ` · up to ${maxFiles} files` : ""}
+                {minFiles > 0 ? ` · at least ${minFiles} required` : ""}
+              </p>
+            </div>
+          )}
         </div>
+      )}
+
+      {rejectMessage && (
+        <p className="text-[13px] text-destructive" role="alert">
+          {rejectMessage}
+        </p>
       )}
 
       {fileItems.length > 0 && (
-        <div className="space-y-2">
-          {fileItems.map((item, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-3 p-3 rounded-lg border bg-card"
+        <ul className="space-y-2">
+          {fileItems.map((item) => (
+            <li
+              key={item.id}
+              className={cn(
+                "flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5",
+                item.status === "error" && "border-danger/50 bg-danger-soft/50"
+              )}
             >
-              {item.preview ? (
+              {item.status === "success" ? (
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-success" />
+              ) : item.status === "error" ? (
+                <AlertCircle className="h-5 w-5 shrink-0 text-danger" />
+              ) : item.preview ? (
                 <img
                   src={item.preview}
-                  alt={item.file.name}
-                  className="h-10 w-10 rounded object-cover flex-shrink-0"
+                  alt=""
+                  className="h-[18px] w-[18px] shrink-0 rounded object-cover"
                 />
               ) : (
-                <div className="h-10 w-10 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
-                </div>
+                <FileText className="h-5 w-5 shrink-0 text-primary" />
               )}
 
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{item.file.name}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-foreground">{item.fileName}</p>
                 <p className="text-xs text-muted-foreground">
-                  {formatFileSize(item.file.size)}
+                  {formatFileSize(item.sizeBytes)}
+                  {item.status === "uploading" && " · Uploading…"}
                 </p>
-                {item.status === "uploading" && (
-                  <Progress value={item.progress} className="mt-1 h-1" />
-                )}
+                {item.error && <p className="text-xs text-destructive">{item.error}</p>}
               </div>
 
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {item.status === "success" && (
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                )}
-                {item.status === "error" && (
-                  <AlertCircle className="h-4 w-4 text-destructive" />
+              <div className="flex shrink-0 items-center gap-1">
+                {item.status === "success" && item.storageFile && (
+                  <FileDownloadButton
+                    fileId={item.storageFile.id}
+                    fileName={item.storageFile.fileName}
+                  />
                 )}
                 <button
                   type="button"
-                  onClick={() => removeFile(index)}
-                  className="h-6 w-6 rounded-md hover:bg-muted flex items-center justify-center transition-colors"
+                  onClick={() => removeFile(item)}
+                  aria-label={`Remove ${item.fileName}`}
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-lg leading-none text-slate-400 transition-all duration-200 ease-out hover:bg-slate-50 hover:text-slate-800 active:scale-[0.98]"
                 >
-                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+                  ×
                 </button>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
+  );
+}
+
+function isPlainFileObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function asStoredFile(value: unknown): StoredFileReference | null {
+  if (isStoredFileReference(value)) return value;
+  if (!isPlainFileObject(value)) return null;
+  if (typeof value.id !== "string" || typeof value.fileName !== "string") return null;
+  const meta = isPlainFileObject(value.meta) ? value.meta : {};
+  return {
+    id: value.id,
+    fileName: value.fileName,
+    contentType: typeof value.contentType === "string" ? value.contentType : "application/octet-stream",
+    status: "AVAILABLE",
+    uploadedAt: typeof value.uploadedAt === "string" ? value.uploadedAt : new Date().toISOString(),
+    type: typeof value.type === "string" ? value.type : "",
+    meta: {
+      folderId: meta.folderId === null || typeof meta.folderId === "string" ? meta.folderId : null,
+      sizeBytes: typeof meta.sizeBytes === "number" ? meta.sizeBytes : 0,
+      checksum: typeof meta.checksum === "string" ? meta.checksum : "",
+      ownerId: typeof meta.ownerId === "string" ? meta.ownerId : "",
+    },
+  };
+}
+
+function toItems(files: StoredFileReference[]): FileItem[] {
+  return files.map((storageFile) => ({
+    id: storageFile.id,
+    fileName: storageFile.fileName,
+    contentType: storageFile.contentType,
+    sizeBytes: storageFile.meta.sizeBytes,
+    status: "success",
+    storageFile,
+  }));
+}
+
+function errorMessage(error: unknown): string {
+  return parseApiError(error).message || "File could not be uploaded";
+}
+
+/** In-flight list key. `randomUUID` exists only in a secure context. */
+function newLocalId(): string {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  return `upload-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    (error instanceof DOMException && error.name === "AbortError") ||
+    (error instanceof Error && error.name === "AbortError")
   );
 }

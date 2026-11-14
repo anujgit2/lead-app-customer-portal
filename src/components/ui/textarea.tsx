@@ -11,11 +11,14 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <textarea
         className={cn(
-          "flex min-h-[80px] w-full rounded-lg border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0 disabled:cursor-not-allowed disabled:opacity-50 transition-colors resize-none",
-          error ? "border-destructive focus-visible:ring-destructive" : "border-input",
+          "flex min-h-[88px] w-full resize-y rounded-md border bg-card px-3 py-2.5 text-sm leading-5 text-foreground transition-[border-color,box-shadow] duration-150 placeholder:text-placeholder hover:border-foreground/55 focus-visible:border-ring focus-visible:outline-none focus-visible:shadow-[0_0_0_3px_hsl(var(--ring)/0.22)] disabled:cursor-not-allowed disabled:border-border disabled:bg-muted disabled:text-muted-foreground read-only:border-border read-only:bg-muted",
+          error
+            ? "border-danger focus-visible:border-danger focus-visible:shadow-[0_0_0_3px_hsl(var(--danger)/0.2)]"
+            : "border-input",
           className
         )}
         ref={ref}
+        aria-invalid={error || undefined}
         {...props}
       />
     );

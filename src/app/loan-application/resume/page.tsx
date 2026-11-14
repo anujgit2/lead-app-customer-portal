@@ -1,32 +1,32 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { FormWizard } from "@/features/loan-application/FormWizard";
-import { applicationService } from "@/services/application.service";
-import { Building2 } from "lucide-react";
+import { ApplicationViewScreen } from "@/features/loan-application/ApplicationViewScreen";
+import {
+  applicationService,
+  resolveApplicationFormData,
+} from "@/services/application.service";
+import { AppLayout } from "@/layouts/AppLayout";
+import { PageShell } from "@/components/PageShell";
+import { LoadingProgressDialog } from "@/features/loan-application/LoadingProgressDialog";
 import { ErrorState } from "@/components/ErrorState";
 import { parseApiError } from "@/lib/api-error";
 import type { FormData } from "@/types";
-import { normalizeApplicationFormData } from "@/utils/prefill-mapper";
 
 function LoadingState() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3 text-muted-foreground">
-        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center animate-pulse">
-          <Building2 className="h-5 w-5 text-primary" />
-        </div>
-        <p className="text-sm">Loading application...</p>
-      </div>
-    </div>
+    <LoadingProgressDialog open title="Opening your application" message="Loading application…" />
   );
 }
 
 function ResumeContent() {
   const searchParams = useSearchParams();
   const applicationId = searchParams.get("id") ?? "";
+  const programIdParam = searchParams.get("programId") ?? "";
+  const programCode = searchParams.get("programCode") ?? "";
 
   const {
     data: application,
@@ -40,38 +40,51 @@ function ResumeContent() {
     retry: 1,
   });
 
-  const { data: product, isLoading: productLoading } = useQuery({
-    queryKey: ["loan-product", application?.programId],
-    queryFn: () =>
-      application?.programId
-        ? applicationService.getLoanProductByProgramId(application.programId)
-        : applicationService.getLoanProducts().then((p) => p[0]),
-    enabled: !!application,
+  const productLookup =
+    application?.programId || programIdParam || application?.programCode || programCode || "";
+
+  const {
+    data: product,
+    isLoading: productLoading,
+    isError: productError,
+    error: productQueryError,
+  } = useQuery({
+    queryKey: ["loan-product", applicationId, productLookup],
+    queryFn: () => applicationService.getLoanProductByProgramId(productLookup),
+    enabled: !!application && !!productLookup,
   });
+
+  const initialFormData = useMemo(
+    () =>
+      application && product
+        ? resolveApplicationFormData(application, product)
+        : ({} as FormData),
+    [application, product]
+  );
 
   if (!applicationId) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <PageShell width="narrow">
         <ErrorState
           compact
           title="Invalid link"
           message="No application ID was provided. Please go back and try again."
         />
-      </div>
+      </PageShell>
     );
   }
 
-  if (appError) {
-    const apiError = parseApiError(appQueryError);
+  if (appError || productError) {
+    const apiError = parseApiError(appError ? appQueryError : productQueryError);
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <PageShell width="narrow">
         <ErrorState
           compact
-          title="Unable to load application"
+          title={appError ? "Unable to load application" : "Unable to load application form"}
           message={apiError.message}
           onRetry={() => window.location.reload()}
         />
-      </div>
+      </PageShell>
     );
   }
 
@@ -81,13 +94,11 @@ function ResumeContent() {
 
   if (application.status !== "draft") {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <ErrorState
-          compact
-          title="Application is read-only"
-          message={`This application has been ${application.status.replace("_", " ")} and can no longer be edited.`}
-        />
-      </div>
+      <ApplicationViewScreen
+        application={application}
+        product={product}
+        formData={initialFormData}
+      />
     );
   }
 
@@ -95,16 +106,19 @@ function ResumeContent() {
     <FormWizard
       product={product}
       draftId={applicationId}
-      initialFormData={normalizeApplicationFormData(application.formData, product)}
+      initialFormData={initialFormData}
       programId={application.programId}
+      applicationNumber={application.applicationNumber}
     />
   );
 }
 
 export default function ResumeLoanApplicationPage() {
   return (
-    <Suspense fallback={<LoadingState />}>
-      <ResumeContent />
-    </Suspense>
+    <AppLayout>
+      <Suspense fallback={<LoadingState />}>
+        <ResumeContent />
+      </Suspense>
+    </AppLayout>
   );
 }

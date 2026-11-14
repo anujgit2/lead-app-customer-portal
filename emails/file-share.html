@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light">
+  <title>Documents shared with you</title>
+  <!--
+    File share. Inbox-safe: tables, inline CSS, no external assets required.
+    Fill with Mustache / Handlebars before sending. Do not put a share password in this email.
+
+    {{recipientName}}         Optional greeting name
+    {{recipientEmail}}        Optional recipient address
+    {{senderName}}            Person who shared the files
+    {{organizationName}}      Optional tenant name. Defaults to LoanPortal
+    {{logoUrl}}               Optional absolute https logo
+    {{logoAlt}}               Optional logo alt text
+    {{documentCount}}         Optional count, shown beside the file list
+    {{#documents}}            Repeatable file rows
+      {{name}}
+      {{typeName}}            Optional
+      {{tag}}                 Optional
+    {{/documents}}
+    {{expiresAt}}             Optional display date
+    {{viewUrl}}               Absolute https link to the shared files
+    {{passwordProtected}}     Boolean. True shows the password note. Never include the password
+    {{viewOnly}}              Boolean. True when downloading is turned off
+    {{supportEmail}}          Optional support address
+    {{year}}                  Copyright year
+  -->
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+  <style>
+    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+    img { -ms-interpolation-mode: bicubic; border: 0; outline: none; text-decoration: none; }
+    body { margin: 0 !important; padding: 0 !important; width: 100% !important; }
+    a { text-decoration: none; }
+    @media screen and (max-width: 620px) {
+      .container { width: 100% !important; }
+      .px { padding-left: 20px !important; padding-right: 20px !important; }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f6f8f9;color:#121c21;">
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#f6f8f9;">
+    {{senderName}} shared documents with you. Open the secure link to view them.
+    &nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f6f8f9" style="background-color:#f6f8f9;">
+    <tr>
+      <td align="center" style="padding:32px 12px;">
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+          <tr>
+            <td style="border:1px solid #dce2e5;border-radius:12px;background-color:#ffffff;box-shadow:0 4px 12px rgba(16,32,38,0.08);">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td bgcolor="#052229" style="background-color:#052229;background-image:linear-gradient(160deg,#052229 0%,#07505a 100%);border-radius:12px 12px 0 0;padding:22px 28px;" class="px">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        {{#logoUrl}}
+                        <td style="padding-right:10px;vertical-align:middle;">
+                          <img src="{{logoUrl}}" alt="{{#logoAlt}}{{logoAlt}}{{/logoAlt}}{{^logoAlt}}{{#organizationName}}{{organizationName}}{{/organizationName}}{{^organizationName}}LoanPortal{{/organizationName}}{{/logoAlt}}" height="32" style="display:block;height:32px;width:auto;max-width:140px;border:0;">
+                        </td>
+                        {{/logoUrl}}
+                        {{^logoUrl}}
+                        <td width="32" height="32" bgcolor="#085d68" style="width:32px;height:32px;background-color:#085d68;border-radius:6px;text-align:center;vertical-align:middle;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;color:#ffffff;line-height:32px;">
+                          L
+                        </td>
+                        <td width="10" style="width:10px;font-size:0;line-height:0;">&nbsp;</td>
+                        {{/logoUrl}}
+                        <td style="vertical-align:middle;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:24px;font-weight:600;letter-spacing:-0.01em;color:#ffffff;">
+                          {{#organizationName}}{{organizationName}}{{/organizationName}}{{^organizationName}}LoanPortal{{/organizationName}}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td height="3" bgcolor="#3cd7dd" style="height:3px;background-color:#3cd7dd;font-size:0;line-height:0;">&nbsp;</td>
+                </tr>
+                <tr>
+                  <td class="px" style="padding:32px 28px 8px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    <p style="margin:0 0 10px;font-size:12px;line-height:16px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#085d68;">
+                      Secure file share
+                    </p>
+                    <h1 style="margin:0 0 12px;font-size:24px;line-height:30px;font-weight:600;letter-spacing:-0.02em;color:#121c21;">
+                      Documents shared with you
+                    </h1>
+                    <p style="margin:0 0 8px;font-size:14px;line-height:22px;color:#121c21;">
+                      {{#recipientName}}Hello {{recipientName}},{{/recipientName}}{{^recipientName}}Hello,{{/recipientName}}
+                    </p>
+                    <p style="margin:0;font-size:14px;line-height:22px;color:#4c5a61;">
+                      <strong style="font-weight:600;color:#121c21;">{{senderName}}</strong>
+                      shared files with you. Open the secure link to view them. You'll confirm your email before the files open.
+                    </p>
+                    {{#viewOnly}}
+                    <p style="margin:8px 0 0;font-size:14px;line-height:22px;color:#4c5a61;">
+                      Downloading is turned off for this share.
+                    </p>
+                    {{/viewOnly}}
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px" style="padding:20px 28px 4px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #dce2e5;border-radius:8px;">
+                      <tr>
+                        <td style="padding:10px 14px;background-color:#e6f3f4;border-radius:8px 8px 0 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:16px;font-weight:600;letter-spacing:0.02em;color:#044149;">
+                          Shared files{{#documentCount}} · {{documentCount}}{{/documentCount}}
+                        </td>
+                      </tr>
+                      {{#documents}}
+                      <tr>
+                        <td style="padding:12px 14px;border-top:1px solid #dce2e5;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                          <p style="margin:0;font-size:14px;line-height:20px;font-weight:600;color:#121c21;">{{name}}</p>
+                          {{#typeName}}
+                          <p style="margin:2px 0 0;font-size:12px;line-height:18px;color:#4c5a61;">{{typeName}}{{#tag}} · Tag {{tag}}{{/tag}}</p>
+                          {{/typeName}}
+                          {{^typeName}}
+                          {{#tag}}
+                          <p style="margin:2px 0 0;font-size:12px;line-height:18px;color:#4c5a61;">Tag {{tag}}</p>
+                          {{/tag}}
+                          {{/typeName}}
+                        </td>
+                      </tr>
+                      {{/documents}}
+                      {{^documents}}
+                      <tr>
+                        <td style="padding:12px 14px;border-top:1px solid #dce2e5;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;color:#4c5a61;">
+                          The file list is available from the secure link.
+                        </td>
+                      </tr>
+                      {{/documents}}
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px" align="left" style="padding:24px 28px 8px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td align="center" bgcolor="#085d68" style="border-radius:8px;background-color:#085d68;">
+                          <!--[if mso]>
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{viewUrl}}" style="height:44px;v-text-anchor:middle;width:200px;" arcsize="18%" strokecolor="#085d68" fillcolor="#085d68">
+                            <w:anchorlock/>
+                            <center style="color:#ffffff;font-family:'Segoe UI',Arial,sans-serif;font-size:14px;font-weight:bold;">View documents</center>
+                          </v:roundrect>
+                          <![endif]-->
+                          <!--[if !mso]><!-- -->
+                          <a href="{{viewUrl}}" style="display:inline-block;padding:12px 22px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:20px;font-weight:700;color:#ffffff;background-color:#085d68;border-radius:8px;text-decoration:none;">
+                            View documents
+                          </a>
+                          <!--<![endif]-->
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px" style="padding:8px 28px 28px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+                    <p style="margin:0 0 16px;font-size:12px;line-height:18px;color:#4c5a61;">
+                      If the button does not open, copy this link into your browser:<br>
+                      <a href="{{viewUrl}}" style="color:#085d68;text-decoration:underline;word-break:break-all;">{{viewUrl}}</a>
+                    </p>
+                    {{#passwordProtected}}
+                    <p style="margin:0 0 12px;padding:12px 14px;background-color:#e6f3f4;border-radius:8px;font-size:13px;line-height:20px;color:#044149;">
+                      This link is password protected. {{senderName}} will share the password with you separately. It is not included in this email.
+                    </p>
+                    {{/passwordProtected}}
+                    <p style="margin:0;padding:12px 14px;background-color:#fdf3dd;border-radius:8px;font-size:13px;line-height:20px;color:#ab5f07;">
+                      {{#expiresAt}}This link expires on {{expiresAt}}. {{/expiresAt}}Don't forward it. If you were not expecting these files, ignore this email{{#recipientEmail}} — it was sent to {{recipientEmail}}{{/recipientEmail}}.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:20px 12px 8px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#4c5a61;">
+              {{#supportEmail}}Questions? Write to <a href="mailto:{{supportEmail}}" style="color:#085d68;text-decoration:underline;">{{supportEmail}}</a>.<br>{{/supportEmail}}
+              © {{year}} {{#organizationName}}{{organizationName}}{{/organizationName}}{{^organizationName}}LoanPortal{{/organizationName}}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

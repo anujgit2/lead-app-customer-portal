@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LoanPortal design system</title>
+<meta name="color-scheme" content="light dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================================
+   LoanPortal design system · v2
+   Tokens use shadcn-compatible names (HSL triplets) so they drop into the
+   existing Tailwind config: hsl(var(--primary)) etc.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --background: 200 18% 97%;
+  --card: 0 0% 100%;
+  --muted: 200 16% 94%;
+  --accent: 200 16% 94%;
+  --popover: 0 0% 100%;
+
+  /* Text */
+  --foreground: 200 28% 10%;
+  --muted-foreground: 200 12% 34%;
+  --placeholder: 200 9% 40%;
+
+  /* Lines. --border is decorative; --input is a control edge (3:1 on white) */
+  --border: 200 14% 88%;
+  --input: 205 9% 50%;
+
+  /* Brand: Peacock */
+  --primary: 187 86% 22%;
+  --primary-hover: 187 86% 17%;
+  --primary-foreground: 0 0% 100%;
+  --primary-soft: 187 40% 93%;
+  --primary-soft-foreground: 187 90% 15%;
+  --ring: 187 75% 38%;
+
+  /* Status: solid + tonal triplets */
+  --danger: 0 72% 46%;       --danger-soft: 0 80% 96%;      --danger-strong: 0 75% 33%;
+  --success: 152 70% 26%;    --success-soft: 150 50% 94%;   --success-strong: 152 80% 20%;
+  --warning: 32 92% 35%;     --warning-soft: 40 90% 93%;    --warning-strong: 28 90% 24%;
+  --info: 214 80% 42%;       --info-soft: 214 85% 95%;      --info-strong: 214 80% 30%;
+  --neutral-soft: 200 14% 93%; --neutral-strong: 200 14% 28%;
+
+  /* Radius: concentric, controls < cards < dialogs */
+  --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 16px;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px hsl(200 40% 10% / .06);
+  --shadow-2: 0 4px 12px hsl(200 40% 10% / .08), 0 1px 3px hsl(200 40% 10% / .06);
+  --shadow-3: 0 16px 40px hsl(200 40% 10% / .16), 0 2px 6px hsl(200 40% 10% / .08);
+
+  /* Type */
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: 205 24% 7%;
+  --card: 205 20% 10%;
+  --muted: 205 16% 14%;
+  --accent: 205 16% 14%;
+  --popover: 205 20% 12%;
+  --foreground: 200 15% 94%;
+  --muted-foreground: 200 10% 68%;
+  --placeholder: 200 8% 62%;
+  --border: 205 14% 20%;
+  --input: 205 9% 46%;
+  --primary: 186 70% 55%;
+  --primary-hover: 186 72% 62%;
+  --primary-foreground: 205 40% 8%;
+  --primary-soft: 187 40% 15%;
+  --primary-soft-foreground: 187 70% 78%;
+  --ring: 186 75% 55%;
+  --danger: 0 85% 68%;   --danger-soft: 0 40% 15%;   --danger-strong: 0 90% 80%;
+  --success: 150 55% 55%; --success-soft: 152 35% 14%; --success-strong: 150 60% 76%;
+  --warning: 38 92% 58%;  --warning-soft: 36 40% 14%;  --warning-strong: 40 90% 74%;
+  --info: 214 90% 68%;    --info-soft: 214 40% 16%;    --info-strong: 214 95% 80%;
+  --neutral-soft: 205 12% 17%; --neutral-strong: 200 12% 80%;
+  --shadow-1: 0 1px 2px hsl(0 0% 0% / .4);
+  --shadow-2: 0 6px 16px hsl(0 0% 0% / .45);
+  --shadow-3: 0 20px 48px hsl(0 0% 0% / .6);
+}
+
+/* Original brand, kept for comparison */
+:root[data-brand="classic"] {
+  --primary: 221 83% 47%;
+  --primary-hover: 221 83% 39%;
+  --primary-soft: 221 90% 96%;
+  --primary-soft-foreground: 221 80% 32%;
+  --ring: 221 83% 53%;
+}
+:root[data-brand="classic"][data-theme="dark"] {
+  --primary: 217 91% 68%;
+  --primary-hover: 217 91% 75%;
+  --primary-foreground: 222 47% 8%;
+  --primary-soft: 221 45% 18%;
+  --primary-soft-foreground: 217 95% 84%;
+  --ring: 217 91% 68%;
+}
+
+/* ---------- Base ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 5rem; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: hsl(var(--background)); color: hsl(var(--foreground));
+  font: 400 14px/1.5 var(--font); font-feature-settings: "calt", "rlig", "cv11";
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+h1, h2, h3, h4, p { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; background: none; border: 0; padding: 0; }
+a { color: hsl(var(--primary)); text-underline-offset: 3px; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+code, .mono { font-family: var(--mono); font-size: .92em; }
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum", "cv11"; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; border-radius: var(--r-sm); }
+.icon { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon-sm { width: 14px; height: 14px; } .icon-lg { width: 20px; height: 20px; } .icon-xl { width: 24px; height: 24px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; scroll-behavior: auto !important; } }
+
+/* ---------- Type scale ---------- */
+.t-display { font-size: 32px; line-height: 40px; font-weight: 650; letter-spacing: -.025em; }
+.t-h1 { font-size: 24px; line-height: 32px; font-weight: 650; letter-spacing: -.02em; }
+.t-h2 { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -.015em; }
+.t-h3 { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -.01em; }
+.t-body { font-size: 14px; line-height: 20px; }
+.t-label { font-size: 14px; line-height: 20px; font-weight: 500; }
+.t-small { font-size: 13px; line-height: 18px; }
+.t-caption { font-size: 12px; line-height: 16px; }
+.muted { color: hsl(var(--muted-foreground)); }
+
+/* ---------- Layout utilities ---------- */
+.stack { display: flex; flex-direction: column; gap: var(--gap, 16px); }
+.row { display: flex; align-items: center; gap: var(--gap, 12px); }
+.wrap { flex-wrap: wrap; }
+.grow { flex: 1; min-width: 0; }
+.between { justify-content: space-between; }
+.end { justify-content: flex-end; }
+.grid { display: grid; gap: var(--gap, 24px); }
+.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cols-6 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.span-2 { grid-column: span 2; }
+@media (max-width: 1100px) { .cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cols-6 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 820px) { .cols-2, .cols-3 { grid-template-columns: minmax(0, 1fr); } .span-2 { grid-column: auto; } .cols-6 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------- Docs shell ---------- */
+.shell { display: grid; grid-template-columns: 256px minmax(0, 1fr); min-height: 100vh; }
+.side { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 20px; padding: 20px 12px; background: hsl(var(--card)); border-right: 1px solid hsl(var(--border)); overflow-y: auto; }
+.brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; text-decoration: none; color: hsl(var(--foreground)); }
+.brand-mark { display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--r-md); background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.brand-text b { display: block; font-size: 14px; line-height: 18px; letter-spacing: -.01em; }
+.brand-text span { display: block; font-size: 12px; line-height: 16px; color: hsl(var(--muted-foreground)); }
+.nav-group { display: flex; flex-direction: column; gap: 2px; }
+.nav-group > p { padding: 0 12px 6px; font-size: 12px; font-weight: 600; color: hsl(var(--muted-foreground)); }
+.nav-link { display: block; padding: 7px 12px; border-radius: var(--r-md); font-size: 14px; font-weight: 500; color: hsl(var(--muted-foreground)); text-decoration: none; transition: background .15s, color .15s; }
+.nav-link:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+.nav-link[aria-current="true"] { background: hsl(var(--primary-soft)); color: hsl(var(--primary-soft-foreground)); }
+.topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 56px; padding: 0 32px; background: hsl(var(--card) / .92); backdrop-filter: blur(8px); border-bottom: 1px solid hsl(var(--border)); }
+.btn.menu-btn { display: none; }
+.content { max-width: 1120px; margin: 0 auto; padding: 40px 32px 96px; display: flex; flex-direction: column; gap: 72px; }
+.section { display: flex; flex-direction: column; gap: 24px; scroll-margin-top: 80px; }
+.section-head p { margin-top: 4px; max-width: 68ch; color: hsl(var(--muted-foreground)); }
+.sub { display: flex; flex-direction: column; gap: 12px; }
+.sub > h3 { font-size: 16px; line-height: 24px; font-weight: 600; letter-spacing: -.01em; }
+.sub > p { color: hsl(var(--muted-foreground)); max-width: 68ch; }
+.seg { display: inline-flex; padding: 3px; gap: 2px; background: hsl(var(--muted)); border-radius: var(--r-md); }
+.seg button { height: 28px; padding: 0 12px; border-radius: var(--r-sm); font-size: 13px; font-weight: 500; color: hsl(var(--muted-foreground)); display: inline-flex; align-items: center; gap: 6px; }
+.seg button[aria-pressed="true"] { background: hsl(var(--card)); color: hsl(var(--foreground)); box-shadow: var(--shadow-1); }
+@media (max-width: 1024px) {
+  .shell { grid-template-columns: 1fr; }
+  .side { display: none; }
+  .btn.menu-btn { display: inline-flex; }
+  .topbar, .content { padding-left: 16px; padding-right: 16px; }
+  .content { padding-top: 24px; gap: 56px; }
+  .topbar .hide-sm { display: none; }
+}
+
+/* ---------- Surfaces ---------- */
+.card { background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: var(--r-lg); box-shadow: var(--shadow-1); }
+.card-pad { padding: 24px; }
+.card-head { padding: 20px 24px 0; display: flex; flex-direction: column; gap: 4px; }
+.card-body { padding: 16px 24px 24px; }
+.card-foot { padding: 0 24px 20px; display: flex; gap: 8px; justify-content: flex-end; }
+.divider { height: 1px; background: hsl(var(--border)); border: 0; margin: 0; }
+.stage { min-width: 0; background: hsl(var(--muted)); border-radius: var(--r-lg); padding: 16px; }
+.stage-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.stage-head p { font-size: 13px; font-weight: 600; }
+
+/* ---------- Tokens specimens ---------- */
+.swatch { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
+.swatch-chip { height: 56px; border-radius: var(--r-md); border: 1px solid hsl(var(--foreground) / .08); display: flex; align-items: flex-end; justify-content: flex-end; padding: 6px; }
+.swatch-chip span { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 99px; background: hsl(0 0% 100% / .92); color: hsl(200 28% 10%); }
+.swatch b { display: block; font-size: 13px; line-height: 18px; }
+.swatch small { display: block; font-size: 12px; line-height: 16px; color: hsl(var(--muted-foreground)); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; border-radius: var(--r-md); overflow: hidden; border: 1px solid hsl(var(--border)); }
+.pair div { padding: 10px 12px; font-size: 13px; font-weight: 500; }
+.scale-row { display: grid; grid-template-columns: 112px 1fr; gap: 16px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid hsl(var(--border)); }
+.scale-row:last-child { border: 0; }
+.scale-row code { color: hsl(var(--muted-foreground)); font-size: 12px; }
+.radius-box { width: 72px; height: 72px; border: 2px solid hsl(var(--primary)); background: hsl(var(--primary-soft)); }
+.elev-box { height: 72px; border-radius: var(--r-lg); background: hsl(var(--card)); border: 1px solid hsl(var(--border)); display: grid; place-items: center; font-size: 13px; font-weight: 500; }
+.space-bar { height: 12px; border-radius: 3px; background: hsl(var(--primary) / .7); }
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px;
+  border: 1px solid transparent; border-radius: var(--r-md); font-size: 14px; font-weight: 500; line-height: 1; white-space: nowrap;
+  text-decoration: none; transition: background .15s, border-color .15s, color .15s, box-shadow .15s; user-select: none;
+}
+.btn:focus-visible, .btn.is-focus { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; border-radius: var(--r-md); }
+.btn:active { transform: translateY(.5px); }
+.btn:disabled, .btn[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+.btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.btn-primary:hover, .btn-primary.is-hover { background: hsl(var(--primary-hover)); }
+.btn-secondary { background: hsl(var(--primary-soft)); color: hsl(var(--primary-soft-foreground)); }
+.btn-secondary:hover, .btn-secondary.is-hover { background: hsl(var(--primary-soft) / .6); box-shadow: inset 0 0 0 1px hsl(var(--primary) / .25); }
+.btn-outline { background: hsl(var(--card)); border-color: hsl(var(--input)); }
+.btn-outline:hover, .btn-outline.is-hover { background: hsl(var(--muted)); }
+.btn-ghost { color: hsl(var(--foreground)); }
+.btn-ghost:hover, .btn-ghost.is-hover { background: hsl(var(--muted)); }
+.btn-danger { background: hsl(var(--danger)); color: #fff; }
+:root[data-theme="dark"] .btn-danger { color: hsl(205 40% 8%); }
+.btn-danger:hover, .btn-danger.is-hover { background: hsl(var(--danger) / .88); }
+.btn-danger-outline { background: hsl(var(--card)); color: hsl(var(--danger-strong)); border-color: hsl(var(--danger) / .5); }
+.btn-danger-outline:hover { background: hsl(var(--danger-soft)); }
+.btn-link { height: auto; padding: 2px 0; color: hsl(var(--primary)); border-radius: 2px; }
+.btn-link:hover { text-decoration: underline; }
+.btn-sm { height: 32px; padding: 0 12px; font-size: 13px; }
+.btn-lg { height: 48px; padding: 0 24px; font-size: 15px; }
+.btn-icon { width: 40px; padding: 0; } .btn-icon.btn-sm { width: 32px; } .btn-icon.btn-lg { width: 48px; }
+.btn-block { width: 100%; }
+.btn .spin { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn-group { display: inline-flex; } .btn-group .btn { border-radius: 0; margin-left: -1px; } .btn-group .btn:first-child { border-radius: var(--r-md) 0 0 var(--r-md); margin: 0; } .btn-group .btn:last-child { border-radius: 0 var(--r-md) var(--r-md) 0; }
+.btn-group .btn[aria-pressed="true"] { background: hsl(var(--primary-soft)); color: hsl(var(--primary-soft-foreground)); border-color: hsl(var(--primary)); position: relative; }
+.state-label { width: 72px; font-size: 12px; color: hsl(var(--muted-foreground)); }
+
+/* ---------- Fields ---------- */
+.fg { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fg > label, .fg > .label { font-size: 14px; line-height: 20px; font-weight: 500; }
+.req { color: hsl(var(--danger)); margin-left: 2px; }
+.opt { font-weight: 400; color: hsl(var(--muted-foreground)); margin-left: 4px; }
+.hint { font-size: 13px; line-height: 18px; color: hsl(var(--muted-foreground)); }
+.err { display: flex; gap: 6px; align-items: flex-start; font-size: 13px; line-height: 18px; color: hsl(var(--danger-strong)); }
+.err .icon { margin-top: 2px; }
+.input {
+  width: 100%; height: 40px; padding: 0 12px; background: hsl(var(--card)); color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--input)); border-radius: var(--r-md); font-size: 14px; transition: border-color .15s, box-shadow .15s;
+}
+/* Native date picker: keep its selection accent in step with the active brand. */
+.input[type="date"], .input[type="datetime-local"] { accent-color: hsl(var(--primary)); }
+.input[type="date"]::-webkit-calendar-picker-indicator,
+.input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  filter: invert(31%) sepia(80%) saturate(778%) hue-rotate(139deg) brightness(82%);
+  transition: filter .15s, transform .15s;
+}
+.input[type="date"]::-webkit-calendar-picker-indicator:hover,
+.input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  filter: invert(23%) sepia(85%) saturate(900%) hue-rotate(139deg) brightness(72%);
+  transform: translateY(-1px);
+}
+:root[data-theme="dark"] .input[type="date"]::-webkit-calendar-picker-indicator,
+:root[data-theme="dark"] .input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(78%) sepia(36%) saturate(680%) hue-rotate(132deg) brightness(105%);
+}
+
+/* Branded date menu */
+.date-picker { position: relative; z-index: 1; }
+.date-picker:has(.date-menu:not([hidden])) { z-index: 45; }
+.date-picker .input-wrap > .icon { color: hsl(var(--primary)); }
+.date-picker .input { padding-right: 44px; cursor: pointer; }
+.date-trigger { position: absolute; right: 4px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--r-sm); color: hsl(var(--primary)); background: hsl(var(--primary-soft)); transition: color .15s, background .15s, transform .15s; }
+.date-trigger:hover, .date-trigger[aria-expanded="true"] { color: hsl(var(--primary-foreground)); background: hsl(var(--primary)); }
+.date-trigger[aria-expanded="true"] .icon { transform: rotate(180deg); }
+.date-menu { position: absolute; z-index: 50; top: calc(100% + 9px); left: 0; width: 304px; max-width: min(304px, calc(100vw - 48px)); padding: 14px; color: hsl(var(--foreground)); background: hsl(var(--popover)); border: 1px solid hsl(var(--border)); border-radius: var(--r-lg); box-shadow: var(--shadow-3), 0 0 0 3px hsl(var(--primary) / .08); animation: date-pop .14s ease-out; }
+.date-menu[hidden] { display: none; }
+@keyframes date-pop { from { opacity: 0; transform: translateY(-4px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.date-menu-head, .date-menu-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.date-menu-head { margin-bottom: 12px; }
+.date-month { font-size: 14px; font-weight: 650; }
+.date-nav { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid hsl(var(--border)); border-radius: var(--r-md); color: hsl(var(--primary)); background: hsl(var(--card)); font-size: 22px; line-height: 1; transition: background .15s, color .15s, box-shadow .15s; }
+.date-nav:hover { background: hsl(var(--primary-soft)); box-shadow: var(--shadow-1); }
+.date-weekdays, .date-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; }
+.date-weekdays { margin-bottom: 5px; color: hsl(var(--muted-foreground)); font-size: 11px; font-weight: 650; }
+.date-weekdays span { padding: 4px 0; }
+.date-day { display: grid; place-items: center; aspect-ratio: 1; border-radius: var(--r-md); color: hsl(var(--foreground)); font-size: 13px; font-variant-numeric: tabular-nums; transition: color .12s, background .12s, transform .12s; }
+.date-day:hover { color: hsl(var(--primary-soft-foreground)); background: hsl(var(--primary-soft)); transform: translateY(-1px); }
+.date-day.is-selected { color: hsl(var(--primary-foreground)); background: hsl(var(--primary)); font-weight: 650; box-shadow: 0 3px 8px hsl(var(--primary) / .28); }
+.date-day.is-today:not(.is-selected) { color: hsl(var(--primary)); box-shadow: inset 0 0 0 1px hsl(var(--primary) / .48); font-weight: 650; }
+.date-menu-foot { margin-top: 12px; padding-top: 10px; border-top: 1px solid hsl(var(--border)); }
+/* Form control icons carry the brand tint; semantic status icons keep their own tone. */
+.input-wrap > .icon, .input-wrap > .affix { color: hsl(var(--primary)); }
+.input-wrap > .affix-end { color: hsl(var(--info-strong)); }
+.input-wrap .trail .icon { color: hsl(266 62% 52%); }
+.select-trigger .icon, .multi-trigger .icon { color: hsl(var(--primary)); }
+:root[data-theme="dark"] .input-wrap .trail .icon { color: hsl(270 85% 78%); }
+
+.input::placeholder { color: hsl(var(--placeholder)); opacity: 1; }
+.input:hover:not(:disabled):not([readonly]) { border-color: hsl(var(--foreground) / .55); }
+.input:focus, .input.is-focus { outline: none; border-color: hsl(var(--ring)); box-shadow: 0 0 0 3px hsl(var(--ring) / .22); }
+.input[aria-invalid="true"] { border-color: hsl(var(--danger)); }
+.input[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px hsl(var(--danger) / .2); }
+.input:disabled { background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); border-color: hsl(var(--border)); cursor: not-allowed; }
+.input[readonly] { background: hsl(var(--muted)); border-color: hsl(var(--border)); }
+textarea.input { height: auto; min-height: 88px; padding: 10px 12px; resize: vertical; line-height: 20px; }
+.input-mono { font-family: var(--mono); font-size: 13px; line-height: 20px; }
+.input-wrap { position: relative; display: flex; align-items: center; }
+.input-wrap > .icon, .input-wrap > .affix { position: absolute; left: 12px; color: hsl(var(--muted-foreground)); pointer-events: none; }
+.input-wrap > .affix { font-size: 14px; font-weight: 500; }
+.input-wrap.has-lead .input { padding-left: 38px; }
+.input-wrap.has-trail .input { padding-right: 40px; }
+.input-wrap > .trail { position: absolute; right: 4px; }
+.input-wrap > .affix-end { position: absolute; right: 12px; color: hsl(var(--muted-foreground)); pointer-events: none; font-weight: 500; }
+.input-right { text-align: right; }
+.counter { align-self: flex-end; font-size: 12px; color: hsl(var(--muted-foreground)); }
+.meter { display: flex; align-items: center; gap: 10px; }
+.meter-bars { display: flex; flex: 1; gap: 4px; }
+.meter-bars span { height: 4px; flex: 1; border-radius: 99px; background: hsl(var(--border)); transition: background .2s; }
+.meter-bars[data-level="1"] span:nth-child(-n+1) { background: hsl(var(--danger)); }
+.meter-bars[data-level="2"] span:nth-child(-n+2) { background: hsl(var(--warning)); }
+.meter-bars[data-level="3"] span:nth-child(-n+3) { background: hsl(var(--info)); }
+.meter-bars[data-level="4"] span:nth-child(-n+4) { background: hsl(var(--success)); }
+.meter-label { min-width: 72px; font-size: 13px; font-weight: 500; text-align: right; }
+.otp { display: flex; gap: 8px; }
+.otp .input { width: 44px; height: 52px; padding: 0; text-align: center; font-size: 20px; font-weight: 600; }
+.field-note { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: var(--r-md); background: hsl(var(--muted)); font-size: 13px; color: hsl(var(--muted-foreground)); border: 1px dashed hsl(var(--input) / .6); }
+.captcha { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 304px; max-width: 100%; height: 76px; padding: 0 16px; border: 1px solid hsl(var(--input)); border-radius: var(--r-md); background: hsl(var(--muted)); font-size: 14px; }
+.captcha.err-state { border-color: hsl(var(--danger) / .6); background: hsl(var(--danger-soft)); color: hsl(var(--danger-strong)); }
+.captcha-box { width: 24px; height: 24px; border: 2px solid hsl(var(--input)); border-radius: var(--r-sm); background: hsl(var(--card)); display: grid; place-items: center; }
+.captcha-box.ok { background: hsl(var(--success)); border-color: hsl(var(--success)); color: #fff; }
+
+/* ---------- Checkbox / radio / switch ---------- */
+.check { display: inline-flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 20px; cursor: pointer; }
+.check input { appearance: none; -webkit-appearance: none; flex: none; width: 18px; height: 18px; margin: 1px 0 0; border: 1.5px solid hsl(var(--input)); background: hsl(var(--card)); display: grid; place-items: center; cursor: inherit; transition: background .12s, border-color .12s; }
+.check input[type="checkbox"] { border-radius: 5px; }
+.check input[type="radio"] { border-radius: 50%; }
+.check input:hover:not(:disabled) { border-color: hsl(var(--primary)); }
+.check input:checked, .check input:indeterminate { background: hsl(var(--primary)); border-color: hsl(var(--primary)); }
+.check input[type="checkbox"]:checked::after { content: ""; width: 10px; height: 6px; border: solid hsl(var(--primary-foreground)); border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
+.check input[type="checkbox"]:indeterminate::after { content: ""; width: 10px; height: 2px; background: hsl(var(--primary-foreground)); }
+.check input[type="radio"]:checked { background: hsl(var(--card)); border-width: 5px; }
+.check input:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.check input:disabled { opacity: .45; cursor: not-allowed; }
+.check:has(input:disabled) { color: hsl(var(--muted-foreground)); cursor: not-allowed; }
+.check small { display: block; color: hsl(var(--muted-foreground)); font-size: 13px; line-height: 18px; }
+.check input[aria-invalid="true"] { border-color: hsl(var(--danger)); }
+.switch { position: relative; flex: none; width: 40px; height: 24px; border-radius: 99px; background: hsl(var(--input)); transition: background .18s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px hsl(0 0% 0% / .3); transition: transform .18s; }
+.switch[aria-checked="true"] { background: hsl(var(--primary)); }
+.switch[aria-checked="true"]::after { transform: translateX(16px); }
+.switch:disabled { opacity: .45; }
+.option-card { display: flex; gap: 12px; padding: 14px 16px; border: 1px solid hsl(var(--input) / .6); border-radius: var(--r-lg); cursor: pointer; background: hsl(var(--card)); transition: border-color .15s, background .15s; }
+.option-card:hover { border-color: hsl(var(--primary)); }
+.option-card:has(input:checked) { border-color: hsl(var(--primary)); background: hsl(var(--primary-soft) / .6); box-shadow: 0 0 0 1px hsl(var(--primary)); }
+.option-card:has(input:focus-visible) { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.option-card b { display: block; font-weight: 600; }
+
+/* ---------- Select / multiselect / popover menus ---------- */
+.select { position: relative; }
+.select-trigger { width: 100%; height: 40px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; background: hsl(var(--card)); border: 1px solid hsl(var(--input)); border-radius: var(--r-md); transition: border-color .15s, box-shadow .15s; }
+.select-trigger:hover { border-color: hsl(var(--foreground) / .55); }
+.select-trigger:focus-visible, .select-trigger[aria-expanded="true"] { outline: none; border-color: hsl(var(--ring)); box-shadow: 0 0 0 3px hsl(var(--ring) / .22); }
+.select-trigger[aria-invalid="true"] { border-color: hsl(var(--danger)); }
+.select-trigger .ph { color: hsl(var(--placeholder)); }
+.select-trigger .icon { color: hsl(var(--muted-foreground)); transition: transform .15s; }
+.select-trigger[aria-expanded="true"] .icon { transform: rotate(180deg); }
+.menu { z-index: 20; min-width: 200px; padding: 4px; background: hsl(var(--popover)); border: 1px solid hsl(var(--border)); border-radius: var(--r-lg); box-shadow: var(--shadow-2); font-size: 14px; }
+.select .menu { position: absolute; top: calc(100% + 6px); left: 0; right: 0; max-height: 260px; overflow-y: auto; }
+.menu-label { padding: 8px 10px 4px; font-size: 12px; font-weight: 600; color: hsl(var(--muted-foreground)); }
+.menu-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border-radius: var(--r-md); text-align: left; text-decoration: none; color: hsl(var(--foreground)); }
+.menu-item:hover, .menu-item.is-active, .menu-item:focus-visible { background: hsl(var(--muted)); outline: none; }
+.menu-item[aria-selected="true"] { font-weight: 600; }
+.menu-item[aria-selected="true"]::after { content: ""; margin-left: auto; width: 10px; height: 6px; border: solid hsl(var(--primary)); border-width: 0 0 2px 2px; transform: rotate(-45deg) translateY(-2px); }
+.menu-item[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+.menu-item.danger { color: hsl(var(--danger-strong)); }
+.menu-item small { display: block; color: hsl(var(--muted-foreground)); font-size: 13px; line-height: 18px; font-weight: 400; }
+.menu-sep { height: 1px; margin: 4px -4px; background: hsl(var(--border)); }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
+.tag { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 4px 0 8px; border-radius: var(--r-sm); background: hsl(var(--muted)); border: 1px solid hsl(var(--border)); font-size: 13px; font-weight: 500; }
+.tag button { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 4px; color: hsl(var(--muted-foreground)); }
+.tag button:hover { background: hsl(var(--border)); color: hsl(var(--foreground)); }
+.multi-trigger { height: auto; min-height: 40px; padding-top: 6px; padding-bottom: 6px; }
+.popover { padding: 16px; width: 288px; background: hsl(var(--popover)); border: 1px solid hsl(var(--border)); border-radius: var(--r-lg); box-shadow: var(--shadow-2); }
+.tip-wrap { position: relative; display: inline-block; }
+.tip { position: absolute; left: 50%; top: calc(100% + 8px); transform: translateX(-50%); z-index: 10; padding: 6px 10px; border-radius: var(--r-md); background: hsl(var(--foreground)); color: hsl(var(--background)); font-size: 13px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .12s; }
+.tip-wrap:hover .tip, .tip-wrap:focus-within .tip { opacity: 1; }
+
+/* ---------- Badges ---------- */
+.badge { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 99px; font-size: 12px; line-height: 1; font-weight: 600; white-space: nowrap; background: hsl(var(--neutral-soft)); color: hsl(var(--neutral-strong)); }
+.badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .9; }
+.badge.no-dot::before { display: none; }
+.badge .icon { width: 12px; height: 12px; }
+.badge-brand { background: hsl(var(--primary-soft)); color: hsl(var(--primary-soft-foreground)); }
+.badge-info { background: hsl(var(--info-soft)); color: hsl(var(--info-strong)); }
+.badge-success { background: hsl(var(--success-soft)); color: hsl(var(--success-strong)); }
+.badge-warning { background: hsl(var(--warning-soft)); color: hsl(var(--warning-strong)); }
+.badge-danger { background: hsl(var(--danger-soft)); color: hsl(var(--danger-strong)); }
+.badge-outline { background: transparent; box-shadow: inset 0 0 0 1px hsl(var(--input)); color: hsl(var(--foreground)); }
+.badge-solid { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.badge-solid::before { display: none; }
+
+/* ---------- Alerts / toasts ---------- */
+.alert { display: grid; grid-template-columns: 20px 1fr auto; gap: 12px; padding: 14px 16px; border-radius: var(--r-lg); border: 1px solid; font-size: 14px; line-height: 20px; }
+.alert .icon { margin-top: 1px; }
+.alert b { display: block; font-weight: 600; }
+.alert p { margin-top: 2px; opacity: .92; }
+.alert .actions { display: flex; gap: 12px; margin-top: 8px; }
+.alert .actions button { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.alert-x { align-self: start; display: grid; place-items: center; width: 24px; height: 24px; margin: -2px -4px 0 0; border-radius: var(--r-sm); opacity: .75; }
+.alert-x:hover { opacity: 1; background: hsl(0 0% 0% / .06); }
+.alert-info { background: hsl(var(--info-soft)); border-color: hsl(var(--info) / .3); color: hsl(var(--info-strong)); }
+.alert-success { background: hsl(var(--success-soft)); border-color: hsl(var(--success) / .3); color: hsl(var(--success-strong)); }
+.alert-warning { background: hsl(var(--warning-soft)); border-color: hsl(var(--warning) / .35); color: hsl(var(--warning-strong)); }
+.alert-danger { background: hsl(var(--danger-soft)); border-color: hsl(var(--danger) / .3); color: hsl(var(--danger-strong)); }
+.alert-neutral { background: hsl(var(--muted)); border-color: hsl(var(--border)); color: hsl(var(--foreground)); }
+#toasts { position: fixed; z-index: 80; right: 16px; top: 16px; display: flex; flex-direction: column; gap: 8px; width: min(360px, calc(100vw - 32px)); pointer-events: none; }
+.toast { pointer-events: auto; display: grid; grid-template-columns: 20px 1fr auto; gap: 12px; padding: 14px 14px 14px 16px; background: hsl(var(--popover)); border: 1px solid hsl(var(--border)); border-left: 4px solid var(--tone); border-radius: var(--r-lg); box-shadow: var(--shadow-3); animation: toast-in .22s ease-out; }
+.toast .icon { color: var(--tone); margin-top: 1px; }
+.toast b { display: block; font-weight: 600; font-size: 14px; line-height: 20px; }
+.toast p { font-size: 13px; line-height: 18px; color: hsl(var(--muted-foreground)); margin-top: 2px; }
+.toast.out { opacity: 0; transform: translateX(12px); transition: opacity .18s, transform .18s; }
+@keyframes toast-in { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+
+/* ---------- Avatars / stat tiles ---------- */
+.avatar { display: inline-grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: hsl(var(--primary-soft)); color: hsl(var(--primary-soft-foreground)); font-size: 14px; font-weight: 600; }
+.avatar-sm { width: 28px; height: 28px; font-size: 12px; } .avatar-lg { width: 48px; height: 48px; font-size: 16px; }
+.avatar-solid { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.avatar-group { display: flex; } .avatar-group .avatar { margin-left: -5px; box-shadow: 0 0 0 2px hsl(var(--card)); } .avatar-group .avatar:first-child { margin: 0; }
+.stat { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.stat-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: var(--r-md); }
+.stat-value { font-size: 28px; line-height: 32px; font-weight: 650; letter-spacing: -.02em; }
+.stat-meta { display: flex; justify-content: space-between; align-items: baseline; }
+.tone-brand { background: hsl(var(--primary-soft)); color: hsl(var(--primary-soft-foreground)); }
+.tone-warning { background: hsl(var(--warning-soft)); color: hsl(var(--warning-strong)); }
+.tone-success { background: hsl(var(--success-soft)); color: hsl(var(--success-strong)); }
+.tone-danger { background: hsl(var(--danger-soft)); color: hsl(var(--danger-strong)); }
+.tone-info { background: hsl(var(--info-soft)); color: hsl(var(--info-strong)); }
+.icon-tile { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: var(--r-md); }
+
+/* ---------- Disclosure card (share) ---------- */
+.disclosure-btn { display: flex; width: 100%; align-items: flex-start; gap: 16px; padding: 16px 20px; text-align: left; border-radius: var(--r-lg); }
+.disclosure-btn:hover { background: hsl(var(--muted) / .6); }
+.disclosure-btn > .icon { margin-top: 4px; color: hsl(var(--muted-foreground)); transition: transform .2s; }
+.disclosure-btn[aria-expanded="true"] > .icon { transform: rotate(180deg); }
+.disclosure-panel { padding: 4px 20px 20px; border-top: 1px solid hsl(var(--border)); display: flex; flex-direction: column; gap: 16px; }
+.timeline { position: relative; display: flex; flex-direction: column; gap: 18px; padding: 16px 0 0 22px; }
+.timeline::before { content: ""; position: absolute; left: 4px; top: 22px; bottom: 6px; width: 2px; background: hsl(var(--border)); }
+.timeline li { position: relative; }
+.timeline li::before { content: ""; position: absolute; left: -22px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: hsl(var(--card)); border: 2px solid hsl(var(--primary)); }
+
+/* ---------- Table ---------- */
+.table-card { overflow: hidden; }
+.table-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid hsl(var(--border)); }
+.table-scroll { overflow-x: auto; }
+table.table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+.table th { position: sticky; top: 0; height: 44px; padding: 0 16px; text-align: left; font-size: 13px; font-weight: 600; color: hsl(var(--muted-foreground)); background: hsl(var(--muted) / .6); border-bottom: 1px solid hsl(var(--border)); white-space: nowrap; }
+.table td { height: 56px; padding: 0 16px; border-bottom: 1px solid hsl(var(--border)); }
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tbody tr:hover td { background: hsl(var(--muted) / .5); }
+.table tr[aria-selected="true"] td { background: hsl(var(--primary-soft) / .6); }
+.table .r { text-align: right; }
+.table .sort { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: inherit; border-radius: var(--r-sm); }
+.table .sort:hover { color: hsl(var(--foreground)); }
+.table th[aria-sort="ascending"], .table th[aria-sort="descending"] { color: hsl(var(--foreground)); }
+.table .id { font-weight: 600; font-variant-numeric: tabular-nums; }
+.table-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-top: 1px solid hsl(var(--border)); }
+.pager { display: flex; gap: 4px; }
+.pager .btn[aria-current="page"] { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border-color: transparent; }
+.skel { display: block; border-radius: var(--r-sm); background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--border)) 40%, hsl(var(--muted)) 60%); background-size: 300% 100%; animation: shimmer 1.6s linear infinite; }
+@keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+
+/* ---------- Progress / stepper ---------- */
+.progress { height: 8px; border-radius: 99px; background: hsl(var(--muted)); overflow: hidden; }
+.progress > i { display: block; height: 100%; width: var(--v, 50%); border-radius: inherit; background: hsl(var(--primary)); transition: width .3s; }
+.progress.sm { height: 6px; }
+.stepper { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; counter-reset: s; }
+.step { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; font-size: 13px; line-height: 18px; color: hsl(var(--muted-foreground)); }
+.step::before { content: ""; position: absolute; top: 13px; left: calc(-50% + 18px); right: calc(50% + 18px); height: 2px; background: hsl(var(--border)); }
+.step:first-child::before { display: none; }
+.step-dot { position: relative; z-index: 1; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: hsl(var(--card)); border: 2px solid hsl(var(--input)); font-size: 12px; font-weight: 600; }
+.step.done::before, .step.current::before { background: hsl(var(--primary)); }
+.step.done .step-dot { background: hsl(var(--primary)); border-color: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.step.current .step-dot { border-color: hsl(var(--primary)); color: hsl(var(--primary)); box-shadow: 0 0 0 4px hsl(var(--primary) / .16); }
+.step.current { color: hsl(var(--foreground)); font-weight: 600; }
+.step.error .step-dot { border-color: hsl(var(--danger)); color: hsl(var(--danger-strong)); background: hsl(var(--danger-soft)); }
+.split { display: flex; height: 140px; overflow: hidden; border: 1px solid hsl(var(--border)); border-radius: var(--r-lg); background: hsl(var(--card)); }
+.split-pane { display: grid; place-items: center; font-size: 13px; color: hsl(var(--muted-foreground)); min-width: 80px; }
+.split-handle { flex: none; width: 12px; display: grid; place-items: center; cursor: col-resize; background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); touch-action: none; }
+.split-handle:hover, .split-handle:focus-visible { background: hsl(var(--primary-soft)); color: hsl(var(--primary)); outline-offset: -2px; }
+
+/* ---------- App bar / tabs / chips / breadcrumbs ---------- */
+.appbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 60px; padding: 0 16px; background: hsl(var(--card)); border-bottom: 1px solid hsl(var(--border)); }
+.appbar-nav { display: flex; align-items: center; gap: 2px; }
+.appbar-link { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 12px; border-radius: var(--r-md); font-size: 14px; font-weight: 500; color: hsl(var(--muted-foreground)); text-decoration: none; }
+.appbar-link:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+.appbar-link[aria-current="page"] { color: hsl(var(--primary-soft-foreground)); background: hsl(var(--primary-soft)); }
+.dot-badge { position: relative; }
+.dot-badge::after { content: ""; position: absolute; top: 8px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: hsl(var(--danger)); box-shadow: 0 0 0 2px hsl(var(--card)); }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid hsl(var(--border)); }
+.tab { position: relative; height: 42px; padding: 0 14px; font-size: 14px; font-weight: 500; color: hsl(var(--muted-foreground)); border-radius: var(--r-md) var(--r-md) 0 0; }
+.tab:hover { color: hsl(var(--foreground)); }
+.tab[aria-selected="true"] { color: hsl(var(--foreground)); }
+.tab[aria-selected="true"]::after { content: ""; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; border-radius: 2px; background: hsl(var(--primary)); }
+.tab-panel { padding-top: 16px; }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px; }
+.chip { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 99px; border: 1px solid hsl(var(--input) / .7); background: hsl(var(--card)); font-size: 14px; font-weight: 500; transition: background .15s, border-color .15s; }
+.chip:hover { background: hsl(var(--muted)); }
+.chip[aria-pressed="true"] { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); border-color: transparent; }
+.crumbs { display: flex; align-items: center; gap: 6px; font-size: 14px; color: hsl(var(--muted-foreground)); }
+.crumbs a { color: inherit; text-decoration: none; border-radius: var(--r-sm); } .crumbs a:hover { color: hsl(var(--foreground)); text-decoration: underline; }
+.crumbs [aria-current] { color: hsl(var(--foreground)); font-weight: 500; }
+.crumbs .icon { width: 14px; height: 14px; opacity: .6; }
+.menu-anchor { position: relative; }
+.menu-anchor > .menu { position: absolute; top: calc(100% + 6px); right: 0; width: 240px; }
+
+/* ---------- Dialog ---------- */
+dialog.modal { padding: 0; border: 0; background: transparent; max-width: 100vw; max-height: 100vh; overflow: visible; color: inherit; }
+dialog.modal::backdrop { background: hsl(200 40% 6% / .55); backdrop-filter: blur(2px); }
+dialog.modal[open] { animation: dlg-in .18s ease-out; } dialog.modal[open]::backdrop { animation: fade-in .18s ease-out; }
+@keyframes dlg-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.dlg { position: relative; display: flex; flex-direction: column; gap: 20px; width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto; padding: 24px; background: hsl(var(--popover)); border: 1px solid hsl(var(--border)); border-radius: var(--r-xl); box-shadow: var(--shadow-3); }
+.dlg-lg { width: min(560px, calc(100vw - 32px)); }
+.dlg-head { display: flex; gap: 14px; align-items: flex-start; padding-right: 36px; }
+.dlg-head h3 { font-size: 18px; line-height: 26px; font-weight: 650; letter-spacing: -.015em; }
+.dlg-head p { margin-top: 2px; font-size: 14px; line-height: 20px; color: hsl(var(--muted-foreground)); }
+.dlg-x { position: absolute; top: 16px; right: 16px; display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--r-md); color: hsl(var(--muted-foreground)); }
+.dlg-x:hover { background: hsl(var(--muted)); color: hsl(var(--foreground)); }
+.dlg-foot { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.dlg-foot.stack-sm { flex-direction: column-reverse; }
+.dlg-foot.stack-sm .btn { width: 100%; }
+.kv { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; border-radius: var(--r-lg); background: hsl(var(--muted)); }
+.kv dt { font-size: 12px; line-height: 16px; color: hsl(var(--muted-foreground)); margin-bottom: 2px; }
+.kv dd { margin: 0; font-weight: 600; }
+.preview-box { display: grid; place-items: center; height: 176px; border: 1px dashed hsl(var(--input) / .7); border-radius: var(--r-lg); background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); text-align: center; }
+.link-row { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; border: 1px solid hsl(var(--border)); border-radius: var(--r-md); background: hsl(var(--muted)); font-size: 14px; }
+.dlg-preview .dlg { width: 100%; max-width: 520px; margin: 0 auto; box-shadow: var(--shadow-2); }
+
+/* ---------- Files ---------- */
+.drop { display: flex; align-items: center; gap: 14px; padding: 16px; border: 1.5px dashed hsl(var(--input)); border-radius: var(--r-lg); background: hsl(var(--card)); cursor: pointer; transition: border-color .15s, background .15s; }
+.drop:hover, .drop.is-over, .drop:focus-within { border-color: hsl(var(--primary)); background: hsl(var(--primary-soft) / .5); }
+.drop.is-error { border-color: hsl(var(--danger)); background: hsl(var(--danger-soft)); }
+.drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.file-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid hsl(var(--border)); border-radius: var(--r-lg); background: hsl(var(--card)); }
+.file-row.is-error { border-color: hsl(var(--danger) / .5); background: hsl(var(--danger-soft) / .5); }
+.file-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- States ---------- */
+.empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 40px 24px; }
+.empty .icon-tile { width: 48px; height: 48px; border-radius: var(--r-lg); margin-bottom: 12px; }
+.empty h3 { font-size: 16px; line-height: 24px; font-weight: 600; }
+.empty p { max-width: 36ch; color: hsl(var(--muted-foreground)); }
+.empty .btn { margin-top: 16px; }
+.full-state { padding: 32px 24px; }
+.full-state .icon-tile { width: 56px; height: 56px; border-radius: 50%; margin-bottom: 16px; }
+
+/* ---------- Icons grid ---------- */
+.icon-cell { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; text-align: left; border: 1px solid hsl(var(--border)); border-radius: var(--r-md); background: hsl(var(--card)); font-size: 13px; transition: border-color .15s, background .15s; }
+.icon-cell:hover { border-color: hsl(var(--primary)); background: hsl(var(--primary-soft) / .5); }
+.icon-cell span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- Showcase (hero) ---------- */
+.hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 32px; align-items: center; padding: 40px; border-radius: var(--r-xl); background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); position: relative; overflow: hidden; }
+.hero::after { content: ""; position: absolute; inset: auto -80px -120px auto; width: 360px; height: 360px; border-radius: 50%; border: 56px solid hsl(var(--primary-foreground) / .07); pointer-events: none; }
+.hero-copy h1 { font-size: 36px; line-height: 44px; font-weight: 650; letter-spacing: -.03em; max-width: 16ch; }
+.hero-copy p { margin-top: 12px; max-width: 46ch; font-size: 16px; line-height: 24px; opacity: .88; }
+.hero-card { position: relative; z-index: 1; padding: 20px; border-radius: var(--r-lg); background: hsl(var(--card)); color: hsl(var(--foreground)); box-shadow: var(--shadow-3); display: flex; flex-direction: column; gap: 16px; }
+.hero-amount { display: inline-block; margin-top: 5px; font-size: 36px; line-height: 42px; font-weight: 750; letter-spacing: -.04em; background: linear-gradient(105deg, #087f8c 0%, #3568d4 48%, #8a4fbd 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.money-amount { color: #087f8c; font-weight: 650; }
+.money-amount::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 8px 2px 0; border-radius: 50%; background: linear-gradient(135deg, #11a8a1, #7255d8); }
+[data-theme="dark"] .hero-amount { background-image: linear-gradient(105deg, #5ee2d1 0%, #86a8ff 52%, #d59aff 100%); }
+[data-theme="dark"] .money-amount { color: #7be0d5; }
+@media (max-width: 520px) { .hero-amount { font-size: 30px; line-height: 36px; } }
+.hero-meta { display: flex; gap: 20px; font-size: 13px; color: hsl(var(--muted-foreground)); }
+.hero-meta b { display: block; color: hsl(var(--foreground)); font-size: 14px; font-weight: 600; }
+@media (max-width: 900px) { .hero { grid-template-columns: 1fr; padding: 24px; } .hero-copy h1 { font-size: 28px; line-height: 36px; } }
+
+/* ---------- Mobile drawer ---------- */
+#drawer { position: fixed; inset: 0; z-index: 70; }
+#drawer .scrim { position: absolute; inset: 0; background: hsl(200 40% 6% / .5); }
+#drawer .panel { position: absolute; inset: 0 auto 0 0; width: 288px; padding: 20px 12px; background: hsl(var(--card)); box-shadow: var(--shadow-3); display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+
+.appbar-burger { display: none; }
+@media (max-width: 900px) {
+  .appbar { padding: 0 8px; gap: 8px; }
+  .appbar-nav, .appbar .brand-word { display: none; }
+  .appbar-burger { display: inline-flex; }
+  .appbar .btn-primary .lbl { display: none; }
+  .appbar .btn-primary { width: 32px; padding: 0; }
+}
+
+</style>
+</head>
+<body>
+<svg id="sprite" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="i-alert-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></symbol><symbol id="i-alert-triangle" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol><symbol id="i-align-left" viewBox="0 0 24 24"><path d="M21 5H3"/><path d="M15 12H3"/><path d="M17 19H3"/></symbol><symbol id="i-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></symbol><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol><symbol id="i-badge-check" viewBox="0 0 24 24"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></symbol><symbol id="i-braces" viewBox="0 0 24 24"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></symbol><symbol id="i-bug" viewBox="0 0 24 24"><path d="M12 20v-9"/><path d="M14 7a4 4 0 0 1 4 4v3a6 6 0 0 1-12 0v-3a4 4 0 0 1 4-4z"/><path d="M14.12 3.88 16 2"/><path d="M21 21a4 4 0 0 0-3.81-4"/><path d="M21 5a4 4 0 0 1-3.55 3.97"/><path d="M22 13h-4"/><path d="M3 21a4 4 0 0 1 3.81-4"/><path d="M3 5a4 4 0 0 0 3.55 3.97"/><path d="M6 13H2"/><path d="m8 2 1.88 1.88"/><path d="M9 7.13V6a3 3 0 1 1 6 0v1.13"/></symbol><symbol id="i-building-2" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></symbol><symbol id="i-calendar-days" viewBox="0 0 24 24"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol><symbol id="i-check-circle-2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol><symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol><symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol><symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol><symbol id="i-chevron-up" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></symbol><symbol id="i-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></symbol><symbol id="i-circle-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></symbol><symbol id="i-clipboard" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></symbol><symbol id="i-clipboard-paste" viewBox="0 0 24 24"><path d="M11 14h10"/><path d="M16 4h2a2 2 0 0 1 2 2v1.344"/><path d="m17 18 4-4-4-4"/><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 1.793-1.113"/><rect x="8" y="2" width="8" height="4" rx="1"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></symbol><symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol><symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol><symbol id="i-edit-2" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></symbol><symbol id="i-eraser" viewBox="0 0 24 24"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></symbol><symbol id="i-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol><symbol id="i-file-warning" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol><symbol id="i-files" viewBox="0 0 24 24"><path d="M15 2a2 2 0 0 1 1.414.586l4 4A2 2 0 0 1 21 8v7a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/><path d="M15 2v4a2 2 0 0 0 2 2h4"/><path d="M5 7a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h8a2 2 0 0 0 1.732-1"/></symbol><symbol id="i-flask-conical" viewBox="0 0 24 24"><path d="M14 2v6a2 2 0 0 0 .245.96l5.51 10.08A2 2 0 0 1 18 22H6a2 2 0 0 1-1.755-2.96l5.51-10.08A2 2 0 0 0 10 8V2"/><path d="M6.453 15h11.094"/><path d="M8.5 2h7"/></symbol><symbol id="i-grip-vertical" viewBox="0 0 24 24"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></symbol><symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol><symbol id="i-indian-rupee" viewBox="0 0 24 24"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3"/><path d="M9 13c6.667 0 6.667-10 0-10"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol><symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol><symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></symbol><symbol id="i-layout-dashboard" viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></symbol><symbol id="i-layout-grid" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></symbol><symbol id="i-link-2" viewBox="0 0 24 24"><path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><line x1="8" x2="16" y1="12" y2="12"/></symbol><symbol id="i-loader-2" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol><symbol id="i-log-in" viewBox="0 0 24 24"><path d="m10 17 5-5-5-5"/><path d="M15 12H3"/><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></symbol><symbol id="i-log-out" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></symbol><symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/><rect x="2" y="4" width="20" height="16" rx="2"/></symbol><symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol><symbol id="i-pen-line" viewBox="0 0 24 24"><path d="M13 21h8"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></symbol><symbol id="i-percent" viewBox="0 0 24 24"><line x1="19" x2="5" y1="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></symbol><symbol id="i-phone" viewBox="0 0 24 24"><path d="M13.832 16.568a1 1 0 0 0 1.213-.303l.355-.465A2 2 0 0 1 17 15h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2A18 18 0 0 1 2 4a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3a2 2 0 0 1-.8 1.6l-.468.351a1 1 0 0 0-.292 1.233 14 14 0 0 0 6.392 6.384"/></symbol><symbol id="i-play-circle" viewBox="0 0 24 24"><path d="M9 9.003a1 1 0 0 1 1.517-.859l4.997 2.997a1 1 0 0 1 0 1.718l-4.997 2.997A1 1 0 0 1 9 14.996z"/><circle cx="12" cy="12" r="10"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></symbol><symbol id="i-plus-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></symbol><symbol id="i-refresh-cw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol><symbol id="i-rotate-ccw" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol><symbol id="i-save" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></symbol><symbol id="i-save-all" viewBox="0 0 24 24"><path d="M10 2v3a1 1 0 0 0 1 1h5"/><path d="M18 18v-6a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6"/><path d="M18 22H4a2 2 0 0 1-2-2V6"/><path d="M8 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9.172a2 2 0 0 1 1.414.586l2.828 2.828A2 2 0 0 1 22 6.828V16a2 2 0 0 1-2.01 2z"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></symbol><symbol id="i-settings-2" viewBox="0 0 24 24"><path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></symbol><symbol id="i-share-2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></symbol><symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol><symbol id="i-shield-alert" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="M12 8v4"/><path d="M12 16h.01"/></symbol><symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/><path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol><symbol id="i-trash-2" viewBox="0 0 24 24"><path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol><symbol id="i-trending-up" viewBox="0 0 24 24"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></symbol><symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol><symbol id="i-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></symbol><symbol id="i-user-round" viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></symbol><symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol><symbol id="i-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol><symbol id="i-more-horizontal" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></symbol><symbol id="i-arrow-up-down" viewBox="0 0 24 24"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></symbol><symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol><symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol><symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol><symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></symbol><symbol id="i-contrast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 18a6 6 0 0 0 0-12v12z"/></symbol><symbol id="i-external-link" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol><symbol id="i-filter" viewBox="0 0 24 24"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></symbol><symbol id="i-paperclip" viewBox="0 0 24 24"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></symbol><symbol id="i-image" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></symbol><symbol id="i-file-spreadsheet" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></symbol><symbol id="i-file-image" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><circle cx="10" cy="12" r="2"/><path d="m20 17-1.296-1.296a2.41 2.41 0 0 0-3.408 0L9 22"/></symbol><symbol id="i-landmark" viewBox="0 0 24 24"><path d="M10 18v-7"/><path d="M11.12 2.198a2 2 0 0 1 1.76.006l7.866 3.847c.476.233.31.949-.22.949H3.474c-.53 0-.695-.716-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/></symbol><symbol id="i-badge-indian-rupee" viewBox="0 0 24 24"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="M8 8h8"/><path d="M8 12h8"/><path d="m13 17-5-1h1a4 4 0 0 0 0-8"/></symbol><symbol id="i-calculator" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></symbol><symbol id="i-smartphone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></symbol><symbol id="i-fingerprint" viewBox="0 0 24 24"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></symbol><symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol><symbol id="i-scroll-text" viewBox="0 0 24 24"><path d="M15 12h-5"/><path d="M15 8h-5"/><path d="M19 17V5a2 2 0 0 0-2-2H4"/><path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></symbol><symbol id="i-ban" viewBox="0 0 24 24"><path d="M4.929 4.929 19.07 19.071"/><circle cx="12" cy="12" r="10"/></symbol><symbol id="i-archive" viewBox="0 0 24 24"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></symbol><symbol id="i-panel-left" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></symbol><symbol id="i-more-vertical" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></symbol><symbol id="i-circle-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></symbol><symbol id="i-undo-2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol><symbol id="i-chevrons-up-down" viewBox="0 0 24 24"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></symbol><symbol id="i-file-check-2" viewBox="0 0 24 24"><path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m3 15 2 2 4-4"/></symbol></svg>
+<div class="shell">
+  <aside class="side" aria-label="Catalog navigation">
+    <a class="brand" href="#top">
+      <span class="brand-mark"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-landmark"/></svg></span>
+      <span class="brand-text"><b>LoanPortal</b><span>Design system v2</span></span>
+    </a>
+    <nav class="stack" style="--gap:20px" id="sidenav">
+      <div class="nav-group"><p>Foundations</p>
+        <a class="nav-link" href="#color">Color</a>
+        <a class="nav-link" href="#type">Typography</a>
+        <a class="nav-link" href="#shape">Shape and elevation</a>
+      </div>
+      <div class="nav-group"><p>Inputs</p>
+        <a class="nav-link" href="#buttons">Buttons</a>
+        <a class="nav-link" href="#fields">Form fields</a>
+        <a class="nav-link" href="#selection">Selection</a>
+        <a class="nav-link" href="#files">File upload</a>
+      </div>
+      <div class="nav-group"><p>Display</p>
+        <a class="nav-link" href="#badges">Badges</a>
+        <a class="nav-link" href="#cards">Cards</a>
+        <a class="nav-link" href="#tables">Tables</a>
+        <a class="nav-link" href="#progress">Progress and steps</a>
+      </div>
+      <div class="nav-group"><p>Feedback</p>
+        <a class="nav-link" href="#alerts">Alerts and toasts</a>
+        <a class="nav-link" href="#dialogs">Dialogs</a>
+        <a class="nav-link" href="#states">Empty and error states</a>
+      </div>
+      <div class="nav-group"><p>Navigation</p>
+        <a class="nav-link" href="#nav">App bar, tabs, menus</a>
+      </div>
+      <div class="nav-group"><p>Assets</p>
+        <a class="nav-link" href="#icons">Icons</a>
+      </div>
+    </nav>
+  </aside>
+
+  <main id="top" style="min-width:0">
+    <header class="topbar">
+      <div class="row">
+        <button type="button" class="btn btn-ghost btn-icon menu-btn" id="open-drawer" aria-label="Open navigation"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-menu"/></svg></button>
+        <div><p class="t-label">Component catalog</p><p class="t-caption muted hide-sm">Light and dark. Checked against WCAG 2.2 AA.</p></div>
+      </div>
+      <div class="row">
+        <div class="seg hide-sm" role="group" aria-label="Brand colour" id="brand-seg">
+          <button type="button" data-brand="peacock" aria-pressed="true">Peacock</button>
+          <button type="button" data-brand="classic" aria-pressed="false">Classic blue</button>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" id="theme-toggle" aria-pressed="false">
+          <span class="row" style="--gap:6px" data-when="light"><svg class="icon" aria-hidden="true"><use href="#i-moon"/></svg> Dark</span>
+          <span class="row" style="--gap:6px" data-when="dark" hidden><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg> Light</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- HERO -->
+      <section class="hero" aria-label="Overview">
+        <div class="hero-copy" style="position:relative;z-index:1">
+          <h1>Borrower and review desk, one system.</h1>
+          <p>Tokens, components and patterns for applying, reviewing and sharing loan documents. Built for ₹ amounts, PAN and GST data, and long forms on small screens.</p>
+          <div class="row wrap" style="margin-top:24px;--gap:10px">
+            <a class="btn btn-lg" style="background:hsl(var(--primary-foreground));color:hsl(var(--primary))" href="#buttons">Browse components</a>
+            <a class="btn btn-lg" style="color:hsl(var(--primary-foreground));border-color:hsl(var(--primary-foreground)/.5)" href="#color">View tokens</a>
+          </div>
+        </div>
+        <div class="hero-card">
+          <div class="between row">
+            <div class="row"><span class="icon-tile tone-brand"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-file-text"/></svg></span><div><p class="t-label">BL-20418</p><p class="t-caption muted">Business loan · Submitted 2 Oct 2026</p></div></div>
+            <span class="badge badge-info">Submitted</span>
+          </div>
+          <div><p class="t-caption muted">Requested amount</p><p class="hero-amount num" aria-label="Requested amount: 15 lakh rupees">₹15,00,000</p></div>
+          <div class="stepper" aria-label="Application progress">
+            <div class="step done"><span class="step-dot"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-check"/></svg></span>Business</div>
+            <div class="step current" aria-current="step"><span class="step-dot">2</span>Owners</div>
+            <div class="step"><span class="step-dot">3</span>Documents</div>
+            <div class="step"><span class="step-dot">4</span>Review</div>
+          </div>
+          <div class="hero-meta"><div><b class="num">18.5%</b>Interest</div><div><b class="num">36 months</b>Tenure</div><div><b class="num">₹54,720</b>Est. EMI</div></div>
+        </div>
+      </section>
+
+      <!-- COLOR -->
+      <section id="color" class="section">
+        <div class="section-head"><h2 class="t-h1">Color</h2><p>Neutrals carry the interface, one brand colour marks the primary action, and four status hues carry meaning. Every pairing below is measured live against WCAG, so switch the theme or brand and the numbers update.</p></div>
+        <div class="grid cols-6" style="--gap:12px" id="swatches">
+          <div class="card swatch"><div class="swatch-chip" style="background:hsl(var(--primary));color:hsl(var(--primary-foreground))" data-bg="--primary" data-fg="--primary-foreground"><span></span></div><div><b>Primary</b><small>Actions, links, focus</small></div></div>
+          <div class="card swatch"><div class="swatch-chip" style="background:hsl(var(--primary-soft));color:hsl(var(--primary-soft-foreground))" data-bg="--primary-soft" data-fg="--primary-soft-foreground"><span></span></div><div><b>Primary soft</b><small>Selected, secondary</small></div></div>
+          <div class="card swatch"><div class="swatch-chip" style="background:hsl(var(--background));color:hsl(var(--foreground))" data-bg="--background" data-fg="--foreground"><span></span></div><div><b>Background</b><small>Page canvas</small></div></div>
+          <div class="card swatch"><div class="swatch-chip" style="background:hsl(var(--card));color:hsl(var(--muted-foreground))" data-bg="--card" data-fg="--muted-foreground"><span></span></div><div><b>Card</b><small>Secondary text on card</small></div></div>
+          <div class="card swatch"><div class="swatch-chip" style="background:hsl(var(--muted));color:hsl(var(--muted-foreground))" data-bg="--muted" data-fg="--muted-foreground"><span></span></div><div><b>Muted</b><small>Table heads, wells</small></div></div>
+          <div class="card swatch"><div class="swatch-chip" style="background:hsl(var(--card));color:hsl(var(--input));border:2px solid hsl(var(--input))" data-bg="--card" data-fg="--input"><span></span></div><div><b>Control edge</b><small>Input borders, 3:1</small></div></div>
+        </div>
+        <div class="grid cols-4" style="--gap:12px">
+          <div class="card card-pad stack" style="--gap:10px"><span class="badge badge-info no-dot" style="height:auto;padding:12px;border-radius:var(--r-md);justify-content:space-between;width:100%"><b>Info</b><span class="t-caption" data-pair="--info-strong|--info-soft"></span></span><p class="t-caption muted">Submitted, neutral news, help text</p></div>
+          <div class="card card-pad stack" style="--gap:10px"><span class="badge badge-success no-dot" style="height:auto;padding:12px;border-radius:var(--r-md);justify-content:space-between;width:100%"><b>Success</b><span class="t-caption" data-pair="--success-strong|--success-soft"></span></span><p class="t-caption muted">Approved, verified, saved</p></div>
+          <div class="card card-pad stack" style="--gap:10px"><span class="badge badge-warning no-dot" style="height:auto;padding:12px;border-radius:var(--r-md);justify-content:space-between;width:100%"><b>Warning</b><span class="t-caption" data-pair="--warning-strong|--warning-soft"></span></span><p class="t-caption muted">Under review, mismatch, expiring</p></div>
+          <div class="card card-pad stack" style="--gap:10px"><span class="badge badge-danger no-dot" style="height:auto;padding:12px;border-radius:var(--r-md);justify-content:space-between;width:100%"><b>Danger</b><span class="t-caption" data-pair="--danger-strong|--danger-soft"></span></span><p class="t-caption muted">Rejected, errors, destructive actions</p></div>
+        </div>
+        <div class="alert alert-neutral" role="note"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-info"/></svg><div><b>Color is never the only signal.</b><p>Status badges pair a dot and a text label with the hue. Errors add an icon and a message. Rejected is shown as a tonal badge, not a solid red pill, so one rejected row does not overpower a table.</p></div><span></span></div>
+      </section>
+
+      <!-- TYPE -->
+      <section id="type" class="section">
+        <div class="section-head"><h2 class="t-h1">Typography</h2><p>Inter at six steps. Labels use sentence case, with no tracked-out capitals. Amounts use tabular figures so digits line up in tables and summaries.</p></div>
+        <div class="grid cols-2">
+          <div class="card card-pad">
+            <div class="scale-row"><code>32 / 40 · 650</code><p class="t-display">Display</p></div>
+            <div class="scale-row"><code>24 / 32 · 650</code><p class="t-h1">Page title</p></div>
+            <div class="scale-row"><code>20 / 28 · 600</code><p class="t-h2">Section title</p></div>
+            <div class="scale-row"><code>16 / 24 · 600</code><p class="t-h3">Card title</p></div>
+            <div class="scale-row"><code>14 / 20 · 400</code><p class="t-body">Body text for forms, tables and dialogs.</p></div>
+            <div class="scale-row"><code>14 / 20 · 500</code><p class="t-label">Field label and button text</p></div>
+            <div class="scale-row"><code>13 / 18 · 400</code><p class="t-small muted">Helper text and validation messages</p></div>
+            <div class="scale-row"><code>12 / 16 · 400</code><p class="t-caption muted">Captions, timestamps, counters</p></div>
+          </div>
+          <div class="card card-pad stack">
+            <div><h3 class="t-h3">Tabular figures for money</h3><p class="t-small muted" style="margin-top:4px">Proportional digits drift. Tabular digits keep decimals and lakhs aligned.</p></div>
+            <div class="grid cols-2" style="--gap:16px">
+              <div><p class="t-caption muted" style="margin-bottom:6px">Proportional</p><div style="text-align:right;font-size:18px;line-height:30px;font-weight:600;font-variant-numeric:proportional-nums;font-feature-settings:'pnum'"><div>₹11,11,111</div><div>₹8,50,000</div><div>₹15,00,000</div><div>₹1,00,000</div></div></div>
+              <div><p class="t-caption muted" style="margin-bottom:6px">Tabular <code>.num</code></p><div class="num" style="text-align:right;font-size:18px;line-height:30px;font-weight:600"><div>₹11,11,111</div><div>₹8,50,000</div><div>₹15,00,000</div><div>₹1,00,000</div></div></div>
+            </div>
+            <hr class="divider">
+            <div><h3 class="t-h3">Reading width</h3><p class="t-small muted" style="margin-top:4px">Body copy stays under 70 characters per line. Forms stay narrow so labels sit close to their inputs.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SHAPE -->
+      <section id="shape" class="section">
+        <div class="section-head"><h2 class="t-h1">Shape and elevation</h2><p>Radius steps up with the size of the container: controls 8, cards 12, dialogs 16. The original kit mixed 2, 4, 6, 8, 10, 12 and 16 on similar objects.</p></div>
+        <div class="grid cols-2">
+          <div class="card card-pad stack">
+            <h3 class="t-h3">Radius</h3>
+            <div class="row wrap" style="--gap:20px;align-items:flex-end">
+              <div class="stack" style="--gap:8px"><div class="radius-box" style="border-radius:var(--r-sm)"></div><p class="t-caption">6 · tags</p></div>
+              <div class="stack" style="--gap:8px"><div class="radius-box" style="border-radius:var(--r-md)"></div><p class="t-caption">8 · controls</p></div>
+              <div class="stack" style="--gap:8px"><div class="radius-box" style="border-radius:var(--r-lg)"></div><p class="t-caption">12 · cards</p></div>
+              <div class="stack" style="--gap:8px"><div class="radius-box" style="border-radius:var(--r-xl)"></div><p class="t-caption">16 · dialogs</p></div>
+              <div class="stack" style="--gap:8px"><div class="radius-box" style="border-radius:99px"></div><p class="t-caption">Full · pills</p></div>
+            </div>
+          </div>
+          <div class="card card-pad stack">
+            <h3 class="t-h3">Elevation</h3>
+            <div class="grid cols-4" style="--gap:12px">
+              <div class="elev-box" style="box-shadow:none">Flat</div>
+              <div class="elev-box" style="box-shadow:var(--shadow-1)">Card</div>
+              <div class="elev-box" style="box-shadow:var(--shadow-2)">Menu</div>
+              <div class="elev-box" style="box-shadow:var(--shadow-3)">Dialog</div>
+            </div>
+            <p class="t-small muted">In dark mode shadows deepen and the 1px border does most of the separation.</p>
+          </div>
+          <div class="card card-pad stack">
+            <h3 class="t-h3">Spacing, 4px base</h3>
+            <div class="stack" style="--gap:6px">
+              <div class="row"><span class="t-caption muted" style="width:44px">4</span><i class="space-bar" style="width:4px"></i></div>
+              <div class="row"><span class="t-caption muted" style="width:44px">8</span><i class="space-bar" style="width:8px"></i></div>
+              <div class="row"><span class="t-caption muted" style="width:44px">12</span><i class="space-bar" style="width:12px"></i></div>
+              <div class="row"><span class="t-caption muted" style="width:44px">16</span><i class="space-bar" style="width:16px"></i></div>
+              <div class="row"><span class="t-caption muted" style="width:44px">24</span><i class="space-bar" style="width:24px"></i></div>
+              <div class="row"><span class="t-caption muted" style="width:44px">32</span><i class="space-bar" style="width:32px"></i></div>
+              <div class="row"><span class="t-caption muted" style="width:44px">48</span><i class="space-bar" style="width:48px"></i></div>
+            </div>
+          </div>
+          <div class="card card-pad stack">
+            <h3 class="t-h3">Focus ring</h3>
+            <p class="t-small muted">2px ring with 2px offset on every interactive element. Tab through the buttons to see it.</p>
+            <div class="row wrap"><button class="btn btn-primary">Primary</button><button class="btn btn-outline">Outline</button><input class="input" style="width:180px" placeholder="Text field"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BUTTONS -->
+      <section id="buttons" class="section">
+        <div class="section-head"><h2 class="t-h1">Buttons</h2><p>One primary action per view. Name the action with a verb: “Save changes”, not “Submit”. Heights are 32, 40 and 48, and every size keeps a 24px minimum hit area.</p></div>
+        <div class="card card-pad stack" style="--gap:28px">
+          <div class="sub"><h3>Variants</h3>
+            <div class="row wrap">
+              <button class="btn btn-primary">Primary</button>
+              <button class="btn btn-secondary">Secondary</button>
+              <button class="btn btn-outline">Outline</button>
+              <button class="btn btn-ghost">Ghost</button>
+              <button class="btn btn-danger">Delete</button>
+              <button class="btn btn-danger-outline">Revoke access</button>
+              <button class="btn btn-link">Link button</button>
+            </div>
+          </div>
+          <div class="sub"><h3>Sizes and icons</h3>
+            <div class="row wrap">
+              <button class="btn btn-primary btn-sm">Small</button>
+              <button class="btn btn-primary">Default</button>
+              <button class="btn btn-primary btn-lg">Large</button>
+              <button class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-arrow-right"/></svg> Continue</button>
+              <button class="btn btn-outline"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg> Upload</button>
+              <button class="btn btn-outline btn-icon" aria-label="Download"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg></button>
+              <button class="btn btn-ghost btn-icon btn-sm" aria-label="Copy link"><svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg></button>
+              <div class="btn-group" role="group" aria-label="View"><button class="btn btn-outline btn-sm" aria-pressed="true">List</button><button class="btn btn-outline btn-sm" aria-pressed="false">Board</button></div>
+            </div>
+          </div>
+          <div class="sub"><h3>States</h3>
+            <div class="stack" style="--gap:10px">
+              <div class="row wrap"><span class="state-label">Primary</span>
+                <button class="btn btn-primary">Default</button><button class="btn btn-primary is-hover">Hover</button><button class="btn btn-primary is-focus">Focus</button><button class="btn btn-primary" disabled>Disabled</button><button class="btn btn-primary" aria-busy="true" disabled><svg class="icon spin" aria-hidden="true"><use href="#i-loader-2"/></svg> Saving</button></div>
+              <div class="row wrap"><span class="state-label">Outline</span>
+                <button class="btn btn-outline">Default</button><button class="btn btn-outline is-hover">Hover</button><button class="btn btn-outline is-focus">Focus</button><button class="btn btn-outline" disabled>Disabled</button><button class="btn btn-outline" aria-busy="true" disabled><svg class="icon spin" aria-hidden="true"><use href="#i-loader-2"/></svg> Loading</button></div>
+            </div>
+          </div>
+          <div class="sub"><h3>Full width, for mobile footers</h3>
+            <div class="stack" style="max-width:360px;--gap:8px"><button class="btn btn-primary btn-lg btn-block">Submit application</button><button class="btn btn-ghost btn-lg btn-block">Save as draft</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FIELDS -->
+      <section id="fields" class="section">
+        <div class="section-head"><h2 class="t-h1">Form fields</h2><p>Labels sit above the control and stay visible. Helper text explains the format, and an error replaces it with what to fix. Required fields carry an asterisk and <code>aria-required</code>. These fields validate live: try the PAN, the amount and the password.</p></div>
+        <div class="grid cols-2">
+          <div class="card card-pad stack" style="--gap:20px">
+            <div class="fg"><label for="f-name">Legal business name<span class="req" aria-hidden="true">*</span></label><input id="f-name" class="input" placeholder="As registered with the MCA" aria-required="true"><p class="hint">Required fields show a red asterisk.</p></div>
+            <div class="fg"><label for="f-pan">PAN</label><input id="f-pan" class="input mono" style="text-transform:uppercase" placeholder="ABCDE1234F" maxlength="10" aria-describedby="f-pan-d" data-validate="pan"><p class="hint" id="f-pan-d">10 characters: 5 letters, 4 digits, 1 letter.</p></div>
+            <div class="fg"><label for="f-err">Text with error</label><input id="f-err" class="input" value="ab" aria-invalid="true" aria-describedby="f-err-d"><p class="err" id="f-err-d"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-circle-alert"/></svg><span>Enter at least 3 characters.</span></p></div>
+            <div class="fg"><label for="f-dis">Disabled</label><input id="f-dis" class="input" value="Locked after submission" disabled></div>
+            <div class="fg"><label for="f-ro">Read only</label><input id="f-ro" class="input" value="BL-20418" readonly></div>
+            <div class="fg"><label for="f-mail">Email</label><div class="input-wrap has-lead"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg><input id="f-mail" class="input" type="email" placeholder="name@company.com" autocomplete="email"></div></div>
+            <div class="fg"><label for="f-tel">Mobile number</label><div class="input-wrap has-lead"><span class="affix">+91</span><input id="f-tel" class="input" style="padding-left:46px" type="tel" inputmode="numeric" placeholder="98765 43210" autocomplete="tel-national"></div></div>
+            <div class="fg"><label for="password">Password</label>
+              <div class="input-wrap has-trail"><input id="password" class="input" type="password" value="Password@123" aria-describedby="pw-meter"><button type="button" class="btn btn-ghost btn-icon btn-sm trail" id="toggle-password" aria-label="Show password" aria-pressed="false"><span data-when="hide"><svg class="icon" aria-hidden="true"><use href="#i-eye"/></svg></span><span data-when="show" hidden><svg class="icon" aria-hidden="true"><use href="#i-eye-off"/></svg></span></button></div>
+              <div class="meter" id="pw-meter"><div class="meter-bars" id="pw-bars" data-level="4"><span></span><span></span><span></span><span></span></div><span class="meter-label" id="pw-label" aria-live="polite">Strong</span></div>
+              <p class="hint">Use 8 or more characters with a mix of letters, numbers and symbols.</p></div>
+            <div class="fg"><span class="label" id="otp-l">Mobile OTP</span><div class="otp" role="group" aria-labelledby="otp-l" id="otp"><input class="input" inputmode="numeric" maxlength="1" aria-label="Digit 1"><input class="input" inputmode="numeric" maxlength="1" aria-label="Digit 2"><input class="input" inputmode="numeric" maxlength="1" aria-label="Digit 3"><input class="input" inputmode="numeric" maxlength="1" aria-label="Digit 4"><input class="input" inputmode="numeric" maxlength="1" aria-label="Digit 5"><input class="input" inputmode="numeric" maxlength="1" aria-label="Digit 6"></div><p class="hint">Sent to +91 98••• ••210. <button type="button" class="btn btn-link">Resend in 28s</button></p></div>
+          </div>
+          <div class="card card-pad stack" style="--gap:20px">
+            <div class="fg"><label for="f-num">Number of directors</label><input id="f-num" class="input num" type="number" min="0" placeholder="2"></div>
+            <div class="fg"><label for="f-amt">Loan amount<span class="req" aria-hidden="true">*</span></label><div class="input-wrap has-lead"><span class="affix">₹</span><input id="f-amt" class="input num input-right" inputmode="decimal" value="15,00,000" data-currency aria-describedby="f-amt-d" aria-required="true"></div><p class="hint" id="f-amt-d">Grouped as you type. Stored as a number: <code id="f-amt-raw">1500000</code></p></div>
+            <div class="fg"><label for="f-rate">Interest rate</label><div class="input-wrap"><input id="f-rate" class="input num input-right" style="padding-right:36px" inputmode="decimal" value="18.50"><span class="affix-end">%</span></div></div>
+            <div class="grid cols-2" style="--gap:16px"><div class="fg"><label for="f-date">Date</label><div class="date-picker" id="date-picker"><div class="input-wrap has-lead"><svg class="icon" aria-hidden="true"><use href="#i-calendar-days"/></svg><input id="f-date" class="input" type="text" value="10 Oct 2026" autocomplete="off" aria-haspopup="dialog" aria-expanded="false" aria-controls="date-menu"><button class="date-trigger" type="button" aria-label="Open calendar" aria-controls="date-menu" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button></div><div class="date-menu" id="date-menu" role="dialog" aria-label="Choose a date" hidden><div class="date-menu-head"><button type="button" class="date-nav" data-month="-1" aria-label="Previous month">‹</button><p class="date-month" aria-live="polite"></p><button type="button" class="date-nav" data-month="1" aria-label="Next month">›</button></div><div class="date-weekdays" aria-hidden="true"><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span><span>Su</span></div><div class="date-days" role="grid" aria-label="Calendar days"></div><div class="date-menu-foot"><span class="t-caption muted">Select a date</span><button type="button" class="btn btn-secondary btn-sm" data-date-today>Today</button></div></div></div></div><div class="fg"><label for="f-dt">Date and time</label><input id="f-dt" class="input" type="datetime-local" value="2026-10-10T12:00"></div></div>
+            <div class="fg"><label for="f-ta">Loan purpose</label><textarea id="f-ta" class="input" maxlength="200" placeholder="Describe what the funds will be used for" data-counter="f-ta-c"></textarea><span class="counter num" id="f-ta-c">0 / 200</span></div>
+            <div class="fg"><label for="f-json">Payload</label><textarea id="f-json" class="input input-mono" rows="4" spellcheck="false">{
+  "programCode": "BL",
+  "amount": 1500000
+}</textarea></div>
+            <div class="fg"><span class="label">Hidden field</span><div class="field-note"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-eye-off"/></svg><span>Rendered as <code>&lt;input type="hidden"&gt;</code>. Not shown to the applicant. The value stays in the payload.</span></div></div>
+          </div>
+        </div>
+        <div class="card card-pad stack">
+          <div><h3 class="t-h3">Address</h3><p class="t-small muted">One field expands into six subfields. Submitted data nests under the field name.</p></div>
+          <div class="grid cols-2" style="--gap:16px;max-width:760px">
+            <div class="fg"><label for="a1">Address line 1</label><input id="a1" class="input" value="42 MG Road" autocomplete="address-line1"></div>
+            <div class="fg"><label for="a2">Address line 2<span class="opt">Optional</span></label><input id="a2" class="input" placeholder="Near City Center" autocomplete="address-line2"></div>
+            <div class="fg"><label for="a3">City</label><input id="a3" class="input" value="Mumbai" autocomplete="address-level2"></div>
+            <div class="fg"><label for="a4">State</label><input id="a4" class="input" value="Maharashtra" autocomplete="address-level1"></div>
+            <div class="fg"><label for="a5">PIN code</label><input id="a5" class="input num" inputmode="numeric" maxlength="6" value="400001" autocomplete="postal-code"></div>
+            <div class="fg"><label for="a6">Country</label><input id="a6" class="input" value="India" autocomplete="country-name"></div>
+          </div>
+        </div>
+        <div class="card card-pad stack">
+          <div><h3 class="t-h3">Human verification</h3><p class="t-small muted">Shown on registration. Ready, loading and error states.</p></div>
+          <div class="row wrap" style="--gap:16px;align-items:stretch">
+            <div class="captcha"><div class="row"><span class="captcha-box ok"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-check"/></svg></span><span>I'm not a robot</span></div><span class="t-caption muted" style="text-align:right;line-height:14px">reCAPTCHA<br>Privacy · Terms</span></div>
+            <div class="captcha" style="background:hsl(var(--card))" aria-busy="true"><div class="row muted"><svg class="icon spin" aria-hidden="true"><use href="#i-loader-2"/></svg><span>Loading verification</span></div></div>
+            <div class="captcha err-state" role="alert"><span class="row" style="--gap:8px"><svg class="icon" aria-hidden="true"><use href="#i-circle-alert"/></svg> Verification failed</span><button class="btn btn-outline btn-sm"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh-cw"/></svg> Retry</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SELECTION -->
+      <section id="selection" class="section">
+        <div class="section-head"><h2 class="t-h1">Selection controls</h2><p>Checkbox, radio and switch are real inputs, so they work with keyboards, screen readers and form submission. Select and multiselect open a listbox you can drive with arrow keys.</p></div>
+        <div class="grid cols-2">
+          <div class="card card-pad stack" style="--gap:20px">
+            <fieldset style="border:0;padding:0;margin:0" class="stack" aria-label="Checkbox states">
+              <label class="check"><input type="checkbox" checked>Checked</label>
+              <label class="check"><input type="checkbox">Unchecked</label>
+              <label class="check"><input type="checkbox" id="indet">Indeterminate</label>
+              <label class="check"><input type="checkbox" disabled>Disabled</label>
+              <label class="check"><input type="checkbox" aria-invalid="true" aria-describedby="chk-e"><span>I agree to the terms<small class="err" id="chk-e" style="margin-top:2px">You must accept to continue.</small></span></label>
+            </fieldset>
+            <hr class="divider">
+            <fieldset style="border:0;padding:0;margin:0" class="stack">
+              <legend class="t-label" style="padding:0;margin-bottom:12px">Business type</legend>
+              <label class="check"><input type="radio" name="bt" checked>Sole proprietorship</label>
+              <label class="check"><input type="radio" name="bt">Private limited</label>
+              <label class="check"><input type="radio" name="bt">Partnership</label>
+              <label class="check"><input type="radio" name="bt" disabled>LLP (unavailable)</label>
+            </fieldset>
+            <hr class="divider">
+            <div class="row between"><div><p class="t-label" id="sw-l">Allow download</p><p class="t-small muted" id="sw-d">Recipients can save the file</p></div><button type="button" class="switch" role="switch" aria-checked="true" aria-labelledby="sw-l" aria-describedby="sw-d" id="switch"></button></div>
+            <div class="row between"><div><p class="t-label" id="sw2-l">Email me on access</p><p class="t-small muted">Disabled until a recipient is added</p></div><button type="button" class="switch" role="switch" aria-checked="false" aria-labelledby="sw2-l" disabled></button></div>
+          </div>
+          <div class="stack" style="--gap:24px">
+            <div class="card card-pad stack" style="--gap:20px">
+              <div class="fg" data-select>
+                <span class="label" id="sel1-l">Loan program</span>
+                <div class="select">
+                  <button type="button" class="select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="sel1-l sel1-v"><span id="sel1-v" class="val">Business loan</span><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
+                  <div class="menu" role="listbox" aria-labelledby="sel1-l" hidden>
+                    <div class="menu-label" role="presentation">Programs</div>
+                    <div class="menu-item" role="option" tabindex="-1" aria-selected="true">Business loan</div>
+                    <div class="menu-item" role="option" tabindex="-1" aria-selected="false">Working capital</div>
+                    <div class="menu-item" role="option" tabindex="-1" aria-selected="false">MSME term loan</div>
+                    <div class="menu-sep" role="presentation"></div>
+                    <div class="menu-item" role="option" tabindex="-1" aria-selected="false" aria-disabled="true">Equipment finance (soon)</div>
+                  </div>
+                </div>
+              </div>
+              <div class="fg" data-select>
+                <span class="label" id="sel2-l">Select with error</span>
+                <div class="select"><button type="button" class="select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="sel2-l sel2-v" aria-invalid="true" aria-describedby="sel2-e"><span id="sel2-v" class="val ph">Choose a program</span><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
+                  <div class="menu" role="listbox" aria-labelledby="sel2-l" hidden><div class="menu-item" role="option" tabindex="-1" aria-selected="false">Business loan</div><div class="menu-item" role="option" tabindex="-1" aria-selected="false">Working capital</div></div></div>
+                <p class="err" id="sel2-e"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-circle-alert"/></svg><span>Select a loan program.</span></p>
+              </div>
+            </div>
+            <div class="card card-pad stack" style="--gap:20px">
+              <div class="fg" data-multi>
+                <span class="label" id="ms-l">Documents to attach</span>
+                <div class="select">
+                  <div class="select-trigger multi-trigger" role="group" aria-labelledby="ms-l"><div class="tags"></div><button type="button" class="btn btn-ghost btn-icon btn-sm" aria-haspopup="listbox" aria-expanded="false" aria-label="Open document list"><svg class="icon" aria-hidden="true"><use href="#i-chevrons-up-down"/></svg></button></div>
+                  <div class="menu" role="listbox" aria-multiselectable="true" aria-labelledby="ms-l" hidden>
+                    <div class="menu-item" role="option" tabindex="-1" aria-selected="true">PAN card</div>
+                    <div class="menu-item" role="option" tabindex="-1" aria-selected="false">Bank statement</div>
+                    <div class="menu-item" role="option" tabindex="-1" aria-selected="true">GST certificate</div>
+                    <div class="menu-item" role="option" tabindex="-1" aria-selected="false">Income tax return</div>
+                  </div>
+                </div>
+                <p class="hint">Choose all that apply.</p>
+              </div>
+            </div>
+            <div class="stack" style="--gap:10px">
+              <p class="t-label">Option cards</p>
+              <label class="option-card"><span class="check"><input type="radio" name="lt" checked></span><span><b>Business loan</b><span class="t-small muted">Working capital for day-to-day needs. Up to ₹50,00,000.</span></span></label>
+              <label class="option-card"><span class="check"><input type="radio" name="lt"></span><span><b>MSME term loan</b><span class="t-small muted">Longer tenure for equipment and expansion.</span></span></label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FILES -->
+      <section id="files" class="section">
+        <div class="section-head"><h2 class="t-h1">File upload</h2><p>The drop zone is a real file input, so it works by keyboard and on mobile. Each file shows its own state, and an error says what to change.</p></div>
+        <div class="grid cols-2">
+          <div class="stack" style="--gap:12px">
+            <label class="drop" id="drop">
+              <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png">
+              <span class="icon-tile tone-brand"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-upload"/></svg></span>
+              <span><span class="t-label" style="display:block">Drop files or <span style="color:hsl(var(--primary));text-decoration:underline;text-underline-offset:3px">browse</span></span><span class="t-small muted">PDF, JPG or PNG. Up to 10 MB each, 5 files.</span></span>
+            </label>
+            <ul class="stack" style="--gap:8px" id="file-list">
+              <li class="file-row"><span class="icon-tile tone-success"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-check-circle-2"/></svg></span><div class="grow"><p class="file-name">gst-certificate.pdf</p><p class="t-caption muted">1.2 MB · Uploaded</p></div><button class="btn btn-ghost btn-icon btn-sm" aria-label="Remove gst-certificate.pdf"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></li>
+              <li class="file-row"><span class="icon-tile tone-brand"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-file-text"/></svg></span><div class="grow stack" style="--gap:6px"><div class="between row"><p class="file-name">bank-statement-sep.pdf</p><span class="t-caption muted num">64%</span></div><div class="progress sm" role="progressbar" aria-label="Uploading bank-statement-sep.pdf" aria-valuenow="64" aria-valuemin="0" aria-valuemax="100" style="--v:64%"><i></i></div></div><button class="btn btn-ghost btn-icon btn-sm" aria-label="Cancel upload"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg></button></li>
+              <li class="file-row is-error"><span class="icon-tile tone-danger"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-file-warning"/></svg></span><div class="grow"><p class="file-name">office-photos.png</p><p class="err" style="margin-top:2px">This file is 14 MB. Choose one under 10 MB.</p></div><button class="btn btn-outline btn-sm">Replace</button></li>
+            </ul>
+          </div>
+          <div class="card card-pad stack">
+            <div><h3 class="t-h3">Upload document</h3><p class="t-small muted">PDF, images and spreadsheets up to 25 MB.</p></div>
+            <div class="fg" data-select><span class="label" id="up1-l">Category</span><div class="select"><button type="button" class="select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="up1-l up1-v"><span id="up1-v" class="val">Financial</span><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button><div class="menu" role="listbox" aria-labelledby="up1-l" hidden><div class="menu-item" role="option" tabindex="-1" aria-selected="false">Identity</div><div class="menu-item" role="option" tabindex="-1" aria-selected="true">Financial</div><div class="menu-item" role="option" tabindex="-1" aria-selected="false">Business</div></div></div></div>
+            <div class="fg" data-select><span class="label" id="up2-l">Document type</span><div class="select"><button type="button" class="select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="up2-l up2-v"><span id="up2-v" class="val">GST certificate</span><svg class="icon" aria-hidden="true"><use href="#i-chevron-down"/></svg></button><div class="menu" role="listbox" aria-labelledby="up2-l" hidden><div class="menu-item" role="option" tabindex="-1" aria-selected="true">GST certificate</div><div class="menu-item" role="option" tabindex="-1" aria-selected="false">Bank statement</div><div class="menu-item" role="option" tabindex="-1" aria-selected="false">Income tax return</div></div></div></div>
+            <div class="fg"><label for="up-lab">Label<span class="opt">Optional</span></label><input id="up-lab" class="input" value="Company PAN"></div>
+            <label class="drop"><input type="file"><span class="icon-tile tone-brand"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-upload"/></svg></span><span><span class="t-label" style="display:block">Choose a file</span><span class="t-small muted">One file, up to 25 MB</span></span></label>
+            <div class="row end"><button class="btn btn-outline">Cancel</button><button class="btn btn-primary">Upload</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- BADGES -->
+      <section id="badges" class="section">
+        <div class="section-head"><h2 class="t-h1">Badges</h2><p>Tonal pills with a status dot. Six tones cover every status in the portal, so the same word always gets the same colour.</p></div>
+        <div class="card card-pad stack" style="--gap:24px">
+          <div class="sub"><h3>Tones</h3><div class="row wrap" style="--gap:8px"><span class="badge">Neutral</span><span class="badge badge-brand">Brand</span><span class="badge badge-info">Info</span><span class="badge badge-success">Success</span><span class="badge badge-warning">Warning</span><span class="badge badge-danger">Danger</span><span class="badge badge-outline">Outline</span><span class="badge badge-solid">New</span></div></div>
+          <hr class="divider">
+          <div class="sub"><h3>Application status</h3><div class="row wrap" style="--gap:8px"><span class="badge">Draft</span><span class="badge badge-info">Submitted</span><span class="badge badge-warning">Under review</span><span class="badge badge-success">Approved</span><span class="badge badge-danger">Rejected</span><span class="badge badge-brand">Disbursed</span></div></div>
+          <div class="sub"><h3>Share status</h3><div class="row wrap" style="--gap:8px"><span class="badge badge-success">Active</span><span class="badge">Expired</span><span class="badge badge-outline">Revoked</span></div></div>
+          <div class="sub"><h3>Source and PAN verification</h3><div class="row wrap" style="--gap:8px"><span class="badge badge-success no-dot"><svg class="icon" aria-hidden="true"><use href="#i-badge-check"/></svg> Verified via DigiLocker</span><span class="badge no-dot"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg> Uploaded</span><span class="badge badge-success">Verified</span><span class="badge badge-warning">Verified with mismatch</span><span class="badge badge-danger">Not verified</span></div></div>
+        </div>
+      </section>
+
+      <!-- CARDS -->
+      <section id="cards" class="section">
+        <div class="section-head"><h2 class="t-h1">Cards</h2><p>Cards group related content and do not move on hover unless the whole card is a link. Summary tiles lead with the number.</p></div>
+        <div class="grid cols-4" style="--gap:16px">
+          <article class="card stat"><span class="stat-icon tone-brand"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-file-text"/></svg></span><div><p class="stat-value num">12</p><div class="stat-meta"><p class="t-small muted">Applications</p><span class="t-caption muted">+2 this week</span></div></div></article>
+          <article class="card stat"><span class="stat-icon tone-warning"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-clock"/></svg></span><div><p class="stat-value num">4</p><div class="stat-meta"><p class="t-small muted">Under review</p><span class="t-caption muted">Avg 3 days</span></div></div></article>
+          <article class="card stat"><span class="stat-icon tone-success"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-check-circle-2"/></svg></span><div><p class="stat-value num">6</p><div class="stat-meta"><p class="t-small muted">Approved</p><span class="t-caption muted num">₹62,50,000</span></div></div></article>
+          <article class="card stat"><span class="stat-icon tone-danger"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-x-circle"/></svg></span><div><p class="stat-value num">2</p><div class="stat-meta"><p class="t-small muted">Rejected</p><span class="t-caption muted">Reapply in 90 days</span></div></div></article>
+        </div>
+        <div class="grid cols-2" style="align-items:start">
+          <article class="card">
+            <div class="card-head"><h3 class="t-h3">Business details</h3><p class="t-small muted">Section card used by the form wizard.</p></div>
+            <div class="card-body t-body muted">Card content sits under the header. Keep one idea per card.</div>
+            <div class="card-foot"><button class="btn btn-outline btn-sm">Cancel</button><button class="btn btn-primary btn-sm">Save changes</button></div>
+          </article>
+          <article class="card" style="overflow:hidden">
+            <button type="button" class="disclosure-btn" aria-expanded="true" aria-controls="share-panel">
+              <div class="grow stack" style="--gap:6px">
+                <div class="row wrap" style="--gap:8px"><h3 class="t-label">Priya Sharma</h3><span class="badge badge-success">Active</span><span class="t-caption muted">Link only</span></div>
+                <p class="t-small muted">priya@example.com · +91 •••• 2210</p>
+                <p class="t-small muted">Version 2 · Expires 24 Oct 2026 · Opened 3 times</p>
+              </div><svg class="icon icon-lg" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+            </button>
+            <div class="disclosure-panel" id="share-panel">
+              <ol class="timeline"><li><p class="t-label">Link opened</p><p class="t-caption muted">10 Oct 2026, 9:14 am</p></li><li><p class="t-label">File downloaded</p><p class="t-caption muted">10 Oct 2026, 9:16 am</p></li></ol>
+              <div class="row between wrap"><p class="t-small muted">This person loses access immediately.</p><button class="btn btn-danger-outline btn-sm">Revoke access</button></div>
+            </div>
+          </article>
+        </div>
+        <div class="card card-pad row wrap" style="--gap:20px">
+          <div class="row"><span class="avatar avatar-sm avatar-solid">AS</span><span class="avatar">AS</span><span class="avatar avatar-lg">PS</span></div>
+          <div class="avatar-group" aria-label="Three reviewers"><span class="avatar avatar-sm">AS</span><span class="avatar avatar-sm tone-info">RK</span><span class="avatar avatar-sm tone-warning">MN</span></div>
+          <div><p class="t-label">Ananya Shah</p><p class="t-caption muted">ananya@example.com</p></div>
+        </div>
+      </section>
+
+      <!-- TABLES -->
+      <section id="tables" class="section">
+        <div class="section-head"><h2 class="t-h1">Tables</h2><p>Amounts are right-aligned with tabular figures. Sortable headers are buttons and announce their sort state. Rows select with a checkbox, never by row click alone.</p></div>
+        <div class="card table-card">
+          <div class="table-bar">
+            <div class="input-wrap has-lead" style="width:260px;max-width:100%"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><input class="input" style="height:36px" placeholder="Search applications" aria-label="Search applications"></div>
+            <div class="row"><button class="btn btn-outline btn-sm"><svg class="icon" aria-hidden="true"><use href="#i-filter"/></svg> Filter</button><button class="btn btn-outline btn-sm"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg> Export</button></div>
+          </div>
+          <div class="table-scroll">
+            <table class="table" id="app-table">
+              <caption class="sr-only">Loan applications</caption>
+              <thead><tr>
+                <th style="width:48px"><label class="check" style="vertical-align:middle"><input type="checkbox" id="sel-all" aria-label="Select all rows"></label></th>
+                <th aria-sort="ascending" data-col="id"><button class="sort" type="button">Application <svg class="icon icon-sm" aria-hidden="true"><use href="#i-arrow-up"/></svg></button></th>
+                <th aria-sort="none" data-col="program"><button class="sort" type="button">Program <svg class="icon icon-sm" aria-hidden="true"><use href="#i-arrow-up-down"/></svg></button></th>
+                <th class="r" aria-sort="none" data-col="amount"><button class="sort" type="button">Amount <svg class="icon icon-sm" aria-hidden="true"><use href="#i-arrow-up-down"/></svg></button></th>
+                <th>Status</th>
+                <th style="width:56px"><span class="sr-only">Actions</span></th>
+              </tr></thead>
+              <tbody id="app-body"></tbody>
+            </table>
+          </div>
+          <div class="table-foot"><p class="t-small muted num" id="app-count">Showing 1–5 of 12</p>
+            <nav class="pager" aria-label="Pagination"><button class="btn btn-outline btn-icon btn-sm" aria-label="Previous page" disabled><svg class="icon" aria-hidden="true"><use href="#i-chevron-left"/></svg></button><button class="btn btn-ghost btn-icon btn-sm" aria-current="page">1</button><button class="btn btn-ghost btn-icon btn-sm" aria-label="Page 2">2</button><button class="btn btn-ghost btn-icon btn-sm" aria-label="Page 3">3</button><button class="btn btn-outline btn-icon btn-sm" aria-label="Next page"><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg></button></nav></div>
+        </div>
+        <div class="card table-card" aria-busy="true">
+          <div class="table-scroll"><table class="table"><caption class="sr-only">Loading applications</caption><tbody>
+            <tr><td><span class="skel" style="height:14px;width:96px"></span></td><td><span class="skel" style="height:14px;width:128px"></span></td><td class="r"><span class="skel" style="height:14px;width:72px;margin-left:auto"></span></td><td><span class="skel" style="height:22px;width:84px;border-radius:99px"></span></td></tr>
+            <tr><td><span class="skel" style="height:14px;width:96px"></span></td><td><span class="skel" style="height:14px;width:110px"></span></td><td class="r"><span class="skel" style="height:14px;width:72px;margin-left:auto"></span></td><td><span class="skel" style="height:22px;width:70px;border-radius:99px"></span></td></tr>
+          </tbody></table></div>
+        </div>
+      </section>
+
+      <!-- PROGRESS -->
+      <section id="progress" class="section">
+        <div class="section-head"><h2 class="t-h1">Progress and steps</h2><p>The stepper marks done, current and error steps with an icon or number as well as colour, and connects them with a line that fills as the person advances.</p></div>
+        <div class="grid cols-2" style="align-items:start">
+          <div class="card card-pad stack" style="--gap:20px">
+            <div class="between row"><p class="t-label">Application progress</p><span class="t-small muted num">65%</span></div>
+            <div class="progress" role="progressbar" aria-label="Application progress" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100" style="--v:65%"><i></i></div>
+            <div class="row" style="--gap:14px;padding:12px 14px;border:1px solid hsl(var(--border));border-radius:var(--r-lg)"><p class="t-label num" style="flex:none">2 of 4 required</p><div class="progress sm grow" role="progressbar" aria-label="Required documents" aria-valuenow="2" aria-valuemin="0" aria-valuemax="4" style="--v:50%"><i></i></div></div>
+            <p class="t-small muted">Add the required documents to continue.</p>
+          </div>
+          <div class="card card-pad stack" style="--gap:24px">
+            <div class="stepper" aria-label="Application steps">
+              <div class="step done"><span class="step-dot"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-check"/></svg></span>Business</div>
+              <div class="step done"><span class="step-dot"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-check"/></svg></span>Owners</div>
+              <div class="step current" aria-current="step"><span class="step-dot">3</span>Documents</div>
+              <div class="step"><span class="step-dot">4</span>Review</div>
+            </div>
+            <div class="stepper" aria-label="Application steps with an error">
+              <div class="step done"><span class="step-dot"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-check"/></svg></span>Business</div>
+              <div class="step error"><span class="step-dot"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-x"/></svg></span>Owners</div>
+              <div class="step"><span class="step-dot">3</span>Documents</div>
+              <div class="step"><span class="step-dot">4</span>Review</div>
+            </div>
+            <div class="row" style="--gap:12px"><div class="progress grow" role="progressbar" aria-label="Step 3 of 4" aria-valuenow="3" aria-valuemin="1" aria-valuemax="4" style="--v:75%"><i></i></div><span class="t-caption muted">Step 3 of 4</span></div>
+          </div>
+        </div>
+        <div class="card card-pad stack">
+          <div><h3 class="t-h3">Resizable split</h3><p class="t-small muted">Drag the handle, or focus it and use the arrow keys.</p></div>
+          <div class="split" id="split"><div class="split-pane" style="width:38%">Schema</div><div class="split-handle" role="separator" aria-orientation="vertical" aria-label="Resize panels" aria-valuenow="38" aria-valuemin="20" aria-valuemax="80" tabindex="0"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-grip-vertical"/></svg></div><div class="split-pane" style="flex:1">Preview</div></div>
+        </div>
+      </section>
+
+      <!-- ALERTS -->
+      <section id="alerts" class="section">
+        <div class="section-head"><h2 class="t-h1">Alerts and toasts</h2><p>Alerts stay in the page until the problem is fixed. Toasts confirm an action and leave on their own after five seconds, or on hover-out. Both say what happened and what to do next.</p></div>
+        <div class="stack" style="--gap:12px">
+          <div class="alert alert-info" role="status"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-info"/></svg><div><b>Your draft is saved</b><p>You can return to this application from the dashboard any time in the next 30 days.</p></div><span></span></div>
+          <div class="alert alert-success" role="status"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-check-circle-2"/></svg><div><b>PAN verified</b><p>The name and date of birth match the PAN record.</p></div><span></span></div>
+          <div class="alert alert-warning" role="status"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-alert-triangle"/></svg><div><b>Bank statement is older than 90 days</b><p>Upload a recent statement to avoid delays in review.</p><div class="actions"><button>Upload new statement</button><button>Continue anyway</button></div></div><button class="alert-x" aria-label="Dismiss"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-x"/></svg></button></div>
+          <div class="alert alert-danger" role="alert"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-circle-alert"/></svg><div><b>We couldn't submit your application</b><p>The connection dropped before we got a reply. Your answers are still here. Try again.</p><div class="actions"><button>Try again</button></div></div><span></span></div>
+        </div>
+        <div class="card card-pad row wrap">
+          <button class="btn btn-primary btn-sm" data-toast="success">Success toast</button>
+          <button class="btn btn-outline btn-sm" data-toast="info">Info toast</button>
+          <button class="btn btn-outline btn-sm" data-toast="warning">Warning toast</button>
+          <button class="btn btn-danger btn-sm" data-toast="danger">Error toast</button>
+        </div>
+      </section>
+
+      <!-- DIALOGS -->
+      <section id="dialogs" class="section">
+        <div class="section-head"><h2 class="t-h1">Dialogs</h2><p>Every dialog in the portal, on one template: title, one sentence of context, then actions with the safest choice first. Open any of them as a real modal. Focus is trapped, Esc closes it, and focus returns to the button.</p></div>
+        <div class="grid cols-2" id="dialog-grid" style="--gap:20px"></div>
+      </section>
+
+      <!-- STATES -->
+      <section id="states" class="section">
+        <div class="section-head"><h2 class="t-h1">Empty, loading and error states</h2><p>An empty screen invites the next action. An error says what happened and offers a way out.</p></div>
+        <div class="grid cols-3" style="align-items:stretch">
+          <div class="card empty"><span class="icon-tile tone-brand"><svg class="icon icon-xl" aria-hidden="true"><use href="#i-files"/></svg></span><h3>No documents yet</h3><p>Upload a file or import one from DigiLocker.</p><button class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg> Upload document</button></div>
+          <div class="card card-pad stack" aria-busy="true" aria-label="Loading"><span class="skel" style="height:16px;width:50%"></span><span class="skel" style="height:40px"></span><span class="skel" style="height:40px"></span><span class="skel" style="height:40px"></span></div>
+          <div class="card card-pad stack" style="--gap:12px;justify-content:center"><div class="alert alert-danger" role="alert"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-circle-alert"/></svg><div><b>Couldn't load activity</b><p>Check your connection and try again.</p></div><span></span></div><button class="btn btn-outline"><svg class="icon" aria-hidden="true"><use href="#i-refresh-cw"/></svg> Try again</button><p class="t-small muted">Other empty messages: “No activity yet.” and “No loan programs are available right now.”</p></div>
+        </div>
+        <div class="grid cols-3">
+          <article class="card empty full-state"><span class="icon-tile tone-warning"><svg class="icon icon-xl" aria-hidden="true"><use href="#i-shield-alert"/></svg></span><h3 class="t-h2">Session expired</h3><p>For your security you were signed out. Sign in again to continue your application.</p><button class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-log-in"/></svg> Sign in</button><button class="btn btn-ghost" style="margin-top:4px">Back to home</button></article>
+          <article class="card empty full-state"><span class="icon-tile tone-info"><svg class="icon icon-xl" aria-hidden="true"><use href="#i-wifi-off"/></svg></span><h3 class="t-h2">Connection problem</h3><p>We can't reach the server. Check your network and try again.</p><button class="btn btn-primary"><svg class="icon" aria-hidden="true"><use href="#i-refresh-cw"/></svg> Try again</button></article>
+          <article class="card empty full-state"><span class="icon-tile tone-danger"><svg class="icon icon-xl" aria-hidden="true"><use href="#i-lock"/></svg></span><h3 class="t-h2">Access denied</h3><p>You don't have permission to open this page. Ask an admin to grant access.</p><button class="btn btn-outline"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg> Go to dashboard</button></article>
+        </div>
+      </section>
+
+      <!-- NAV -->
+      <section id="nav" class="section">
+        <div class="section-head"><h2 class="t-h1">App bar, tabs and menus</h2><p>The current page is marked with a fill and <code>aria-current</code>. Menus open on click and close with Esc or an outside click.</p></div>
+        <div class="card" style="overflow:visible;position:relative;z-index:5">
+          <div class="appbar" style="border-radius:var(--r-lg) var(--r-lg) 0 0">
+            <div class="row" style="--gap:16px">
+              <button class="btn btn-ghost btn-icon appbar-burger" aria-label="Open menu"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-menu"/></svg></button>
+              <span class="row" style="--gap:10px"><span class="brand-mark" style="width:28px;height:28px"><svg class="icon" aria-hidden="true"><use href="#i-building-2"/></svg></span><b class="t-label brand-word">LoanPortal</b></span>
+              <nav class="appbar-nav" aria-label="Main">
+                <a class="appbar-link" href="#nav" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-layout-dashboard"/></svg> Dashboard</a>
+                <a class="appbar-link" href="#nav"><svg class="icon" aria-hidden="true"><use href="#i-file-text"/></svg> Applications</a>
+                <a class="appbar-link" href="#nav"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg> Borrowers</a>
+                <a class="appbar-link" href="#nav"><svg class="icon" aria-hidden="true"><use href="#i-files"/></svg> Documents</a>
+              </nav>
+            </div>
+            <div class="row" style="--gap:8px">
+              <div class="menu-anchor"><button class="btn btn-primary btn-sm" id="apply-trigger" aria-label="Apply for a loan" aria-haspopup="menu" aria-expanded="false" aria-controls="apply-menu"><svg class="icon" aria-hidden="true"><use href="#i-plus-circle"/></svg><span class="lbl">Apply for a loan</span></button>
+                <div class="menu" id="apply-menu" role="menu" hidden style="width:300px"><p class="menu-label" role="presentation">Select a loan program</p><a class="menu-item" role="menuitem" href="#nav"><span><b>Business loan</b><small>Working capital up to ₹50,00,000</small></span></a><a class="menu-item" role="menuitem" href="#nav"><span><b>MSME term loan</b><small>Longer tenure for equipment and growth</small></span></a></div></div>
+              <button class="btn btn-ghost btn-icon dot-badge" aria-label="Notifications, 3 unread"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-bell"/></svg></button>
+              <div class="menu-anchor"><button class="btn btn-ghost" style="padding:0 8px" id="profile-trigger" aria-haspopup="menu" aria-expanded="false" aria-controls="profile-menu"><span class="avatar avatar-sm avatar-solid">AS</span><span class="hide-sm">Ananya</span><svg class="icon icon-sm" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>
+                <div class="menu" id="profile-menu" role="menu" hidden><div style="padding:8px 10px"><p class="t-label">Ananya Shah</p><p class="t-caption muted">ananya@example.com</p></div><div class="menu-sep" role="presentation"></div><a class="menu-item" role="menuitem" href="#nav"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg> Profile</a><a class="menu-item" role="menuitem" href="#nav"><svg class="icon" aria-hidden="true"><use href="#i-settings-2"/></svg> Settings</a><div class="menu-sep" role="presentation"></div><button class="menu-item danger" role="menuitem"><svg class="icon" aria-hidden="true"><use href="#i-log-out"/></svg> Sign out</button></div></div>
+            </div>
+          </div>
+          <div style="padding:20px 24px;min-height:120px;--gap:8px" class="stack"><nav class="crumbs" aria-label="Breadcrumb"><a href="#nav">Documents</a><svg class="icon" aria-hidden="true"><use href="#i-chevron-right"/></svg><span aria-current="page">GST certificate</span></nav><h3 class="t-h1">GST certificate</h3></div>
+        </div>
+        <div class="grid cols-2" style="align-items:start">
+          <div class="card card-pad stack">
+            <div class="tabs" role="tablist" aria-label="Profile sections" id="tabs">
+              <button class="tab" role="tab" id="tab-personal" aria-selected="true" aria-controls="panel-personal">Personal</button>
+              <button class="tab" role="tab" id="tab-contact" aria-selected="false" aria-controls="panel-contact" tabindex="-1">Contact</button>
+              <button class="tab" role="tab" id="tab-security" aria-selected="false" aria-controls="panel-security" tabindex="-1">Security</button>
+            </div>
+            <div class="tab-panel t-body muted" role="tabpanel" id="panel-personal" aria-labelledby="tab-personal" tabindex="0">Name, date of birth and PAN.</div>
+            <div class="tab-panel t-body muted" role="tabpanel" id="panel-contact" aria-labelledby="tab-contact" tabindex="0" hidden>Email, mobile and address.</div>
+            <div class="tab-panel t-body muted" role="tabpanel" id="panel-security" aria-labelledby="tab-security" tabindex="0" hidden>Password and active sessions.</div>
+            <p class="t-caption muted">Arrow keys move between tabs.</p>
+          </div>
+          <div class="card card-pad stack">
+            <p class="t-label">Category filter</p>
+            <div class="chips" id="chips" role="group" aria-label="Document category"><button class="chip" aria-pressed="true">All</button><button class="chip" aria-pressed="false">Identity</button><button class="chip" aria-pressed="false">Financial</button><button class="chip" aria-pressed="false">Business</button></div>
+            <hr class="divider">
+            <div class="row" style="--gap:32px;align-items:flex-start;flex-wrap:wrap">
+              <div class="tip-wrap"><button class="btn btn-outline btn-sm" aria-describedby="tip1">Hover or focus me</button><span class="tip" role="tooltip" id="tip1">Saved locally until you submit</span></div>
+              <div class="popover"><p class="t-label">Popover</p><p class="t-small muted" style="margin-top:4px">Used by multiselect and inline help. 8px offset, 1px border, popover surface.</p></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ICONS -->
+      <section id="icons" class="section">
+        <div class="section-head"><h2 class="t-h1">Icons</h2><p>Lucide, 2px stroke, in an inline SVG sprite, so there is no icon script to load. Use 16px on controls, 14px in badges and 20px in tiles. Select an icon to copy its name.</p></div>
+        <div class="card card-pad row wrap" style="--gap:28px">
+          <span class="row" style="--gap:8px"><svg class="icon icon-sm" aria-hidden="true"><use href="#i-bell"/></svg><span class="t-caption muted">14</span></span><span class="row" style="--gap:8px"><svg class="icon" aria-hidden="true"><use href="#i-bell"/></svg><span class="t-caption muted">16</span></span><span class="row" style="--gap:8px"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-bell"/></svg><span class="t-caption muted">20</span></span><span class="row" style="--gap:8px"><svg class="icon icon-xl" aria-hidden="true"><use href="#i-bell"/></svg><span class="t-caption muted">24</span></span>
+        </div>
+        <div class="row between wrap"><h3 class="t-h3" id="ic-count">Portal icons</h3><div class="input-wrap has-lead" style="width:280px;max-width:100%"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><input id="icon-search" class="input" placeholder="Search icons" aria-label="Search icons"></div></div>
+        <div class="grid cols-4" style="--gap:8px" id="icon-grid"></div>
+        <p id="icon-empty" class="t-small muted" hidden>No icons match that search.</p>
+        <h3 class="t-h3" style="margin-top:12px">Proposed additions</h3>
+        <p class="t-small muted" style="margin-top:-12px">Used by the new components in this catalog.</p>
+        <div class="grid cols-4" style="--gap:8px" id="icon-grid-new"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div id="drawer" hidden><div class="scrim" data-close-drawer></div><div class="panel" role="dialog" aria-modal="true" aria-label="Navigation"><div class="between row"><span class="brand"><span class="brand-mark"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-landmark"/></svg></span><span class="brand-text"><b>LoanPortal</b><span>Design system v2</span></span></span><button class="btn btn-ghost btn-icon" data-close-drawer aria-label="Close navigation"><svg class="icon icon-lg" aria-hidden="true"><use href="#i-x"/></svg></button></div><nav class="stack" style="--gap:20px" id="drawer-nav"></nav></div></div>
+<dialog class="modal" id="modal"></dialog>
+<div id="toasts" role="region" aria-label="Notifications" aria-live="polite"></div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const ic = (name, cls = '') => `<svg class="icon ${cls}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+  const root = document.documentElement;
+
+  /* ---------- Theme + brand ---------- */
+  const setTheme = (t) => {
+    root.dataset.theme = t;
+    const btn = $('#theme-toggle');
+    btn.setAttribute('aria-pressed', String(t === 'dark'));
+    $('[data-when="light"]', btn).hidden = t === 'dark';
+    $('[data-when="dark"]', btn).hidden = t !== 'dark';
+    refreshContrast();
+  };
+  setTheme(matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  $('#theme-toggle').addEventListener('click', () => setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'));
+  $('#brand-seg').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-brand]'); if (!b) return;
+    if (b.dataset.brand === 'classic') root.dataset.brand = 'classic'; else delete root.dataset.brand;
+    $$('#brand-seg button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    refreshContrast();
+  });
+
+
+  /* ---------- Branded calendar popover ---------- */
+  const datePicker = $('#date-picker');
+  if (datePicker) {
+    const dateInput = $('#f-date'), dateMenu = $('#date-menu'), dateDays = $('.date-days', dateMenu), dateMonth = $('.date-month', dateMenu);
+    let shown = new Date(2026, 9, 1), selected = new Date(2026, 9, 10);
+    const pad = n => String(n).padStart(2, '0');
+    const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const renderCalendar = () => {
+      dateMonth.textContent = shown.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
+      dateDays.innerHTML = '';
+      const offset = (new Date(shown.getFullYear(), shown.getMonth(), 1).getDay() + 6) % 7;
+      const count = new Date(shown.getFullYear(), shown.getMonth() + 1, 0).getDate();
+      for (let i = 0; i < offset; i++) { const blank = document.createElement('span'); blank.setAttribute('aria-hidden', 'true'); dateDays.appendChild(blank); }
+      for (let day = 1; day <= count; day++) {
+        const date = new Date(shown.getFullYear(), shown.getMonth(), day), button = document.createElement('button');
+        button.type = 'button'; button.className = 'date-day'; button.textContent = day; button.setAttribute('role', 'gridcell');
+        button.setAttribute('aria-label', date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
+        if (iso(date) === iso(selected)) { button.classList.add('is-selected'); button.setAttribute('aria-selected', 'true'); }
+        if (iso(date) === '2026-10-10') button.classList.add('is-today');
+        button.addEventListener('click', () => { selected = date; dateInput.value = date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); closeCalendar(); dateInput.focus(); });
+        dateDays.appendChild(button);
+      }
+    };
+    const openCalendar = () => { shown = new Date(selected.getFullYear(), selected.getMonth(), 1); renderCalendar(); dateMenu.hidden = false; dateInput.setAttribute('aria-expanded', 'true'); $('.date-trigger', datePicker).setAttribute('aria-expanded', 'true'); };
+    const closeCalendar = () => { dateMenu.hidden = true; dateInput.setAttribute('aria-expanded', 'false'); $('.date-trigger', datePicker).setAttribute('aria-expanded', 'false'); };
+    dateInput.addEventListener('click', openCalendar);
+    dateInput.addEventListener('keydown', e => { if (e.key === 'ArrowDown' || e.key === 'Enter') { e.preventDefault(); openCalendar(); } if (e.key === 'Escape') closeCalendar(); });
+    $('.date-trigger', datePicker).addEventListener('click', () => dateMenu.hidden ? openCalendar() : closeCalendar());
+    $$('[data-month]', dateMenu).forEach(button => button.addEventListener('click', () => { shown.setMonth(shown.getMonth() + Number(button.dataset.month)); renderCalendar(); }));
+    $('[data-date-today]', dateMenu).addEventListener('click', () => { selected = new Date(2026, 9, 10); shown = new Date(2026, 9, 1); dateInput.value = '10 Oct 2026'; renderCalendar(); closeCalendar(); dateInput.focus(); });
+    document.addEventListener('click', e => { if (!datePicker.contains(e.target)) closeCalendar(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !dateMenu.hidden) { closeCalendar(); dateInput.focus(); } });
+    renderCalendar();
+  }
+
+  /* ---------- Live contrast ---------- */
+  const probe = document.createElement('i'); probe.style.cssText = 'position:absolute;visibility:hidden'; document.body.appendChild(probe);
+  const rgbOf = (v) => { probe.style.color = `hsl(var(${v}))`; const m = getComputedStyle(probe).color.match(/[\d.]+/g).map(Number); return m.slice(0, 3); };
+  const lum = ([r, g, b]) => { const f = (c) => { c /= 255; return c <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4; }; return .2126 * f(r) + .7152 * f(g) + .0722 * f(b); };
+  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + .05) / (y + .05); };
+  const grade = (r, ui) => r >= 7 ? 'AAA' : r >= 4.5 ? 'AA' : r >= 3 ? (ui ? 'UI AA' : 'AA large') : 'Fail';
+  function refreshContrast() {
+    requestAnimationFrame(() => {
+      $$('[data-bg]').forEach(el => {
+        const r = ratio(rgbOf(el.dataset.fg), rgbOf(el.dataset.bg));
+        $('span', el).textContent = `${r.toFixed(1)} · ${grade(r, el.dataset.fg === '--input')}`;
+      });
+      $$('[data-pair]').forEach(el => {
+        const [f, b] = el.dataset.pair.split('|');
+        const r = ratio(rgbOf(f), rgbOf(b)); el.textContent = `${r.toFixed(1)} · ${grade(r)}`;
+      });
+    });
+  }
+
+  /* ---------- Toasts ---------- */
+  const TONES = { success: ['check-circle-2', 'success'], info: ['info', 'info'], warning: ['alert-triangle', 'warning'], danger: ['circle-alert', 'danger'] };
+  const DEMO = {
+    success: { title: 'Changes saved', body: 'Your business details are up to date.', action: 'Undo' },
+    info: { title: 'Checking your PAN', body: 'This usually takes a few seconds.' },
+    warning: { title: 'Your session ends in 2 minutes', body: 'Save your work to avoid losing changes.', action: 'Stay signed in' },
+    danger: { title: "Couldn't save changes", body: 'Check your connection and try again.', action: 'Try again' },
+  };
+  function toast({ tone = 'info', title, body, action }) {
+    const [icon, c] = TONES[tone];
+    const el = document.createElement('div');
+    el.className = 'toast'; el.style.setProperty('--tone', `hsl(var(--${c}))`);
+    el.setAttribute('role', tone === 'danger' ? 'alert' : 'status');
+    el.innerHTML = `${ic(icon, 'icon-lg')}<div><b></b>${body ? '<p></p>' : ''}${action ? '<button type="button" class="btn btn-link t-small" style="margin-top:6px"></button>' : ''}</div><button type="button" class="btn btn-ghost btn-icon btn-sm" aria-label="Dismiss notification" style="margin:-4px -4px 0 0">${ic('x', 'icon-sm')}</button>`;
+    $('b', el).textContent = title; if (body) $('p', el).textContent = body; if (action) $('.btn-link', el).textContent = action;
+    $('#toasts').appendChild(el);
+    let t; const out = () => { el.classList.add('out'); setTimeout(() => el.remove(), 200); };
+    const start = () => { t = setTimeout(out, 5000); };
+    el.addEventListener('mouseenter', () => clearTimeout(t)); el.addEventListener('mouseleave', start);
+    el.addEventListener('focusin', () => clearTimeout(t)); el.addEventListener('focusout', start);
+    el.addEventListener('click', (e) => { if (e.target.closest('button')) out(); });
+    start();
+  }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-toast]'); if (b) toast({ tone: b.dataset.toast, ...DEMO[b.dataset.toast] });
+  });
+
+  /* ---------- Menus (apply / profile) ---------- */
+  function menuToggle(trigger, menu) {
+    const set = (open) => { menu.hidden = !open; trigger.setAttribute('aria-expanded', String(open)); };
+    trigger.addEventListener('click', (e) => { e.stopPropagation(); const willOpen = menu.hidden; $$('.menu-anchor > .menu').forEach(m => { m.hidden = true; }); $$('[aria-controls][aria-haspopup="menu"]').forEach(t => t.setAttribute('aria-expanded', 'false')); set(willOpen); if (willOpen) $('[role="menuitem"]', menu)?.focus(); });
+    menu.addEventListener('keydown', (e) => {
+      const items = $$('[role="menuitem"]', menu), i = items.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+      if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+      if (e.key === 'Escape') { set(false); trigger.focus(); }
+    });
+    document.addEventListener('click', (e) => { if (!menu.hidden && !menu.contains(e.target)) set(false); });
+  }
+  menuToggle($('#apply-trigger'), $('#apply-menu')); menuToggle($('#profile-trigger'), $('#profile-menu'));
+
+  /* ---------- Select + multiselect ---------- */
+  function listbox(menu, { multi, onChange, trigger }) {
+    const opts = () => $$('[role="option"]:not([aria-disabled="true"])', menu);
+    const open = (focusFirst = true) => { menu.hidden = false; trigger.setAttribute('aria-expanded', 'true'); if (focusFirst) (opts().find(o => o.getAttribute('aria-selected') === 'true') || opts()[0]).focus(); };
+    const close = (refocus = true) => { menu.hidden = true; trigger.setAttribute('aria-expanded', 'false'); if (refocus) trigger.focus(); };
+    const pick = (o) => { if (multi) o.setAttribute('aria-selected', String(o.getAttribute('aria-selected') !== 'true')); else { $$('[role="option"]', menu).forEach(x => x.setAttribute('aria-selected', String(x === o))); close(); } onChange(); };
+    menu.addEventListener('click', (e) => { const o = e.target.closest('[role="option"]'); if (o && o.getAttribute('aria-disabled') !== 'true') pick(o); });
+    menu.addEventListener('keydown', (e) => {
+      const l = opts(), i = l.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); l[Math.min(i + 1, l.length - 1)].focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); l[Math.max(i - 1, 0)].focus(); }
+      else if (e.key === 'Home') { e.preventDefault(); l[0].focus(); }
+      else if (e.key === 'End') { e.preventDefault(); l[l.length - 1].focus(); }
+      else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (document.activeElement.matches('[role="option"]')) pick(document.activeElement); }
+      else if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else if (e.key === 'Tab') close(false);
+    });
+    trigger.addEventListener('keydown', (e) => { if (['ArrowDown', 'ArrowUp'].includes(e.key) && menu.hidden) { e.preventDefault(); open(); } });
+    document.addEventListener('click', (e) => { if (!menu.hidden && !menu.parentElement.contains(e.target)) close(false); });
+    return { open, close };
+  }
+  $$('[data-select]').forEach(w => {
+    const trigger = $('.select-trigger', w), menu = $('[role="listbox"]', w), val = $('.val', w);
+    const L = listbox(menu, { trigger, onChange() { const s = $('[aria-selected="true"]', menu); val.textContent = s.textContent; val.classList.remove('ph'); trigger.removeAttribute('aria-invalid'); const e = $('.err', w); if (e) e.hidden = true; } });
+    trigger.addEventListener('click', () => (menu.hidden ? L.open() : L.close()));
+  });
+  $$('[data-multi]').forEach(w => {
+    const box = $('.multi-trigger', w), btn = $('button[aria-haspopup]', box), menu = $('[role="listbox"]', w), tags = $('.tags', box);
+    const render = () => {
+      const sel = $$('[aria-selected="true"]', menu);
+      tags.innerHTML = sel.length ? sel.map(o => `<span class="tag"><span>${o.textContent}</span><button type="button" aria-label="Remove ${o.textContent}" data-v="${o.textContent}">${ic('x', 'icon-sm')}</button></span>`).join('') : '<span class="ph" style="color:hsl(var(--placeholder))">Select documents</span>';
+    };
+    const L = listbox(menu, { multi: true, trigger: btn, onChange: render });
+    render();
+    tags.addEventListener('click', (e) => { const r = e.target.closest('[data-v]'); if (!r) return; e.stopPropagation(); $$('[role="option"]', menu).find(o => o.textContent === r.dataset.v).setAttribute('aria-selected', 'false'); render(); });
+    box.addEventListener('click', (e) => { if (e.target.closest('[data-v]')) return; menu.hidden ? L.open() : L.close(false); });
+  });
+
+  /* ---------- Switch, indeterminate, disclosure ---------- */
+  $$('.switch:not(:disabled)').forEach(s => s.addEventListener('click', () => s.setAttribute('aria-checked', String(s.getAttribute('aria-checked') !== 'true'))));
+  $('#indet').indeterminate = true;
+  $$('.disclosure-btn').forEach(b => b.addEventListener('click', () => { const open = b.getAttribute('aria-expanded') !== 'true'; b.setAttribute('aria-expanded', String(open)); document.getElementById(b.getAttribute('aria-controls')).hidden = !open; }));
+
+  /* ---------- Tabs + chips ---------- */
+  const tabs = $$('#tabs [role="tab"]');
+  const selectTab = (t, focus) => { tabs.forEach(x => { const on = x === t; x.setAttribute('aria-selected', String(on)); x.tabIndex = on ? 0 : -1; document.getElementById(x.getAttribute('aria-controls')).hidden = !on; }); if (focus) t.focus(); };
+  tabs.forEach((t, i) => { t.addEventListener('click', () => selectTab(t)); t.addEventListener('keydown', (e) => { const n = { ArrowRight: 1, ArrowLeft: -1 }[e.key]; if (n) { e.preventDefault(); selectTab(tabs[(i + n + tabs.length) % tabs.length], true); } if (e.key === 'Home') selectTab(tabs[0], true); if (e.key === 'End') selectTab(tabs.at(-1), true); }); });
+  $('#chips').addEventListener('click', (e) => { const c = e.target.closest('.chip'); if (c) $$('#chips .chip').forEach(x => x.setAttribute('aria-pressed', String(x === c))); });
+  $('#brand-seg'); // keep reference for linters
+
+  /* ---------- Password ---------- */
+  const pw = $('#password');
+  $('#toggle-password').addEventListener('click', (e) => {
+    const b = e.currentTarget, show = pw.type === 'password'; pw.type = show ? 'text' : 'password';
+    b.setAttribute('aria-pressed', String(show)); b.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    $('[data-when="hide"]', b).hidden = show; $('[data-when="show"]', b).hidden = !show;
+  });
+  const strength = (v) => { let s = 0; if (v.length >= 8) s++; if (/[a-z]/.test(v) && /[A-Z]/.test(v)) s++; if (/\d/.test(v)) s++; if (/[^A-Za-z0-9]/.test(v)) s++; return v ? Math.max(1, s) : 0; };
+  const paintPw = () => { const l = strength(pw.value); $('#pw-bars').dataset.level = l; $('#pw-label').textContent = ['', 'Weak', 'Fair', 'Good', 'Strong'][l]; };
+  pw.addEventListener('input', paintPw); paintPw();
+
+  /* ---------- Currency (Indian grouping), counter, PAN ---------- */
+  const groupIN = (digits) => { if (digits.length <= 3) return digits; const last = digits.slice(-3), rest = digits.slice(0, -3); return rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + last; };
+  const cur = $('[data-currency]');
+  cur.addEventListener('input', () => {
+    const pos = cur.selectionStart, before = cur.value.slice(0, pos).replace(/[^\d]/g, '').length;
+    let [i, d] = cur.value.replace(/[^\d.]/g, '').split('.'); i = i.replace(/^0+(?=\d)/, '');
+    const out = groupIN(i) + (d !== undefined ? '.' + d.slice(0, 2) : '');
+    cur.value = out; let n = 0, p = 0; while (p < out.length && n < before) { if (/\d/.test(out[p])) n++; p++; } cur.setSelectionRange(p, p);
+    $('#f-amt-raw').textContent = parseFloat(out.replace(/,/g, '')) || 0;
+  });
+  $$('[data-counter]').forEach(t => { const c = document.getElementById(t.dataset.counter); const f = () => { c.textContent = `${t.value.length} / ${t.maxLength}`; }; t.addEventListener('input', f); f(); });
+  const pan = $('[data-validate="pan"]');
+  pan.addEventListener('input', () => { pan.value = pan.value.toUpperCase(); if (pan.getAttribute('aria-invalid')) validatePan(); });
+  function validatePan() {
+    const ok = !pan.value || /^[A-Z]{5}\d{4}[A-Z]$/.test(pan.value), hint = $('#f-pan-d');
+    pan.setAttribute('aria-invalid', String(!ok)); if (ok) pan.removeAttribute('aria-invalid');
+    hint.className = ok ? 'hint' : 'err';
+    hint.innerHTML = ok ? '10 characters: 5 letters, 4 digits, 1 letter.' : `${ic('circle-alert', 'icon-sm')}<span>Enter a valid PAN, for example ABCDE1234F.</span>`;
+  }
+  pan.addEventListener('blur', validatePan);
+
+  /* ---------- OTP ---------- */
+  const otp = $$('#otp input');
+  otp.forEach((el, i) => {
+    el.addEventListener('input', () => { el.value = el.value.replace(/\D/g, ''); if (el.value && otp[i + 1]) otp[i + 1].focus(); });
+    el.addEventListener('keydown', (e) => { if (e.key === 'Backspace' && !el.value && otp[i - 1]) otp[i - 1].focus(); if (e.key === 'ArrowLeft' && otp[i - 1]) otp[i - 1].focus(); if (e.key === 'ArrowRight' && otp[i + 1]) otp[i + 1].focus(); });
+    el.addEventListener('paste', (e) => { const d = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, otp.length); if (!d) return; e.preventDefault(); [...d].forEach((c, k) => { otp[k].value = c; }); otp[Math.min(d.length, otp.length - 1)].focus(); });
+  });
+
+  /* ---------- Table ---------- */
+  const inr = (n) => '₹' + groupIN(String(n));
+  const ROWS = [
+    { id: 'BL-20418', program: 'Business loan', amount: 1500000, status: ['Submitted', 'info'] },
+    { id: 'BL-20402', program: 'Working capital', amount: 850000, status: ['Approved', 'success'] },
+    { id: 'BL-20397', program: 'MSME term loan', amount: 3200000, status: ['Under review', 'warning'] },
+    { id: 'BL-20385', program: 'Business loan', amount: 500000, status: ['Rejected', 'danger'] },
+    { id: 'BL-20371', program: 'Working capital', amount: 1275000, status: ['Disbursed', 'brand'] },
+  ];
+  let sortKey = 'id', sortDir = 1; const picked = new Set();
+  const body = $('#app-body'), all = $('#sel-all');
+  function renderTable() {
+    const rows = [...ROWS].sort((a, b) => (a[sortKey] > b[sortKey] ? 1 : -1) * sortDir);
+    body.innerHTML = rows.map(r => `<tr aria-selected="${picked.has(r.id)}"><td><label class="check"><input type="checkbox" data-row="${r.id}" aria-label="Select ${r.id}" ${picked.has(r.id) ? 'checked' : ''}></label></td><td class="id">${r.id}</td><td>${r.program}</td><td class="r num money-amount">${inr(r.amount)}</td><td><span class="badge badge-${r.status[1]}">${r.status[0]}</span></td><td><button class="btn btn-ghost btn-icon btn-sm" aria-label="Actions for ${r.id}">${ic('more-horizontal')}</button></td></tr>`).join('');
+    $$('#app-table th[data-col]').forEach(th => { const on = th.dataset.col === sortKey; th.setAttribute('aria-sort', on ? (sortDir === 1 ? 'ascending' : 'descending') : 'none'); $('use', th).setAttribute('href', `#i-${on ? (sortDir === 1 ? 'arrow-up' : 'arrow-down') : 'arrow-up-down'}`); });
+    all.checked = picked.size === ROWS.length; all.indeterminate = picked.size > 0 && picked.size < ROWS.length;
+    $('#app-count').textContent = picked.size ? `${picked.size} selected` : 'Showing 1–5 of 12';
+  }
+  $('#app-table thead').addEventListener('click', (e) => { const th = e.target.closest('th[data-col]'); if (!th || !e.target.closest('.sort')) return; if (sortKey === th.dataset.col) sortDir *= -1; else { sortKey = th.dataset.col; sortDir = 1; } renderTable(); });
+  body.addEventListener('change', (e) => { const id = e.target.dataset.row; if (!id) return; e.target.checked ? picked.add(id) : picked.delete(id); renderTable(); });
+  all.addEventListener('change', () => { picked.clear(); if (all.checked) ROWS.forEach(r => picked.add(r.id)); renderTable(); });
+  renderTable();
+
+  /* ---------- Split ---------- */
+  const split = $('#split'), handle = $('.split-handle', split), left = split.firstElementChild;
+  const setSplit = (p) => { p = Math.max(20, Math.min(80, p)); left.style.width = p + '%'; handle.setAttribute('aria-valuenow', Math.round(p)); };
+  handle.addEventListener('pointerdown', (e) => { handle.setPointerCapture(e.pointerId); const move = (ev) => { const r = split.getBoundingClientRect(); setSplit((ev.clientX - r.left) / r.width * 100); }; const up = () => { handle.removeEventListener('pointermove', move); handle.removeEventListener('pointerup', up); }; handle.addEventListener('pointermove', move); handle.addEventListener('pointerup', up); });
+  handle.addEventListener('keydown', (e) => { const v = +handle.getAttribute('aria-valuenow'); if (e.key === 'ArrowLeft') { e.preventDefault(); setSplit(v - 5); } if (e.key === 'ArrowRight') { e.preventDefault(); setSplit(v + 5); } });
+
+  /* ---------- File drop ---------- */
+  const drop = $('#drop'), list = $('#file-list');
+  const addFile = (f) => {
+    const tooBig = f.size > 10 * 1024 * 1024, li = document.createElement('li'); li.className = 'file-row' + (tooBig ? ' is-error' : '');
+    const size = f.size > 1048576 ? (f.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(f.size / 1024)) + ' KB';
+    li.innerHTML = tooBig
+      ? `<span class="icon-tile tone-danger">${ic('file-warning', 'icon-lg')}</span><div class="grow"><p class="file-name"></p><p class="err" style="margin-top:2px">This file is ${size}. Choose one under 10 MB.</p></div><button class="btn btn-outline btn-sm" type="button" data-rm>Remove</button>`
+      : `<span class="icon-tile tone-brand">${ic('file-text', 'icon-lg')}</span><div class="grow stack" style="--gap:6px"><div class="between row"><p class="file-name"></p><span class="t-caption muted num" data-pct>0%</span></div><div class="progress sm" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="--v:0%"><i></i></div></div><button class="btn btn-ghost btn-icon btn-sm" type="button" data-rm aria-label="Cancel upload">${ic('x')}</button>`;
+    $('.file-name', li).textContent = f.name; list.prepend(li);
+    if (!tooBig) { let p = 0; const bar = $('.progress', li); const t = setInterval(() => { p += 8 + Math.random() * 14; if (p >= 100 || !li.isConnected) { clearInterval(t); if (li.isConnected) { li.innerHTML = `<span class="icon-tile tone-success">${ic('check-circle-2', 'icon-lg')}</span><div class="grow"><p class="file-name"></p><p class="t-caption muted">${size} · Uploaded</p></div><button class="btn btn-ghost btn-icon btn-sm" type="button" data-rm aria-label="Remove file">${ic('x')}</button>`; $('.file-name', li).textContent = f.name; } return; } bar.style.setProperty('--v', p + '%'); bar.setAttribute('aria-valuenow', Math.round(p)); $('[data-pct]', li).textContent = Math.round(p) + '%'; }, 220); }
+  };
+  $('input', drop).addEventListener('change', (e) => { [...e.target.files].forEach(addFile); e.target.value = ''; });
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('is-over'); }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('is-over'); }));
+  drop.addEventListener('drop', (e) => [...e.dataTransfer.files].forEach(addFile));
+  list.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) b.closest('li').remove(); });
+
+  /* ---------- Dialogs ---------- */
+  const X = `<button class="dlg-x" type="button" data-close aria-label="Close">${ic('x')}</button>`;
+  const head = (t, d, icon, tone) => `<div class="dlg-head">${icon ? `<span class="icon-tile ${tone}">${ic(icon, 'icon-lg')}</span>` : ''}<div><h3>${t}</h3>${d ? `<p>${d}</p>` : ''}</div></div>`;
+  const foot = (...b) => `<div class="dlg-foot">${b.join('')}</div>`;
+  const cancel = (t = 'Cancel') => `<button type="button" class="btn btn-outline" data-close>${t}</button>`;
+  const go = (cls, label, done) => `<button type="button" class="btn ${cls}" data-done="${done || ''}">${label}</button>`;
+  const field = (l, input) => `<label class="fg"><span class="label">${l}</span>${input}</label>`;
+  const DIALOGS = [
+    { t: 'Generic dialog', h: () => X + head('Dialog title', 'Supporting description for the action.') + '<p class="t-body muted">Body content, forms or a confirmation message.</p>' + foot(cancel(), go('btn-primary', 'Confirm', 'Confirmed')) },
+    { t: 'Archive profile', h: () => X + head('Archive profile', 'Priya Sharma will be marked archived. You can still open it from the archived filter.') + foot(cancel(), go('btn-danger', 'Archive', 'Profile archived')) },
+    { t: 'Version conflict', h: () => X + head('A newer version exists', 'Someone saved this profile before you, so your changes were not saved. Reload to see the latest version, then edit again.', 'alert-triangle', 'tone-warning') + foot(cancel('Close'), go('btn-primary', 'Reload', 'Profile reloaded')) },
+    { t: 'Application details', h: () => X + head('BL-20418', 'Business loan · submitted 2 Oct 2026', 'file-text', 'tone-brand') + `<dl class="kv"><div><dt>Amount</dt><dd class="num">₹15,00,000</dd></div><div><dt>Status</dt><dd><span class="badge badge-info">Submitted</span></dd></div><div><dt>Interest</dt><dd class="num">18.5%</dd></div><div><dt>Updated</dt><dd>8 Oct 2026</dd></div></dl>` + foot(cancel('Close'), `<button type="button" class="btn btn-primary" data-close>Open application</button>`) },
+    { t: 'Upload document', h: () => X + head('Upload document', 'PDF, images and spreadsheets up to 25 MB.') + `<label class="drop"><input type="file"><span class="icon-tile tone-brand">${ic('upload', 'icon-lg')}</span><span><span class="t-label" style="display:block">Drop a file or browse</span><span class="t-small muted">One file, up to 25 MB</span></span></label>` + foot(cancel(), go('btn-primary', 'Upload', 'Document uploaded')) },
+    { t: 'Upload new version', h: () => X + head('Upload new version', 'The type is locked. This becomes the next version of the GST certificate.') + `<div class="kv" style="grid-template-columns:1fr"><div><dd>GST certificate</dd><dt style="margin:2px 0 0">Financial · current version 3</dt></div></div>` + foot(cancel(), go('btn-primary', 'Upload', 'Version 4 uploaded')) },
+    { t: 'File preview', h: () => X + `<div class="dlg-head"><div><h3>Preview</h3><p>gst-certificate.pdf</p></div></div><div class="preview-box"><div>${ic('file-text', 'icon-xl')}<p class="t-small" style="margin-top:6px">Preview unavailable offline</p></div></div>` + foot(cancel('Close'), `<button type="button" class="btn btn-outline">${ic('download')} Download</button>`) },
+    { t: 'Share securely', h: () => X + head('Share securely', '1 document · GST certificate', 'shield-check', 'tone-brand') + field('Recipient name', '<input class="input" value="Priya Sharma">') + field('Email', `<span class="input-wrap has-lead">${ic('mail')}<input class="input" type="email" value="priya@example.com"></span>`) + `<div class="row between"><span class="t-label">Allow download</span><span class="switch" role="img" aria-label="On" aria-checked="true"></span></div>` + foot(cancel(), go('btn-primary', 'Create link', 'Link created')) },
+    { t: 'Documents shared', h: () => X + head('Documents shared', 'Copy the link and send it to Priya.', 'check-circle-2', 'tone-success') + `<div class="link-row">${ic('link-2')}<span class="grow" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">https://portal.example/s/ab12cd</span><button type="button" class="btn btn-ghost btn-icon btn-sm" aria-label="Copy link" data-done="Link copied">${ic('copy')}</button></div>` + foot(`<button type="button" class="btn btn-outline" data-done="Links copied">Copy all links</button>`, `<button type="button" class="btn btn-primary" data-close>Done</button>`) },
+    { t: 'Import from DigiLocker', h: () => X + head('Import from DigiLocker', 'Pull a verified document into your portal. It will show as verified via DigiLocker.', 'badge-check', 'tone-brand') + '<p class="t-body muted">Connect DigiLocker to see documents you can import. You’ll come back here afterwards.</p><div class="alert alert-danger" role="alert">' + ic('circle-alert', 'icon-lg') + '<div><b>DigiLocker is unavailable right now</b><p>Try again in a few minutes, or upload the document yourself.</p></div><span></span></div>' + foot(`<button type="button" class="btn btn-outline" data-close>Upload manually instead</button>`, go('btn-primary', 'Connect DigiLocker', 'Connecting to DigiLocker')) },
+    { t: 'Revoke access', h: () => X + head('Revoke access', 'Priya Sharma will lose access immediately. You can share the document again later.') + foot(cancel(), go('btn-danger', 'Revoke access', 'Access revoked')) },
+    { t: 'Search PAN', h: () => X + head('Search PAN', 'Verify the owner’s PAN against the name and date of birth on the PAN record.') + field('PAN', '<input class="input mono" style="text-transform:uppercase" value="ABCDE1234F">') + field('Name as per PAN', '<input class="input" placeholder="Full name as on the PAN card">') + field('Date of birth', '<input class="input" type="date">') + foot(cancel(), `<button type="button" class="btn btn-primary" data-done="Search complete">${ic('search')} Search</button>`) },
+    { t: 'PAN search result', h: () => X + head('PAN search result', 'Review the verification result before filling the form.') + '<div><span class="badge badge-warning">Verified with mismatch</span></div><div class="alert alert-warning" role="status">' + ic('alert-triangle', 'icon-lg') + '<div><b>The name doesn’t match</b><p>The name on the PAN record differs from the one you entered. Check the spelling, then search again.</p></div><span></span></div>' + foot(cancel('Close'), `<button type="button" class="btn btn-primary" data-close>Edit details</button>`) },
+  ];
+  const grid = $('#dialog-grid');
+  DIALOGS.forEach((d, i) => {
+    const s = document.createElement('div'); s.className = 'stage dlg-preview';
+    s.innerHTML = `<div class="stage-head"><p>${d.t}</p><button type="button" class="btn btn-primary btn-sm" data-open="${i}">Open as modal</button></div><div class="dlg" aria-hidden="false">${d.h()}</div>`;
+    $$('[data-close],[data-done]', s).forEach(b => b.setAttribute('tabindex', '-1')); grid.appendChild(s);
+  });
+  const modal = $('#modal');
+  document.addEventListener('click', (e) => {
+    const o = e.target.closest('[data-open]');
+    if (o) { modal.innerHTML = `<div class="dlg ${DIALOGS[o.dataset.open].t.includes('Application') ? 'dlg-lg' : ''}">${DIALOGS[o.dataset.open].h()}</div>`; const h = $('h3', modal); h.id = 'modal-title'; modal.setAttribute('aria-labelledby', 'modal-title'); modal.showModal(); return; }
+    if (e.target === modal) { modal.close(); return; }
+    const inModal = e.target.closest('#modal'); if (!inModal) return;
+    const d = e.target.closest('[data-done]'); if (d) { if (d.dataset.done) toast({ tone: 'success', title: d.dataset.done }); if (!d.closest('.link-row') && d.dataset.done !== 'Links copied') modal.close(); return; }
+    if (e.target.closest('[data-close]')) modal.close();
+  });
+
+  /* ---------- Icons ---------- */
+  const PORTAL = ['AlertCircle', 'AlertTriangle', 'AlignLeft', 'ArrowLeft', 'ArrowRight', 'BadgeCheck', 'Bell', 'Braces', 'Bug', 'Building2', 'CalendarDays', 'Check', 'CheckCircle2', 'ChevronDown', 'ChevronLeft', 'ChevronRight', 'ChevronUp', 'Circle', 'CircleAlert', 'Clipboard', 'ClipboardPaste', 'Clock', 'Copy', 'Database', 'Download', 'Edit2', 'Eraser', 'Eye', 'EyeOff', 'FileText', 'FileWarning', 'Files', 'FlaskConical', 'GripVertical', 'Home', 'IndianRupee', 'Info', 'KeyRound', 'Layers', 'LayoutDashboard', 'LayoutGrid', 'Link2', 'Loader2', 'Lock', 'LogIn', 'LogOut', 'Mail', 'Menu', 'Minus', 'PenLine', 'Percent', 'Phone', 'PlayCircle', 'Plus', 'PlusCircle', 'RefreshCw', 'RotateCcw', 'Save', 'SaveAll', 'Search', 'Send', 'Settings2', 'Share2', 'Shield', 'ShieldAlert', 'ShieldCheck', 'Sparkles', 'Target', 'Trash2', 'TrendingUp', 'Upload', 'User', 'UserPlus', 'UserRound', 'Users', 'WifiOff', 'X', 'XCircle'];
+  const kebab = (n) => n.replace(/([a-z])([A-Z])/g, '$1-$2').replace(/([A-Z]+)([A-Z][a-z])/g, '$1-$2').replace(/([a-zA-Z])([0-9])/g, '$1-$2').toLowerCase();
+  const portal = PORTAL.map(kebab), every = $$('#sprite symbol').map(s => s.id.slice(2)), extra = every.filter(n => !portal.includes(n));
+  const cell = (n) => `<button type="button" class="icon-cell" data-icon="${n}" aria-label="Copy name ${n}">${ic(n)}<span>${n}</span></button>`;
+  $('#icon-grid').innerHTML = portal.filter(n => every.includes(n)).map(cell).join('');
+  $('#icon-grid-new').innerHTML = extra.map(cell).join('');
+  document.addEventListener('click', async (e) => { const c = e.target.closest('.icon-cell'); if (!c) return; try { await navigator.clipboard.writeText(c.dataset.icon); } catch (_) { } toast({ tone: 'success', title: 'Copied', body: c.dataset.icon }); });
+  $('#icon-search').addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase(); let n = 0;
+    $$('#icon-grid .icon-cell, #icon-grid-new .icon-cell').forEach(c => { const m = c.dataset.icon.includes(q); c.hidden = !m; if (m) n++; });
+    $('#icon-empty').hidden = n !== 0;
+  });
+
+  /* ---------- Scrollspy + mobile drawer ---------- */
+  const links = $$('#sidenav .nav-link'), sections = $$('.section');
+  let ticking = false;
+  const spy = () => {
+    ticking = false;
+    let cur = null; sections.forEach(s => { if (s.getBoundingClientRect().top <= 200) cur = s.id; });
+    links.forEach(l => { if (cur && l.getAttribute('href') === '#' + cur) l.setAttribute('aria-current', 'true'); else l.removeAttribute('aria-current'); });
+  };
+  addEventListener('scroll', () => { if (!ticking) { ticking = true; requestAnimationFrame(spy); } }, { passive: true });
+  spy();
+  $('#drawer-nav').innerHTML = $('#sidenav').innerHTML;
+  const drawer = $('#drawer');
+  $('#open-drawer').addEventListener('click', () => { drawer.hidden = false; $('.panel .btn', drawer).focus(); });
+  drawer.addEventListener('click', (e) => { if (e.target.closest('[data-close-drawer]') || e.target.closest('.nav-link')) drawer.hidden = true; });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !drawer.hidden) { drawer.hidden = true; $('#open-drawer').focus(); } });
+})();
+
+</script>
+</body>
+</html>

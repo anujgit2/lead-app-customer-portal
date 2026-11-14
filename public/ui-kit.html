@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LoanPortal UI Kit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"] },
+          colors: {
+            border: "hsl(var(--border))",
+            input: "hsl(var(--input))",
+            ring: "hsl(var(--ring))",
+            background: "hsl(var(--background))",
+            foreground: "hsl(var(--foreground))",
+            primary: { DEFAULT: "hsl(var(--primary))", foreground: "hsl(var(--primary-foreground))" },
+            secondary: { DEFAULT: "hsl(var(--secondary))", foreground: "hsl(var(--secondary-foreground))" },
+            destructive: { DEFAULT: "hsl(var(--destructive))", foreground: "hsl(var(--destructive-foreground))" },
+            muted: { DEFAULT: "hsl(var(--muted))", foreground: "hsl(var(--muted-foreground))" },
+            accent: { DEFAULT: "hsl(var(--accent))", foreground: "hsl(var(--accent-foreground))" },
+            popover: { DEFAULT: "hsl(var(--popover))", foreground: "hsl(var(--popover-foreground))" },
+            card: { DEFAULT: "hsl(var(--card))", foreground: "hsl(var(--card-foreground))" },
+            success: { DEFAULT: "hsl(var(--success))", foreground: "hsl(var(--success-foreground))" },
+            warning: { DEFAULT: "hsl(var(--warning))", foreground: "hsl(var(--warning-foreground))" },
+          },
+          borderRadius: {
+            lg: "var(--radius)",
+            md: "calc(var(--radius) - 2px)",
+            sm: "calc(var(--radius) - 4px)",
+          },
+          boxShadow: {
+            soft: "0 8px 30px rgb(0 0 0 / 0.04)",
+            menu: "0 8px 30px rgb(0 0 0 / 0.08)",
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 222.2 84% 4.9%;
+      --card: 0 0% 100%;
+      --card-foreground: 222.2 84% 4.9%;
+      --popover: 0 0% 100%;
+      --popover-foreground: 222.2 84% 4.9%;
+      --primary: 221.2 83.2% 53.3%;
+      --primary-foreground: 210 40% 98%;
+      --secondary: 210 40% 96.1%;
+      --secondary-foreground: 222.2 47.4% 11.2%;
+      --muted: 210 40% 96.1%;
+      --muted-foreground: 215.4 16.3% 46.9%;
+      --accent: 210 40% 96.1%;
+      --accent-foreground: 222.2 47.4% 11.2%;
+      --destructive: 0 84.2% 60.2%;
+      --destructive-foreground: 210 40% 98%;
+      --border: 214.3 31.8% 91.4%;
+      --input: 214.3 31.8% 91.4%;
+      --ring: 221.2 83.2% 53.3%;
+      --radius: 0.75rem;
+      --success: 142.1 76.2% 36.3%;
+      --success-foreground: 355.7 100% 97.3%;
+      --warning: 32.1 94.6% 43.7%;
+      --warning-foreground: 355.7 100% 97.3%;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-feature-settings: "rlig" 1, "calt" 1; }
+    .field {
+      display: flex; height: 2.5rem; width: 100%; border-radius: 0.5rem;
+      border: 1px solid hsl(var(--input)); background: white; padding: 0.5rem 0.75rem;
+      font-size: 0.875rem; transition: border-color .15s, box-shadow .15s;
+    }
+    .field:focus { outline: none; box-shadow: 0 0 0 2px hsl(var(--ring)); border-color: transparent; }
+    .field.error { border-color: hsl(var(--destructive)); }
+    .field.error:focus { box-shadow: 0 0 0 2px hsl(var(--destructive)); }
+    .field:disabled { opacity: .5; cursor: not-allowed; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+      white-space: nowrap; border-radius: 0.5rem; font-size: .875rem; font-weight: 500;
+      height: 2.5rem; padding: 0 .1rem 0 1rem; padding-left: 1rem; padding-right: 1rem;
+      transition: all .15s; box-shadow: 0 1px 2px rgb(0 0 0 / .05);
+    }
+    .btn:active { transform: scale(.98); }
+    .btn:disabled { opacity: .5; pointer-events: none; }
+    .btn:focus-visible { outline: none; box-shadow: 0 0 0 2px white, 0 0 0 4px hsl(var(--ring)); }
+    .btn-default { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+    .btn-default:hover { background: hsl(221.2 83.2% 53.3% / .9); }
+    .btn-destructive { background: hsl(var(--destructive)); color: white; }
+    .btn-destructive:hover { background: hsl(0 84.2% 60.2% / .9); }
+    .btn-outline { border: 1px solid hsl(var(--input)); background: white; color: hsl(var(--foreground)); box-shadow: 0 1px 2px rgb(0 0 0 / .04); }
+    .btn-outline:hover { background: hsl(var(--accent)); }
+    .btn-secondary { background: hsl(var(--secondary)); color: hsl(var(--secondary-foreground)); }
+    .btn-secondary:hover { background: hsl(210 40% 96.1% / .8); }
+    .btn-ghost { background: transparent; box-shadow: none; }
+    .btn-ghost:hover { background: hsl(var(--accent)); }
+    .btn-link { background: transparent; box-shadow: none; color: hsl(var(--primary)); text-underline-offset: 4px; height: auto; padding: 0; }
+    .btn-link:hover { text-decoration: underline; }
+    .btn-sm { height: 2rem; padding: 0 .75rem; font-size: .75rem; border-radius: .375rem; }
+    .btn-lg { height: 2.75rem; padding: 0 2rem; font-size: 1rem; }
+    .btn-xl { height: 3rem; padding: 0 2.5rem; font-size: 1rem; }
+    .btn-icon { height: 2.5rem; width: 2.5rem; padding: 0; }
+    .dialog-x {
+      position: absolute; right: 1rem; top: 1rem; border-radius: 0.125rem; opacity: .7;
+      display: inline-flex; padding: 0.125rem;
+    }
+    .dialog-x:hover { opacity: 1; }
+    .spin { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .nav-link.active { background: hsl(var(--primary) / .1); color: hsl(var(--primary)); }
+    .toast-in { animation: toastin .25s ease-out; }
+    @keyframes toastin { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+    .shimmer {
+      background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
+      background-size: 400% 100%;
+      animation: shimmer 2s linear infinite;
+    }
+    @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+  </style>
+</head>
+<body class="bg-slate-50 font-sans text-foreground antialiased">
+  <div class="lg:grid lg:grid-cols-[240px_1fr] min-h-screen">
+    <aside class="hidden lg:flex lg:flex-col sticky top-0 h-screen border-r border-slate-100 bg-white px-4 py-6">
+      <a href="#top" class="flex items-center gap-2.5 px-2 mb-6">
+        <span class="grid h-7 w-7 place-items-center rounded-lg bg-primary text-white">
+          <i data-lucide="building-2" class="h-4 w-4"></i>
+        </span>
+        <span class="text-sm font-semibold tracking-tight text-slate-900">UI Kit</span>
+      </a>
+      <nav id="sidenav" class="flex flex-col gap-0.5 overflow-y-auto text-sm">
+        <a class="nav-link rounded-md px-3 py-1.5 font-medium text-slate-500 transition-all duration-200 hover:bg-muted hover:text-slate-900" href="#tokens">Tokens</a>
+        <a class="nav-link rounded-md px-3 py-1.5 font-medium text-slate-500 transition-all duration-200 hover:bg-muted hover:text-slate-900" href="#buttons">Buttons</a>
+        <a class="nav-link rounded-md px-3 py-1.5 font-medium text-slate-500 transition-all duration-200 hover:bg-muted hover:text-slate-900" href="#fields">Form fields</a>
+        <a class="nav-link rounded-md px-3 py-1.5 font-medium text-slate-500 transition-all duration-200 hover:bg-muted hover:text-slate-900" href="#selection">Selection</a>
+        <a class="nav-link rounded-md px-3 py-1.5 font-medium text-slate-500 transition-all duration-200 hover:bg-muted hover:text-slate-900" href="#badges">Badges</a>
+        <a class="nav-link rounded-md px-3 py-1.5 font-medium text-slate-500 transition-all duration-200 hover:bg-muted hover:text-slate-900" href="#alerts">Alerts & toasts</a>
+        <a class="nav-link rounded-md px-3 py-1.5 font-medium text-slate-500 transition-all duration-200 hover:bg-muted hover:text-slate-900" href="#cards">Cards</a>
+        <a class="nav-link rounded-md px-3 py-1.5 font-medium text-slate-500 transition-all duration-200 hover:bg-muted hover:text-slate-900" href="#data">Tables & progress</a>
+        <a class="nav-link rounded-md px-3 py-1.5 font-medium text-slate-500 transition-all duration-200 hover:bg-muted hover:text-slate-900" href="#nav">Navigation</a>
+        <a class="nav-link rounded-md px-3 py-1.5 font-medium text-slate-500 transition-all duration-200 hover:bg-muted hover:text-slate-900" href="#overlays">Popups</a>
+        <a class="nav-link rounded-md px-3 py-1.5 font-medium text-slate-500 transition-all duration-200 hover:bg-muted hover:text-slate-900" href="#files">Files</a>
+        <a class="nav-link rounded-md px-3 py-1.5 font-medium text-slate-500 transition-all duration-200 hover:bg-muted hover:text-slate-900" href="#states">States</a>
+        <a class="nav-link rounded-md px-3 py-1.5 font-medium text-slate-500 transition-all duration-200 hover:bg-muted hover:text-slate-900" href="#icons">Icons</a>
+      </nav>
+    </aside>
+
+    <main id="top" class="min-w-0">
+      <header class="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-white px-4 sm:px-8">
+        <div class="flex items-center gap-3">
+          <button type="button" id="open-drawer" class="grid h-10 w-10 place-items-center rounded-md transition-all duration-200 hover:bg-muted active:scale-[0.98] lg:hidden" aria-label="Open menu">
+            <i data-lucide="menu" class="h-4 w-4"></i>
+          </button>
+          <div>
+            <p class="text-sm font-semibold tracking-tight text-slate-900">LoanPortal component catalog</p>
+            <p class="hidden text-xs text-slate-500 sm:block">Every primitive, field, overlay, and icon</p>
+          </div>
+        </div>
+        <button type="button" data-toast="info" data-toast-title="Catalog" data-toast-body="This page is a static style reference." class="btn btn-outline btn-sm">
+          <i data-lucide="info" class="h-3.5 w-3.5"></i> About
+        </button>
+      </header>
+
+      <div class="mx-auto max-w-6xl space-y-14 px-4 py-8 sm:px-8 sm:py-10">
+
+        <!-- TOKENS -->
+        <section id="tokens" class="scroll-mt-20 space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Design tokens</h2>
+            <p class="mt-1 text-sm text-slate-500">CSS variables from the app theme. Radius is 0.75rem.</p>
+          </div>
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+            <div class="rounded-xl border border-slate-100 bg-white p-3 shadow-sm"><div class="h-12 rounded-lg bg-primary"></div><p class="mt-2 text-xs font-semibold text-slate-900">Primary</p><p class="text-[11px] text-slate-500">221 83% 53%</p></div>
+            <div class="rounded-xl border border-slate-100 bg-white p-3 shadow-sm"><div class="h-12 rounded-lg bg-secondary border border-slate-100"></div><p class="mt-2 text-xs font-semibold text-slate-900">Secondary</p><p class="text-[11px] text-slate-500">210 40% 96%</p></div>
+            <div class="rounded-xl border border-slate-100 bg-white p-3 shadow-sm"><div class="h-12 rounded-lg bg-muted"></div><p class="mt-2 text-xs font-semibold text-slate-900">Muted</p><p class="text-[11px] text-slate-500">Backgrounds</p></div>
+            <div class="rounded-xl border border-slate-100 bg-white p-3 shadow-sm"><div class="h-12 rounded-lg bg-destructive"></div><p class="mt-2 text-xs font-semibold text-slate-900">Destructive</p><p class="text-[11px] text-slate-500">Errors, delete</p></div>
+            <div class="rounded-xl border border-slate-100 bg-white p-3 shadow-sm"><div class="h-12 rounded-lg bg-success"></div><p class="mt-2 text-xs font-semibold text-slate-900">Success</p><p class="text-[11px] text-slate-500">142 76% 36%</p></div>
+            <div class="rounded-xl border border-slate-100 bg-white p-3 shadow-sm"><div class="h-12 rounded-lg bg-warning"></div><p class="mt-2 text-xs font-semibold text-slate-900">Warning</p><p class="text-[11px] text-slate-500">32 95% 44%</p></div>
+          </div>
+          <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+            <p class="text-lg font-semibold tracking-tight text-slate-900">Typography</p>
+            <p class="mt-1 text-sm font-normal text-slate-500">Inter. Headings are tight and semibold. Secondary copy is slate-500 at text-sm.</p>
+            <div class="mt-5 space-y-2">
+              <p class="text-2xl font-semibold tracking-tight text-slate-900">Page title</p>
+              <p class="text-lg font-semibold tracking-tight text-slate-900">Card title</p>
+              <p class="text-sm font-medium text-slate-900">Label / medium</p>
+              <p class="text-sm font-normal text-slate-500">Helper and description text</p>
+              <p class="text-xs font-semibold tracking-wide text-slate-500">TABLE HEADER</p>
+              <p class="text-xs text-destructive">Validation message</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- BUTTONS -->
+        <section id="buttons" class="scroll-mt-20 space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Buttons</h2>
+            <p class="mt-1 text-sm text-slate-500">Variants default, destructive, outline, secondary, ghost, link. Sizes default, sm, lg, xl, icon. Loading disables the control.</p>
+          </div>
+          <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm space-y-6">
+            <div class="flex flex-wrap items-center gap-3">
+              <button class="btn btn-default">Default</button>
+              <button class="btn btn-destructive">Destructive</button>
+              <button class="btn btn-outline">Outline</button>
+              <button class="btn btn-secondary">Secondary</button>
+              <button class="btn btn-ghost">Ghost</button>
+              <button class="btn btn-link">Link</button>
+              <button class="btn btn-default" disabled>Disabled</button>
+              <button class="btn btn-default" disabled>
+                <svg class="spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                Saving
+              </button>
+            </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <button class="btn btn-default btn-sm">Small</button>
+              <button class="btn btn-default">Default</button>
+              <button class="btn btn-default btn-lg">Large</button>
+              <button class="btn btn-default btn-xl">Extra large</button>
+              <button class="btn btn-outline btn-icon" aria-label="Download"><i data-lucide="download" class="h-4 w-4"></i></button>
+              <button class="btn btn-default"><i data-lucide="arrow-right" class="h-4 w-4"></i> Continue</button>
+              <button class="btn btn-outline"><i data-lucide="save" class="h-4 w-4"></i> Save draft</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- FIELDS -->
+        <section id="fields" class="scroll-mt-20 space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Form fields</h2>
+            <p class="mt-1 text-sm text-slate-500">Every field type the form engine renders: text, textarea, number, currency, percentage, email, tel, checkbox, select, multiselect, radio, datetime, date, json, file, document, hidden, and address.</p>
+          </div>
+
+          <div class="grid gap-6 lg:grid-cols-2">
+            <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm space-y-5">
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">Text <span class="text-destructive">*</span></label>
+                <input class="field" type="text" placeholder="Legal business name" />
+                <p class="text-xs text-slate-500">Required fields show a red asterisk.</p>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">Text with error</label>
+                <input class="field error" type="text" value="ab" />
+                <p class="text-xs text-destructive">Enter at least 3 characters.</p>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">Disabled</label>
+                <input class="field" type="text" value="Locked after submission" disabled />
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">Email</label>
+                <div class="relative">
+                  <i data-lucide="mail" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"></i>
+                  <input class="field pl-9" type="email" placeholder="name@company.com" />
+                </div>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">Telephone</label>
+                <div class="relative">
+                  <i data-lucide="phone" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"></i>
+                  <input class="field pl-9" type="tel" placeholder="98765 43210" />
+                </div>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">Password</label>
+                <div class="relative">
+                  <input id="password" class="field pr-10" type="password" value="Password@123" />
+                  <button type="button" id="toggle-password" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-700" aria-label="Show password">
+                    <i data-lucide="eye" class="h-4 w-4"></i>
+                  </button>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                  <div class="flex flex-1 gap-1" id="strength-bars"></div>
+                  <span id="strength-label" class="text-xs font-medium text-emerald-600">Very Strong</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm space-y-5">
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">Number</label>
+                <input class="field" type="number" placeholder="12" min="0" />
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">Currency</label>
+                <div class="relative">
+                  <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">₹</span>
+                  <input class="field pl-8" type="text" value="15,00,000.00" />
+                </div>
+                <p class="text-xs text-slate-500">Grouped display. The form stores a number.</p>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">Percentage</label>
+                <div class="relative">
+                  <input class="field pr-9" type="text" value="18.50" />
+                  <i data-lucide="percent" class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"></i>
+                </div>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">Date</label>
+                <input class="field" type="date" value="2026-10-10" />
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">Datetime</label>
+                <input class="field" type="datetime-local" value="2026-10-10T12:00" />
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">Textarea</label>
+                <textarea class="field min-h-[80px] h-auto resize-none py-2" placeholder="Describe the loan purpose"></textarea>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">JSON</label>
+                <textarea class="field h-auto min-h-[88px] resize-none py-2 font-mono text-xs">{
+  "programCode": "BL",
+  "amount": 1500000
+}</textarea>
+              </div>
+              <div class="space-y-1.5">
+                <label class="text-sm font-medium">Hidden</label>
+                <div class="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                  Rendered as <code class="font-mono text-slate-700">&lt;input type="hidden"&gt;</code>. Not shown to the applicant. Value stays in the payload.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm space-y-4">
+            <div>
+              <h3 class="text-lg font-semibold tracking-tight text-slate-900">Address</h3>
+              <p class="text-sm text-slate-500">One field expands into six subfields. Submitted data is nested under the field name.</p>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="space-y-1.5 sm:col-span-2"><label class="text-sm font-medium">Address line 1</label><input class="field" value="42 MG Road" /></div>
+              <div class="space-y-1.5 sm:col-span-2"><label class="text-sm font-medium">Address line 2</label><input class="field" placeholder="Near City Center" /></div>
+              <div class="space-y-1.5"><label class="text-sm font-medium">City</label><input class="field" value="Mumbai" /></div>
+              <div class="space-y-1.5"><label class="text-sm font-medium">State</label><input class="field" value="Maharashtra" /></div>
+              <div class="space-y-1.5"><label class="text-sm font-medium">PIN code</label><input class="field" value="400001" /></div>
+              <div class="space-y-1.5"><label class="text-sm font-medium">Country</label><input class="field" value="India" /></div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+            <h3 class="text-lg font-semibold tracking-tight text-slate-900">reCAPTCHA</h3>
+            <p class="mt-1 mb-4 text-sm text-slate-500">Shown on registration. Loading, ready, and error states.</p>
+            <div class="flex flex-wrap gap-4">
+              <div class="flex h-[78px] w-[304px] items-center justify-between rounded border border-slate-200 bg-slate-50 px-4">
+                <div class="flex items-center gap-3">
+                  <span class="grid h-7 w-7 place-items-center rounded border border-slate-300 bg-white"><i data-lucide="check" class="h-4 w-4 text-emerald-600"></i></span>
+                  <span class="text-sm text-slate-700">I'm not a robot</span>
+                </div>
+                <div class="text-right text-[10px] leading-tight text-slate-400">reCAPTCHA<br/>Privacy · Terms</div>
+              </div>
+              <div class="flex h-[78px] w-[304px] items-center gap-3 rounded border border-slate-200 bg-white px-4 text-sm text-slate-500">
+                <svg class="spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                Loading verification
+              </div>
+              <div class="flex h-[78px] w-[304px] items-center justify-between rounded border border-destructive/30 bg-destructive/5 px-4">
+                <span class="flex items-center gap-2 text-sm text-destructive"><i data-lucide="alert-circle" class="h-4 w-4"></i> Couldn't load</span>
+                <button class="btn btn-outline btn-sm"><i data-lucide="refresh-cw" class="h-3.5 w-3.5"></i> Retry</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SELECTION -->
+        <section id="selection" class="scroll-mt-20 space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Selection controls</h2>
+            <p class="mt-1 text-sm text-slate-500">Checkbox, radio, switch, select, and multiselect, including open menus.</p>
+          </div>
+          <div class="grid gap-6 lg:grid-cols-2">
+            <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm space-y-5">
+              <label class="flex items-center gap-3 text-sm">
+                <span class="grid h-4 w-4 place-items-center rounded border border-primary bg-primary text-white"><i data-lucide="check" class="h-3.5 w-3.5"></i></span>
+                Checked
+              </label>
+              <label class="flex items-center gap-3 text-sm">
+                <span class="h-4 w-4 rounded border border-primary bg-white"></span>
+                Unchecked
+              </label>
+              <label class="flex items-center gap-3 text-sm">
+                <span class="grid h-4 w-4 place-items-center rounded border border-primary bg-primary text-white"><i data-lucide="minus" class="h-3.5 w-3.5"></i></span>
+                Indeterminate
+              </label>
+              <label class="flex items-center gap-3 text-sm opacity-50">
+                <span class="h-4 w-4 rounded border border-primary bg-white"></span>
+                Disabled
+              </label>
+              <div class="h-px bg-border"></div>
+              <label class="flex items-center gap-3 text-sm"><span class="grid h-4 w-4 place-items-center rounded-full border border-primary text-primary"><i data-lucide="circle" class="h-2 w-2 fill-current"></i></span> Sole proprietor</label>
+              <label class="flex items-center gap-3 text-sm"><span class="h-4 w-4 rounded-full border border-primary"></span> Private limited</label>
+              <label class="flex items-center gap-3 text-sm"><span class="h-4 w-4 rounded-full border border-primary"></span> Partnership</label>
+              <div class="h-px bg-border"></div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium">Allow download</p>
+                  <p class="text-xs text-slate-500">Recipients can save the file</p>
+                </div>
+                <button type="button" id="switch" role="switch" aria-checked="true" class="relative inline-flex h-6 w-11 items-center rounded-full bg-primary transition-colors">
+                  <span class="block h-5 w-5 translate-x-5 rounded-full bg-white shadow-lg transition-transform"></span>
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-6">
+              <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+                <label class="text-sm font-medium">Select</label>
+                <button type="button" id="select-trigger" class="field mt-1.5 items-center justify-between">
+                  <span>Business loan</span>
+                  <i data-lucide="chevron-down" class="h-4 w-4 opacity-50"></i>
+                </button>
+                <div id="select-menu" class="mt-1 overflow-hidden rounded-lg border bg-white text-sm shadow-md">
+                  <div class="flex justify-center py-1 text-slate-400"><i data-lucide="chevron-up" class="h-4 w-4"></i></div>
+                  <div class="p-1">
+                    <p class="px-2 py-1.5 text-sm font-semibold">Programs</p>
+                    <button type="button" class="flex w-full items-center rounded-md py-1.5 pl-8 pr-2 text-left hover:bg-accent">Business loan</button>
+                    <button type="button" class="relative flex w-full items-center rounded-md bg-accent py-1.5 pl-8 pr-2 text-left"><i data-lucide="check" class="absolute left-2 h-4 w-4"></i> Working capital</button>
+                    <div class="-mx-1 my-1 h-px bg-muted"></div>
+                    <button type="button" class="flex w-full items-center rounded-md py-1.5 pl-8 pr-2 text-left opacity-50" disabled>Equipment finance</button>
+                  </div>
+                  <div class="flex justify-center py-1 text-slate-400"><i data-lucide="chevron-down" class="h-4 w-4"></i></div>
+                </div>
+                <p class="mt-3 text-sm font-medium">Select with error</p>
+                <button type="button" class="field error mt-1.5 items-center justify-between text-muted-foreground">
+                  <span>Choose a program</span>
+                  <i data-lucide="chevron-down" class="h-4 w-4 opacity-50"></i>
+                </button>
+                <p class="mt-1 text-xs text-destructive">Select a loan program.</p>
+              </div>
+
+              <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+                <label class="text-sm font-medium">Multiselect</label>
+                <button type="button" id="multi-trigger" class="mt-1.5 flex min-h-10 w-full items-center gap-2 rounded-sm border border-input bg-white px-3 py-1.5 text-sm shadow-sm">
+                  <span class="flex flex-1 flex-wrap gap-1.5">
+                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">GST <i data-lucide="x" class="h-3 w-3 text-slate-400"></i></span>
+                    <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">PAN <i data-lucide="x" class="h-3 w-3 text-slate-400"></i></span>
+                  </span>
+                  <i data-lucide="chevron-down" class="h-4 w-4 opacity-50"></i>
+                </button>
+                <div id="multi-menu" class="mt-2 rounded-lg border border-slate-100 bg-white p-1 shadow-menu">
+                  <button type="button" class="flex w-full items-center gap-2 rounded-md bg-slate-50 px-2 py-1.5 text-left text-sm text-slate-700"><span class="grid h-4 w-4 place-items-center rounded-sm border border-primary bg-primary text-white"><i data-lucide="check" class="h-3 w-3"></i></span>GST certificate</button>
+                  <button type="button" class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-slate-700 hover:bg-slate-50"><span class="h-4 w-4 rounded-sm border border-slate-300"></span>Bank statement</button>
+                  <button type="button" class="flex w-full items-center gap-2 rounded-md bg-slate-50 px-2 py-1.5 text-left text-sm text-slate-700"><span class="grid h-4 w-4 place-items-center rounded-sm border border-primary bg-primary text-white"><i data-lucide="check" class="h-3 w-3"></i></span>PAN card</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- BADGES -->
+        <section id="badges" class="scroll-mt-20 space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Badges and pills</h2>
+            <p class="mt-1 text-sm text-slate-500">Badge variants, application statuses, share statuses, document source, and PAN verification.</p>
+          </div>
+          <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm space-y-5">
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex rounded-full bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground">Default</span>
+              <span class="inline-flex rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-secondary-foreground">Secondary</span>
+              <span class="inline-flex rounded-full bg-destructive px-2.5 py-0.5 text-xs font-semibold text-white">Destructive</span>
+              <span class="inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold">Outline</span>
+              <span class="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">Success</span>
+              <span class="inline-flex rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">Warning</span>
+              <span class="inline-flex rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">Info</span>
+              <span class="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">Draft</span>
+            </div>
+            <div class="h-px bg-border"></div>
+            <p class="text-xs font-semibold tracking-wide text-slate-500">APPLICATION STATUS</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-700">Draft</span>
+              <span class="inline-flex rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">Submitted</span>
+              <span class="inline-flex rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">Under Review</span>
+              <span class="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">Approved</span>
+              <span class="inline-flex rounded-full bg-destructive px-2.5 py-0.5 text-xs font-semibold text-white">Rejected</span>
+              <span class="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">Disbursed</span>
+            </div>
+            <p class="text-xs font-semibold tracking-wide text-slate-500">SHARE STATUS</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex rounded-full border border-teal-100 bg-teal-50 px-2.5 py-0.5 text-xs font-semibold text-teal-800">Active</span>
+              <span class="inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">Expired</span>
+              <span class="inline-flex rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">Revoked</span>
+            </div>
+            <p class="text-xs font-semibold tracking-wide text-slate-500">SOURCE AND PAN</p>
+            <div class="flex flex-wrap gap-2">
+              <span class="inline-flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-800"><i data-lucide="badge-check" class="h-3.5 w-3.5"></i> Verified via DigiLocker</span>
+              <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600"><i data-lucide="upload" class="h-3.5 w-3.5"></i> Uploaded</span>
+              <span class="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">Verified</span>
+              <span class="inline-flex rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">Verified with mismatch</span>
+              <span class="inline-flex rounded-full bg-destructive px-2.5 py-0.5 text-xs font-medium text-white">Not verified</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ALERTS -->
+        <section id="alerts" class="scroll-mt-20 space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Alerts and toasts</h2>
+            <p class="mt-1 text-sm text-slate-500">Inline alerts plus Sonner-style toasts. Toasts sit at the top right.</p>
+          </div>
+          <div class="space-y-3">
+            <div class="relative rounded-lg border border-border bg-white p-4 text-sm"><i data-lucide="info" class="absolute left-4 top-4 h-4 w-4"></i><div class="pl-7"><p class="mb-1 font-semibold">Default</p><p>Your draft is saved on this device.</p></div></div>
+            <div class="relative rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"><i data-lucide="circle-alert" class="absolute left-4 top-4 h-4 w-4"></i><div class="pl-7"><p class="mb-1 font-semibold">Destructive</p><p>This application could not be submitted.</p></div></div>
+            <div class="relative rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800"><i data-lucide="alert-triangle" class="absolute left-4 top-4 h-4 w-4 text-amber-600"></i><div class="pl-7"><p class="mb-1 font-semibold">Warning</p><p>PAN name does not match the record.</p></div></div>
+            <div class="relative rounded-lg border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-800"><i data-lucide="check-circle-2" class="absolute left-4 top-4 h-4 w-4 text-emerald-600"></i><div class="pl-7"><p class="mb-1 font-semibold">Success</p><p>Application submitted.</p></div></div>
+            <div class="relative rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800"><i data-lucide="info" class="absolute left-4 top-4 h-4 w-4 text-blue-600"></i><div class="pl-7"><p class="mb-1 font-semibold">Info</p><p>A reviewer may request more documents.</p></div></div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button class="btn btn-default btn-sm" data-toast="success" data-toast-title="Saved successfully">Success toast</button>
+            <button class="btn btn-destructive btn-sm" data-toast="error" data-toast-title="Something went wrong">Error toast</button>
+            <button class="btn btn-outline btn-sm" data-toast="info" data-toast-title="Processing…">Info toast</button>
+          </div>
+        </section>
+
+        <!-- CARDS -->
+        <section id="cards" class="scroll-mt-20 space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Cards</h2>
+            <p class="mt-1 text-sm text-slate-500">Card, summary tiles, share card, and avatar.</p>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <article class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5">
+              <div class="mb-3 grid h-9 w-9 place-items-center rounded-lg bg-primary/10 text-primary"><i data-lucide="file-text" class="h-4 w-4"></i></div>
+              <p class="text-2xl font-semibold tracking-tight text-slate-900">12</p>
+              <p class="text-sm text-slate-500">Applications</p>
+            </article>
+            <article class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm"><div class="mb-3 grid h-9 w-9 place-items-center rounded-lg bg-amber-50 text-amber-600"><i data-lucide="clock" class="h-4 w-4"></i></div><p class="text-2xl font-semibold tracking-tight">3</p><p class="text-sm text-slate-500">Under review</p></article>
+            <article class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm"><div class="mb-3 grid h-9 w-9 place-items-center rounded-lg bg-emerald-50 text-emerald-600"><i data-lucide="check-circle-2" class="h-4 w-4"></i></div><p class="text-2xl font-semibold tracking-tight">5</p><p class="text-sm text-slate-500">Approved</p></article>
+            <article class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm"><div class="mb-3 grid h-9 w-9 place-items-center rounded-lg bg-rose-50 text-destructive"><i data-lucide="x-circle" class="h-4 w-4"></i></div><p class="text-2xl font-semibold tracking-tight">1</p><p class="text-sm text-slate-500">Rejected</p></article>
+          </div>
+          <div class="grid gap-6 lg:grid-cols-2">
+            <article class="rounded-xl border bg-card text-card-foreground shadow-sm">
+              <div class="flex flex-col space-y-1.5 p-6">
+                <h3 class="text-lg font-semibold leading-none tracking-tight">Business details</h3>
+                <p class="text-sm text-muted-foreground">Section card used by the form wizard.</p>
+              </div>
+              <div class="p-6 pt-0 text-sm text-slate-600">Card content sits under the header with the top padding removed.</div>
+              <div class="flex items-center gap-2 p-6 pt-0">
+                <button class="btn btn-outline btn-sm">Cancel</button>
+                <button class="btn btn-default btn-sm">Save</button>
+              </div>
+            </article>
+            <article class="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+              <button type="button" class="flex w-full items-start gap-4 p-5 text-left hover:bg-slate-50">
+                <div class="min-w-0 flex-1 space-y-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="text-sm font-semibold tracking-tight text-slate-900">Priya Sharma</h3>
+                    <span class="inline-flex rounded-full border border-teal-100 bg-teal-50 px-2.5 py-0.5 text-xs font-semibold text-teal-800">Active</span>
+                    <span class="text-xs font-medium text-slate-500">Link only</span>
+                  </div>
+                  <p class="text-sm text-slate-500">priya@example.com · +91 •••• 2210</p>
+                  <p class="text-sm text-slate-500">Version 2 · Expires 24 Oct 2026</p>
+                  <p class="text-sm text-slate-500">Opened 3 times · Downloaded once</p>
+                </div>
+                <i data-lucide="chevron-down" class="mt-1 h-4 w-4 text-slate-400"></i>
+              </button>
+              <div class="space-y-4 border-t border-slate-100 px-5 py-5">
+                <ol class="relative space-y-5 border-l border-slate-100 pl-6">
+                  <li class="relative"><span class="absolute -left-[1.7rem] top-1.5 h-2.5 w-2.5 rounded-full bg-slate-300 ring-4 ring-white"></span><p class="text-sm font-semibold text-slate-900">Link opened</p><p class="text-xs text-slate-500">10 Oct 2026, 11:20</p></li>
+                  <li class="relative"><span class="absolute -left-[1.7rem] top-1.5 h-2.5 w-2.5 rounded-full bg-slate-300 ring-4 ring-white"></span><p class="text-sm font-semibold text-slate-900">File downloaded</p><p class="text-xs text-slate-500">10 Oct 2026, 11:24</p></li>
+                </ol>
+                <button class="btn btn-outline h-11 text-destructive">Revoke access</button>
+                <p class="text-sm text-slate-500">This person will lose access immediately.</p>
+              </div>
+            </article>
+          </div>
+          <div class="flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+            <span class="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-muted text-sm font-medium">AS</span>
+            <span class="grid h-7 w-7 place-items-center rounded-full bg-primary text-xs text-white">AS</span>
+            <span class="grid h-12 w-12 place-items-center rounded-full bg-slate-100 text-sm font-semibold text-slate-700">PS</span>
+            <div>
+              <p class="text-sm font-semibold text-slate-900">Ananya Shah</p>
+              <p class="text-xs text-slate-500">ananya@example.com</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- DATA -->
+        <section id="data" class="scroll-mt-20 space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Tables, progress, and wizard</h2>
+          </div>
+          <div class="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead><tr class="border-b border-slate-100">
+                  <th class="h-10 px-4 text-left text-xs font-semibold tracking-wide text-slate-500">Application</th>
+                  <th class="h-10 px-4 text-left text-xs font-semibold tracking-wide text-slate-500">Program</th>
+                  <th class="h-10 px-4 text-left text-xs font-semibold tracking-wide text-slate-500">Amount</th>
+                  <th class="h-10 px-4 text-left text-xs font-semibold tracking-wide text-slate-500">Status</th>
+                </tr></thead>
+                <tbody>
+                  <tr class="border-b border-slate-100/80 transition-colors hover:bg-slate-100/80">
+                    <td class="px-4 py-3 text-slate-700">BL-20418</td><td class="px-4 py-3">Business loan</td><td class="px-4 py-3">₹15,00,000</td>
+                    <td class="px-4 py-3"><span class="inline-flex rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">Submitted</span></td>
+                  </tr>
+                  <tr class="border-b border-slate-100/80 bg-muted/60">
+                    <td class="px-4 py-3">BL-20402</td><td class="px-4 py-3">Working capital</td><td class="px-4 py-3">₹8,50,000</td>
+                    <td class="px-4 py-3"><span class="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">Approved</span></td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3"><span class="shimmer inline-block h-4 w-24 rounded"></span></td>
+                    <td class="px-4 py-3"><span class="shimmer inline-block h-4 w-32 rounded"></span></td>
+                    <td class="px-4 py-3"><span class="shimmer inline-block h-4 w-16 rounded"></span></td>
+                    <td class="px-4 py-3"><span class="shimmer inline-block h-5 w-16 rounded-full"></span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="flex items-center justify-between border-t border-slate-100 px-4 py-3">
+              <p class="text-xs text-slate-500">Showing 1–2 of 12</p>
+              <div class="flex items-center gap-1">
+                <button class="btn btn-outline btn-icon btn-sm" aria-label="Previous page"><i data-lucide="chevron-left" class="h-4 w-4"></i></button>
+                <button class="btn btn-default btn-icon btn-sm">1</button>
+                <button class="btn btn-ghost btn-icon btn-sm">2</button>
+                <button class="btn btn-outline btn-icon btn-sm" aria-label="Next page"><i data-lucide="chevron-right" class="h-4 w-4"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm space-y-4">
+            <p class="text-sm font-medium">Progress · 65%</p>
+            <div class="relative h-2 w-full overflow-hidden rounded-full bg-secondary"><div class="h-full w-[65%] bg-primary"></div></div>
+            <div class="flex items-center gap-3.5 rounded-xl border border-slate-100 bg-white px-4 py-3.5 shadow-sm">
+              <p class="shrink-0 text-sm font-semibold tracking-tight text-slate-900">2 of 4 required</p>
+              <div class="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100"><div class="h-full w-1/2 rounded-full bg-primary"></div></div>
+              <p class="hidden text-xs text-slate-500 sm:block">Add the required documents to continue</p>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+            <p class="mb-4 text-sm font-medium">Wizard progress</p>
+            <div class="grid grid-cols-4 gap-2">
+              <div class="flex flex-col items-center gap-2"><span class="grid h-5 w-5 place-items-center rounded-full bg-emerald-500"><i data-lucide="check" class="h-3.5 w-3.5 text-white"></i></span><span class="text-center text-xs font-medium text-slate-700">Business</span></div>
+              <div class="flex flex-col items-center gap-2"><span class="grid h-5 w-5 place-items-center rounded-full bg-primary shadow-sm"><span class="h-1.5 w-1.5 rounded-full bg-white"></span></span><span class="text-center text-xs font-semibold text-slate-900">Owners</span></div>
+              <div class="flex flex-col items-center gap-2"><span class="h-5 w-5 rounded-full border-2 border-slate-300 bg-white"></span><span class="text-center text-xs text-slate-500">Documents</span></div>
+              <div class="flex flex-col items-center gap-2"><span class="h-5 w-5 rounded-full border-2 border-slate-300 bg-white"></span><span class="text-center text-xs text-slate-500">Review</span></div>
+            </div>
+            <div class="mt-3 border-t-2 border-slate-200"></div>
+            <div class="mt-4 flex items-center gap-2 sm:hidden">
+              <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted"><div class="h-full w-1/2 rounded-full bg-primary"></div></div>
+              <span class="text-xs text-slate-500">Step 2 of 4</span>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+            <p class="mb-3 text-sm font-medium">Resizable split</p>
+            <div class="flex h-28 overflow-hidden rounded-lg border border-slate-100">
+              <div class="flex w-[38%] items-center justify-center bg-slate-50 text-xs text-slate-500">Schema</div>
+              <div class="flex w-1.5 items-center justify-center bg-slate-100"><span class="grid h-8 w-3.5 place-items-center rounded-sm border border-slate-100 bg-white shadow-sm"><i data-lucide="grip-vertical" class="h-3 w-3 text-slate-400"></i></span></div>
+              <div class="flex flex-1 items-center justify-center text-xs text-slate-500">Preview</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- NAV -->
+        <section id="nav" class="scroll-mt-20 space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Navigation</h2>
+            <p class="mt-1 text-sm text-slate-500">App bar, profile menu, apply-for-a-loan menu, tabs, category chips, tooltip, and popover.</p>
+          </div>
+          <div class="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
+            <div class="flex h-14 items-center justify-between border-b border-border px-4">
+              <div class="flex items-center gap-6">
+                <span class="flex items-center gap-2.5"><span class="grid h-7 w-7 place-items-center rounded-lg bg-primary text-white"><i data-lucide="building-2" class="h-4 w-4"></i></span><span class="text-sm font-semibold">LoanPortal</span></span>
+                <nav class="hidden items-center gap-1 md:flex">
+                  <span class="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary"><i data-lucide="layout-dashboard" class="h-4 w-4"></i> Dashboard</span>
+                  <span class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground"><i data-lucide="file-text" class="h-4 w-4"></i> Applications</span>
+                  <span class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground"><i data-lucide="users" class="h-4 w-4"></i> Profiles</span>
+                  <span class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground"><i data-lucide="files" class="h-4 w-4"></i> Documents</span>
+                  <button type="button" id="apply-trigger" class="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted"><i data-lucide="plus-circle" class="h-4 w-4"></i> Apply for a Loan <i data-lucide="chevron-down" class="h-3.5 w-3.5 opacity-70"></i></button>
+                </nav>
+              </div>
+              <div class="flex items-center gap-2">
+                <button class="relative rounded-md p-2 hover:bg-muted" aria-label="Notifications"><i data-lucide="bell" class="h-4 w-4 text-muted-foreground"></i><span class="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary"></span></button>
+                <button type="button" id="profile-trigger" class="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted">
+                  <span class="grid h-7 w-7 place-items-center rounded-full bg-primary text-xs text-white">AS</span>
+                  <span class="hidden text-sm font-medium sm:block">Ananya</span>
+                  <i data-lucide="chevron-down" class="hidden h-3.5 w-3.5 text-muted-foreground sm:block"></i>
+                </button>
+              </div>
+            </div>
+            <div class="grid gap-4 p-4 md:grid-cols-2">
+              <div id="apply-menu" class="hidden w-full max-w-xs rounded-xl border border-slate-100 bg-white p-1.5 shadow-menu md:block">
+                <p class="px-2.5 py-1.5 text-xs font-medium text-slate-500">Select a loan program</p>
+                <button class="flex w-full flex-col items-start rounded-lg px-2.5 py-2 text-left hover:bg-slate-50"><span class="text-sm font-semibold tracking-tight">Business Loan</span><span class="text-xs text-slate-500">Working capital for registered businesses</span></button>
+                <button class="flex w-full flex-col items-start rounded-lg px-2.5 py-2 text-left hover:bg-slate-50"><span class="text-sm font-semibold tracking-tight">MSME Term Loan</span><span class="text-xs text-slate-500">Longer tenure for equipment and expansion</span></button>
+              </div>
+              <div id="profile-menu" class="w-52 rounded-xl border bg-white py-1 shadow-lg">
+                <div class="px-3 py-2"><p class="text-sm font-medium">Ananya Shah</p><p class="truncate text-xs text-muted-foreground">ananya@example.com</p></div>
+                <div class="h-px bg-border"></div>
+                <a class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted" href="#nav"><i data-lucide="user" class="h-4 w-4"></i> Profile</a>
+                <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-destructive hover:bg-muted"><i data-lucide="log-out" class="h-4 w-4"></i> Log out</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-sm">
+            <div class="inline-flex h-10 items-center rounded-lg bg-muted p-1 text-muted-foreground" id="tabs">
+              <button type="button" data-tab="personal" class="tab-btn rounded-md bg-white px-3 py-1.5 text-sm font-medium text-foreground shadow-sm">Personal</button>
+              <button type="button" data-tab="contact" class="tab-btn rounded-md px-3 py-1.5 text-sm font-medium">Contact</button>
+              <button type="button" data-tab="security" class="tab-btn rounded-md px-3 py-1.5 text-sm font-medium">Security</button>
+            </div>
+            <div class="mt-4 text-sm text-slate-600" id="tab-personal">Name, date of birth, and PAN.</div>
+            <div class="mt-4 hidden text-sm text-slate-600" id="tab-contact">Email, mobile, and address.</div>
+            <div class="mt-4 hidden text-sm text-slate-600" id="tab-security">Password and active sessions.</div>
+          </div>
+
+          <div class="flex gap-2 overflow-x-auto" id="chips">
+            <button type="button" data-chip class="min-h-11 shrink-0 rounded-full bg-primary px-4 text-sm font-medium text-white shadow-sm">All</button>
+            <button type="button" data-chip class="min-h-11 shrink-0 rounded-full border border-slate-100 bg-white px-4 text-sm font-medium text-slate-600 shadow-sm">Identity</button>
+            <button type="button" data-chip class="min-h-11 shrink-0 rounded-full border border-slate-100 bg-white px-4 text-sm font-medium text-slate-600 shadow-sm">Financial</button>
+            <button type="button" data-chip class="min-h-11 shrink-0 rounded-full border border-slate-100 bg-white px-4 text-sm font-medium text-slate-600 shadow-sm">Business</button>
+          </div>
+
+          <div class="flex flex-wrap items-start gap-8">
+            <div class="group relative">
+              <button class="btn btn-outline btn-sm">Hover for tooltip</button>
+              <span class="pointer-events-none absolute left-1/2 top-full z-10 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-md border bg-white px-3 py-1.5 text-sm shadow-md group-hover:block">Saved locally until you submit</span>
+            </div>
+            <div class="w-72 rounded-lg border border-slate-100 bg-white p-4 text-sm shadow-menu">
+              <p class="font-semibold tracking-tight text-slate-900">Popover</p>
+              <p class="mt-1 text-slate-500">Used by multiselect and inline help. Soft border, 8px offset, slate text.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- OVERLAYS -->
+        <section id="overlays" class="scroll-mt-20 space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Popups and dialogs</h2>
+            <p class="mt-1 text-sm text-slate-500">Every dialog in the portal, shown on a dimmed stage. Open any of them as a real overlay.</p>
+          </div>
+          <div class="grid gap-6 xl:grid-cols-2" id="dialog-grid"></div>
+        </section>
+
+        <!-- FILES -->
+        <section id="files" class="scroll-mt-20 space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">File and document upload</h2>
+          </div>
+          <div class="grid gap-6 lg:grid-cols-2">
+            <div class="space-y-2">
+              <div class="flex cursor-pointer items-center gap-3 rounded-[10px] border-[1.5px] border-dashed border-slate-200 px-3.5 py-3 transition-all hover:border-primary hover:bg-primary/5">
+                <div class="grid h-[34px] w-[34px] place-items-center rounded-[9px] bg-primary/10 text-primary"><i data-lucide="upload" class="h-4 w-4"></i></div>
+                <div><p class="text-sm text-slate-800">Drop files or <span class="font-medium text-primary">browse</span></p><p class="text-xs text-slate-500">PDF, JPG, PNG · up to 10 MB · up to 5 files</p></div>
+              </div>
+              <div class="flex items-center gap-3 rounded-[10px] border-[1.5px] border-dashed border-primary bg-primary/5 px-3.5 py-3"><div class="grid h-[34px] w-[34px] place-items-center rounded-[9px] bg-primary/10 text-primary"><i data-lucide="upload" class="h-4 w-4"></i></div><p class="text-sm font-medium text-primary">Drop files here</p></div>
+              <ul class="space-y-2">
+                <li class="flex items-center gap-3 rounded-[10px] border border-slate-100 bg-white px-3 py-2.5"><i data-lucide="check-circle-2" class="h-[18px] w-[18px] text-emerald-600"></i><div class="min-w-0 flex-1"><p class="truncate text-sm font-medium">gst-certificate.pdf</p><p class="text-xs text-slate-500">1.2 MB</p></div><button class="btn btn-ghost btn-icon h-7 w-7" aria-label="Download"><i data-lucide="download" class="h-4 w-4"></i></button><button class="flex h-7 w-7 items-center justify-center rounded-md text-lg text-slate-400 hover:bg-slate-50" aria-label="Remove">×</button></li>
+                <li class="flex items-center gap-3 rounded-[10px] border border-slate-100 bg-white px-3 py-2.5"><i data-lucide="file-text" class="h-[18px] w-[18px] text-slate-400"></i><div class="flex-1"><p class="text-sm font-medium">bank-statement.pdf</p><p class="text-xs text-slate-500">840 KB · Uploading…</p></div></li>
+                <li class="flex items-center gap-3 rounded-[10px] border border-slate-100 bg-white px-3 py-2.5"><i data-lucide="alert-circle" class="h-[18px] w-[18px] text-destructive"></i><div class="flex-1"><p class="text-sm font-medium">scan.heic</p><p class="text-xs text-destructive">File could not be uploaded</p></div></li>
+              </ul>
+              <p class="text-[13px] text-destructive">Each file must be under 10MB</p>
+            </div>
+            <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-soft space-y-4">
+              <div><h3 class="text-lg font-semibold tracking-tight">Upload document</h3><p class="text-sm text-slate-500">PDF, images and spreadsheets up to 25 MB.</p></div>
+              <div class="space-y-1.5"><label class="text-sm font-medium">Category</label><div class="field items-center justify-between"><span>Identity</span><i data-lucide="chevron-down" class="h-4 w-4 opacity-50"></i></div></div>
+              <div class="space-y-1.5"><label class="text-sm font-medium">Document type</label><div class="field items-center justify-between"><span>PAN card</span><i data-lucide="chevron-down" class="h-4 w-4 opacity-50"></i></div></div>
+              <div class="space-y-1.5"><label class="text-sm font-medium">Label</label><input class="field" value="Company PAN" /></div>
+              <div class="flex items-center gap-3 rounded-xl border border-dashed border-slate-200 px-4 py-4"><div class="grid h-11 w-11 place-items-center rounded-lg bg-primary/10 text-primary"><i data-lucide="upload" class="h-4 w-4"></i></div><div><p class="text-sm font-medium">Drop a file or <span class="text-primary">browse</span></p><p class="text-sm text-slate-500">One file, up to 25 MB</p></div></div>
+              <div class="flex justify-end gap-2"><button class="btn btn-outline h-11">Cancel</button><button class="btn btn-default h-11">Upload</button></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- STATES -->
+        <section id="states" class="scroll-mt-20 space-y-6">
+          <div>
+            <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Empty, loading, and error states</h2>
+          </div>
+          <div class="grid gap-6 lg:grid-cols-3">
+            <div class="rounded-xl border border-slate-100 bg-white p-8 text-center shadow-sm">
+              <div class="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-full bg-slate-100 text-slate-400"><i data-lucide="files" class="h-5 w-5"></i></div>
+              <p class="font-semibold tracking-tight">No documents yet</p>
+              <p class="mt-1 text-sm text-slate-500">Upload a file or import from DigiLocker.</p>
+              <button class="btn btn-default mt-4">Upload</button>
+            </div>
+            <div class="rounded-xl border border-slate-100 bg-white p-8 shadow-sm space-y-3" aria-busy="true">
+              <div class="shimmer h-4 w-1/2 rounded"></div>
+              <div class="shimmer h-10 rounded-lg"></div>
+              <div class="shimmer h-10 rounded-lg"></div>
+              <div class="shimmer h-10 rounded-lg"></div>
+            </div>
+            <div class="space-y-3">
+              <p class="text-sm text-destructive">Couldn't load activity.</p>
+              <button class="btn btn-outline h-11">Try again</button>
+              <p class="text-sm text-slate-500">No activity yet.</p>
+              <p class="text-sm text-slate-500">No loan programs are available right now.</p>
+            </div>
+          </div>
+          <div class="grid gap-6 md:grid-cols-3">
+            <article class="rounded-xl bg-white p-8 text-center shadow-xl shadow-gray-100/50">
+              <div class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-amber-100 text-amber-600"><i data-lucide="shield-alert" class="h-7 w-7"></i></div>
+              <h3 class="text-xl font-semibold">Session expired</h3>
+              <p class="mt-2 text-sm text-muted-foreground">Sign in again to continue your application.</p>
+              <div class="mt-5 flex flex-col gap-2"><button class="btn btn-default"><i data-lucide="log-in" class="h-4 w-4"></i> Sign in again</button><button class="btn btn-outline"><i data-lucide="log-out" class="h-4 w-4"></i> Sign out</button></div>
+            </article>
+            <article class="rounded-xl bg-white p-8 text-center shadow-xl shadow-gray-100/50">
+              <div class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-destructive/10 text-destructive"><i data-lucide="wifi-off" class="h-7 w-7"></i></div>
+              <h3 class="text-xl font-semibold">Connection problem</h3>
+              <p class="mt-2 text-sm text-muted-foreground">Check your network and try again.</p>
+              <button class="btn btn-default mt-5"><i data-lucide="refresh-cw" class="h-4 w-4"></i> Try again</button>
+            </article>
+            <article class="rounded-xl bg-white p-8 text-center shadow-xl shadow-gray-100/50">
+              <div class="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-destructive/10 text-destructive"><i data-lucide="alert-circle" class="h-7 w-7"></i></div>
+              <h3 class="text-xl font-semibold">Access denied</h3>
+              <p class="mt-2 text-sm text-muted-foreground">You don't have permission to open this page.</p>
+              <button class="btn btn-secondary mt-5"><i data-lucide="home" class="h-4 w-4"></i> Go to dashboard</button>
+            </article>
+          </div>
+        </section>
+
+        <!-- ICONS -->
+        <section id="icons" class="scroll-mt-20 space-y-6">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 class="text-2xl font-semibold tracking-tight text-slate-900">Icons</h2>
+              <p class="mt-1 text-sm text-slate-500">Every Lucide icon imported in the portal. 16px on controls, 14px in badges.</p>
+            </div>
+            <input id="icon-search" class="field sm:max-w-xs" placeholder="Search icons" />
+          </div>
+          <div id="icon-grid" class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6"></div>
+          <p id="icon-empty" class="hidden text-sm text-slate-500">No icons match that search.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="drawer" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/40" data-close-drawer></div>
+    <div class="absolute inset-y-0 left-0 w-72 bg-white p-4 shadow-xl">
+      <div class="mb-4 flex items-center justify-between">
+        <span class="flex items-center gap-2 text-sm font-semibold"><span class="grid h-7 w-7 place-items-center rounded-lg bg-primary text-white"><i data-lucide="building-2" class="h-4 w-4"></i></span> LoanPortal</span>
+        <button type="button" data-close-drawer class="btn btn-ghost btn-icon" aria-label="Close menu"><i data-lucide="x" class="h-4 w-4"></i></button>
+      </div>
+      <nav class="flex flex-col gap-1 text-sm">
+        <a class="flex items-center gap-2 rounded-md bg-primary/10 px-3 py-2 font-medium text-primary" href="#nav"><i data-lucide="layout-dashboard" class="h-4 w-4"></i> Dashboard</a>
+        <a class="flex items-center gap-2 rounded-md px-3 py-2 text-slate-600" href="#data"><i data-lucide="file-text" class="h-4 w-4"></i> Applications</a>
+        <a class="flex items-center gap-2 rounded-md px-3 py-2 text-slate-600" href="#cards"><i data-lucide="users" class="h-4 w-4"></i> Profiles</a>
+        <a class="flex items-center gap-2 rounded-md px-3 py-2 text-slate-600" href="#files"><i data-lucide="files" class="h-4 w-4"></i> Documents</a>
+      </nav>
+    </div>
+  </div>
+
+  <div id="overlay" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+    <div id="overlay-card" class="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border bg-white p-6 shadow-lg"></div>
+  </div>
+  <div id="toasts" class="pointer-events-none fixed right-4 top-4 z-[60] flex w-[320px] flex-col gap-2"></div>
+
+  <script src="https://unpkg.com/lucide@0.544.0/dist/umd/lucide.min.js"></script>
+  <script>
+    const ICONS = ["AlertCircle","AlertTriangle","AlignLeft","ArrowLeft","ArrowRight","BadgeCheck","Bell","Braces","Bug","Building2","CalendarDays","Check","CheckCircle2","ChevronDown","ChevronLeft","ChevronRight","ChevronUp","Circle","CircleAlert","Clipboard","ClipboardPaste","Clock","Copy","Database","Download","Edit2","Eraser","Eye","EyeOff","FileText","FileWarning","Files","FlaskConical","GripVertical","Home","IndianRupee","Info","KeyRound","Layers","LayoutDashboard","LayoutGrid","Link2","Loader2","Lock","LogIn","LogOut","Mail","Menu","Minus","PenLine","Percent","Phone","PlayCircle","Plus","PlusCircle","RefreshCw","RotateCcw","Save","SaveAll","Search","Send","Settings2","Share2","Shield","ShieldAlert","ShieldCheck","Sparkles","Target","Trash2","TrendingUp","Upload","User","UserPlus","UserRound","Users","WifiOff","X","XCircle"];
+
+    function kebab(name) {
+      return name
+        .replace(/([a-z])([A-Z])/g, "$1-$2")
+        .replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2")
+        .replace(/([a-zA-Z])([0-9])/g, "$1-$2")
+        .toLowerCase();
+    }
+
+    const dialogs = [
+      { title: "Generic dialog", html: `<button class="dialog-x" data-close aria-label="Close"><i data-lucide="x" class="h-4 w-4"></i></button><div class="space-y-1.5"><h3 class="text-lg font-semibold tracking-tight">Dialog title</h3><p class="text-sm text-muted-foreground">Supporting description for the action.</p></div><p class="text-sm text-slate-600">Body content, forms, or a confirmation message.</p><div class="flex justify-end gap-2"><button class="btn btn-outline" data-close>Cancel</button><button class="btn btn-default">Confirm</button></div>` },
+      { title: "Archive profile", html: `<button class="dialog-x" data-close aria-label="Close"><i data-lucide="x" class="h-4 w-4"></i></button><div class="space-y-1.5"><h3 class="text-lg font-semibold tracking-tight text-slate-900">Archive profile</h3><p class="text-sm text-slate-500">Priya Sharma will be marked archived. You can still open it from the archived filter.</p></div><div class="flex justify-end gap-2"><button class="btn btn-outline h-11" data-close>Cancel</button><button class="btn btn-destructive h-11">Archive</button></div>` },
+      { title: "Version conflict", html: `<button class="dialog-x" data-close aria-label="Close"><i data-lucide="x" class="h-4 w-4"></i></button><div class="space-y-1.5"><h3 class="text-lg font-semibold tracking-tight text-slate-900">A newer version exists</h3><p class="text-sm text-slate-500">Someone saved this profile before you. Your changes were not saved. Reload to see the latest version, then edit again.</p></div><div class="flex justify-end gap-2"><button class="btn btn-outline h-11" data-close>Close</button><button class="btn btn-default h-11">Reload</button></div>` },
+      { title: "Application details", html: `<button class="dialog-x" data-close aria-label="Close"><i data-lucide="x" class="h-4 w-4"></i></button><div class="flex items-start gap-3"><div class="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 text-primary"><i data-lucide="file-text" class="h-4 w-4"></i></div><div><h3 class="text-xl font-semibold tracking-tight text-slate-900">BL-20418</h3><p class="text-sm text-slate-500">Business loan · submitted 2 Oct 2026</p></div></div><div class="grid grid-cols-2 gap-3 text-sm"><div><p class="text-xs text-slate-500">Amount</p><p class="font-medium">₹15,00,000</p></div><div><p class="text-xs text-slate-500">Status</p><span class="inline-flex rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">Submitted</span></div></div><div class="flex items-center gap-2 text-sm text-slate-500"><i data-lucide="calendar-days" class="h-4 w-4"></i> Updated 8 Oct 2026</div>` },
+      { title: "Upload document", html: `<button class="dialog-x" data-close aria-label="Close"><i data-lucide="x" class="h-4 w-4"></i></button><div class="space-y-1.5"><h3 class="text-lg font-semibold tracking-tight text-slate-900">Upload document</h3><p class="text-sm text-slate-500">PDF, images and spreadsheets up to 25 MB.</p></div><div class="flex items-center gap-3 rounded-xl border border-dashed border-slate-200 px-4 py-4"><div class="grid h-11 w-11 place-items-center rounded-lg bg-primary/10 text-primary"><i data-lucide="upload" class="h-4 w-4"></i></div><div><p class="text-sm font-medium">Drop a file or <span class="text-primary">browse</span></p><p class="text-sm text-slate-500">One file, up to 25 MB</p></div></div><div class="flex justify-end gap-2"><button class="btn btn-outline h-11" data-close>Cancel</button><button class="btn btn-default h-11">Upload</button></div>` },
+      { title: "Upload new version", html: `<button class="dialog-x" data-close aria-label="Close"><i data-lucide="x" class="h-4 w-4"></i></button><div class="space-y-1.5"><h3 class="text-lg font-semibold tracking-tight">Upload new version</h3><p class="text-sm text-slate-500">Type is locked. This becomes the next version of GST certificate.</p></div><div class="rounded-lg bg-slate-50 px-3 py-2 text-sm"><p class="font-medium">GST certificate</p><p class="text-xs text-slate-500">Financial · current version 3</p></div><div class="flex justify-end gap-2"><button class="btn btn-outline h-11" data-close>Cancel</button><button class="btn btn-default h-11">Upload</button></div>` },
+      { title: "File preview", html: `<button class="dialog-x" data-close aria-label="Close"><i data-lucide="x" class="h-4 w-4"></i></button><div class="flex items-center justify-between gap-3"><h3 class="text-lg font-semibold tracking-tight">Preview</h3><button class="btn btn-outline btn-sm"><i data-lucide="download" class="h-3.5 w-3.5"></i> Download</button></div><div class="grid h-48 place-items-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-slate-400"><div class="text-center"><i data-lucide="file-text" class="mx-auto mb-2 h-8 w-8"></i><p class="text-sm">gst-certificate.pdf</p></div></div>` },
+      { title: "Share securely", html: `<div class="flex items-start gap-3.5"><div class="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#e8eefc] text-[#2457d6]"><i data-lucide="shield-check" class="h-[22px] w-[22px]"></i></div><div class="min-w-0 flex-1"><h3 class="text-xl font-bold tracking-tight text-[#151a27]">Share securely</h3><p class="mt-1 text-sm text-[#556075]">1 document · GST certificate</p></div><button data-close class="grid h-11 w-11 place-items-center rounded-[10px] text-[#556075] hover:bg-[#f3f5f9]" aria-label="Close"><i data-lucide="x" class="h-[18px] w-[18px]"></i></button></div><div class="space-y-1.5"><label class="text-sm font-medium">Recipient name</label><input class="field" value="Priya Sharma" /></div><div class="space-y-1.5"><label class="text-sm font-medium">Email</label><div class="relative"><i data-lucide="mail" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i><input class="field pl-9" value="priya@example.com" /></div></div><label class="flex items-center justify-between text-sm"><span>Allow download</span><span class="inline-flex h-6 w-11 items-center rounded-full bg-primary"><span class="ml-5 block h-5 w-5 rounded-full bg-white shadow"></span></span></label><button class="btn btn-default h-11 w-full">Create link</button>` },
+      { title: "Documents shared", html: `<div class="flex items-start gap-3"><div class="grid h-11 w-11 place-items-center rounded-xl bg-emerald-50 text-emerald-600"><i data-lucide="check" class="h-5 w-5"></i></div><div><h3 class="text-xl font-bold tracking-tight text-[#151a27]">Documents shared</h3><p class="text-sm text-[#556075]">Copy the link and send it to Priya.</p></div></div><div class="flex items-center gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm"><i data-lucide="link-2" class="h-4 w-4 text-slate-400"></i><span class="truncate">https://portal.example/s/ab12cd</span><button class="btn btn-ghost btn-sm"><i data-lucide="copy" class="h-3.5 w-3.5"></i></button></div><div class="flex justify-end gap-2"><button class="btn btn-outline">Copy all links</button><button class="btn btn-default" data-close>Done</button></div>` },
+      { title: "Import from DigiLocker", html: `<button class="dialog-x" data-close aria-label="Close"><i data-lucide="x" class="h-4 w-4"></i></button><div class="space-y-1.5"><h3 class="text-lg font-semibold tracking-tight">Import from DigiLocker</h3><p class="text-sm text-slate-500">Pull a verified document into your portal. It will show as Verified via DigiLocker.</p></div><p class="text-sm text-slate-500">Connect DigiLocker to see documents you can import. You'll come back here afterwards.</p><button class="btn btn-default h-11">Connect DigiLocker</button><div class="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">DigiLocker is unavailable right now.</div><button class="btn btn-outline h-11">Upload manually instead</button>` },
+      { title: "Revoke access", html: `<button class="dialog-x" data-close aria-label="Close"><i data-lucide="x" class="h-4 w-4"></i></button><div class="space-y-1.5"><h3 class="text-lg font-semibold tracking-tight text-slate-900">Revoke access</h3><p class="text-sm text-slate-500">Priya Sharma will lose access immediately.</p></div><div class="flex justify-end gap-2"><button class="btn btn-outline h-11" data-close>Cancel</button><button class="btn btn-destructive h-11">Revoke access</button></div>` },
+      { title: "Search PAN", html: `<button class="dialog-x" data-close aria-label="Close"><i data-lucide="x" class="h-4 w-4"></i></button><div class="space-y-1.5"><h3 class="text-lg font-semibold tracking-tight text-slate-900">Search PAN</h3><p class="text-sm text-slate-500">Verify the owner PAN against the name and date of birth on the PAN record.</p></div><div class="space-y-1.5"><label class="text-sm text-slate-600">PAN</label><input class="field uppercase" value="ABCDE1234F" /></div><div class="space-y-1.5"><label class="text-sm text-slate-600">Name as per PAN</label><input class="field" placeholder="Enter full name as on the PAN card" /></div><div class="space-y-1.5"><label class="text-sm text-slate-600">Date of birth</label><input class="field" type="date" /></div><div class="flex justify-end gap-2"><button class="btn btn-outline" data-close>Cancel</button><button class="btn btn-default"><i data-lucide="search" class="h-4 w-4"></i> Search</button></div>` },
+      { title: "PAN search result", html: `<button class="dialog-x" data-close aria-label="Close"><i data-lucide="x" class="h-4 w-4"></i></button><div class="space-y-1.5"><h3 class="text-lg font-semibold tracking-tight">PAN search result</h3><p class="text-sm text-slate-500">Review the verification result before filling the form.</p></div><div class="flex items-center gap-2"><span class="inline-flex rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">Verified with mismatch</span></div><div class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">Name on the record does not match.</div><div class="flex justify-end"><button class="btn btn-default" data-close>Close</button></div>` }
+    ];
+
+    const grid = document.getElementById("dialog-grid");
+    dialogs.forEach((dialog) => {
+      const wrap = document.createElement("div");
+      wrap.innerHTML = `
+        <div class="rounded-xl bg-slate-200/70 p-4">
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <p class="text-xs font-semibold tracking-wide text-slate-500">${dialog.title.toUpperCase()}</p>
+            <button type="button" class="btn btn-default btn-sm" data-open>Open overlay</button>
+          </div>
+          <div class="dialog-card relative grid gap-4 rounded-xl border bg-white p-6 shadow-lg">${dialog.html}</div>
+        </div>`;
+      grid.appendChild(wrap.firstElementChild);
+    });
+
+    const overlay = document.getElementById("overlay");
+    const overlayCard = document.getElementById("overlay-card");
+    function openOverlay(html) {
+      overlayCard.innerHTML = html;
+      overlay.classList.remove("hidden");
+      overlay.classList.add("flex");
+      lucide.createIcons();
+    }
+    function closeOverlay() {
+      overlay.classList.add("hidden");
+      overlay.classList.remove("flex");
+    }
+    document.addEventListener("click", (event) => {
+      const open = event.target.closest("[data-open]");
+      if (open) {
+        const card = open.closest("div").parentElement.querySelector(".dialog-card");
+        openOverlay(card.innerHTML);
+      }
+      if (event.target.closest("[data-close]") || event.target === overlay) closeOverlay();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeOverlay();
+    });
+
+    document.querySelectorAll("[data-toast]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const kind = button.dataset.toast;
+        const colors = {
+          success: "border-emerald-200 bg-emerald-50 text-emerald-900",
+          error: "border-red-200 bg-red-50 text-red-900",
+          info: "border-blue-200 bg-blue-50 text-blue-900",
+        };
+        const toast = document.createElement("div");
+        toast.className = `toast-in pointer-events-auto rounded-[10px] border px-4 py-3 text-[13px] shadow-lg ${colors[kind] || colors.info}`;
+        toast.innerHTML = `<p class="font-semibold">${button.dataset.toastTitle || ""}</p>${button.dataset.toastBody ? `<p class="mt-0.5">${button.dataset.toastBody}</p>` : ""}`;
+        document.getElementById("toasts").appendChild(toast);
+        setTimeout(() => toast.remove(), 2800);
+      });
+    });
+
+    document.getElementById("toggle-password").addEventListener("click", () => {
+      const input = document.getElementById("password");
+      input.type = input.type === "password" ? "text" : "password";
+    });
+    const bars = document.getElementById("strength-bars");
+    for (let i = 0; i < 6; i++) {
+      const bar = document.createElement("span");
+      bar.className = "h-1.5 flex-1 rounded-full " + (i < 6 ? "bg-green-600" : "bg-slate-200");
+      bars.appendChild(bar);
+    }
+
+    document.getElementById("switch").addEventListener("click", (event) => {
+      const button = event.currentTarget;
+      const on = button.getAttribute("aria-checked") !== "true";
+      button.setAttribute("aria-checked", String(on));
+      button.classList.toggle("bg-primary", on);
+      button.classList.toggle("bg-input", !on);
+      button.firstElementChild.classList.toggle("translate-x-5", on);
+      button.firstElementChild.classList.toggle("translate-x-0", !on);
+    });
+
+    document.getElementById("select-trigger").addEventListener("click", () => {
+      document.getElementById("select-menu").classList.toggle("hidden");
+    });
+    document.getElementById("multi-trigger").addEventListener("click", () => {
+      document.getElementById("multi-menu").classList.toggle("hidden");
+    });
+    document.getElementById("apply-trigger").addEventListener("click", () => {
+      document.getElementById("apply-menu").classList.toggle("hidden");
+    });
+
+    document.getElementById("tabs").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-tab]");
+      if (!button) return;
+      document.querySelectorAll(".tab-btn").forEach((tab) => {
+        const active = tab === button;
+        tab.classList.toggle("bg-white", active);
+        tab.classList.toggle("text-foreground", active);
+        tab.classList.toggle("shadow-sm", active);
+      });
+      ["personal", "contact", "security"].forEach((id) => {
+        document.getElementById("tab-" + id).classList.toggle("hidden", id !== button.dataset.tab);
+      });
+    });
+
+    document.getElementById("chips").addEventListener("click", (event) => {
+      const chip = event.target.closest("[data-chip]");
+      if (!chip) return;
+      document.querySelectorAll("[data-chip]").forEach((item) => {
+        const active = item === chip;
+        item.className = active
+          ? "min-h-11 shrink-0 rounded-full bg-primary px-4 text-sm font-medium text-white shadow-sm"
+          : "min-h-11 shrink-0 rounded-full border border-slate-100 bg-white px-4 text-sm font-medium text-slate-600 shadow-sm";
+      });
+    });
+
+    const drawer = document.getElementById("drawer");
+    document.getElementById("open-drawer").addEventListener("click", () => drawer.classList.remove("hidden"));
+    drawer.addEventListener("click", (event) => {
+      if (event.target.closest("[data-close-drawer]")) drawer.classList.add("hidden");
+    });
+
+    const iconGrid = document.getElementById("icon-grid");
+    ICONS.forEach((name) => {
+      const cell = document.createElement("div");
+      cell.dataset.icon = name.toLowerCase();
+      cell.className = "flex items-center gap-2 rounded-lg border border-slate-100 bg-white px-3 py-2.5 text-slate-700 shadow-sm";
+      cell.innerHTML = `<i data-lucide="${kebab(name)}" class="h-4 w-4 shrink-0"></i><span class="truncate text-xs font-medium">${name}</span>`;
+      iconGrid.appendChild(cell);
+    });
+    document.getElementById("icon-search").addEventListener("input", (event) => {
+      const query = event.target.value.trim().toLowerCase();
+      let shown = 0;
+      iconGrid.querySelectorAll("[data-icon]").forEach((cell) => {
+        const match = cell.dataset.icon.includes(query);
+        cell.classList.toggle("hidden", !match);
+        if (match) shown += 1;
+      });
+      document.getElementById("icon-empty").classList.toggle("hidden", shown !== 0);
+    });
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>

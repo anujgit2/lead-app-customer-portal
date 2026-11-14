@@ -1,0 +1,18 @@
+You're invited to apply
+{{#organizationName}}{{organizationName}}{{/organizationName}}{{^organizationName}}LoanPortal{{/organizationName}}
+
+{{#recipientName}}Hello {{recipientName}},{{/recipientName}}{{^recipientName}}Hello,{{/recipientName}}
+
+{{#inviterName}}{{inviterName}}{{#organizationName}} at {{organizationName}}{{/organizationName}} invited you{{/inviterName}}{{^inviterName}}You've been invited{{/inviterName}} to create an account and continue your loan application{{#companyName}} for {{companyName}}{{/companyName}}.
+
+{{#recipientEmail}}Sent to: {{recipientEmail}}
+{{/recipientEmail}}{{#programName}}Program: {{programName}}
+{{/programName}}{{#expiresAt}}Expires: {{expiresAt}}
+{{/expiresAt}}
+Accept your invitation:
+{{acceptUrl}}
+
+{{#expiresAt}}This invitation expires on {{expiresAt}}. {{/expiresAt}}If you were not expecting it, you can ignore this email. The link only works for the invited address.
+
+{{#supportEmail}}Questions? Write to {{supportEmail}}.
+{{/supportEmail}}© {{year}} {{#organizationName}}{{organizationName}}{{/organizationName}}{{^organizationName}}LoanPortal{{/organizationName}}

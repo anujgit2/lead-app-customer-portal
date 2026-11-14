@@ -4,16 +4,21 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "local:dev": "env-cmd -f .env.local next dev",
+    "local:linux": "env-cmd -f .env.linux next dev",
     "dev:dev": "env-cmd -f .env.dev next dev",
     "build": "next build",
     "build:dev": "env-cmd -f .env.dev next build",
     "build:uat": "env-cmd -f .env.uat next build",
     "build:prod": "env-cmd -f .env.prod next build",
     "start": "serve -l 3000 out",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --import tsx --test \"src/**/*.test.ts\"",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
+    "@monaco-editor/react": "^4.7.0",
     "@radix-ui/react-accordion": "^1.2.13",
     "@radix-ui/react-alert-dialog": "^1.1.16",
     "@radix-ui/react-avatar": "^1.1.12",
@@ -23,6 +28,7 @@
     "@radix-ui/react-label": "^2.1.9",
     "@radix-ui/react-popover": "^1.1.16",
     "@radix-ui/react-progress": "^1.1.9",
+    "@radix-ui/react-radio-group": "^1.4.7",
     "@radix-ui/react-scroll-area": "^1.2.11",
     "@radix-ui/react-select": "^2.3.0",
     "@radix-ui/react-separator": "^1.1.9",
@@ -39,17 +45,19 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.17.0",
-    "next": "^15.3.3",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "next": "^16.4.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "react-dropzone": "^15.0.0",
     "react-hook-form": "^7.78.0",
+    "react-number-format": "^5.4.5",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
     "zod": "^3.25.76",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -57,10 +65,11 @@
     "autoprefixer": "^10.5.0",
     "env-cmd": "^11.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.3.0-preview.0",
+    "eslint-config-next": "^16.4.0",
     "postcss": "^8.5.15",
     "serve": "^14.2.6",
     "tailwindcss": "^3.4.19",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

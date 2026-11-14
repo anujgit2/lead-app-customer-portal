@@ -11,7 +11,7 @@ A production-grade, JSON-driven Loan Origination Customer Portal. All loan forms
 
 | Layer | Library | Version |
 |-------|---------|---------|
-| Framework | Next.js (App Router) | 15.3.3 |
+| Framework | Next.js (App Router) | 16.4.0 |
 | Language | TypeScript strict mode | 5.x |
 | Styling | Tailwind CSS | v3 |
 | UI Primitives | Radix UI + custom Shadcn-style components | — |

@@ -1,38 +1,46 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   FileText,
+  Files,
   User,
+  Users,
   LogOut,
   Menu,
   X,
   Bell,
   ChevronDown,
   Building2,
+  Loader2,
+  UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
 import { getInitials } from "@/lib/utils";
+import { isIdleLocked, subscribeIdleLock } from "@/lib/idle-lock";
+import { clearFullSession, hasAccessToken, subscribeAuthStorage } from "@/lib/session";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 
 const NAV_ITEMS = [
-  {
-    label: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Applications",
-    href: "/applications",
-    icon: FileText,
-  },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Applications", href: "/applications", icon: FileText },
+  { label: "Profiles", href: "/profiles", icon: Users },
+  { label: "Documents", href: "/documents", icon: Files },
+  { label: "Invite", href: "/invite", icon: UserPlus },
 ];
 
 interface AppLayoutProps {
@@ -44,7 +52,16 @@ export function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const { user } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const authorized = useSyncExternalStore(subscribeAuthStorage, hasAccessToken, () => false);
+  const sessionLocked = useSyncExternalStore(subscribeIdleLock, isIdleLocked, () => false);
+
+  useEffect(() => {
+    // Read storage directly: the hydration snapshot is always `false`.
+    // A locked session has no token on purpose — keep this page mounted.
+    if (sessionLocked || hasAccessToken()) return;
+    clearFullSession();
+    router.replace("/auth/login");
+  }, [router, authorized, sessionLocked]);
 
   const handleLogout = async () => {
     await authService.logout();
@@ -54,127 +71,142 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const initials = user ? getInitials(user.firstName, user.lastName) : "U";
 
+  if (!authorized && !sessionLocked) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background" aria-busy="true">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <span className="sr-only">Checking your session</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      {/* Top navbar */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-border h-14">
-        <div className="h-full px-4 flex items-center justify-between max-w-screen-2xl mx-auto">
-          {/* Logo */}
-          <div className="flex items-center gap-8">
-            <Link href="/dashboard" className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
-                <Building2 className="h-4 w-4 text-white" />
-              </div>
-              <span className="font-semibold text-sm hidden sm:block">LoanPortal</span>
-            </Link>
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-40 flex h-[60px] items-center justify-between gap-2 border-b border-border bg-card px-2 min-[901px]:gap-4 min-[901px]:px-4">
+        <div className="flex min-w-0 items-center gap-2 min-[901px]:gap-4">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="min-[901px]:hidden [&_svg]:size-5"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu />
+          </Button>
 
-            {/* Desktop nav */}
-            <nav className="hidden md:flex items-center gap-1">
-              {NAV_ITEMS.map((item) => {
-                const active = pathname.startsWith(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-                      active
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
+          <Link href="/dashboard" className="flex items-center gap-2.5 text-foreground">
+            <span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-primary-foreground">
+              <Building2 className="h-4 w-4" />
+            </span>
+            <span className="hidden text-sm font-semibold tracking-[-0.01em] min-[901px]:block">
+              LoanPortal
+            </span>
+          </Link>
 
-          {/* Right side */}
-          <div className="flex items-center gap-2">
-            <button className="relative p-2 rounded-md hover:bg-muted transition-colors">
-              <Bell className="h-4.5 w-4.5 text-muted-foreground" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-primary rounded-full" />
-            </button>
+          <nav className="hidden items-center gap-0.5 min-[901px]:flex" aria-label="Main">
+            {NAV_ITEMS.map((item) => {
+              const active = pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors duration-150",
+                    active
+                      ? "bg-primary-soft text-primary-soft-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
 
-            {/* Profile dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setProfileOpen(!profileOpen)}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted transition-colors"
-              >
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="relative [&_svg]:size-5"
+            aria-label="Notifications"
+          >
+            <Bell />
+            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-danger shadow-[0_0_0_2px_hsl(var(--card))]" />
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="ghost" className="gap-2 px-2">
                 <Avatar className="h-7 w-7">
-                  <AvatarFallback className="text-xs bg-primary text-white">
+                  <AvatarFallback className="bg-primary text-xs text-primary-foreground">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium hidden sm:block">
-                  {user?.firstName}
-                </span>
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden sm:block" />
-              </button>
-
-              {profileOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setProfileOpen(false)}
-                  />
-                  <div className="absolute right-0 top-full mt-1 w-52 rounded-xl border bg-white shadow-lg py-1 z-50">
-                    <div className="px-3 py-2">
-                      <p className="text-sm font-medium">
-                        {user?.firstName} {user?.lastName}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {user?.email}
-                      </p>
-                    </div>
-                    <Separator />
-                    <Link
-                      href="/profile"
-                      className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
-                      onClick={() => setProfileOpen(false)}
-                    >
-                      <User className="h-4 w-4" />
-                      Profile
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Sign out
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Mobile menu button */}
-            <button
-              className="md:hidden p-2 rounded-md hover:bg-muted"
-              onClick={() => setMobileOpen(!mobileOpen)}
-            >
-              {mobileOpen ? (
-                <X className="h-5 w-5" />
-              ) : (
-                <Menu className="h-5 w-5" />
-              )}
-            </button>
-          </div>
+                <span className="hidden min-[901px]:inline">{user?.firstName}</span>
+                <ChevronDown className="hidden text-muted-foreground min-[901px]:block" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <div className="px-2.5 py-2">
+                <p className="text-sm font-medium">
+                  {user?.firstName} {user?.lastName}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/profile">
+                  <User className="h-4 w-4" />
+                  Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-danger-strong" onSelect={() => void handleLogout()}>
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
-      {/* Mobile nav drawer */}
       {mobileOpen && (
-        <>
+        <div className="fixed inset-0 z-[70] min-[901px]:hidden">
           <div
-            className="fixed inset-0 z-30 bg-black/30 md:hidden"
+            className="absolute inset-0 bg-[hsl(200_40%_6%/0.5)]"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="fixed top-14 left-0 right-0 z-30 bg-white border-b shadow-md md:hidden">
-            <nav className="p-4 space-y-1">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation"
+            className="absolute inset-y-0 left-0 flex w-72 flex-col gap-5 overflow-y-auto bg-card p-5 shadow-lg"
+          >
+            <div className="flex items-center justify-between">
+              <Link href="/dashboard" className="flex items-center gap-2.5" onClick={() => setMobileOpen(false)}>
+                <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
+                  <Building2 className="h-5 w-5" />
+                </span>
+                <span>
+                  <span className="block text-sm font-semibold leading-[18px]">LoanPortal</span>
+                </span>
+              </Link>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="[&_svg]:size-5"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close navigation"
+              >
+                <X />
+              </Button>
+            </div>
+            <nav className="flex flex-col gap-0.5">
               {NAV_ITEMS.map((item) => {
                 const active = pathname.startsWith(item.href);
                 return (
@@ -182,11 +214,12 @@ export function AppLayout({ children }: AppLayoutProps) {
                     key={item.href}
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
+                    aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      "inline-flex h-9 items-center gap-2 rounded-md px-3 text-sm font-medium",
                       active
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-muted"
+                        ? "bg-primary-soft text-primary-soft-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
                     )}
                   >
                     <item.icon className="h-4 w-4" />
@@ -196,14 +229,11 @@ export function AppLayout({ children }: AppLayoutProps) {
               })}
             </nav>
           </div>
-        </>
+        </div>
       )}
 
-      {/* Main content */}
-      <main className="pt-14">
-        <div className="max-w-screen-2xl mx-auto">
-          {children}
-        </div>
+      <main>
+        <div className="mx-auto max-w-screen-2xl">{children}</div>
       </main>
     </div>
   );

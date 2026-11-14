@@ -1,0 +1,1 @@
+[{"type":"BankInfoProperty","name":"bankInfo","access":{},"value":[{"holderName":"Acme Traders","accountNumber":"50100123456789","accountNumberConfirm":"50100123456789","ifscCode":"HDFC0001234","bankName":"HDFC Bank","accountType":"CURRENT","isPrimary":true,"verificationStatus":"PENDING"}]}]

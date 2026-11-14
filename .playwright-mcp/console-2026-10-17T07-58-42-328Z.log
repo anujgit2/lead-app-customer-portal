@@ -1,0 +1,41 @@
+[     735ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[     951ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[   72873ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  143879ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  215239ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  218243ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  218502ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  290173ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  362173ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  434174ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  506189ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  578167ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  650230ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  720630ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  794272ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  805268ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://leads-services.local/api/applications/dd1cd285-6aec-4c92-b0f7-6eab90be840c:0
+[  866213ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[  938153ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1010147ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1082158ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1154160ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1226185ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1298156ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1370196ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1442142ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1587439ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1675056ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1746062ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1790868ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1791103ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1859679ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1934154ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1990841ms] [LOG] [Fast Refresh] rebuilding @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 1997590ms] [LOG] [Fast Refresh] done in 6258ms @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 2010543ms] [LOG] [Fast Refresh] rebuilding @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 2011322ms] [LOG] [Fast Refresh] done in 880ms @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 2072338ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 2151401ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 2184182ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 2185130ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719
+[ 2256994ms] [LOG] [HMR] connected @ http://customer.bizloandev.local/_next/static/chunks/node_modules_next_dist_05y3oi5z9mc_3._.js:719

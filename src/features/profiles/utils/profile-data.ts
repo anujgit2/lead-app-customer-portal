@@ -1,0 +1,214 @@
+import type { FormData, FormField, FormSection, FormTemplate, TemplateData } from "@/types";
+import { normalizeAddressValue } from "@/utils/address-field";
+import {
+  assignDeep,
+  fieldPayloadSegments,
+  getByPath,
+  setByPath,
+} from "@/utils/field-path";
+import {
+  applyWireTransformInbound,
+  applyWireTransformOutbound,
+} from "@/utils/field-transform";
+import { consentValueForForm, shouldPersistConsent, toClientConsentValue } from "@/utils/consent";
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function toCamelCase(value: string): string {
+  return value.toLowerCase().replace(/[_-]+([a-z0-9])/g, (_, char: string) => char.toUpperCase());
+}
+
+function sectionPayloadKey(section: FormSection): string {
+  return section.payloadKey ?? toCamelCase(section.code);
+}
+
+function sectionPathContext(template: FormTemplate, section: FormSection) {
+  return {
+    propertyName: template.propertyName,
+    payloadKey: sectionPayloadKey(section),
+    insideRepeatableSection: !!section.repeatable,
+  };
+}
+
+function normalizeFieldValue(
+  field: FormField,
+  value: unknown,
+  direction: "in" | "out" = "out"
+): unknown {
+  if (field.type === "consent") {
+    const version = field.consent?.version;
+    return direction === "in"
+      ? consentValueForForm(value, version)
+      : toClientConsentValue(value, version);
+  }
+  if (value === undefined || value === null || value === "") return undefined;
+
+  switch (field.type) {
+    case "number":
+    case "currency":
+    case "percentage": {
+      const num = typeof value === "number" ? value : Number(value);
+      return Number.isFinite(num) ? num : undefined;
+    }
+    case "checkbox":
+      return Boolean(value);
+    case "json":
+      if (typeof value !== "string") return value;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    case "file":
+    case "document":
+    case "multiselect":
+      return Array.isArray(value) && value.length > 0 ? value : undefined;
+    case "address":
+      return normalizeAddressValue(value);
+    default: {
+      if (typeof value === "string") {
+        const trimmed = field.inputFormat?.trim ? value.trim() : value;
+        return trimmed === "" ? undefined : trimmed;
+      }
+      return value;
+    }
+  }
+}
+
+function buildSectionValue(
+  template: FormTemplate,
+  section: FormSection,
+  data: unknown,
+  templateData?: unknown,
+  allForms?: Record<string, unknown>
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  if (!isPlainObject(data)) return result;
+  const context = sectionPathContext(template, section);
+  const formScope = isPlainObject(templateData) ? templateData : undefined;
+  for (const field of section.fields) {
+    if (field.type === "consent" && !shouldPersistConsent(field, data, formScope, allForms)) continue;
+    const value = applyWireTransformOutbound(
+      field,
+      normalizeFieldValue(field, data[field.name], "out")
+    );
+    if (value === undefined) continue;
+    setByPath(result, fieldPayloadSegments(field, context), value);
+  }
+  return result;
+}
+
+/**
+ * Saved profile data is grouped by section: the backend stores a section's fields under
+ * the section code (e.g. `identity`, `current_address`). Older or hand-built data may use
+ * the camelCase payload key instead.
+ */
+function sectionBucket(data: Record<string, unknown>, section: FormSection): unknown {
+  if (isPlainObject(data[section.code])) return data[section.code];
+  const key = sectionPayloadKey(section);
+  return isPlainObject(data[key]) ? data[key] : undefined;
+}
+
+function sectionItems(data: Record<string, unknown>, section: FormSection): unknown {
+  return data[section.code] !== undefined ? data[section.code] : data[sectionPayloadKey(section)];
+}
+
+function parseSectionValue(
+  template: FormTemplate,
+  section: FormSection,
+  data: unknown,
+  bucket?: unknown
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  if (!isPlainObject(data)) return result;
+  const context = sectionPathContext(template, section);
+  const scoped = isPlainObject(bucket) ? bucket : undefined;
+  for (const field of section.fields) {
+    const fromPath = getByPath(data, fieldPayloadSegments(field, context));
+    const fromSection = scoped && field.name in scoped ? scoped[field.name] : undefined;
+    const raw =
+      fromPath !== undefined ? fromPath : fromSection !== undefined ? fromSection : data[field.name];
+    const value = normalizeFieldValue(field, applyWireTransformInbound(field, raw), "in");
+    if (value !== undefined) result[field.name] = value;
+  }
+  return result;
+}
+
+/** Merges one saved object per form into the single profile `data` payload. */
+export function mergeProfileFormValues(
+  templates: FormTemplate[],
+  valuesByTemplate: Record<string, unknown>
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const template of templates) {
+    assignDeep(
+      result,
+      formValuesToProfileData(template, valuesByTemplate[template.code], valuesByTemplate)
+    );
+  }
+  return result;
+}
+
+/**
+ * Form-engine values (keyed by section code) → the profile `data` object.
+ * `allForms` holds every form's values so cross-form `visibleIf` rules resolve
+ * the same way they did on screen.
+ */
+export function formValuesToProfileData(
+  template: FormTemplate,
+  values: unknown,
+  allForms?: Record<string, unknown>
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  if (!isPlainObject(values)) return result;
+
+  for (const section of template.sections) {
+    const sectionData = values[section.code];
+    if (section.repeatable) {
+      const items = (Array.isArray(sectionData) ? sectionData : [])
+        .map((item) => buildSectionValue(template, section, item, values, allForms))
+        .filter((item) => Object.keys(item).length > 0);
+      if (items.length === 0) continue;
+      const key = sectionPayloadKey(section);
+      result[key] = section.maxInstances === 1 ? items[0] : items;
+    } else {
+      assignDeep(result, buildSectionValue(template, section, sectionData, values, allForms));
+    }
+  }
+
+  return result;
+}
+
+/** Profile `data` → form-engine values the JSON form can render. */
+export function profileDataToFormValues(
+  template: FormTemplate,
+  data: unknown
+): Record<string, unknown> {
+  if (!isPlainObject(data)) return {};
+  const result: Record<string, unknown> = {};
+
+  for (const section of template.sections) {
+    if (section.repeatable) {
+      const raw = sectionItems(data, section);
+      const items = Array.isArray(raw) ? raw : raw == null ? [] : [raw];
+      const mapped = items
+        .map((item) => parseSectionValue(template, section, item))
+        .filter((item) => Object.keys(item).length > 0);
+      if (mapped.length > 0) result[section.code] = mapped;
+    } else {
+      const fields = parseSectionValue(template, section, data, sectionBucket(data, section));
+      if (Object.keys(fields).length > 0) result[section.code] = fields;
+    }
+  }
+
+  return result;
+}
+
+/** Per-template form values for the application-style review summary. */
+export function profileReviewFormData(templates: FormTemplate[], data: unknown): FormData {
+  return Object.fromEntries(
+    templates.map((template) => [template.code, profileDataToFormValues(template, data) as TemplateData])
+  ) as FormData;
+}

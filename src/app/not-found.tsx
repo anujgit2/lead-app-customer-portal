@@ -2,15 +2,24 @@ import Link from "next/link";
 import { Building2, Home, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { UnmatchedRoute } from "@/features/documents/pages/UnmatchedRoute";
 
 export default function NotFound() {
+  return (
+    <UnmatchedRoute>
+      <MissingPage />
+    </UnmatchedRoute>
+  );
+}
+
+function MissingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 flex items-center justify-center p-4">
       <div className="w-full max-w-md text-center">
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary mb-6">
-          <Building2 className="h-6 w-6 text-white" />
+          <Building2 className="h-6 w-6 text-primary-foreground" />
         </div>
-        <Card className="border-0 shadow-xl shadow-gray-100/50">
+        <Card className="border-0 shadow-lg">
           <CardContent className="p-8 flex flex-col items-center gap-5">
             <p className="text-5xl font-bold text-muted-foreground/40">404</p>
             <div className="space-y-2">

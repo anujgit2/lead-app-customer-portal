@@ -64,7 +64,7 @@ export function ErrorState({
   const heading = title ?? getDefaultTitle(code, status);
 
   const iconClassName = cn(
-    isSessionError ? "text-amber-600" : "text-destructive",
+    isSessionError ? "text-warning-strong" : "text-destructive",
     compact ? "h-6 w-6" : "h-7 w-7"
   );
 
@@ -94,12 +94,12 @@ export function ErrorState({
   };
 
   const content = (
-    <Card className={cn("border-0 shadow-xl shadow-gray-100/50", compact && "shadow-md")}>
+    <Card className={cn("border-0 shadow-lg", compact && "shadow-md")}>
       <CardContent className={cn("p-8 flex flex-col items-center gap-5 text-center", compact && "p-6")}>
         <div
           className={cn(
             "rounded-full flex items-center justify-center",
-            isSessionError ? "bg-amber-100" : "bg-destructive/10",
+            isSessionError ? "bg-warning-soft" : "bg-destructive/10",
             compact ? "w-12 h-12" : "w-14 h-14"
           )}
         >
@@ -191,7 +191,7 @@ export function ErrorState({
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary mb-4">
-            <Building2 className="h-6 w-6 text-white" />
+            <Building2 className="h-6 w-6 text-primary-foreground" />
           </div>
         </div>
         {content}

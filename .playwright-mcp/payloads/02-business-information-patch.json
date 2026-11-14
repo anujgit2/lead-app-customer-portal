@@ -1,0 +1,39 @@
+[
+    {
+        "type": "CompanyProperty",
+        "name": "company",
+        "access": {},
+        "value": {
+            "companyName": "Acme Traders",
+            "companyType": "PROPRIETORSHIP",
+            "doingBusinessAs": "Acme",
+            "industryType": "RETAIL",
+            "natureOfBusiness": "RETAIL_TRADING",
+            "stateOfFormation": "MAHARASHTRA",
+            "incorporationDate": "2018-04-12",
+            "yearEstablished": 2018,
+            "businessVintage": 8,
+            "annualRevenue": 2500000,
+            "netIncome": 400000,
+            "businessPan": "ABCPD1234F",
+            "gstRegistered": false,
+            "businessEmail": "accounts@acmetraders.example",
+            "businessMobile": "9876543210",
+            "website": "https://acmetraders.example",
+            "employeeCount": 12,
+            "nicCode": "47111",
+            "premisesOwnership": "RENTED",
+            "businessAddress": [
+                {
+                    "addressType": "REGISTERED",
+                    "addressLine1": "42 MG Road",
+                    "addressLine2": "Near City Center",
+                    "city": "Mumbai",
+                    "state": "MAHARASHTRA",
+                    "pincode": "400001",
+                    "country": "India"
+                }
+            ]
+        }
+    }
+]
