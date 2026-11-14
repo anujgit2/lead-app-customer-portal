@@ -105,6 +105,7 @@ apiClient.interceptors.response.use(
           path.startsWith("/auth/register") ||
           path.startsWith("/auth/session-expired") ||
           path.startsWith("/apply") ||
+          path.startsWith("/lead-invite") ||
           path.startsWith("/s/") ||
           path.startsWith("/shared");
 

@@ -18,7 +18,12 @@ import {
 
 type FlowStep = "register" | "verify-email" | "ready";
 
-export function SelfServeRegisterFlow() {
+interface SelfServeRegisterFlowProps {
+  /** Set when the visitor arrived through a user-to-user invitation link. */
+  invitation?: { token: string; email: string };
+}
+
+export function SelfServeRegisterFlow({ invitation }: SelfServeRegisterFlowProps = {}) {
   const router = useRouter();
   const { setUser } = useAuthStore();
   const [step, setStep] = useState<FlowStep>("register");
@@ -73,7 +78,7 @@ export function SelfServeRegisterFlow() {
       <SignupProgress step={progressStep} />
 
       <div className={step === "register" ? "contents" : "hidden"}>
-        <SelfServeRegisterForm onSuccess={handleRegisterSuccess} />
+        <SelfServeRegisterForm onSuccess={handleRegisterSuccess} invitation={invitation} />
       </div>
 
       {step === "verify-email" && userId && registerData && (

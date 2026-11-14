@@ -59,6 +59,8 @@ interface SelfServeRegisterFormProps {
     emailVerificationPending: boolean;
     accessToken: string | null;
   }) => void;
+  /** Set for user-to-user invitations. The email is fixed to the invited address. */
+  invitation?: { token: string; email: string };
 }
 
 function splitName(fullName: string) {
@@ -69,7 +71,7 @@ function splitName(fullName: string) {
   };
 }
 
-export function SelfServeRegisterForm({ onSuccess }: SelfServeRegisterFormProps) {
+export function SelfServeRegisterForm({ onSuccess, invitation }: SelfServeRegisterFormProps) {
   const { config } = useTenantUi();
   const formCopy = config.forms.signup;
   const [showPassword, setShowPassword] = useState(false);
@@ -82,7 +84,14 @@ export function SelfServeRegisterForm({ onSuccess }: SelfServeRegisterFormProps)
     formState: { errors, isSubmitting },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
-    defaultValues: { captcha: false, acceptTerms: false, fullName: "", email: "", mobile: "", password: "" },
+    defaultValues: {
+      captcha: false,
+      acceptTerms: false,
+      fullName: "",
+      email: invitation?.email ?? "",
+      mobile: "",
+      password: "",
+    },
   });
 
   const password = watch("password") ?? "";
@@ -134,6 +143,7 @@ export function SelfServeRegisterForm({ onSuccess }: SelfServeRegisterFormProps)
             error={!!errors.email}
             className="h-11 bg-background"
             startAdornment={<Mail className="h-4 w-4" />}
+            readOnly={!!invitation}
             {...register("email")}
           />
           <FieldError>{errors.email?.message}</FieldError>
@@ -232,6 +242,7 @@ export function SelfServeRegisterForm({ onSuccess }: SelfServeRegisterFormProps)
       firstName: name.firstName,
       lastName: name.lastName,
       password: data.password,
+      ...(invitation ? { invitationToken: invitation.token } : {}),
     };
 
     try {

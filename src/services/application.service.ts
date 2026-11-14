@@ -417,7 +417,7 @@ function readLoanAmount(
   return 0;
 }
 
-function formDataToApplicationProperties(
+export function formDataToApplicationProperties(
   formData: Record<string, unknown>,
   templates: FormTemplate[]
 ): ApplicationProperty[] {

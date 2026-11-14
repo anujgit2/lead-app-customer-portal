@@ -908,3 +908,34 @@ export interface LinkedDocumentProfile {
   type: CustomerProfileType;
   relation: DocumentProfileRelation;
 }
+
+/** Public registration policy for the current tenant (GET /auth/register/config). */
+export type RegistrationPolicy = "OPEN" | "INVITE_ONLY" | "CLOSED";
+
+export interface RegistrationConfig {
+  policy: RegistrationPolicy;
+  invitationRequired: boolean;
+  mode: string;
+  emailEnabled: boolean;
+  phoneEnabled: boolean;
+  emailVerificationRequired: boolean;
+  phoneVerificationRequired: boolean;
+  otpExpirySeconds: number;
+}
+
+/** A user-to-user invitation as shown to its sender. */
+export type UserInvitationStatus = "PENDING" | "ACCEPTED" | "REVOKED";
+
+export interface UserInvitation {
+  id: string;
+  invitedEmail: string;
+  status: UserInvitationStatus;
+  expiresAt: string;
+  createdAt: string;
+}
+
+/** What the register page needs from a user invitation token. */
+export interface UserInvitationPreview {
+  invitedEmail: string;
+  expiresAt: string;
+}

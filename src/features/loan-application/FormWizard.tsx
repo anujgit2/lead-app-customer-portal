@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import type { FormTemplate, LoanProduct, FormData, WizardStepStatus } from "@/types";
+import type { DraftApplication, FormTemplate, LoanProduct, FormData, WizardStepStatus } from "@/types";
 import { WizardProgress } from "./WizardProgress";
 import { WizardStep, type WizardStepHandle } from "./WizardStep";
 import { ReviewScreen } from "./ReviewScreen";
@@ -21,12 +21,26 @@ import { isFieldRequired, isFieldVisible } from "@/utils/rule-engine";
 import { parseApiError } from "@/lib/api-error";
 import type { ApiError } from "@/types";
 
+/**
+ * Where the wizard saves drafts and submits. Defaults to the application API. Lead pages pass
+ * their own backend so the same wizard renders a lead's form.
+ */
+export interface WizardBackend {
+  saveDraft(draft: DraftApplication, templates: FormTemplate[]): Promise<unknown>;
+  submitApplication(draft: DraftApplication): Promise<unknown>;
+  /** Lead pages set this: the review page then asks for one consent covering data sharing. */
+  requiresDataSharingConsent?: boolean;
+}
+
 interface FormWizardProps {
   product: LoanProduct;
   draftId?: string;
   initialFormData?: FormData;
   programId?: string;
   applicationNumber?: string;
+  backend?: WizardBackend;
+  /** Called after a successful submit or save-and-close. Defaults to the dashboard. */
+  onExit?: () => void;
 }
 
 function isEmptyFormValue(value: unknown): boolean {
@@ -117,8 +131,11 @@ export function FormWizard({
   initialFormData,
   programId,
   applicationNumber,
+  backend = applicationService,
+  onExit,
 }: FormWizardProps) {
   const router = useRouter();
+  const exit = onExit ?? (() => router.push("/dashboard"));
   const queryClient = useQueryClient();
   const { initDraft, setCurrentStep, updateFormData, setStepStatus, getDraft } =
     useWizardStore();
@@ -199,7 +216,7 @@ export function FormWizard({
       return;
     }
 
-    void applicationService
+    void backend
       .saveDraft(
         {
           applicationId: draftId,
@@ -225,6 +242,7 @@ export function FormWizard({
     programId,
     stepStatuses,
     queryClient,
+    backend,
   ]);
 
   const handleValidChange = useCallback(
@@ -294,7 +312,7 @@ export function FormWizard({
       // Save current step data to backend via PATCH API
       try {
         setSavingMode("draft");
-        await applicationService.saveDraft({
+        await backend.saveDraft({
           applicationId: draftId,
           productCode: product.code,
           programId,
@@ -334,7 +352,7 @@ export function FormWizard({
   const handleSaveDraft = async (closeAfterSave = false) => {
     setSavingMode(closeAfterSave ? "close" : "draft");
     try {
-      await applicationService.saveDraft({
+      await backend.saveDraft({
         applicationId: draftId,
         productCode: product.code,
         programId,
@@ -349,7 +367,7 @@ export function FormWizard({
       setSavedAt(saved);
       if (closeAfterSave) {
         toast.success("Draft saved. You can pick up where you left off anytime.");
-        router.push("/dashboard");
+        exit();
         return;
       }
       toast.success("Draft saved");
@@ -382,7 +400,7 @@ export function FormWizard({
         }
       }
 
-      await applicationService.submitApplication({
+      await backend.submitApplication({
         applicationId: draftId,
         productCode: product.code,
         programId,
@@ -393,7 +411,7 @@ export function FormWizard({
       });
       queryClient.invalidateQueries({ queryKey: ["applications"] });
       toast.success("Application submitted successfully!");
-      router.push("/dashboard");
+      exit();
     } catch (err) {
       showApiValidationErrors(parseApiError(err));
     } finally {
@@ -496,6 +514,7 @@ export function FormWizard({
               onSaveClose={() => handleSaveDraft(true)}
               isSubmitting={isSubmitting}
               isSaving={savingMode === "close"}
+              requiresDataSharingConsent={backend?.requiresDataSharingConsent === true}
             />
           )}
         </div>

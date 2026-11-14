@@ -64,6 +64,7 @@ interface ReviewScreenProps {
   onSaveClose?: () => void;
   isSubmitting?: boolean;
   isSaving?: boolean;
+  requiresDataSharingConsent?: boolean;
 }
 
 function NotProvided({ children = "Not provided" }: { children?: React.ReactNode }) {
@@ -663,11 +664,15 @@ export function ReviewScreen({
   onSaveClose,
   isSubmitting,
   isSaving,
+  requiresDataSharingConsent = false,
 }: ReviewScreenProps) {
   const [confirmed, setConfirmed] = useState(false);
+  const [sharingConsented, setSharingConsented] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const uploaded = countUploadedFiles(templates, formData);
   const busy = Boolean(isSubmitting || isSaving);
+  // One consent covers all data sharing. It is required only where the backend asks for it.
+  const canSubmit = confirmed && (!requiresDataSharingConsent || sharingConsented);
 
   return (
     <div className="flex flex-col gap-5">
@@ -688,15 +693,28 @@ export function ReviewScreen({
       />
 
       <div className="sticky bottom-[calc(12px+env(safe-area-inset-bottom,0px))] z-30 flex flex-wrap items-center gap-3 rounded-[14px] border border-border bg-card py-2.5 pl-4 pr-3 shadow-md">
-        <label className="flex min-w-[200px] flex-1 cursor-pointer items-center gap-2.5 text-[13px]">
-          <Checkbox
-            checked={confirmed}
-            onCheckedChange={(checked) => setConfirmed(checked === true)}
-            disabled={busy}
-            aria-label="I confirm the information is accurate."
-          />
-          <span>I confirm the information is accurate.</span>
-        </label>
+        <div className="flex min-w-[200px] flex-1 flex-col gap-2">
+          <label className="flex cursor-pointer items-center gap-2.5 text-[13px]">
+            <Checkbox
+              checked={confirmed}
+              onCheckedChange={(checked) => setConfirmed(checked === true)}
+              disabled={busy}
+              aria-label="I confirm the information is accurate."
+            />
+            <span>I confirm the information is accurate.</span>
+          </label>
+          {requiresDataSharingConsent && (
+            <label className="flex cursor-pointer items-center gap-2.5 text-[13px]">
+              <Checkbox
+                checked={sharingConsented}
+                onCheckedChange={(checked) => setSharingConsented(checked === true)}
+                disabled={busy}
+                aria-label="I consent to sharing the details I have entered with my partner."
+              />
+              <span>I consent to sharing the details I have entered with my partner.</span>
+            </label>
+          )}
+        </div>
         <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <Button
             type="button"
@@ -723,8 +741,8 @@ export function ReviewScreen({
           <Button
             type="button"
             onClick={() => setConfirmOpen(true)}
-            disabled={!confirmed || busy}
-            title={confirmed ? undefined : "Tick the confirmation to submit"}
+            disabled={!canSubmit || busy}
+            title={canSubmit ? undefined : "Tick the confirmations to submit"}
             className="max-sm:flex-1"
           >
             Submit

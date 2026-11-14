@@ -24,6 +24,7 @@ const PROTECTED_PREFIXES = [
   "/profiles",
   "/profile",
   "/documents",
+  "/invite",
   "/loan-application",
 ];
 

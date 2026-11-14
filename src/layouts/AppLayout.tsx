@@ -16,6 +16,7 @@ import {
   ChevronDown,
   Building2,
   Loader2,
+  UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth.store";
@@ -39,6 +40,7 @@ const NAV_ITEMS = [
   { label: "Applications", href: "/applications", icon: FileText },
   { label: "Profiles", href: "/profiles", icon: Users },
   { label: "Documents", href: "/documents", icon: Files },
+  { label: "Invite", href: "/invite", icon: UserPlus },
 ];
 
 interface AppLayoutProps {
