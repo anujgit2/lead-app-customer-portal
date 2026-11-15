@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { LegalDocument } from "@/features/legal/LegalDocument";
-import { siteCopy } from "@/lib/site";
+import { LegalDetails, SupportContactNote } from "@/components/SupportNote";
 
 export const metadata: Metadata = {
   title: "Privacy policy",
-  description: "How LoanPortal handles your account, profile, documents, and the links you share.",
+  description: "How Loantris handles your account, profile, documents, and the links you share.",
 };
 
 export default function PrivacyPage() {
@@ -12,7 +12,7 @@ export default function PrivacyPage() {
     <LegalDocument
       eyebrow="Privacy"
       title="Privacy policy"
-      description={`This page explains what ${siteCopy.legalEntity} collects when you use LoanPortal, and what you control.`}
+      description="This page explains what information we collect when you use Loantris, and what you control."
       sections={[
         {
           heading: "Your account",
@@ -58,10 +58,10 @@ export default function PrivacyPage() {
         {
           heading: "Contact",
           body: (
-            <p>
-              Questions about your information can be sent to {siteCopy.supportEmail}. We aim to reply within{" "}
-              {siteCopy.responseTime}. You can also call {siteCopy.supportPhone} during {siteCopy.supportHours}.
-            </p>
+            <>
+              <SupportContactNote kind="privacy" />
+              <LegalDetails />
+            </>
           ),
         },
       ]}

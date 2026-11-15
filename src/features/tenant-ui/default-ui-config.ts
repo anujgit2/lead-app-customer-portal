@@ -36,7 +36,7 @@ export const DEFAULT_TENANT_UI: TenantUiConfig = {
       ],
       links: [
         { key: "forgotPassword", label: "Forgot password?" },
-        { key: "signup", label: "Create an account", prefix: "New to LoanPortal?" },
+        { key: "signup", label: "Create an account", prefix: "New to Loantris?" },
       ],
     },
     signup: {

@@ -68,8 +68,24 @@ export interface UiTheme {
   colors: UiThemeColors;
 }
 
+/** Sign-in destinations for the landing page's sign-in menu. Absent means no menu is shown. */
+export interface UiSignInUrls {
+  customer?: string;
+  partner?: string;
+}
+
 export interface TenantUiConfig {
   landingPage: string;
   theme: UiTheme;
   forms: Record<UiFormId, UiFormConfig>;
+  signInUrls?: UiSignInUrls;
+  /** Contact and legal details for footers and policy pages. A missing value is left out of the page. */
+  support?: UiSupport;
+}
+
+export interface UiSupport {
+  email?: string;
+  responseTime?: string;
+  legalEntity?: string;
+  registration?: string;
 }

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { RegisterPageClient } from "@/features/auth/RegisterPageClient";
+import { RegisterEntry } from "@/features/auth/RegisterEntry";
 
 export const metadata = { title: "Create your LoanPortal account" };
 
@@ -12,7 +12,7 @@ export default function RegisterPage() {
         </div>
       }
     >
-      <RegisterPageClient />
+      <RegisterEntry />
     </Suspense>
   );
 }

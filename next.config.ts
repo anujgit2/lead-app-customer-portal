@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "export",
   trailingSlash: true,
-  allowedDevOrigins: ["*.bizloandev.local", "*.bizloandev.linux"],
+  allowedDevOrigins:  ["*.bizloandev.local", "*.bizloandev.linux", "*.loantris-dev-linux.com","loantris-dev-linux.com"],
   env: {
     APP_PUBLIC_URL: process.env.APP_PUBLIC_URL ?? process.env.NEXT_PUBLIC_APP_PUBLIC_URL ?? "",
   },

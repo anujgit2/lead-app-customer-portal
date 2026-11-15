@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, FileText, History, Lock, Mail, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ import {
 } from "@/features/auth/AuthScreen";
 import { checkFields, FieldStack, inputFields } from "@/features/tenant-ui/FieldStack";
 import { AUTH_FORM_ROUTES } from "@/features/tenant-ui/form-routes";
+import { BRAND_TAGLINE } from "@/components/Logo";
 import { useTenantUi } from "@/features/tenant-ui/TenantUiProvider";
 import type { UiFormField } from "@/features/tenant-ui/types";
 
@@ -44,21 +45,10 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const POINTS: BrandPoint[] = [
-  {
-    icon: FileText,
-    title: "Saved as you go",
-    description: "Stop any time and continue from the same place.",
-  },
-  {
-    icon: History,
-    title: "A profile with history",
-    description: "Every change is remembered and can be reviewed.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Private until you share",
-    description: "Only you decide who sees your documents.",
-  },
+  { title: "Individual and business profiles" },
+  { title: "Loan applications in one place" },
+  { title: "Secure document storage and sharing" },
+  { title: "Clear application status updates" },
 ];
 
 export function LoginForm() {
@@ -164,8 +154,9 @@ export function LoginForm() {
   return (
     <AuthScreen
       topRight={<BackHomeLink />}
-      asideTitle="Pick up where you left off."
-      asideDescription="Your application, profile and documents are saved to your account and ready on any device."
+      asideTitle={BRAND_TAGLINE}
+      asideDescription="Manage your personal and business profiles, apply for financing and keep every document close at hand."
+      asideFootnote="For customers and business owners"
       points={POINTS}
     >
       <div>

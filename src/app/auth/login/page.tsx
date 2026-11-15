@@ -1,7 +1,7 @@
-import { LoginForm } from "@/features/auth/LoginForm";
+import { PortalChooser } from "@/features/auth/PortalChooser";
 
 export const metadata = { title: "Sign in to LoanPortal" };
 
 export default function LoginPage() {
-  return <LoginForm />;
+  return <PortalChooser mode="signin" />;
 }

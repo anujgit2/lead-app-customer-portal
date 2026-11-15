@@ -1,16 +1,39 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+"use client";
+
+import { useSyncExternalStore } from "react";
 import { Logo } from "@/components/Logo";
-import { Button } from "@/components/ui/button";
+import { SignInMenu } from "@/features/landing/SignInMenu";
+import { landingSectionHref } from "@/lib/portal-urls";
 
 const NAV_LINKS = [
-  { label: "How it works", href: "/#how" },
-  { label: "Features", href: "/#features" },
-  { label: "Questions", href: "/#faq" },
+  { label: "Solutions", hash: "platform" },
+  { label: "How it works", hash: "how" },
+  { label: "Trust & security", hash: "security" },
+  { label: "Resources", hash: "faq" },
 ];
 
 const interactive =
   "transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]";
+
+const noopSubscribe = () => () => {};
+
+function NavLink({ label, hash }: { label: string; hash: string }) {
+  // Server render and first client render use "/#hash"; after hydration the
+  // href follows the host (customer hosts point at the landing host).
+  const href = useSyncExternalStore(
+    noopSubscribe,
+    () => landingSectionHref(window.location, hash),
+    () => `/#${hash}`
+  );
+  return (
+    <a
+      href={href}
+      className="inline-flex h-9 items-center rounded-full px-4 text-sm font-medium text-foreground/70 transition-all duration-200 ease-out hover:bg-primary-soft hover:text-primary-soft-foreground active:scale-[0.98]"
+    >
+      {label}
+    </a>
+  );
+}
 
 export function LandingHeader() {
   return (
@@ -20,26 +43,12 @@ export function LandingHeader() {
 
         <nav aria-label="Page sections" className="hidden items-center gap-1 min-[881px]:flex">
           {NAV_LINKS.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="inline-flex h-9 items-center rounded-full px-4 text-sm font-medium text-foreground/70 transition-all duration-200 ease-out hover:bg-primary-soft hover:text-primary-soft-foreground active:scale-[0.98]"
-            >
-              {link.label}
-            </a>
+            <NavLink key={link.hash} label={link.label} hash={link.hash} />
           ))}
         </nav>
 
         <div className="flex items-center gap-2">
-          <Button asChild variant="ghost" className={`font-semibold ${interactive}`}>
-            <Link href="/auth/login">Sign in</Link>
-          </Button>
-          <Button asChild className={`lp-glow gap-1.5 font-semibold ${interactive}`}>
-            <Link href="/auth/register">
-              Create account
-              <ArrowRight className="hidden h-4 w-4 sm:block" />
-            </Link>
-          </Button>
+          <SignInMenu className={`font-semibold ${interactive}`} />
         </div>
       </div>
     </header>

@@ -22,11 +22,11 @@
     --input: 205 9% 50%;
     --ring: 187 75% 38%;
 
-    --primary: 187 86% 22%;
-    --primary-hover: 187 86% 17%;
+    --primary: 199 47% 35%;
+    --primary-hover: 197 47% 28%;
     --primary-foreground: 0 0% 100%;
-    --primary-soft: 187 40% 93%;
-    --primary-soft-foreground: 187 90% 15%;
+    --primary-soft: 205 40% 94%;
+    --primary-soft-foreground: 208 42% 22%;
 
     --secondary: 187 40% 93%;
     --secondary-foreground: 187 90% 15%;
@@ -64,15 +64,15 @@
     --shadow-2: 0 4px 12px hsl(200 40% 10% / 0.08), 0 1px 3px hsl(200 40% 10% / 0.06);
     --shadow-3: 0 16px 40px hsl(200 40% 10% / 0.16), 0 2px 6px hsl(200 40% 10% / 0.08);
 
-    --brand-deep: 192 80% 9%;
-    --brand-mid: 187 86% 19%;
-    --brand-glow: 182 70% 55%;
+    --brand-deep: 208 42% 18%;
+    --brand-mid: 203 38% 24%;
+    --brand-glow: 197 54% 62%;
   }
 
   .dark {
-    --brand-deep: 200 40% 6%;
-    --brand-mid: 187 70% 14%;
-    --brand-glow: 182 70% 50%;
+    --brand-deep: 208 42% 12%;
+    --brand-mid: 203 38% 18%;
+    --brand-glow: 197 54% 62%;
     color-scheme: dark;
     --background: 205 24% 7%;
     --foreground: 200 15% 94%;
@@ -88,8 +88,8 @@
     --border: 205 14% 20%;
     --input: 205 9% 46%;
     --ring: 186 75% 55%;
-    --primary: 186 70% 55%;
-    --primary-hover: 186 72% 62%;
+    --primary: 197 60% 62%;
+    --primary-hover: 197 62% 70%;
     --primary-foreground: 205 40% 8%;
     --primary-soft: 187 40% 15%;
     --primary-soft-foreground: 187 70% 78%;
