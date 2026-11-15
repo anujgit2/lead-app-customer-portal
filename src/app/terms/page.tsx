@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { LegalDocument } from "@/features/legal/LegalDocument";
-import { siteCopy } from "@/lib/site";
+import { LegalDetails, SupportContactNote } from "@/components/SupportNote";
 
 export const metadata: Metadata = {
   title: "Terms of use",
-  description: "The terms for creating an account and applying for a loan on LoanPortal.",
+  description: "The terms for creating an account and applying for a loan on Loantris.",
 };
 
 export default function TermsPage() {
@@ -12,7 +12,7 @@ export default function TermsPage() {
     <LegalDocument
       eyebrow="Terms"
       title="Terms of use"
-      description={`These terms cover your use of LoanPortal, operated by ${siteCopy.legalEntity}. ${siteCopy.registration}.`}
+      description="These terms cover your use of Loantris."
       sections={[
         {
           heading: "Your account",
@@ -55,10 +55,10 @@ export default function TermsPage() {
         {
           heading: "Contact",
           body: (
-            <p>
-              Write to {siteCopy.supportEmail} or call {siteCopy.supportPhone} during {siteCopy.supportHours}. For a
-              complaint, use the same contact and we will reply within {siteCopy.responseTime}.
-            </p>
+            <>
+              <SupportContactNote kind="terms" />
+              <LegalDetails />
+            </>
           ),
         },
       ]}

@@ -1,87 +1,116 @@
-export const HOW_IT_WORKS = [
+// Copy for the landing page, from the "Landing · loantris.com" design.
+
+export const CUSTOMER_CHECKS = [
+  "Maintain individual and business profiles",
+  "Explore and apply for available loan products",
+  "Upload, organise and securely share documents",
+  "Track progress and respond to requests",
+];
+
+export const PARTNER_CHECKS = [
+  "Create leads and invite customers",
+  "Review client profiles and applications",
+  "Assign work and manage team access",
+  "Track pipeline, tasks and commissions",
+];
+
+export const TOOLKIT = [
   {
-    title: "Create your account",
-    description: "Sign up and confirm your email with a one-time code.",
+    title: "Customer & business profiles",
+    description: "Maintain reusable personal and business information in one account, ready for the next application.",
   },
   {
-    title: "Set up your profile",
-    description: "Tell us about yourself once. We keep it ready for every application.",
+    title: "Loan applications",
+    description: "Start applications for available financing options, save progress and see what needs attention.",
   },
   {
-    title: "Complete your application",
-    description: "Answer step by step. Your progress is saved as you go.",
+    title: "Document centre",
+    description: "Keep key documents organised by profile and application, instead of searching through email threads.",
   },
   {
-    title: "Share your documents",
-    description: "Send them to your lender with a private link you control.",
+    title: "Controlled sharing",
+    description: "Share documents with the relevant partner or lender when required, with clear access controls.",
+  },
+  {
+    title: "Lead management",
+    description: "Partners can capture enquiries, invite customers and keep lead details moving towards an application.",
+  },
+  {
+    title: "Partner team workspace",
+    description: "Organise applications, assign responsibilities and follow up on tasks across your team.",
   },
 ];
 
-export const PROFILE_POINTS = [
-  "Compare any two versions",
-  "Restore an earlier version when you need it",
-  "Download a credit memo as a PDF",
-];
-
-export const SHARE_POINTS = [
-  "Choose how long a link works",
-  "Allow or block downloads",
-  "Stop access whenever you like",
-];
-
-export const MORE_FEATURES = [
+export const CUSTOMER_STEPS = [
   {
-    title: "Guided application",
-    description: "Answer step by step. Stop any time and pick up where you left off.",
+    label: "01 / CUSTOMER",
+    title: "Create your profile",
+    description: "Add your individual or business details once. Keep your profile updated as your needs change.",
   },
   {
-    title: "Documents with versions",
-    description: "Upload an updated file and keep the earlier ones on record.",
+    label: "02 / CUSTOMER",
+    title: "Apply and share",
+    description: "Choose an available loan option, complete the application and securely provide requested documents.",
   },
   {
-    title: "Private by default",
-    description: "Sensitive details are masked, and only you decide who sees a document.",
+    label: "03 / BOTH",
+    title: "Track the journey",
+    description: "Follow requests, updates and application progress. Your lender reviews the application and makes the decision.",
   },
 ];
 
-export const HERO_POINTS = [
+export const PARTNER_STEPS = [
   {
-    title: "Guided application",
-    description: "Saved at every step, so you can stop and come back.",
+    label: "01 / PARTNER",
+    title: "Capture a lead",
+    description: "Record a new enquiry and invite the customer to complete their profile.",
   },
   {
-    title: "A profile with history",
-    description: "Your details are kept once, and every change is remembered.",
+    label: "02 / PARTNER",
+    title: "Support the application",
+    description: "Review submitted information, coordinate documents and prepare the case for submission.",
   },
   {
-    title: "Documents in one place",
-    description: "Upload files and keep the earlier versions on record.",
+    label: "03 / PARTNER",
+    title: "Manage and follow up",
+    description: "Keep the pipeline current, coordinate your team and follow the lender's updates.",
+  },
+];
+
+export const SECURITY_POINTS = [
+  {
+    title: "Protected account access",
+    description: "Use dedicated customer and partner sign-in experiences, with additional verification where enabled.",
   },
   {
-    title: "Secure sharing",
-    description: "Send a private link to your lender that you control.",
+    title: "Purposeful document sharing",
+    description: "Give customers a clear way to provide requested documents to the relevant party for an application.",
+  },
+  {
+    title: "Transparent application status",
+    description: "Keep customers and partners informed about the next step, outstanding information and lender updates.",
   },
 ];
 
 export const FAQS = [
   {
-    question: "Who can use LoanPortal?",
+    question: "Does Loantris approve or decline loans?",
     answer:
-      "LoanPortal is for customers applying for a loan. Your lender tells you which loan programs are open to you.",
+      "No. Loantris provides the technology to manage profiles and applications. The relevant lender assesses each application and makes the lending decision.",
   },
   {
-    question: "Can I stop and finish later?",
+    question: "Can I keep both personal and business profiles?",
     answer:
-      "Yes. Your progress is saved as you go. Sign in, open your application and carry on from where you stopped.",
+      "Yes. The customer experience supports individual and business profiles under one account, so you can select the relevant profile when applying.",
+  },
+  {
+    question: "Can I apply without a partner?",
+    answer:
+      "That depends on the lender and the application route they have enabled. Some applications may be open to customers directly, while others may require a partner invitation.",
   },
   {
     question: "Who can see my documents?",
     answer:
-      "Only you, until you share a link. Each link has an expiry, and the person opening it confirms their email with a one-time code.",
-  },
-  {
-    question: "Is my personal information protected?",
-    answer:
-      "Sensitive details are masked on screen and in downloads, and you choose who can see your documents.",
+      "Documents are shared only with the parties you authorise or the parties required for your application, subject to the platform's access and privacy policies.",
   },
 ];

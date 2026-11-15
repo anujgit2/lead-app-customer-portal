@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="140" viewBox="0 0 640 140" role="img" aria-labelledby="title desc">
+  <title id="title">loantris.</title>
+  <desc id="desc">Loantris wordmark in bold Manrope-style typography, with deep navy for loan and blue for tris.</desc>
+  <text x="24" y="100"
+        font-family="Manrope, 'Plus Jakarta Sans', Arial, sans-serif"
+        font-size="88"
+        font-weight="700"
+        letter-spacing="-3.08">
+    <tspan fill="#183B5B">loan</tspan><tspan fill="#2C83C7">tris.</tspan>
+  </text>
+</svg>

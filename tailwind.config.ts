@@ -19,8 +19,10 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
+        display: ["var(--font-display)", "Manrope", "ui-sans-serif", "system-ui", "sans-serif"],
         sans: [
           "var(--font-sans)",
+          "DM Sans",
           "Inter",
           "ui-sans-serif",
           "system-ui",

@@ -2,14 +2,41 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Landmark } from "lucide-react";
 import { useTenantUi } from "@/features/tenant-ui/TenantUiProvider";
 import { cn } from "@/lib/utils";
 
-function DefaultMark() {
+/**
+ * The Loantris wordmark, from loantris_variation_05: lowercase Manrope Bold, "loan" in deep navy
+ * and "tris." in accent blue. Same as public/brand/loantris-wordmark.svg.
+ */
+export function BrandWordmark({ className }: { className?: string }) {
   return (
-    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground">
-      <Landmark className="h-5 w-5" aria-hidden />
+    <span
+      className={cn(
+        "font-display whitespace-nowrap text-[24px] font-bold leading-[1.05] tracking-[-0.035em] text-[#183b5b] dark:text-white",
+        className
+      )}
+    >
+      loan<span className="text-[#2c83c7] dark:text-[#71c8e4]">tris.</span>
+    </span>
+  );
+}
+
+/** Tagline shown under the wordmark in the lockup. Change it here only. */
+export const BRAND_TAGLINE = "Profiles, documents and loans, in one place.";
+
+/** Wordmark with the tagline under it. Used where the brand needs its tagline, such as the footer. */
+export function BrandLockup({
+  className,
+  wordmarkClassName = "text-[30px]",
+}: {
+  className?: string;
+  wordmarkClassName?: string;
+}) {
+  return (
+    <span className={cn("inline-flex flex-col items-start gap-2", className)}>
+      <BrandWordmark className={wordmarkClassName} />
+      <span className="text-[13px] font-medium leading-5 opacity-70">{BRAND_TAGLINE}</span>
     </span>
   );
 }
@@ -35,8 +62,9 @@ export function Logo({
   return (
     <Link
       href={href}
+      aria-label={logoAlt || "Loantris home"}
       className={cn(
-        "inline-flex items-center gap-2.5 text-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]",
+        "inline-flex items-center text-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]",
         className
       )}
     >
@@ -48,11 +76,8 @@ export function Logo({
           onError={() => setImageFailed(true)}
         />
       ) : (
-        <DefaultMark />
+        <BrandWordmark className={wordmarkClassName} />
       )}
-      <span className={cn("text-base font-semibold tracking-[-0.01em]", wordmarkClassName)}>
-        {logoAlt || "LoanPortal"}
-      </span>
     </Link>
   );
 }

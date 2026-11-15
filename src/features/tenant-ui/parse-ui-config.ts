@@ -7,6 +7,8 @@ import type {
   UiFormField,
   UiFormId,
   UiFormLink,
+  UiSignInUrls,
+  UiSupport,
   UiTheme,
   UiThemeColors,
 } from "@/features/tenant-ui/types";
@@ -194,6 +196,24 @@ function parseTheme(raw: unknown): UiTheme {
   };
 }
 
+const WEB_URL = /^https?:\/\/[^\s]+$/;
+
+function webUrl(value: unknown): string | undefined {
+  const url = text(value, 500);
+  if (!url || !WEB_URL.test(url) || /["'()\\<>]/.test(url)) return undefined;
+  return url;
+}
+
+/** Returns undefined when the entry is missing or holds no usable URL, so the menu stays hidden. */
+function parseSignInUrls(raw: unknown): UiSignInUrls | undefined {
+  const item = record(raw);
+  if (!item) return undefined;
+  const customer = webUrl(item.customer);
+  const partner = webUrl(item.partner);
+  if (!customer && !partner) return undefined;
+  return { customer, partner };
+}
+
 function unwrap(payload: unknown): Record<string, unknown> | null {
   const body = record(payload);
   if (!body) return null;
@@ -215,7 +235,21 @@ export function parseTenantUi(payload: unknown): TenantUiConfig {
       forgotPassword: parseForm("forgotPassword", forms?.forgotPassword),
       resetPassword: parseForm("resetPassword", forms?.resetPassword),
     },
+    signInUrls: parseSignInUrls(ui.signInUrls),
+    support: parseSupport(ui.support),
   };
+}
+
+function parseSupport(raw: unknown): UiSupport | undefined {
+  const item = record(raw);
+  if (!item) return undefined;
+  const support: UiSupport = {
+    email: text(item.email, 254),
+    responseTime: text(item.responseTime, 80),
+    legalEntity: text(item.legalEntity, 160),
+    registration: text(item.registration, 200),
+  };
+  return Object.values(support).some(Boolean) ? support : undefined;
 }
 
 export function groupFieldRows<T extends { width: "full" | "half"; key: string }>(fields: T[]): T[][] {

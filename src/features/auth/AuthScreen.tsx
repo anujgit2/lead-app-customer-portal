@@ -1,22 +1,27 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, CircleAlert, Files, Share2, User, type LucideIcon } from "lucide-react";
-import { Logo } from "@/components/Logo";
-import { CurvedGrid } from "@/components/CurvedGrid";
-import { siteCopy } from "@/lib/site";
+import { BrandWordmark, Logo } from "@/components/Logo";
+import { useSupport } from "@/features/tenant-ui/use-support";
 import { cn } from "@/lib/utils";
 
 export type BrandPoint = {
-  icon: LucideIcon;
+  icon?: LucideIcon;
   title: string;
-  description: string;
+  description?: string;
 };
 
 const AUTH_LINKS = [
-  { label: "Help centre", href: "/#faq" },
-  { label: "Contact us", href: "/#faq" },
   { label: "Privacy policy", href: "/privacy" },
   { label: "Terms of use", href: "/terms" },
+];
+
+/** Brand panel points for the customer sign-in and signup screens, from the redesign. */
+export const CUSTOMER_ASIDE_POINTS: BrandPoint[] = [
+  { title: "Individual and business profiles" },
+  { title: "Loan applications in one place" },
+  { title: "Secure document storage and sharing" },
+  { title: "Clear application status updates" },
 ];
 
 export function AuthScreen({
@@ -24,6 +29,7 @@ export function AuthScreen({
   children,
   asideTitle,
   asideDescription,
+  asideFootnote,
   points,
   contentClassName,
 }: {
@@ -31,17 +37,40 @@ export function AuthScreen({
   children: ReactNode;
   asideTitle: string;
   asideDescription: string;
+  asideFootnote?: string;
   points: BrandPoint[];
   contentClassName?: string;
 }) {
   const year = new Date().getFullYear();
+  const { legalEntity } = useSupport();
 
   return (
-    <div className="grid min-h-screen bg-card text-foreground lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
+    <div className="grid min-h-screen bg-card text-foreground lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)]">
+      <aside
+        aria-label="About Loantris"
+        className="hidden flex-col justify-between gap-8 bg-[#f0f4f5] px-10 py-12 text-[#40566a] lg:flex xl:px-16"
+      >
+        <div>
+          <BrandWordmark className="text-[26px]" />
+          <h2 className="font-display mt-12 max-w-[18ch] text-[35px] font-extrabold leading-[41px] tracking-[-0.035em] text-[#3a5065]">
+            {asideTitle}
+          </h2>
+          <p className="mt-3.5 max-w-[420px] text-[15px] leading-7 text-[#718091]">{asideDescription}</p>
+        </div>
+        <ul className="flex max-w-[420px] flex-col gap-3.5 text-[13px] text-[#718091]">
+          {points.map((point) => (
+            <li key={point.title} className="flex items-start gap-2.5">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#83a296]" strokeWidth={3} aria-hidden />
+              <span>{point.title}</span>
+            </li>
+          ))}
+        </ul>
+        {asideFootnote && <small className="text-xs text-[#718091]">{asideFootnote}</small>}
+      </aside>
       <div className="flex min-w-0 flex-col">
         <main className="flex flex-1 flex-col px-5 py-5 sm:px-8">
           <div className="flex items-center justify-between gap-3">
-            <Logo />
+            <Logo className="lg:hidden" />
             {topRight}
           </div>
           <div className="flex flex-1 items-center justify-center py-8">
@@ -53,7 +82,7 @@ export function AuthScreen({
 
         <footer className="flex flex-wrap items-center justify-between gap-x-5 gap-y-1 px-5 pb-4 text-xs leading-[18px] text-muted-foreground sm:px-8">
           <span>
-            © {year} LoanPortal · {siteCopy.legalEntity}
+            © {year} Loantris{legalEntity ? ` · ${legalEntity}` : ""}
           </span>
           <nav aria-label="Support and legal" className="flex flex-wrap gap-x-4">
             {AUTH_LINKS.map((link) => (
@@ -69,37 +98,6 @@ export function AuthScreen({
         </footer>
       </div>
 
-      <aside aria-label="About LoanPortal" className="hidden p-3 lg:block">
-        <div className="lp-hero-bg relative flex h-full flex-col justify-center gap-8 overflow-hidden rounded-2xl px-10 py-12 text-white shadow-lg xl:px-16">
-          <CurvedGrid />
-          <div className="relative max-w-[420px]">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-glow" />
-              LoanPortal
-            </span>
-            <h2 className="mt-4 max-w-[15ch] text-[34px] font-semibold leading-[40px] tracking-[-0.035em]">
-              {asideTitle}
-            </h2>
-            <p className="mt-3 text-[15px] leading-7 text-white/75">{asideDescription}</p>
-          </div>
-          <ul className="relative flex max-w-[420px] flex-col gap-3">
-            {points.map((point) => (
-              <li
-                key={point.title}
-                className="flex items-start gap-3.5 rounded-xl border border-white/15 bg-white/[0.08] px-4 py-3.5 backdrop-blur-md transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-white/[0.12]"
-              >
-                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white text-brand-deep shadow-sm">
-                  <point.icon className="h-[18px] w-[18px]" aria-hidden />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold leading-5 text-white">{point.title}</p>
-                  <p className="mt-0.5 text-[13px] leading-5 text-white/65">{point.description}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </aside>
     </div>
   );
 }
