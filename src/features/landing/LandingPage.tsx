@@ -1,5 +1,4 @@
-import { Briefcase, Check, ChevronDown, Files, FileText, Share2, UserCircle, Users } from "lucide-react";
-import { BrandWordmark } from "@/components/Logo";
+import { Briefcase, Check, ChevronDown, Files, FileText, History, Share2, UserCircle, Users } from "lucide-react";
 import { LandingHeader } from "@/features/landing/LandingHeader";
 import { LandingFooter } from "@/features/landing/LandingFooter";
 import {
@@ -15,6 +14,13 @@ import { CUSTOMER_PORTAL_URL, PARTNER_PORTAL_URL } from "@/lib/portal-urls";
 import { cn } from "@/lib/utils";
 
 const TOOLKIT_ICONS = [UserCircle, FileText, Files, Share2, Briefcase, Users];
+
+const LANDING_CARD_FEATURES = [
+  { icon: FileText, title: "Guided application", description: "Saved at every step, so you can stop and come back." },
+  { icon: History, title: "A profile with history", description: "Your details are kept once, and every change is remembered." },
+  { icon: Files, title: "Documents in one place", description: "Upload files and keep the earlier versions on record." },
+  { icon: Share2, title: "Secure sharing", description: "Send a private link to your lender that you control." },
+];
 
 const interactive = "transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]";
 
@@ -116,56 +122,53 @@ export function LandingPage() {
             </div>
 
             <div className="lp-rise relative mx-auto flex min-h-[435px] w-full max-w-[505px] items-center justify-center" style={{ animationDelay: "0.3s" }}>
-              <div className="absolute -left-3 top-10 rounded-[14px] border border-[#cdd8e0] bg-white px-4 py-3 text-xs text-[#4e6373] shadow-lg">
-                <p className="mb-0.5 text-[13px] font-bold text-[#1a2e40]">🔒 Secure document sharing</p>
-                <span className="text-[#5e7080]">Share only what&apos;s needed</span>
-              </div>
-              <div className="relative w-full rotate-[0.5deg] rounded-[18px] border border-[#d5dee4] bg-white p-6 shadow-[0_30px_80px_rgba(30,55,75,0.16)]">
-                <div className="mb-6 flex items-center justify-between">
-                  <BrandWordmark className="text-[15px] text-[#3a5264]" />
-                  <span className="rounded-full border border-[#c5e0d8] bg-[#e0f0eb] px-2.5 py-1.5 text-[11px] font-bold text-[#2b6b5a]">● Profile active</span>
+              <div className="relative w-full rotate-[0.5deg] overflow-hidden rounded-[18px] border border-[#d5dee4] bg-white shadow-[0_30px_80px_rgba(30,55,75,0.16)]">
+                <div className="flex items-center gap-1.5 border-b border-[#e3eaee] bg-[#f3f7f6] px-4 py-3">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#e7b4ab]" aria-hidden />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#ecd39a]" aria-hidden />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#8cc4b0]" aria-hidden />
+                  <span className="ml-3 text-xs font-medium text-[#5e7080]">Your application</span>
                 </div>
-                <p className="font-display text-xl font-bold text-[#3a5264]">Good morning, Alex</p>
-                <span className="text-xs text-[#5e7080]">Your business financing workspace</span>
-                <div className="my-4 grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-[#e9eef0] bg-[#fcfdfd] p-4">
-                    <small className="text-[11px] text-[#5e7080]">Profile completion</small>
-                    <strong className="font-display mb-1 mt-2 block text-[23px] font-extrabold text-[#40596a]">72%</strong>
-                    <div className="mt-2.5 h-[7px] overflow-hidden rounded-full bg-[#edf1f4]">
-                      <i className="block h-full w-[72%] rounded-full bg-gradient-to-r from-[#3d8574] to-[#3a8ca8]" />
-                    </div>
-                  </div>
-                  <div className="rounded-xl border border-[#e9eef0] bg-[#fcfdfd] p-4">
-                    <small className="text-[11px] text-[#5e7080]">Active applications</small>
-                    <strong className="font-display mb-1 mt-2 block text-[23px] font-extrabold text-[#40596a]">02</strong>
-                    <small className="text-[11px] text-[#5e7080]">Across your profiles</small>
-                  </div>
+                <div className="relative h-[190px] overflow-hidden border-b border-[#e3eaee] bg-[#e6f1ee]">
+                  <span className="lp-drift absolute -right-6 -top-8 h-28 w-28 rounded-full bg-[#d4eae2]/70" aria-hidden />
+                  <span className="lp-drift absolute -bottom-10 -left-8 h-32 w-32 rounded-full bg-[#d4eae2]/60" style={{ animationDelay: "-4s" }} aria-hidden />
+                  <svg viewBox="0 0 320 170" className="relative h-full w-full" role="img" aria-label="Documents checked and shared securely">
+                    <rect x="8" y="30" width="72" height="100" rx="9" fill="#ffffff" stroke="#c5d9d1" strokeWidth="1.5" />
+                    <rect x="20" y="20" width="78" height="104" rx="9" fill="#ffffff" stroke="#b9d3c9" strokeWidth="1.5" />
+                    <rect x="32" y="36" width="30" height="7" rx="3.5" fill="#2b6b5a" />
+                    <rect x="32" y="54" width="54" height="5" rx="2.5" fill="#d3e3dd" />
+                    <rect x="32" y="66" width="46" height="5" rx="2.5" fill="#d3e3dd" />
+                    <rect x="32" y="78" width="50" height="5" rx="2.5" fill="#d3e3dd" />
+                    <rect x="32" y="90" width="36" height="5" rx="2.5" fill="#d3e3dd" />
+                    <circle className="lp-pop" cx="74" cy="106" r="11" fill="#2b6b5a" style={{ animationDelay: "0.9s" }} />
+                    <path className="lp-pop" d="M69 106l3.5 3.5 6-7" fill="none" stroke="#ffffff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ animationDelay: "0.9s" }} />
+                    <line className="lp-flow" x1="106" y1="85" x2="126" y2="85" stroke="#2b6b5a" strokeWidth="2" strokeLinecap="round" />
+                    <g className="lp-float">
+                      <path d="M160 48l26 9v23c0 17-11 29-26 36-15-7-26-19-26-36V57z" fill="#2b6b5a" />
+                      <path d="M149 84l8 8 15-17" fill="none" stroke="#ffffff" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+                    </g>
+                    <line className="lp-flow" x1="194" y1="85" x2="214" y2="85" stroke="#2b6b5a" strokeWidth="2" strokeLinecap="round" style={{ animationDelay: "-0.6s" }} />
+                    <rect x="222" y="22" width="76" height="110" rx="11" fill="#ffffff" stroke="#b9d3c9" strokeWidth="1.5" />
+                    <rect x="234" y="36" width="52" height="22" rx="5" fill="#d4eae2" />
+                    <path d="M247 47l4 4 8-8" fill="none" stroke="#2b6b5a" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                    <rect x="234" y="70" width="40" height="5" rx="2.5" fill="#d3e3dd" />
+                    <rect x="234" y="82" width="30" height="5" rx="2.5" fill="#d3e3dd" />
+                    <rect x="234" y="108" width="52" height="14" rx="7" fill="#2b6b5a" />
+                  </svg>
                 </div>
-                <div className="border-t border-[#dde5ea] pt-4">
-                  <p className="mb-1 text-xs font-bold text-[#5e7080]">RECENT ACTIVITY</p>
-                  {[
-                    { title: "Business profile updated", sub: "Company details saved", status: "Done" },
-                    { title: "Documents shared securely", sub: "Shared with your selected partner", status: null },
-                    { title: "Application in review", sub: "Awaiting lender update", status: null },
-                  ].map((item) => (
-                    <div key={item.title} className="flex items-center gap-3 py-2.5">
-                      <span className="grid h-[34px] w-[34px] place-items-center rounded-[10px] bg-[#edf3f5] text-sm font-extrabold text-[#6e8da0]" aria-hidden>
-                        {item.status ? "✓" : item.title.startsWith("Documents") ? "↗" : "◷"}
+                <div className="grid grid-cols-2 gap-px bg-[#e3eaee]">
+                  {LANDING_CARD_FEATURES.map((feature) => (
+                    <div key={feature.title} className="flex items-start gap-4 bg-white p-6">
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#2b6b5a] text-white" aria-hidden>
+                        <feature.icon size={16} strokeWidth={2.2} />
                       </span>
                       <div className="min-w-0">
-                        <strong className="block text-xs text-[#1a2e40]">{item.title}</strong>
-                        <small className="text-[11px] text-[#5e7080]">{item.sub}</small>
+                        <strong className="block text-[13px] font-bold leading-tight text-[#1a2e40]">{feature.title}</strong>
+                        <small className="mt-1.5 block text-[11px] leading-relaxed text-[#5e7080]">{feature.description}</small>
                       </div>
-                      {item.status && (
-                        <span className="ml-auto rounded-full border border-[#c5e0d8] bg-[#e0f0eb] px-2 py-1 text-[11px] font-bold text-[#2b6b5a]">{item.status}</span>
-                      )}
                     </div>
                   ))}
                 </div>
-              </div>
-              <div className="absolute -bottom-2 -right-2 z-10 rounded-[14px] border border-[#cdd8e0] bg-white px-4 py-3 text-xs text-[#4e6373] shadow-lg">
-                <p className="mb-0.5 text-[13px] font-bold text-[#1a2e40]">Partner workspace</p>
-                <span className="text-[#5e7080]">Leads · Applications · Team</span>
               </div>
             </div>
           </div>

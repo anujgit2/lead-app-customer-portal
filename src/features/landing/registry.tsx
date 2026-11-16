@@ -26,5 +26,9 @@ export function LandingRoute() {
   );
   if (onCustomerHost) return <LoginForm />;
   const Page = PAGES[resolveLandingPageName(config.landingPage)];
-  return <Page />;
+  return (
+    <div data-landing-root>
+      <Page />
+    </div>
+  );
 }

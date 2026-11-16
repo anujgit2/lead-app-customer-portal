@@ -1,12 +1,30 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useLayoutEffect, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import { DEFAULT_TENANT_UI } from "@/features/tenant-ui/default-ui-config";
 import { parseTenantUi } from "@/features/tenant-ui/parse-ui-config";
 import { fontFaceCss, themeCssVars } from "@/features/tenant-ui/theme-vars";
 import type { TenantUiConfig } from "@/features/tenant-ui/types";
 import { uiConfigService } from "@/services/ui-config.service";
+import { CUSTOMER_PORTAL_URL, PARTNER_PORTAL_URL, isCustomerPortalHost } from "@/lib/portal-urls";
+
+/** Landing page values. Built in, so the landing page never calls the tenant UI API. */
+const LANDING_UI: TenantUiConfig = {
+  ...DEFAULT_TENANT_UI,
+  signInUrls: { customer: CUSTOMER_PORTAL_URL, partner: PARTNER_PORTAL_URL },
+};
+
+const noopSubscribe = () => () => {};
+
+/** True on the landing host's root page. The server render assumes the landing page, like LandingRoute. */
+function useStaticLanding(pathname: string | null) {
+  return useSyncExternalStore(
+    noopSubscribe,
+    () => pathname === "/" && !isCustomerPortalHost(window.location.hostname),
+    () => pathname === "/"
+  );
+}
 
 const TenantUiContext = createContext<{ config: TenantUiConfig }>({
   config: DEFAULT_TENANT_UI,
@@ -106,25 +124,28 @@ function HomeLoadBar() {
 }
 
 export function TenantUiProvider({ children }: { children: React.ReactNode }) {
-  const [config, setConfig] = useState<TenantUiConfig | null>(null);
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+  const staticLanding = useStaticLanding(pathname);
+  const [apiConfig, setApiConfig] = useState<TenantUiConfig | null>(null);
 
   useEffect(() => {
+    if (staticLanding) return;
     let cancelled = false;
     loadTenantUi().then((next) => {
-      if (!cancelled) setConfig(next);
+      if (!cancelled) setApiConfig(next);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [staticLanding]);
+
+  const config = staticLanding ? LANDING_UI : apiConfig;
 
   useLayoutEffect(() => {
     if (!config) return;
     return applyTheme(config);
   }, [config]);
-
-  const pathname = usePathname();
-  const isHome = pathname === "/";
 
   if (!config) {
     return (

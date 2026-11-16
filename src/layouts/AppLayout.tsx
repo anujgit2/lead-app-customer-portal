@@ -19,6 +19,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTenantUi } from "@/features/tenant-ui/TenantUiProvider";
 import { useAuthStore } from "@/store/auth.store";
 import { authService } from "@/services/auth.service";
 import { getInitials } from "@/lib/utils";
@@ -52,6 +53,10 @@ export function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter();
   const { user } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { config: tenantUi } = useTenantUi();
+  const tenantLogoUrl = tenantUi.theme.logoUrl;
+  const tenantLogoAlt = tenantUi.theme.logoAlt;
+  const [failedLogoUrl, setFailedLogoUrl] = useState<string | null>(null);
   const authorized = useSyncExternalStore(subscribeAuthStorage, hasAccessToken, () => false);
   const sessionLocked = useSyncExternalStore(subscribeIdleLock, isIdleLocked, () => false);
 
@@ -95,12 +100,21 @@ export function AppLayout({ children }: AppLayoutProps) {
             <Menu />
           </Button>
 
-          <Link href="/dashboard" className="flex items-center gap-2.5 text-foreground">
-            <span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-primary-foreground">
-              <Building2 className="h-4 w-4" />
-            </span>
-            <span className="hidden text-sm font-semibold tracking-[-0.01em] min-[901px]:block">
-              LoanPortal
+          <Link href="/dashboard" className="flex min-w-0 items-center gap-2.5 text-foreground">
+            {tenantLogoUrl && failedLogoUrl !== tenantLogoUrl ? (
+              <img
+                src={tenantLogoUrl}
+                alt=""
+                className="h-7 w-auto max-w-[120px] shrink-0 object-contain"
+                onError={() => setFailedLogoUrl(tenantLogoUrl ?? null)}
+              />
+            ) : (
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground">
+                <Building2 className="h-4 w-4" />
+              </span>
+            )}
+            <span className="hidden truncate text-sm font-semibold tracking-[-0.01em] min-[901px]:block">
+              {tenantLogoAlt || "LoanPortal"}
             </span>
           </Link>
 

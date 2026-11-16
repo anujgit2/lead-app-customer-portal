@@ -398,3 +398,8 @@
     animation: none !important;
   }
 }
+
+/* My Profile host: hide the landing markup from the static HTML before the sign-in form mounts. */
+html[data-host="customer"] [data-landing-root] {
+  display: none;
+}
