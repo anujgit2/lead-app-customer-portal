@@ -47,9 +47,12 @@ jobs:
         run: npm run lint
 
       - name: Build
-        run: npm run build
+        run: |
+          echo "NEXT_PUBLIC_BUILD_SHA=$NEXT_PUBLIC_BUILD_SHA"
+          npm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ env.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
 
   deploy:
     name: Deploy frontend to AWS UAT
@@ -76,10 +79,13 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: uat-${{ github.sha }}
+          NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
         run: |
           IMAGE_URI="$ECR_REGISTRY/$ECR_FRONTEND_REPOSITORY:$IMAGE_TAG"
+          echo "NEXT_PUBLIC_BUILD_SHA=$NEXT_PUBLIC_BUILD_SHA"
           docker build \
             --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
+            --build-arg NEXT_PUBLIC_BUILD_SHA="$NEXT_PUBLIC_BUILD_SHA" \
             -t "$IMAGE_URI" \
             .
           docker push "$IMAGE_URI"

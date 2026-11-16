@@ -44,8 +44,11 @@ jobs:
           LATEST_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:latest
           SHA_IMAGE=$ECR_REGISTRY/$ECR_REPOSITORY:$SHA_TAG
 
+          echo "NEXT_PUBLIC_BUILD_SHA=$GITHUB_SHA"
+
           docker build \
             --build-arg NEXT_PUBLIC_API_URL=${{ secrets.EC2_HOST }}\
+            --build-arg NEXT_PUBLIC_BUILD_SHA="$GITHUB_SHA" \
             -t "$LATEST_IMAGE" \
             -t "$SHA_IMAGE" \
             .
