@@ -26,7 +26,7 @@ export class SharedRequestError extends Error {
 }
 
 const sharedClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "/api",
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "",
   timeout: 60_000,
 });
 
