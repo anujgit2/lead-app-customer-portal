@@ -1,0 +1,110 @@
+import { expect, test, type Page } from "@playwright/test";
+
+/**
+ * CHG-0002 (AC-1 to AC-4): the production build sends each API path once.
+ *
+ * Run against a static `next build` output with NEXT_PUBLIC_API_URL=/api
+ * (the production base). Backend responses are stubbed with page.route, so no
+ * live backend is needed. Every request to /api/ or /accounts/ is recorded.
+ *
+ *   NEXT_PUBLIC_BUILD_SHA=$(git rev-parse HEAD) NEXT_PUBLIC_API_URL=/api \
+ *     npx env-cmd --no-override -f .env.linux next build
+ *   npx serve -l 3100 out
+ *   PLAYWRIGHT_BASE_URL=http://localhost:3100 npx playwright test e2e/api-base.spec.ts
+ */
+
+const ACCESS_TOKEN = "e2e-api-base-token";
+const SHARE_TOKEN = "e2e-api-base-share";
+
+type CapturedRequest = {
+  url: string;
+  pathname: string;
+  origin: string;
+  authorization: string | null;
+};
+
+/** Stub bodies for the calls under test. Anything else gets an empty object. */
+function stubBody(pathname: string): unknown {
+  if (pathname === "/api/document-types" || pathname === "/api/documents" || pathname === "/api/tenant/programs") {
+    return [];
+  }
+  return {};
+}
+
+async function captureApiRequests(page: Page): Promise<CapturedRequest[]> {
+  const captured: CapturedRequest[] = [];
+  await page.route(/\/(api|accounts)\//, async (route, request) => {
+    const url = new URL(request.url());
+    captured.push({
+      url: request.url(),
+      pathname: url.pathname,
+      origin: url.origin,
+      authorization: (await request.headerValue("authorization")) ?? null,
+    });
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(stubBody(url.pathname)),
+    });
+  });
+  return captured;
+}
+
+function pathnames(captured: CapturedRequest[]): string[] {
+  return captured.map((request) => request.pathname);
+}
+
+function expectNoDoubledPrefix(captured: CapturedRequest[]) {
+  for (const request of captured) {
+    expect(request.url, `doubled /api prefix in ${request.url}`).not.toContain("/api/api");
+  }
+}
+
+test.describe("production API base", () => {
+  test("document types, documents and tenant programs are requested with one /api prefix", async ({
+    page,
+    baseURL,
+  }) => {
+    await page.addInitScript((token) => {
+      window.localStorage.setItem("accessToken", token);
+    }, ACCESS_TOKEN);
+    const captured = await captureApiRequests(page);
+    const origin = new URL(baseURL ?? "http://localhost:3100").origin;
+
+    await page.goto("/documents/");
+    await expect.poll(() => pathnames(captured)).toContain("/api/document-types");
+    await expect.poll(() => pathnames(captured)).toContain("/api/documents");
+
+    await page.goto("/dashboard/");
+    await expect.poll(() => pathnames(captured)).toContain("/api/tenant/programs");
+
+    expectNoDoubledPrefix(captured);
+    for (const request of captured) {
+      expect(request.origin, `request left the app origin: ${request.url}`).toBe(origin);
+    }
+    for (const path of ["/api/document-types", "/api/documents", "/api/tenant/programs"]) {
+      const matches = captured.filter((request) => request.pathname === path);
+      expect(matches.length, `no request for ${path}`).toBeGreaterThan(0);
+      for (const request of matches) {
+        expect(request.authorization, `missing bearer token on ${path}`).toBe(`Bearer ${ACCESS_TOKEN}`);
+      }
+    }
+  });
+
+  test("public shared document page calls the shared client with one /api prefix", async ({ page, baseURL }) => {
+    const captured = await captureApiRequests(page);
+    const origin = new URL(baseURL ?? "http://localhost:3100").origin;
+
+    await page.goto(`/shared/${SHARE_TOKEN}/`);
+    const sharedPrefix = `/api/shared/${SHARE_TOKEN}`;
+    await expect
+      .poll(() => pathnames(captured).some((path) => path.startsWith(`${sharedPrefix}/`)))
+      .toBe(true);
+
+    expectNoDoubledPrefix(captured);
+    for (const request of captured) {
+      expect(request.origin, `request left the app origin: ${request.url}`).toBe(origin);
+    }
+    expect(captured.some((request) => request.pathname.startsWith("/api/api"))).toBe(false);
+  });
+});
