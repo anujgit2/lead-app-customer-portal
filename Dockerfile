@@ -7,6 +7,9 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Commit SHA shown in the footer as "Build <sha7>". Pass --build-arg NEXT_PUBLIC_BUILD_SHA=$GITHUB_SHA.
+ARG NEXT_PUBLIC_BUILD_SHA
+ENV NEXT_PUBLIC_BUILD_SHA=$NEXT_PUBLIC_BUILD_SHA
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build

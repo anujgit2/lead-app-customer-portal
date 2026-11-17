@@ -40,10 +40,18 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Production build reads public values from the workflow env; no .env.prod in CI.
       - name: Build static export
-        run: npm run build:prod
+        run: |
+          echo "NEXT_PUBLIC_BUILD_SHA=$NEXT_PUBLIC_BUILD_SHA"
+          npx next build
         env:
           NEXT_PUBLIC_RECAPTCHA_SITE_KEY: ${{ secrets.PROD_RECAPTCHA_SITE_KEY }}
+          NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
+          NEXT_PUBLIC_API_URL: /api
+          NEXT_PUBLIC_ENABLE_DEV_TOOLS: "false"
+          NEXT_PUBLIC_CUSTOMER_PORTAL_URL: https://myprofile.loantris.com
+          NEXT_PUBLIC_PARTNER_PORTAL_URL: https://partners.loantris.com
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
