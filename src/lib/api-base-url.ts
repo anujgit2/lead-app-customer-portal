@@ -1,5 +1,6 @@
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"]);
 const ACCOUNTS_SUFFIX = "/accounts";
+const API_SUFFIX = "/api";
 
 /**
  * Backend tenant routes are chosen from the API host.
@@ -7,6 +8,10 @@ const ACCOUNTS_SUFFIX = "/accounts";
  * Other hosts keep NEXT_PUBLIC_API_URL.
  * A trailing /accounts on the configured base is the user-service context
  * path and is not part of the loan, document, or file API base.
+ * A trailing /api is stripped too: call sites already carry the /api segment
+ * in every path (for example "/api/document-types"), so the base must not add
+ * a second one. An origin-relative base such as "/api" therefore resolves to ""
+ * and the browser requests "/api/document-types" once.
  */
 export function resolveApiBaseUrl(input?: { hostname?: string; origin?: string }): string {
   return resolveServiceBase(input, false);
@@ -51,11 +56,16 @@ function resolveServiceBase(input: { hostname?: string; origin?: string } | unde
   }
 }
 
+/**
+ * Application root that call-site paths are appended to. Paths already start
+ * with "/api/...", so the root never ends in /api or /accounts. Returns "" for
+ * an origin-relative root.
+ */
 function applicationBase(value: string | undefined): string {
-  const configured = (value ?? "").replace(/\/$/, "") || "/api";
-  return configured.endsWith(ACCOUNTS_SUFFIX)
-    ? configured.slice(0, -ACCOUNTS_SUFFIX.length) || "/api"
-    : configured;
+  let base = (value ?? "").replace(/\/+$/, "");
+  if (base.endsWith(ACCOUNTS_SUFFIX)) base = base.slice(0, -ACCOUNTS_SUFFIX.length);
+  if (base.endsWith(API_SUFFIX)) base = base.slice(0, -API_SUFFIX.length);
+  return base.replace(/\/+$/, "");
 }
 
 function authBase(applicationRoot: string): string {
