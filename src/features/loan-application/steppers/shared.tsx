@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createElement, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   Check,
@@ -107,8 +107,9 @@ export function iconForStep(step: StepperStep): LucideIcon {
 }
 
 export function StepGlyph({ step, className }: { step: StepperStep; className?: string }) {
-  const Icon = iconForStep(step);
-  return <Icon className={className} strokeWidth={1.8} aria-hidden />;
+  // iconForStep returns one of a fixed set of module-level icon components, so createElement
+  // renders it without creating a new component type during render.
+  return createElement(iconForStep(step), { className, strokeWidth: 1.8, "aria-hidden": true });
 }
 
 function trackInset(count: number): string {

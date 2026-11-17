@@ -527,8 +527,9 @@ function useShareLoadProgress(): number {
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduceMotion) {
-      setValue(68);
-      return;
+      // Deferred to a timer so the state update is not a synchronous setState in the effect body.
+      const timeout = window.setTimeout(() => setValue(68), 0);
+      return () => window.clearTimeout(timeout);
     }
 
     const started = performance.now();
