@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useTenantUi } from "@/features/tenant-ui/TenantUiProvider";
 import { cn } from "@/lib/utils";
@@ -54,10 +54,13 @@ export function Logo({
   const logoUrl = config.theme.logoUrl;
   const logoAlt = config.theme.logoAlt;
   const [imageFailed, setImageFailed] = useState(false);
+  const [trackedLogoUrl, setTrackedLogoUrl] = useState(logoUrl);
 
-  useEffect(() => {
+  // Reset the failure flag when the logo URL changes, during render rather than in an effect.
+  if (trackedLogoUrl !== logoUrl) {
+    setTrackedLogoUrl(logoUrl);
     setImageFailed(false);
-  }, [logoUrl]);
+  }
 
   return (
     <Link

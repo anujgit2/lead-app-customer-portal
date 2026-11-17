@@ -292,7 +292,10 @@ export function ConsentList({
   const onWizardContinue = useWizardContinue();
   const summaryId = `${namePrefix ?? "consent"}-summary`;
   const progress = useMemo(() => evaluateConsentContinue(rows), [rows]);
-  rowsRef.current = rows;
+
+  useEffect(() => {
+    rowsRef.current = rows;
+  }, [rows]);
 
   useEffect(() => {
     if (consentSummaryShouldClear(previousRows.current, rows)) {
