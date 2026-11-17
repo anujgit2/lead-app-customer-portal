@@ -4,7 +4,14 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import type { AxiosAdapter, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { getTypes, listDocuments } from "@/features/documents/api/documentsApi";
+import {
+  fetchSharedBundleMeta,
+  lookupSharedDocument,
+  sharedClient,
+} from "@/features/documents/api/sharedApi";
+import { resolveApiBaseUrl } from "@/lib/api-base-url";
 import { apiClient } from "@/lib/axios";
+import { fileStorageService } from "@/services/file-storage.service";
 import { programService } from "@/services/program.service";
 
 type Captured = { url: string; authorization?: string; tenant?: string };
@@ -139,6 +146,88 @@ describe("URL composition with non-production bases (AC-10)", () => {
   });
 });
 
+describe("runtime URL composition for the public shared client and file storage", () => {
+  beforeEach(() => setEnv("/api"));
+
+  describe("sharedClient (features/documents/api/sharedApi.ts)", () => {
+    const originalSharedAdapter = sharedClient.defaults.adapter;
+
+    beforeEach(() => {
+      sharedClient.defaults.adapter = recordingAdapter;
+    });
+
+    afterEach(() => {
+      sharedClient.defaults.adapter = originalSharedAdapter;
+    });
+
+    it("requests the shared lookup at /api/shared/<token> once (AC-4)", async () => {
+      await lookupSharedDocument("tok-1");
+      assert.equal(captured.length, 1);
+      assert.equal(captured[0].url, "/api/shared/tok-1");
+      assert.ok(!captured[0].url.includes("/api/api/"));
+    });
+
+    it("requests the bundle meta at /api/shared/<token>/meta once (AC-4)", async () => {
+      await fetchSharedBundleMeta("tok-2");
+      assert.equal(captured.length, 1);
+      assert.equal(captured[0].url, "/api/shared/tok-2/meta");
+      assert.ok(!captured[0].url.includes("/api/api/"));
+    });
+
+    it("sends no owner Authorization or tenant header on the public shared client", async () => {
+      (globalThis as { window?: unknown }).window = { location: { hostname: "", origin: "" } };
+      (globalThis as { localStorage?: Storage }).localStorage = memoryStorage({ accessToken: "token-123" });
+      (globalThis as { sessionStorage?: Storage }).sessionStorage = memoryStorage({ "tenant-id": "tenant-a" });
+
+      await fetchSharedBundleMeta("tok-3");
+      assert.equal(captured.length, 1);
+      assert.equal(captured[0].authorization, undefined);
+      assert.equal(captured[0].tenant, undefined);
+    });
+  });
+
+  describe("apiFetch (services/file-storage.service.ts)", () => {
+    const originalFetch = globalThis.fetch;
+    let fetched: Array<{ url: string; headers: Record<string, string> }> = [];
+
+    beforeEach(() => {
+      fetched = [];
+      globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+        fetched.push({
+          url: String(input),
+          headers: (init?.headers ?? {}) as Record<string, string>,
+        });
+        return new Response(new Blob(["x"], { type: "application/pdf" }), {
+          status: 200,
+          headers: { "content-type": "application/pdf" },
+        });
+      }) as typeof fetch;
+    });
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+    });
+
+    it("requests file content at /api/files/<id>/content once (AC-4)", async () => {
+      await fileStorageService.fetchContent("file-1", "a.pdf");
+      assert.equal(fetched.length, 1);
+      assert.equal(fetched[0].url, "/api/files/file-1/content");
+      assert.ok(!fetched[0].url.includes("/api/api/"));
+    });
+
+    it("sends Authorization and X-Tenant-ID on file requests (AC-11)", async () => {
+      (globalThis as { window?: unknown }).window = { location: { hostname: "", origin: "" } };
+      (globalThis as { localStorage?: Storage }).localStorage = memoryStorage({ accessToken: "token-123" });
+      (globalThis as { sessionStorage?: Storage }).sessionStorage = memoryStorage({ "tenant-id": "tenant-a" });
+
+      await fileStorageService.fetchContent("file-2", "b.pdf");
+      assert.equal(fetched.length, 1);
+      assert.equal(fetched[0].headers.Authorization, "Bearer token-123");
+      assert.equal(fetched[0].headers["X-Tenant-ID"], "tenant-a");
+    });
+  });
+});
+
 describe("source sweep", () => {
   const srcRoot = path.resolve(process.cwd(), "src");
 
@@ -151,14 +240,31 @@ describe("source sweep", () => {
     });
   }
 
-  it("finds no /api/api segment in non-test src (AC-4)", () => {
+  it("finds no /api/api text in non-test src (AC-4)", () => {
     const offenders = sourceFiles(srcRoot).filter((file) =>
       readFileSync(file, "utf8").includes("/api/api")
     );
     assert.deepEqual(
       offenders.map((file) => path.relative(srcRoot, file)),
       [],
-      "a call site or base URL doubles the /api segment"
+      "a source file contains the literal /api/api"
     );
+  });
+
+  it("joins every literal /api/ call path to the production base with one /api segment (AC-4)", () => {
+    setEnv("/api");
+    const base = resolveApiBaseUrl({ hostname: "", origin: "" });
+    const literals = sourceFiles(srcRoot).flatMap((file) => {
+      const text = readFileSync(file, "utf8");
+      return [...text.matchAll(/(["'`])(\/api\/[^"'`\n]*)/g)].map((match) => ({
+        file: path.relative(srcRoot, file),
+        path: match[2].split("${")[0],
+      }));
+    });
+    assert.ok(literals.length > 20, `expected many /api/ literals, found ${literals.length}`);
+    const doubled = literals
+      .filter((literal) => `${base}${literal.path}`.split("/").filter((segment) => segment === "api").length !== 1)
+      .map((literal) => `${literal.file}: ${base}${literal.path}`);
+    assert.deepEqual(doubled, [], "a literal path gets a second /api segment from the base");
   });
 });
