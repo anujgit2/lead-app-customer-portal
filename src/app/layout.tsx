@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Manrope } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { BuildFooter } from "@/components/BuildFooter";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -38,6 +39,7 @@ export default function RootLayout({
       </head>
       <body className={`${dmSans.variable} ${manrope.variable} font-sans antialiased`}>
         <Providers>{children}</Providers>
+        <BuildFooter />
       </body>
     </html>
   );

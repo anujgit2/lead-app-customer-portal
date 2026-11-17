@@ -41,9 +41,12 @@ jobs:
         run: npm run lint
 
       - name: Build static export
-        run: npm run build:prod
+        run: |
+          echo "NEXT_PUBLIC_BUILD_SHA=$NEXT_PUBLIC_BUILD_SHA"
+          npm run build:prod
         env:
           NEXT_PUBLIC_RECAPTCHA_SITE_KEY: ${{ secrets.PROD_RECAPTCHA_SITE_KEY }}
+          NEXT_PUBLIC_BUILD_SHA: ${{ github.sha }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

@@ -1,6 +1,7 @@
 "use client";
 
 import { ErrorState } from "@/components/ErrorState";
+import { BuildFooter } from "@/components/BuildFooter";
 
 export default function GlobalError({
   error,
@@ -17,6 +18,7 @@ export default function GlobalError({
           message={error.message || "A critical error occurred. Please reload the page."}
           onRetry={reset}
         />
+        <BuildFooter />
       </body>
     </html>
   );
