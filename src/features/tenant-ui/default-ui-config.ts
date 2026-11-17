@@ -58,7 +58,7 @@ export const DEFAULT_TENANT_UI: TenantUiConfig = {
           type: "email",
           label: "Email",
           placeholder: "name@example.com",
-          width: "half",
+          width: "full",
           required: true,
         },
         {
@@ -66,7 +66,7 @@ export const DEFAULT_TENANT_UI: TenantUiConfig = {
           type: "tel",
           label: "Mobile number",
           placeholder: "98765 43210",
-          width: "half",
+          width: "full",
           required: true,
         },
         {

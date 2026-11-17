@@ -14,9 +14,6 @@ import { clearFullSession } from "@/lib/session";
 import type { InvitationDetails, RegistrationPolicy } from "@/types";
 import {
   AuthScreen,
-  SignInLink,
-  SIGN_UP_POINTS,
-  signUpAside,
 } from "@/features/auth/AuthScreen";
 
 type PageState = "loading" | "ready" | "error";
@@ -142,16 +139,8 @@ export function RegisterPageClient() {
     loadInvitation();
   }, [token, tenant]);
 
-  const signUpShell = (children: React.ReactNode) => (
-    <AuthScreen
-      topRight={<SignInLink />}
-      asideTitle={signUpAside.title}
-      asideDescription={signUpAside.description}
-      points={SIGN_UP_POINTS}
-    >
-      {children}
-    </AuthScreen>
-  );
+  // Same card as the signup form, so loading and status screens never switch layout.
+  const signUpShell = (children: React.ReactNode) => <AuthScreen variant="card">{children}</AuthScreen>;
 
   const statusScreen = (title: string, message: string, action: React.ReactNode) =>
     signUpShell(

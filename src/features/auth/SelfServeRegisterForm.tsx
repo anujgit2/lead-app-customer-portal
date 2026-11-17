@@ -98,7 +98,10 @@ export function SelfServeRegisterForm({ onSuccess, invitation }: SelfServeRegist
   const acceptTerms = watch("acceptTerms");
   const captcha = watch("captcha");
   const strength = passwordMeter(password);
-  const inputs = inputFields(formCopy.fields);
+  // Email and mobile each take a full row on the signup form, even when the tenant config marks them half width.
+  const inputs = inputFields(formCopy.fields).map((field) =>
+    field.key === "email" || field.key === "phone" ? { ...field, width: "full" as const } : field
+  );
   const terms = checkFields(formCopy.fields).find((field) => field.key === "acceptTerms");
   const defaultTerms = DEFAULT_TENANT_UI.forms.signup.fields.find((field) => field.key === "acceptTerms")?.label;
   const links = formCopy.links.filter((link) => link.key === "signin" || link.key === "forgotPassword");
