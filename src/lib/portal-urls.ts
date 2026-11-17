@@ -16,5 +16,11 @@ export function landingSectionHref(location: Pick<Location, "protocol" | "hostna
   return `${location.protocol}//${host}${port}/#${hash}`;
 }
 
+// Home of the lending site: the same host as the customer portal without the "myprofile." prefix.
+export function lendingSiteHome(): string {
+  if (typeof window === "undefined") return "/";
+  return window.location.origin.replace("//myprofile.", "//");
+}
+
 export const PARTNER_PORTAL_URL =
   process.env.NEXT_PUBLIC_PARTNER_PORTAL_URL ?? "https://partners.loantris.com";

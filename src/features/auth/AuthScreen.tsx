@@ -4,6 +4,7 @@ import { ArrowLeft, Check, CircleAlert, Files, Share2, User, type LucideIcon } f
 import { BrandWordmark, Logo } from "@/components/Logo";
 import { useSupport } from "@/features/tenant-ui/use-support";
 import { cn } from "@/lib/utils";
+import { lendingSiteHome } from "@/lib/portal-urls";
 
 export type BrandPoint = {
   icon?: LucideIcon;
@@ -24,25 +25,44 @@ export const CUSTOMER_ASIDE_POINTS: BrandPoint[] = [
   { title: "Clear application status updates" },
 ];
 
+/**
+ * "split": brand panel on the left, form on the right (default).
+ * "card": a single centred card with the Loantris logo, for the customer portal.
+ */
 export function AuthScreen({
   topRight,
   children,
-  asideTitle,
-  asideDescription,
+  asideTitle = "",
+  asideDescription = "",
   asideFootnote,
-  points,
+  points = [],
   contentClassName,
+  variant = "split",
 }: {
   topRight?: ReactNode;
   children: ReactNode;
-  asideTitle: string;
-  asideDescription: string;
+  asideTitle?: string;
+  asideDescription?: string;
   asideFootnote?: string;
-  points: BrandPoint[];
+  points?: BrandPoint[];
   contentClassName?: string;
+  variant?: "split" | "card";
 }) {
   const year = new Date().getFullYear();
   const { legalEntity } = useSupport();
+
+  if (variant === "card") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(120deg,#eef3f7,#dfeaf1,#d9e9e4,#e2ecf0)] px-[18px] py-10 text-[#1a2e40]">
+        <main className="auth-card w-full max-w-[420px] rounded-2xl border border-[#dfe8ee] bg-white p-7 shadow-[0_12px_40px_rgba(15,32,48,0.08)] sm:p-10">
+          <a href={lendingSiteHome()} aria-label="Loantris home" className="inline-block">
+            <BrandWordmark className="text-[26px] text-[#40576c]" />
+          </a>
+          <div className="mt-8 flex flex-col gap-5">{children}</div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="grid min-h-screen bg-card text-foreground lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)]">

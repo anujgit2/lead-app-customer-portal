@@ -8,11 +8,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import type { RegisterApiRequest } from "@/types";
-import Link from "next/link";
-import { BRAND_TAGLINE } from "@/components/Logo";
-import { AuthScreen, BackHomeLink, CUSTOMER_ASIDE_POINTS } from "@/features/auth/AuthScreen";
-import { AUTH_FORM_ROUTES } from "@/features/tenant-ui/form-routes";
-import { PARTNER_PORTAL_URL } from "@/lib/portal-urls";
+import { AuthScreen } from "@/features/auth/AuthScreen";
 
 type FlowStep = "register" | "verify-email" | "ready";
 
@@ -63,31 +59,9 @@ export function SelfServeRegisterFlow({ invitation }: SelfServeRegisterFlowProps
   };
 
   return (
-    <AuthScreen
-      topRight={<BackHomeLink />}
-      asideTitle={BRAND_TAGLINE}
-      asideDescription="Manage your personal and business profiles, apply for financing and keep every document close at hand."
-      asideFootnote="For customers and business owners"
-      points={CUSTOMER_ASIDE_POINTS}
-      contentClassName="max-w-[420px]"
-    >
+    <AuthScreen variant="card">
       <div className={step === "register" ? "contents" : "hidden"}>
         <SelfServeRegisterForm onSuccess={handleRegisterSuccess} invitation={invitation} />
-
-        <div className="flex flex-col gap-2 border-t border-border pt-4 text-[13px] text-muted-foreground">
-          <p>
-            Already have an account?{" "}
-            <Link href={AUTH_FORM_ROUTES.signin} className="font-semibold text-primary hover:underline">
-              Sign in
-            </Link>
-          </p>
-          <p>
-            Are you a partner?{" "}
-            <a href={PARTNER_PORTAL_URL} className="font-semibold text-primary hover:underline">
-              Go to partner sign in
-            </a>
-          </p>
-        </div>
       </div>
 
       {step === "verify-email" && userId && registerData && (

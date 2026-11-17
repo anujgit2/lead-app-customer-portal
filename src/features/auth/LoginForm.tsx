@@ -15,15 +15,11 @@ import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 import { clearFullSession } from "@/lib/session";
 import { toast } from "sonner";
-import {
-  AuthScreen,
-  BackHomeLink,
-  FieldError,
-  type BrandPoint,
-} from "@/features/auth/AuthScreen";
+import { FieldError } from "@/features/auth/AuthScreen";
 import { checkFields, FieldStack, inputFields } from "@/features/tenant-ui/FieldStack";
 import { AUTH_FORM_ROUTES } from "@/features/tenant-ui/form-routes";
-import { BRAND_TAGLINE } from "@/components/Logo";
+import { BrandWordmark } from "@/components/Logo";
+import { lendingSiteHome } from "@/lib/portal-urls";
 import { useTenantUi } from "@/features/tenant-ui/TenantUiProvider";
 import type { UiFormField } from "@/features/tenant-ui/types";
 
@@ -43,13 +39,6 @@ const loginSchema = z.object({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
-
-const POINTS: BrandPoint[] = [
-  { title: "Individual and business profiles" },
-  { title: "Loan applications in one place" },
-  { title: "Secure document storage and sharing" },
-  { title: "Clear application status updates" },
-];
 
 export function LoginForm() {
   const router = useRouter();
@@ -151,70 +140,71 @@ export function LoginForm() {
     }
   };
 
+  const landingHref = lendingSiteHome();
+
   return (
-    <AuthScreen
-      topRight={<BackHomeLink />}
-      asideTitle={BRAND_TAGLINE}
-      asideDescription="Manage your personal and business profiles, apply for financing and keep every document close at hand."
-      asideFootnote="For customers and business owners"
-      points={POINTS}
-    >
-      <div>
-        <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.035em] text-foreground">{formCopy.title}</h1>
-        <p className="mt-1 text-sm leading-6 text-muted-foreground">{formCopy.subtitle}</p>
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(120deg,#eef3f7,#dfeaf1,#d9e9e4,#e2ecf0)] px-[18px] py-10 text-[#1a2e40]">
+      <main className="auth-card w-full max-w-[420px] rounded-2xl border border-[#dfe8ee] bg-white p-7 shadow-[0_12px_40px_rgba(15,32,48,0.08)] sm:p-10">
+        <a href={landingHref} aria-label="Loantris home" className="inline-block">
+          <BrandWordmark className="text-[26px] text-[#40576c]" />
+        </a>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
-        <FieldStack fields={inputs} render={renderInput} />
-
-        {(remember || forgot) && (
-          <div className="-mt-1 flex flex-wrap items-center justify-between gap-2">
-            {remember ? (
-              <label htmlFor="rememberMe" className="inline-flex cursor-pointer items-center gap-2 text-[13px] leading-5">
-                <Checkbox
-                  id="rememberMe"
-                  checked={!!rememberMe}
-                  onCheckedChange={(value) => setValue("rememberMe", !!value)}
-                />
-                <span>{remember.label}</span>
-              </label>
-            ) : (
-              <span />
-            )}
-            {forgot && (
-              <Link
-                href={AUTH_FORM_ROUTES.forgotPassword}
-                className="inline-flex min-h-8 items-center text-[13px] font-medium text-primary transition-all duration-200 ease-out hover:underline"
-              >
-                {forgot.label}
-              </Link>
-            )}
+        <div className="mt-8 flex flex-col gap-5">
+          <div>
+            <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.035em] text-[#0f2030]">{formCopy.title}</h1>
+            <p className="mt-1 text-sm leading-6 text-[#4e6373]">{formCopy.subtitle}</p>
           </div>
-        )}
 
-        <Button
-          type="submit"
-          size="lg"
-          loading={isSubmitting}
-          className="lp-glow h-11 w-full font-semibold transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
-        >
-          {isSubmitting ? formCopy.submittingLabel : formCopy.submitLabel}
-        </Button>
-      </form>
+          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+            <FieldStack fields={inputs} render={renderInput} />
 
-      <div className="flex flex-col gap-2 border-t border-border pt-4">
-        {otherLinks.map((link) => (
-          <p key={link.key} className="text-[13px] text-muted-foreground">
-            {link.prefix ? `${link.prefix} ` : null}
-            <Link href={AUTH_FORM_ROUTES[link.key]} className="font-semibold text-primary hover:underline">
-              {link.label}
-            </Link>
-          </p>
-        ))}
-        <p className="text-xs leading-[18px] text-muted-foreground">
-          Invited by a lender or agent? Open the link in your email instead. It takes you straight to your application.
-        </p>
-      </div>
-    </AuthScreen>
+            {(remember || forgot) && (
+              <div className="-mt-1 flex flex-wrap items-center justify-between gap-2">
+                {remember ? (
+                  <label htmlFor="rememberMe" className="inline-flex cursor-pointer items-center gap-2 text-[13px] leading-5">
+                    <Checkbox
+                      id="rememberMe"
+                      checked={!!rememberMe}
+                      onCheckedChange={(value) => setValue("rememberMe", !!value)}
+                    />
+                    <span>{remember.label}</span>
+                  </label>
+                ) : (
+                  <span />
+                )}
+                {forgot && (
+                  <Link
+                    href={AUTH_FORM_ROUTES.forgotPassword}
+                    className="inline-flex min-h-8 items-center text-[13px] font-medium text-primary transition-all duration-200 ease-out hover:underline"
+                  >
+                    {forgot.label}
+                  </Link>
+                )}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              size="lg"
+              loading={isSubmitting}
+              className="lp-glow h-11 w-full font-semibold transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+            >
+              {isSubmitting ? formCopy.submittingLabel : formCopy.submitLabel}
+            </Button>
+          </form>
+
+          <div className="flex flex-col gap-2 border-t border-[#dfe8ee] pt-4 text-center">
+            {otherLinks.map((link) => (
+              <p key={link.key} className="text-[13px] text-muted-foreground">
+                {link.prefix ? `${link.prefix} ` : null}
+                <Link href={AUTH_FORM_ROUTES[link.key]} className="font-semibold text-primary hover:underline">
+                  {link.label}
+                </Link>
+              </p>
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }
