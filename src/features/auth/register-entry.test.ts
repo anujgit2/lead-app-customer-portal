@@ -22,6 +22,20 @@ test("user invitation link opens the form even when the tenant is invite-only or
   );
 });
 
+test("a pending lead invitation opens the form on an invite-only tenant, with the email fixed", () => {
+  assert.deepEqual(
+    resolveRegisterEntry({ ...none, policy: "INVITE_ONLY", leadInvitation: { token: "lead", email: "a@x.com" } }),
+    { kind: "lead-invitation", token: "lead", email: "a@x.com" }
+  );
+});
+
+test("a pending lead invitation still shows the closed screen when the tenant is closed", () => {
+  assert.deepEqual(
+    resolveRegisterEntry({ ...none, policy: "CLOSED", leadInvitation: { token: "lead", email: "a@x.com" } }),
+    { kind: "closed" }
+  );
+});
+
 test("application invitation links keep their existing handling", () => {
   assert.deepEqual(
     resolveRegisterEntry({ token: "t", tenant: "acme", userInvitation: null, policy: "CLOSED" }),

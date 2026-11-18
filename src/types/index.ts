@@ -78,7 +78,10 @@ export interface RegisterApiRequest {
 }
 
 export interface RegisterApiResponse {
-  userId: string;
+  /** Null while verification is pending. The account is created only after verification. */
+  userId: string | null;
+  /** Set while verification is pending. Use it for verify and resend. */
+  registrationId?: string | null;
   activated: boolean;
   emailVerificationPending: boolean;
   phoneVerificationPending: boolean;

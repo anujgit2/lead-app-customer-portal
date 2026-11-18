@@ -121,7 +121,7 @@ export function RegisterForm({
       const res = await authService.registerWithInvitation(registerData);
       toast.success(res.message || "Registration successful!");
       onSuccess({
-        userId: res.userId,
+        userId: res.registrationId ?? res.userId ?? "",
         registerData,
         emailVerificationPending: res.emailVerificationPending,
         accessToken: res.accessToken,

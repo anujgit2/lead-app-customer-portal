@@ -252,7 +252,7 @@ export function SelfServeRegisterForm({ onSuccess, invitation }: SelfServeRegist
       const res = await authService.registerSelfServe(registerData);
       toast.success(res.message || "Account created successfully!");
       onSuccess({
-        userId: res.userId,
+        userId: res.registrationId ?? res.userId ?? "",
         registerData,
         activated: res.activated,
         emailVerificationPending: res.emailVerificationPending,

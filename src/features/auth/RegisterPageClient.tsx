@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { InvitationRegisterFlow } from "@/features/auth/InvitationRegisterFlow";
 import { SelfServeRegisterFlow } from "@/features/auth/SelfServeRegisterFlow";
 import { resolveRegisterEntry } from "@/features/auth/register-entry";
 import { invitationService } from "@/services/invitation.service";
+import { forgetPendingInvite, leadService, peekPendingInvite } from "@/services/lead.service";
 import { userInvitationService } from "@/services/user-invitation.service";
 import { clearFullSession } from "@/lib/session";
 import type { InvitationDetails, RegistrationPolicy } from "@/types";
@@ -30,6 +31,17 @@ export function RegisterPageClient() {
   const [policyLoaded, setPolicyLoaded] = useState(false);
   const [policy, setPolicy] = useState<RegistrationPolicy | null>(null);
 
+  // Lead invitation kept from the invite link. Read from session storage without an effect, and
+  // resolved once, so the form never flashes before the invite is known.
+  const pendingLeadToken = useSyncExternalStore(
+    () => () => {},
+    () => (token || userInvitation ? null : peekPendingInvite()),
+    () => null
+  );
+  const [leadInvitation, setLeadInvitation] = useState<{ token: string; email: string } | null>(null);
+  const [leadInvitationResolved, setLeadInvitationResolved] = useState(false);
+  const leadInvitationChecked = !pendingLeadToken || leadInvitationResolved;
+
   // User-to-user invitation (?userInvitation=…): preview state and the invited email.
   const [userInviteState, setUserInviteState] = useState<PageState>("loading");
   const [userInviteEmail, setUserInviteEmail] = useState("");
@@ -43,6 +55,7 @@ export function RegisterPageClient() {
     tenant,
     userInvitation,
     policy: policyLoaded ? policy : null,
+    leadInvitation,
   });
 
   // Clear all tokens and cookies when landing on register page
@@ -67,6 +80,32 @@ export function RegisterPageClient() {
       cancelled = true;
     };
   }, []);
+
+  // Pending lead invite (from the invite link). The email is read from the server by token, so the
+  // registration can be fixed to the address the invite was sent to.
+  useEffect(() => {
+    if (!pendingLeadToken) return;
+    let cancelled = false;
+    leadService
+      .validateInvite(pendingLeadToken)
+      .then((info) => {
+        if (cancelled) return;
+        if (info.status === "PENDING" && info.invitedEmail && info.type === "LEAD") {
+          setLeadInvitation({ token: pendingLeadToken, email: info.invitedEmail });
+        } else {
+          forgetPendingInvite();
+        }
+      })
+      .catch(() => {
+        if (!cancelled) forgetPendingInvite();
+      })
+      .finally(() => {
+        if (!cancelled) setLeadInvitationResolved(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingLeadToken]);
 
   useEffect(() => {
     if (!userInvitation) return;
@@ -163,12 +202,16 @@ export function RegisterPageClient() {
     );
 
   // Hold the form until the policy is known, so a closed tenant never flashes it.
-  if (entry.kind === "self-serve" && !policyLoaded) {
+  if ((entry.kind === "self-serve" || entry.kind === "lead-invitation") && (!policyLoaded || !leadInvitationChecked)) {
     return loadingScreen("Loading…");
   }
 
   if (entry.kind === "self-serve") {
     return <SelfServeRegisterFlow />;
+  }
+
+  if (entry.kind === "lead-invitation") {
+    return <SelfServeRegisterFlow invitation={{ token: entry.token, email: entry.email }} />;
   }
 
   if (entry.kind === "user-invitation") {
