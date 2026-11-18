@@ -13,8 +13,8 @@ export const DEFAULT_TENANT_UI: TenantUiConfig = {
         {
           key: "identifier",
           type: "text",
-          label: "Email or mobile number",
-          placeholder: "you@example.com or 98765 43210",
+          label: "Email",
+          placeholder: "you@example.com",
           width: "full",
           required: true,
         },
@@ -26,18 +26,8 @@ export const DEFAULT_TENANT_UI: TenantUiConfig = {
           width: "full",
           required: true,
         },
-        {
-          key: "rememberMe",
-          type: "checkbox",
-          label: "Keep me signed in",
-          width: "full",
-          required: false,
-        },
       ],
-      links: [
-        { key: "forgotPassword", label: "Forgot password?" },
-        { key: "signup", label: "Create an account", prefix: "New to Loantris?" },
-      ],
+      links: [{ key: "forgotPassword", label: "Forgot password?" }],
     },
     signup: {
       title: "Create your account",

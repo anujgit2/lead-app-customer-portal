@@ -10,13 +10,12 @@ import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
 import { clearFullSession } from "@/lib/session";
 import { toast } from "sonner";
 import { FieldError } from "@/features/auth/AuthScreen";
-import { checkFields, FieldStack, inputFields } from "@/features/tenant-ui/FieldStack";
+import { FieldStack, inputFields } from "@/features/tenant-ui/FieldStack";
 import { AUTH_FORM_ROUTES } from "@/features/tenant-ui/form-routes";
 import { BrandWordmark } from "@/components/Logo";
 import { lendingSiteHome } from "@/lib/portal-urls";
@@ -55,17 +54,12 @@ export function LoginForm() {
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { rememberMe: true },
   });
 
-  const rememberMe = watch("rememberMe");
   const inputs = inputFields(formCopy.fields);
-  const remember = checkFields(formCopy.fields).find((field) => field.key === "rememberMe");
   const forgot = formCopy.links.find((link) => link.key === "forgotPassword");
   const otherLinks = formCopy.links.filter((link) => link.key !== "forgotPassword");
 
@@ -124,10 +118,8 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      const res = await authService.login({
-        ...data,
-        rememberMe: remember ? data.rememberMe : false,
-      });
+      // The "Keep me signed in" option is gone, so sessions keep the old default: remembered.
+      const res = await authService.login({ ...data, rememberMe: true });
       setUser(res.user);
       toast.success(`Welcome back, ${res.user.firstName}!`);
       router.push("/dashboard");
@@ -158,28 +150,14 @@ export function LoginForm() {
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
             <FieldStack fields={inputs} render={renderInput} />
 
-            {(remember || forgot) && (
-              <div className="-mt-1 flex flex-wrap items-center justify-between gap-2">
-                {remember ? (
-                  <label htmlFor="rememberMe" className="inline-flex cursor-pointer items-center gap-2 text-[13px] leading-5">
-                    <Checkbox
-                      id="rememberMe"
-                      checked={!!rememberMe}
-                      onCheckedChange={(value) => setValue("rememberMe", !!value)}
-                    />
-                    <span>{remember.label}</span>
-                  </label>
-                ) : (
-                  <span />
-                )}
-                {forgot && (
-                  <Link
-                    href={AUTH_FORM_ROUTES.forgotPassword}
-                    className="inline-flex min-h-8 items-center text-[13px] font-medium text-primary transition-all duration-200 ease-out hover:underline"
-                  >
-                    {forgot.label}
-                  </Link>
-                )}
+            {forgot && (
+              <div className="-mt-1 flex flex-wrap items-center justify-end gap-2">
+                <Link
+                  href={AUTH_FORM_ROUTES.forgotPassword}
+                  className="inline-flex min-h-8 items-center text-[13px] font-medium text-primary transition-all duration-200 ease-out hover:underline"
+                >
+                  {forgot.label}
+                </Link>
               </div>
             )}
 
@@ -193,16 +171,18 @@ export function LoginForm() {
             </Button>
           </form>
 
-          <div className="flex flex-col gap-2 border-t border-[#dfe8ee] pt-4 text-center">
-            {otherLinks.map((link) => (
-              <p key={link.key} className="text-[13px] text-muted-foreground">
-                {link.prefix ? `${link.prefix} ` : null}
-                <Link href={AUTH_FORM_ROUTES[link.key]} className="font-semibold text-primary hover:underline">
-                  {link.label}
-                </Link>
-              </p>
-            ))}
-          </div>
+          {otherLinks.length > 0 && (
+            <div className="flex flex-col gap-2 border-t border-[#dfe8ee] pt-4 text-center">
+              {otherLinks.map((link) => (
+                <p key={link.key} className="text-[13px] text-muted-foreground">
+                  {link.prefix ? `${link.prefix} ` : null}
+                  <Link href={AUTH_FORM_ROUTES[link.key]} className="font-semibold text-primary hover:underline">
+                    {link.label}
+                  </Link>
+                </p>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>
