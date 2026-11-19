@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
@@ -17,7 +18,6 @@ import { toast } from "sonner";
 import { FieldError } from "@/features/auth/AuthScreen";
 import { FieldStack, inputFields } from "@/features/tenant-ui/FieldStack";
 import { AUTH_FORM_ROUTES } from "@/features/tenant-ui/form-routes";
-import { BrandWordmark } from "@/components/Logo";
 import { lendingSiteHome } from "@/lib/portal-urls";
 import { useTenantUi } from "@/features/tenant-ui/TenantUiProvider";
 import type { UiFormField } from "@/features/tenant-ui/types";
@@ -138,7 +138,8 @@ export function LoginForm() {
     <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(120deg,#eef3f7,#dfeaf1,#d9e9e4,#e2ecf0)] px-[18px] py-10 text-[#1a2e40]">
       <main className="auth-card w-full max-w-[420px] rounded-2xl border border-[#dfe8ee] bg-white p-7 shadow-[0_12px_40px_rgba(15,32,48,0.08)] sm:p-10">
         <a href={landingHref} aria-label="Loantris home" className="inline-block">
-          <BrandWordmark className="text-[26px] text-[#40576c]" />
+          {/* Brand logo image in place of the text wordmark, for now the sign-in page only. */}
+          <Image src="/brand/loantris-primary.svg" alt="Loantris" width={141} height={32} className="h-8 w-auto" />
         </a>
 
         <div className="mt-8 flex flex-col gap-5">
