@@ -67,7 +67,7 @@ export function ProfileSearchPicker({ excludeIds = [], onSelect, selectedId }: P
                 type="button"
                 aria-pressed={selected}
                 onClick={() => onSelect(profile)}
-                className="flex w-full flex-col items-start gap-0.5 rounded-lg border border-slate-100 bg-card px-3 py-2.5 text-left shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98] aria-pressed:border-primary aria-pressed:bg-primary/5"
+                className="flex w-full flex-col items-start gap-0.5 rounded-lg border border-slate-100 bg-card px-3 py-2.5 text-left shadow-sm transition-colors duration-150 hover:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500/20 aria-pressed:border-primary aria-pressed:bg-primary/5"
               >
                 <span className="text-sm font-semibold tracking-tight text-slate-900">
                   {profile.displayName || "Untitled profile"}

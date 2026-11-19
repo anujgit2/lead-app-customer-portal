@@ -85,7 +85,7 @@ export function MultiSelectField({
             }
           }}
           className={cn(
-            "flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-sm border bg-background px-3 py-1.5 text-sm shadow-sm transition-all duration-200 ease-out",
+            "flex min-h-10 w-full cursor-pointer items-center gap-2 rounded-sm border bg-background px-3 py-1.5 text-sm shadow-sm transition-colors duration-150",
             "focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20",
             error ? "border-destructive" : "border-input",
             disabled && "cursor-not-allowed opacity-50",
@@ -110,7 +110,7 @@ export function MultiSelectField({
                       <button
                         type="button"
                         aria-label={`Remove ${label}`}
-                        className="shrink-0 rounded-full text-slate-400 transition-all duration-200 ease-out hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98]"
+                        className="shrink-0 rounded-full text-slate-400 transition-colors duration-150 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                         onPointerDown={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
@@ -151,7 +151,7 @@ export function MultiSelectField({
                   role="option"
                   aria-selected={isSelected}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-slate-700 transition-all duration-200 ease-out hover:bg-slate-50 active:scale-[0.98]",
+                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm text-slate-700 transition-colors duration-150 hover:bg-slate-50",
                     isSelected && "bg-slate-50"
                   )}
                   onClick={() => toggle(opt.value)}

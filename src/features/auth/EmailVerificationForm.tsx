@@ -199,7 +199,7 @@ export function EmailVerificationForm({
                 const wait = formCopy.resendCooldownSeconds ?? 0;
                 if (wait > 0) setCooldown(wait);
               }}
-              className="inline min-h-6 p-0 text-xs font-semibold text-primary transition-all duration-200 ease-out hover:underline disabled:pointer-events-none disabled:opacity-60"
+              className="inline min-h-6 p-0 text-xs font-semibold text-primary transition-colors duration-150 hover:underline disabled:pointer-events-none disabled:opacity-60"
             >
               {cooldown > 0 ? `${formCopy.resendLabel} (${cooldown}s)` : formCopy.resendLabel}
             </button>
@@ -211,7 +211,7 @@ export function EmailVerificationForm({
             type="submit"
             size="lg"
             loading={isVerifying}
-            className="lp-glow h-11 w-full font-semibold transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+            className="lp-glow h-11 w-full font-semibold transition-colors duration-150"
           >
             {isVerifying ? formCopy.submittingLabel : formCopy.submitLabel}
           </Button>
@@ -221,7 +221,7 @@ export function EmailVerificationForm({
               size="lg"
               variant="ghost"
               onClick={onChangeEmail}
-              className="h-10 w-full text-sm text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+              className="h-10 w-full text-sm text-muted-foreground transition-colors duration-150"
             >
               Change email address
             </Button>
@@ -263,7 +263,7 @@ export function AccountReady() {
         <Button
           asChild
           size="lg"
-          className="lp-glow h-11 font-semibold transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+          className="lp-glow h-11 font-semibold transition-colors duration-150"
         >
           <Link href="/profiles/new">Set up my profile</Link>
         </Button>
@@ -271,7 +271,7 @@ export function AccountReady() {
           asChild
           size="lg"
           variant="outline"
-          className="h-11 bg-card transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+          className="h-11 bg-card transition-colors duration-150"
         >
           <Link href="/dashboard">Go to dashboard</Link>
         </Button>

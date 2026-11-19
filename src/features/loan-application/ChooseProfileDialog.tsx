@@ -150,7 +150,7 @@ function ChooseProfileDialogBody({
             type="button"
             variant="outline"
             size="sm"
-            className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+            className="transition-colors duration-150"
             onClick={() => {
               void options.refetch();
             }}
@@ -195,7 +195,7 @@ function ChooseProfileDialogBody({
         <Button
           type="button"
           size="md"
-          className="w-full transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+          className="w-full transition-colors duration-150"
           disabled={!confirming || options.isError}
           onClick={() => onConfirm(accepted)}
         >
@@ -206,7 +206,7 @@ function ChooseProfileDialogBody({
             type="button"
             variant="outline"
             size="md"
-            className="w-full transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+            className="w-full transition-colors duration-150"
             disabled={!confirming}
             onClick={() => onConfirm([])}
           >
@@ -284,7 +284,7 @@ function SlotField({
             return (
               <label
                 key={profile.id}
-                className="flex items-start gap-3 rounded-md border border-slate-100 p-3 transition-all duration-200 ease-out hover:bg-slate-50"
+                className="flex items-start gap-3 rounded-md border border-slate-100 p-3 transition-colors duration-150 hover:bg-slate-50"
               >
                 <Checkbox
                   checked={checked}

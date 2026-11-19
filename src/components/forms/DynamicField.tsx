@@ -180,7 +180,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
             <button
               type="button"
               aria-label={`Information about ${field.label}`}
-              className="shrink-0 rounded-full text-slate-400 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98]"
+              className="shrink-0 rounded-full text-slate-400 transition-colors duration-150 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             >
               <Info className="h-3.5 w-3.5" />
             </button>
@@ -358,7 +358,7 @@ export function DynamicField({ field, namePrefix }: DynamicFieldProps) {
                     <button
                       type="button"
                       aria-label={`Information about ${field.label}`}
-                      className="shrink-0 rounded-full text-slate-400 transition-all duration-200 ease-out hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98]"
+                      className="shrink-0 rounded-full text-slate-400 transition-colors duration-150 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                     >
                       <Info className="h-3.5 w-3.5" />
                     </button>

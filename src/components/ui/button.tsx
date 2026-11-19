@@ -5,7 +5,7 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent text-sm font-medium leading-none select-none transition-[background,border-color,color,box-shadow] duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:translate-y-px disabled:pointer-events-none disabled:opacity-45 [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent text-sm font-medium leading-none select-none transition-[background,border-color,color,box-shadow] duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-45 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -18,14 +18,14 @@ const buttonVariants = cva(
         link: "h-auto rounded-sm px-0 py-0.5 text-primary hover:underline",
       },
       size: {
-        xs: "h-7 px-2.5 text-xs",
-        sm: "h-8 px-3 text-[13px]",
-        default: "h-10 px-4",
-        md: "h-11 px-5",
-        lg: "h-12 px-6 text-[15px]",
+        xs: "h-6 px-2 text-xs",
+        sm: "h-7 px-2.5 text-xs",
+        default: "h-[34px] px-3",
+        md: "h-10 px-4",
+        lg: "h-10 px-4 text-sm",
         xl: "h-14 px-8 text-base",
-        icon: "h-10 w-10 p-0",
-        "icon-sm": "h-8 w-8 p-0",
+        icon: "h-[34px] w-[34px] p-0",
+        "icon-sm": "h-7 w-7 p-0",
       },
     },
     defaultVariants: {

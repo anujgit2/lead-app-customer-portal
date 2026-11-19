@@ -146,7 +146,7 @@ export const ReCaptcha = forwardRef<ReCaptchaHandle, ReCaptchaProps>(
             <button
               type="button"
               onClick={() => setAttempt((n) => n + 1)}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-destructive transition-all duration-200 ease-out hover:underline active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-destructive transition-colors duration-150 hover:underline"
             >
               <RefreshCw className="h-3 w-3" />
               Retry

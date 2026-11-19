@@ -183,9 +183,9 @@ export function StepButton({
       aria-current={step.state === "active" ? "step" : undefined}
       className={cn(
         "relative z-[1] flex min-w-0 flex-col items-center bg-transparent px-0.5 text-center",
-        "transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
+        "transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20",
         step.canNavigate
-          ? "cursor-pointer hover:-translate-y-0.5 active:scale-[0.98]"
+          ? "cursor-pointer"
           : "cursor-not-allowed",
         className
       )}
@@ -258,7 +258,7 @@ export function MobileStepMenu({
         aria-expanded={open}
         aria-haspopup="listbox"
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center gap-2.5 rounded-[11px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-sm transition-all duration-200 ease-out active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+        className="flex w-full items-center gap-2.5 rounded-[11px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
       >
         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-primary-soft text-xs font-bold text-primary">
           {current.index + 1}
@@ -299,9 +299,9 @@ export function MobileStepMenu({
                   setOpen(false);
                 }}
                 className={cn(
-                  "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-left transition-all duration-200 ease-out",
+                  "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-left transition-colors duration-150",
                   step.state === "active" ? "bg-primary-soft text-primary" : "text-foreground hover:bg-slate-50",
-                  step.canNavigate ? "cursor-pointer active:scale-[0.98]" : "cursor-not-allowed opacity-60"
+                  step.canNavigate ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                 )}
               >
                 <span
@@ -341,7 +341,7 @@ const MARKER = {
 export function markerClass(step: StepperStep, variant: keyof typeof MARKER): string {
   return cn(
     MARKER[variant],
-    "transition-all duration-200 ease-out",
+    "transition-colors duration-150",
     step.state === "active" &&
       variant === "pill" &&
       "bg-gradient-to-br from-primary to-primary-hover text-primary-foreground shadow-[0_5px_12px_hsl(var(--primary)/0.18)]",

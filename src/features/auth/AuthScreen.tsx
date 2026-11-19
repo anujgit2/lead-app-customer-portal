@@ -53,10 +53,10 @@ export function AuthScreen({
 
   if (variant === "card") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(120deg,#eef3f7,#dfeaf1,#d9e9e4,#e2ecf0)] px-[18px] py-10 text-[#1a2e40]">
-        <main className="auth-card w-full max-w-[420px] rounded-2xl border border-[#dfe8ee] bg-white p-7 shadow-[0_12px_40px_rgba(15,32,48,0.08)] sm:p-10">
+      <div className="flex min-h-screen items-center justify-center bg-background px-[18px] py-10 text-foreground">
+        <main className="auth-card w-full max-w-[420px] rounded-[10px] border border-border bg-card p-7 shadow-2 sm:p-10">
           <a href={lendingSiteHome()} aria-label="Loantris home" className="inline-block">
-            <BrandWordmark className="text-[26px] text-[#40576c]" />
+            <BrandWordmark className="text-[26px] text-muted-foreground" />
           </a>
           <div className="mt-8 flex flex-col gap-5">{children}</div>
         </main>
@@ -68,24 +68,24 @@ export function AuthScreen({
     <div className="grid min-h-screen bg-card text-foreground lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1fr)]">
       <aside
         aria-label="About Loantris"
-        className="hidden flex-col justify-between gap-8 bg-[#f0f4f5] px-10 py-12 text-[#40566a] lg:flex xl:px-16"
+        className="hidden flex-col justify-between gap-8 bg-muted px-10 py-12 text-muted-foreground lg:flex xl:px-16"
       >
         <div>
           <BrandWordmark className="text-[26px]" />
-          <h2 className="font-display mt-12 max-w-[18ch] text-[35px] font-extrabold leading-[41px] tracking-[-0.035em] text-[#3a5065]">
+          <h2 className="font-display mt-12 max-w-[18ch] text-[35px] font-extrabold leading-[41px] tracking-[-0.035em] text-foreground">
             {asideTitle}
           </h2>
-          <p className="mt-3.5 max-w-[420px] text-[15px] leading-7 text-[#718091]">{asideDescription}</p>
+          <p className="mt-3.5 max-w-[420px] text-[15px] leading-7 text-muted-foreground">{asideDescription}</p>
         </div>
-        <ul className="flex max-w-[420px] flex-col gap-3.5 text-[13px] text-[#718091]">
+        <ul className="flex max-w-[420px] flex-col gap-3.5 text-[13px] text-muted-foreground">
           {points.map((point) => (
             <li key={point.title} className="flex items-start gap-2.5">
-              <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#83a296]" strokeWidth={3} aria-hidden />
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" strokeWidth={3} aria-hidden />
               <span>{point.title}</span>
             </li>
           ))}
         </ul>
-        {asideFootnote && <small className="text-xs text-[#718091]">{asideFootnote}</small>}
+        {asideFootnote && <small className="text-xs text-muted-foreground">{asideFootnote}</small>}
       </aside>
       <div className="flex min-w-0 flex-col">
         <main className="flex flex-1 flex-col px-5 py-5 sm:px-8">
@@ -109,7 +109,7 @@ export function AuthScreen({
               <Link
                 key={link.label}
                 href={link.href}
-                className="inline-flex min-h-7 items-center transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-foreground active:scale-[0.98]"
+                className="inline-flex min-h-7 items-center transition-colors duration-150 hover:text-foreground"
               >
                 {link.label}
               </Link>
@@ -126,7 +126,7 @@ export function BackHomeLink() {
   return (
     <Link
       href="/"
-      className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-muted hover:text-foreground active:scale-[0.98]"
+      className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
     >
       <ArrowLeft className="h-4 w-4" aria-hidden />
       Back to home
@@ -140,7 +140,7 @@ export function SignInLink() {
       <span className="hidden sm:inline">Have an account? </span>
       <Link
         href="/auth/login"
-        className="font-semibold text-primary transition-all duration-200 ease-out hover:underline"
+        className="font-semibold text-primary transition-colors duration-150 hover:underline"
       >
         Sign in
       </Link>
@@ -190,7 +190,7 @@ export function SignupProgress({ step }: { step: 1 | 2 | 3 }) {
             )}
             <span
               className={cn(
-                "relative z-[1] grid h-6 w-6 place-items-center rounded-full border-2 text-[11px] font-semibold transition-all duration-200",
+                "relative z-[1] grid h-6 w-6 place-items-center rounded-full border-2 text-[11px] font-semibold transition-colors duration-150",
                 done && "border-primary bg-primary text-primary-foreground",
                 current && "border-primary bg-card text-primary shadow-[0_0_0_3px_hsl(var(--primary)/0.16)]",
                 !done && !current && "border-input bg-card text-muted-foreground"

@@ -120,7 +120,7 @@ export function ConsentAcceptButton({
       type="button"
       variant="outline"
       size="sm"
-      className="h-9 shrink-0 rounded-lg bg-card px-3.5 font-medium shadow-none transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98] max-sm:min-h-11"
+      className="h-9 shrink-0 rounded-lg bg-card px-3.5 font-medium shadow-none transition-colors duration-150 max-sm:min-h-11"
       onClick={(event) => {
         event.stopPropagation();
         apply(allAccepted ? "clear" : "accept");
@@ -354,7 +354,7 @@ export function ConsentList({
             <Button
               type="button"
               size="md"
-              className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+              className="transition-colors duration-150"
               onClick={continueFromList}
             >
               Continue

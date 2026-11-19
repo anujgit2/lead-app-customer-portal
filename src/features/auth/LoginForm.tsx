@@ -104,7 +104,7 @@ export function LoginForm() {
               onClick={() => setShowPassword((open) => !open)}
               aria-label={showPassword ? "Hide password" : "Show password"}
               aria-pressed={showPassword}
-              className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-all duration-200 ease-out hover:bg-muted hover:text-foreground active:scale-[0.98]"
+              className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -135,8 +135,8 @@ export function LoginForm() {
   const landingHref = lendingSiteHome();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[linear-gradient(120deg,#eef3f7,#dfeaf1,#d9e9e4,#e2ecf0)] px-[18px] py-10 text-[#1a2e40]">
-      <main className="auth-card w-full max-w-[420px] rounded-2xl border border-[#dfe8ee] bg-white p-7 shadow-[0_12px_40px_rgba(15,32,48,0.08)] sm:p-10">
+    <div className="flex min-h-screen items-center justify-center bg-background px-[18px] py-10 text-foreground">
+      <main className="auth-card w-full max-w-[420px] rounded-[10px] border border-border bg-card p-6 shadow-2 sm:p-8">
         <a href={landingHref} aria-label="Loantris home" className="inline-block">
           {/* Brand logo image in place of the text wordmark, for now the sign-in page only. */}
           <Image src="/brand/loantris-primary.svg" alt="Loantris" width={141} height={32} className="h-8 w-auto" />
@@ -144,8 +144,8 @@ export function LoginForm() {
 
         <div className="mt-8 flex flex-col gap-5">
           <div>
-            <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.035em] text-[#0f2030]">{formCopy.title}</h1>
-            <p className="mt-1 text-sm leading-6 text-[#4e6373]">{formCopy.subtitle}</p>
+            <h1 className="text-xl font-semibold leading-7 tracking-[-0.015em] text-foreground">{formCopy.title}</h1>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">{formCopy.subtitle}</p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
@@ -155,7 +155,7 @@ export function LoginForm() {
               <div className="-mt-1 flex flex-wrap items-center justify-end gap-2">
                 <Link
                   href={AUTH_FORM_ROUTES.forgotPassword}
-                  className="inline-flex min-h-8 items-center text-[13px] font-medium text-primary transition-all duration-200 ease-out hover:underline"
+                  className="inline-flex min-h-8 items-center text-[13px] font-medium text-primary transition-colors duration-150 hover:underline"
                 >
                   {forgot.label}
                 </Link>
@@ -166,14 +166,14 @@ export function LoginForm() {
               type="submit"
               size="lg"
               loading={isSubmitting}
-              className="lp-glow h-11 w-full font-semibold transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+              className="h-10 w-full font-semibold"
             >
               {isSubmitting ? formCopy.submittingLabel : formCopy.submitLabel}
             </Button>
           </form>
 
           {otherLinks.length > 0 && (
-            <div className="flex flex-col gap-2 border-t border-[#dfe8ee] pt-4 text-center">
+            <div className="flex flex-col gap-2 border-t border-border pt-4 text-center">
               {otherLinks.map((link) => (
                 <p key={link.key} className="text-[13px] text-muted-foreground">
                   {link.prefix ? `${link.prefix} ` : null}

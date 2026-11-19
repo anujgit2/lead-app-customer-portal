@@ -333,7 +333,7 @@ export function RegisterForm({
                 type="submit"
                 size="lg"
                 loading={isSubmitting}
-                className="mt-1 lp-glow h-11 w-full font-semibold transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+                className="mt-1 lp-glow h-11 w-full font-semibold transition-colors duration-150"
               >
                 {isSubmitting ? "Creating account…" : "Create account"}
               </Button>
