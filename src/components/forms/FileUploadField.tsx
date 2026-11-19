@@ -314,7 +314,7 @@ export function FileUploadField({
                   type="button"
                   onClick={() => removeFile(item)}
                   aria-label={`Remove ${item.fileName}`}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-lg leading-none text-slate-400 transition-all duration-200 ease-out hover:bg-slate-50 hover:text-slate-800 active:scale-[0.98]"
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-lg leading-none text-slate-400 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-800"
                 >
                   ×
                 </button>

@@ -52,7 +52,7 @@ function ToolbarIconButton({
           onClick={onClick}
           disabled={disabled}
           aria-label={label}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-all duration-200 ease-out hover:bg-slate-100 hover:text-slate-700 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-40 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-700 active:scale-[0.96] disabled:pointer-events-none disabled:opacity-40 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
         >
           <Icon className="h-4 w-4" />
         </button>
@@ -80,7 +80,7 @@ function ToolbarPopoverButton({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="flex h-8 items-center gap-1.5 rounded-md border border-slate-100 px-2.5 text-xs font-medium text-slate-600 transition-all duration-200 ease-out hover:bg-slate-100 hover:text-slate-800 active:scale-[0.98] dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="flex h-8 items-center gap-1.5 rounded-md border border-slate-100 px-2.5 text-xs font-medium text-slate-600 transition-colors duration-150 hover:bg-slate-100 hover:text-slate-800 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           <Icon className="h-3.5 w-3.5" />
           {label}
@@ -248,7 +248,7 @@ export function PlaygroundToolbar() {
             <button
               type="button"
               className={
-                "flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-all duration-200 ease-out active:scale-[0.98] " +
+                "flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors duration-150 " +
                 (statusTone === "destructive"
                   ? "border-destructive/20 bg-destructive/10 text-destructive hover:bg-destructive/15"
                   : statusTone === "warning"

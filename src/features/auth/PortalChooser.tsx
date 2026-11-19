@@ -59,20 +59,20 @@ function buildOptions(mode: Mode): PortalOption[] {
 
 function OptionCard({ option }: { option: PortalOption }) {
   const cardClass =
-    "group flex h-full flex-col gap-4 rounded-[14px] border border-[#dfe6eb] bg-white p-5 shadow-[0_3px_14px_rgba(44,63,82,0.035)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-primary hover:shadow-md";
+    "group flex h-full flex-col gap-4 rounded-[14px] border border-border bg-card p-5 shadow-[0_3px_14px_rgba(44,63,82,0.035)] transition-colors duration-150 hover:border-primary hover:shadow-md";
   const body = (
     <>
       <span className="grid h-10 w-10 place-items-center rounded-lg bg-primary-soft text-primary-soft-foreground">
         <option.icon className="h-5 w-5" aria-hidden />
       </span>
       <div>
-        <h2 className="font-display text-lg font-bold tracking-tight text-[#34495d]">{option.title}</h2>
+        <h2 className="font-display text-lg font-bold tracking-tight text-muted-foreground">{option.title}</h2>
         <p className="mt-1 text-sm leading-6 text-muted-foreground">{option.description}</p>
       </div>
       <ul className="flex flex-col gap-1.5 text-[13px] text-muted-foreground">
         {option.features.map((feature) => (
           <li key={feature} className="flex items-start gap-2">
-            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#7fa397]" strokeWidth={3} aria-hidden />
+            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" strokeWidth={3} aria-hidden />
             <span>{feature}</span>
           </li>
         ))}
@@ -115,7 +115,7 @@ export function PortalChooser({ mode }: { mode: Mode }) {
         contentClassName="max-w-[440px]"
       >
         <div>
-          <h1 className="font-display text-[30px] font-extrabold leading-9 tracking-[-0.035em] text-[#34495d]">
+          <h1 className="font-display text-[30px] font-extrabold leading-9 tracking-[-0.035em] text-muted-foreground">
             Create your Loantris account
           </h1>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">Choose how you use Loantris.</p>

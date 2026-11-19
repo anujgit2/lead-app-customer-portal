@@ -67,7 +67,7 @@ export function Logo({
       href={href}
       aria-label={logoAlt || "Loantris home"}
       className={cn(
-        "inline-flex items-center text-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]",
+        "inline-flex items-center text-foreground transition-colors duration-150",
         className
       )}
     >

@@ -246,7 +246,7 @@ function IdleLockDialog({
                     onClick={() => setShowPassword((open) => !open)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     aria-pressed={showPassword}
-                    className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-all duration-200 ease-out hover:bg-muted hover:text-foreground active:scale-[0.98]"
+                    className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -263,7 +263,7 @@ function IdleLockDialog({
                 size="lg"
                 loading={isSubmitting}
                 disabled={busy}
-                className="h-11 w-full font-semibold transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+                className="h-11 w-full font-semibold transition-colors duration-150"
               >
                 {isSubmitting ? "Signing in…" : "Continue"}
               </Button>
@@ -272,7 +272,7 @@ function IdleLockDialog({
                 variant="ghost"
                 disabled={busy}
                 onClick={() => void onSignOut()}
-                className="h-11 w-full text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-foreground active:scale-[0.98]"
+                className="h-11 w-full text-muted-foreground transition-colors duration-150 hover:text-foreground"
               >
                 {signingOut ? "Signing out…" : "Sign out"}
               </Button>

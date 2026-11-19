@@ -593,7 +593,7 @@ function IconBadge({ tone, children }: { tone: "success" | "error" | "warning" |
 }
 
 const primaryClass =
-  "flex h-12 w-full items-center justify-center rounded-[10px] bg-primary text-sm font-bold text-primary-foreground transition-all duration-200 ease-out hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50";
+  "flex h-12 w-full items-center justify-center rounded-[10px] bg-primary text-sm font-bold text-primary-foreground transition-colors duration-150 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
 
 const textButtonClass =
   "flex min-h-11 w-full items-center justify-center text-sm font-bold text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";

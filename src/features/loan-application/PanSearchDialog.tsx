@@ -275,7 +275,7 @@ export function PanSearchDialog({ variant }: PanSearchDialogProps) {
         variant="outline"
         size="sm"
         onClick={openDialog}
-        className="shrink-0 gap-1.5 border-border text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-input hover:bg-muted/50 active:scale-[0.98] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
+        className="shrink-0 gap-1.5 border-border text-muted-foreground transition-colors duration-150 hover:border-input hover:bg-muted/50 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none"
       >
         <Search className="h-3.5 w-3.5" />
         Search PAN
@@ -389,14 +389,14 @@ export function PanSearchDialog({ variant }: PanSearchDialogProps) {
                   type="button"
                   variant="outline"
                   onClick={() => setOpen(false)}
-                  className="border-border transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+                  className="border-border transition-colors duration-150"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   loading={mutation.isPending}
-                  className="gap-1.5 transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+                  className="gap-1.5 transition-colors duration-150"
                 >
                   Verify PAN
                 </Button>
@@ -412,14 +412,14 @@ export function PanSearchDialog({ variant }: PanSearchDialogProps) {
                     type="button"
                     variant="outline"
                     onClick={() => setView("form")}
-                    className="border-border transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+                    className="border-border transition-colors duration-150"
                   >
                     Search again
                   </Button>
                   <Button
                     type="button"
                     onClick={() => setOpen(false)}
-                    className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+                    className="transition-colors duration-150"
                   >
                     Close
                   </Button>

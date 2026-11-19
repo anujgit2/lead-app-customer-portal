@@ -202,7 +202,7 @@ export function SelfServeRegisterForm({ onSuccess, invitation }: SelfServeRegist
               onClick={() => setShowPassword((open) => !open)}
               aria-label={showPassword ? "Hide password" : "Show password"}
               aria-pressed={showPassword}
-              className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-all duration-200 ease-out hover:bg-muted hover:text-foreground active:scale-[0.98]"
+              className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
@@ -284,7 +284,7 @@ export function SelfServeRegisterForm({ onSuccess, invitation }: SelfServeRegist
             aria-checked={!!captcha}
             onClick={() => setValue("captcha", !captcha, { shouldValidate: !!errors.captcha })}
             className={cn(
-              "flex h-14 w-full items-center justify-between gap-3 rounded-md border px-3.5 text-left text-[13px] transition-all duration-200 ease-out hover:border-foreground/55 active:scale-[0.98]",
+              "flex h-14 w-full items-center justify-between gap-3 rounded-md border px-3.5 text-left text-[13px] transition-colors duration-150 hover:border-foreground/55",
               errors.captcha
                 ? "border-danger/60 bg-danger-soft"
                 : "border-input bg-muted"
@@ -293,7 +293,7 @@ export function SelfServeRegisterForm({ onSuccess, invitation }: SelfServeRegist
             <span className="flex items-center gap-3">
               <span
                 className={cn(
-                  "grid h-5 w-5 place-items-center rounded-[5px] border-2 text-white transition-all duration-200",
+                  "grid h-5 w-5 place-items-center rounded-[5px] border-2 text-white transition-colors duration-150",
                   captcha ? "border-success bg-success" : "border-input bg-card"
                 )}
               >
@@ -344,7 +344,7 @@ export function SelfServeRegisterForm({ onSuccess, invitation }: SelfServeRegist
           type="submit"
           size="lg"
           loading={isSubmitting}
-          className="lp-glow h-11 w-full font-semibold transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+          className="lp-glow h-11 w-full font-semibold transition-colors duration-150"
         >
           {isSubmitting ? formCopy.submittingLabel : formCopy.submitLabel}
         </Button>

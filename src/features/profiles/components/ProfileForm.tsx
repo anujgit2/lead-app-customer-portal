@@ -196,7 +196,7 @@ export function ProfileForm({
               type="button"
               variant="outline"
               size="sm"
-              className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+              className="transition-colors duration-150"
               disabled={pending || checking}
               onClick={onCancel}
             >
@@ -208,7 +208,7 @@ export function ProfileForm({
               type="button"
               variant="outline"
               size="sm"
-              className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+              className="transition-colors duration-150"
               disabled={pending || checking}
               onClick={() => submitAll("draft")}
             >
@@ -218,7 +218,7 @@ export function ProfileForm({
           <Button
             type="button"
             size="sm"
-            className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98]"
+            className="transition-colors duration-150"
             loading={pending || checking}
             onClick={() => submitAll("complete")}
           >

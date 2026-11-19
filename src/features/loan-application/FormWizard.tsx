@@ -549,7 +549,7 @@ export function FormWizard({
                   variant="outline"
                   onClick={handlePrev}
                   disabled={savingMode !== null || isSubmitting}
-                  className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98] max-sm:flex-1"
+                  className="transition-colors duration-150 max-sm:flex-1"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Back
@@ -561,7 +561,7 @@ export function FormWizard({
                 onClick={() => handleSaveDraft(false)}
                 loading={savingMode === "draft"}
                 disabled={savingMode !== null || isSubmitting}
-                className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98] max-sm:flex-1"
+                className="transition-colors duration-150 max-sm:flex-1"
               >
                 <Save className="h-4 w-4" />
                 Save draft
@@ -570,7 +570,7 @@ export function FormWizard({
                 type="button"
                 onClick={handleNext}
                 disabled={savingMode !== null || isSubmitting}
-                className="transition-all duration-200 ease-out hover:-translate-y-0.5 active:scale-[0.98] max-sm:flex-1"
+                className="transition-colors duration-150 max-sm:flex-1"
               >
                 Continue
                 <ArrowRight className="h-4 w-4" />

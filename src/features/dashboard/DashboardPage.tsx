@@ -355,7 +355,7 @@ export function DashboardPage() {
             <button
               type="button"
               onClick={() => setUploadOpen(true)}
-              className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-primary-foreground/55 bg-transparent px-3 text-[13px] font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary-foreground/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground active:translate-y-px max-sm:flex-1"
+              className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-primary-foreground/55 bg-transparent px-3 text-[13px] font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary-foreground/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground max-sm:flex-1"
             >
               <Upload className="h-4 w-4" aria-hidden />
               Upload document

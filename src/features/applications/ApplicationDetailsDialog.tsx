@@ -106,7 +106,7 @@ export function ApplicationDetailsDialog({
                   "Loading application information"}
               </DialogDescription>
             </div>
-            <DialogClose className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20 active:scale-[0.98]">
+            <DialogClose className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-muted px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20">
               <X className="h-4 w-4" />
               Close
             </DialogClose>

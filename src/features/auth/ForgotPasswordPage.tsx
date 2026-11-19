@@ -106,17 +106,17 @@ export function ForgotPasswordPage() {
     <AuthScreen variant="card">
       <Link
         href={AUTH_FORM_ROUTES.signin}
-        className="inline-flex items-center gap-1.5 self-start text-[13px] font-bold text-[#6487a2] transition-opacity hover:opacity-80"
+        className="inline-flex items-center gap-1.5 self-start text-[13px] font-bold text-muted-foreground transition-opacity hover:opacity-80"
       >
         <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
         {backLink?.label ?? "Back to sign in"}
       </Link>
 
       <div>
-        <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.035em] text-[#0f2030]">
+        <h1 className="text-[30px] font-semibold leading-9 tracking-[-0.035em] text-foreground">
           {codeSent ? resetCopy.title : requestCopy.title}
         </h1>
-        <p className="mt-1 text-sm leading-6 text-[#4e6373]">
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
           {codeSent ? resetCopy.subtitle : requestCopy.subtitle}
         </p>
       </div>
@@ -153,7 +153,7 @@ export function ForgotPasswordPage() {
       {codeSent && (
         <form
           onSubmit={resetForm.handleSubmit(resetPassword)}
-          className="flex flex-col gap-4 border-t border-[#dfe8ee] pt-5"
+          className="flex flex-col gap-4 border-t border-border pt-5"
           noValidate
         >
           <Alert variant="info" role="status">

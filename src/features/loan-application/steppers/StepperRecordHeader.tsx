@@ -44,8 +44,8 @@ function CopyButton({ value, label }: { value: string; label: string }) {
     <button
       type="button"
       className={cn(
-        "inline-grid place-items-center rounded text-slate-400 transition-all duration-200 ease-out",
-        "hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 active:scale-[0.98]",
+        "inline-grid place-items-center rounded text-slate-400 transition-colors duration-150",
+        "hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
         copied && "text-primary"
       )}
       aria-label={copied ? "Copied" : label}

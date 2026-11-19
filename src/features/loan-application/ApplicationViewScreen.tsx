@@ -46,7 +46,7 @@ export function ApplicationViewScreen({
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4 space-y-3">
           <Link
             href="/applications"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-0.5 hover:text-foreground active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:rounded-sm"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:rounded-sm"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to applications
