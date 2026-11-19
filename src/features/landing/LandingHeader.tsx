@@ -1,7 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Logo } from "@/components/Logo";
+import Image from "next/image";
+import Link from "next/link";
 import { SignInMenu } from "@/features/landing/SignInMenu";
 import { landingSectionHref } from "@/lib/portal-urls";
 
@@ -39,7 +40,9 @@ export function LandingHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/85 shadow-sm backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-[1160px] items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6">
-        <Logo wordmarkClassName="hidden min-[420px]:inline" />
+        <Link href="/" aria-label="Loantris home" className="inline-flex shrink-0 items-center">
+          <Image src="/brand/loantris-primary.svg" alt="Loantris" width={141} height={32} className="h-8 w-auto" />
+        </Link>
 
         <nav aria-label="Page sections" className="hidden items-center gap-1 min-[881px]:flex">
           {NAV_LINKS.map((link) => (

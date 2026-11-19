@@ -1,29 +1,23 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageShell } from "@/components/PageShell";
 import { ErrorState } from "@/components/ErrorState";
 import { parseApiError } from "@/lib/api-error";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
-import {
-  forgetPendingInvite,
-  leadService,
-  rememberPendingInvite,
-  type InvitePreview,
-} from "@/services/lead.service";
+import { forgetPendingInvite, leadService, rememberPendingInvite } from "@/services/lead.service";
 
 /**
  * Flow for a partner's lead invitation:
  *  1. Validate the link.
  *  2. If the customer is already signed in, accept it and open the lead.
  *  3. Otherwise, if an account exists for the invited contact, ask them to sign in.
- *  4. Otherwise, send them to registration. The invite is kept, and the dashboard returns them
- *     here once the account is ready.
+ *  4. Otherwise, send them straight to registration. The invite is kept, and the dashboard returns
+ *     them here once the account is ready.
  */
-type Phase = "checking" | "invalid" | "sign-in" | "create-account" | "accepting" | "failed";
+type Phase = "checking" | "invalid" | "sign-in" | "accepting" | "failed";
 
 export function LeadInvitePage() {
   const router = useRouter();
@@ -32,7 +26,6 @@ export function LeadInvitePage() {
   const token = searchParams.get("token") ?? "";
 
   const [phase, setPhase] = useState<Phase>("checking");
-  const [preview, setPreview] = useState<InvitePreview | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,7 +39,6 @@ export function LeadInvitePage() {
       try {
         const info = await leadService.validateInvite(token);
         if (cancelled) return;
-        setPreview(info);
         if (info.status !== "PENDING") {
           forgetPendingInvite();
           setPhase("invalid");
@@ -81,7 +73,13 @@ export function LeadInvitePage() {
       try {
         const { exists } = await leadService.accountStatus(token);
         if (cancelled) return;
-        setPhase(exists ? "sign-in" : "create-account");
+        if (exists) {
+          setPhase("sign-in");
+        } else {
+          // No separate confirmation step: the registration form opens with the invite attached.
+          rememberPendingInvite(token);
+          router.replace("/auth/register/");
+        }
       } catch (err: unknown) {
         if (cancelled) return;
         setPhase("failed");
@@ -116,11 +114,6 @@ export function LeadInvitePage() {
     }
   };
 
-  const createAccount = () => {
-    rememberPendingInvite(token);
-    router.push("/auth/register/");
-  };
-
   if (!token) {
     return (
       <PageShell width="narrow">
@@ -141,23 +134,6 @@ export function LeadInvitePage() {
     return (
       <PageShell width="narrow">
         <ErrorState compact title="Invite unavailable" message={message ?? "This invite cannot be used."} />
-      </PageShell>
-    );
-  }
-
-  if (phase === "create-account") {
-    return (
-      <PageShell width="narrow">
-        <h1 className="text-2xl font-semibold">Create your account</h1>
-        <p className="text-sm text-muted-foreground">
-          Your partner has started an application for you
-          {preview?.invitedEmail ? ` (sent to ${preview.invitedEmail})` : ""}. Create an account with that
-          email to continue. You will come back here to open it.
-        </p>
-        <button className="btn p" onClick={createAccount}>Create account</button>
-        <p className="text-sm">
-          Already have an account? <Link className="underline" href="/auth/login/">Sign in</Link>
-        </p>
       </PageShell>
     );
   }

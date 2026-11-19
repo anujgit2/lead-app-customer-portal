@@ -62,6 +62,27 @@ export const leadService = {
     await apiClient.post(`/api/customer/leads/${encodeURIComponent(leadId)}/submit`);
   },
 
+  /** Public. The template name and loan type behind a share link. Throws the same error for any unusable link. */
+  async validateTemplateLink(token: string): Promise<{ templateName: string; loanType: string }> {
+    const { data } = await apiClient.get<{ templateName: string; loanType: string }>(
+      `/api/template-links/${encodeURIComponent(token)}/validate`
+    );
+    return data;
+  },
+
+  /**
+   * Signed in with a verified email. Returns the customer's lead, created on the first claim. A 401 means
+   * "not signed in yet", which the link page handles.
+   */
+  async claimTemplateLink(token: string): Promise<{ leadId: string }> {
+    const { data } = await apiClient.post<{ leadId: string }>(
+      `/api/customer/template-links/${encodeURIComponent(token)}/claim`,
+      undefined,
+      { skipAuthRedirect: true }
+    );
+    return data;
+  },
+
   /** Public. Returns masked contact details only. */
   async validateInvite(token: string): Promise<InvitePreview> {
     const { data } = await apiClient.get<InvitePreview>(
@@ -137,6 +158,33 @@ export function peekPendingInvite(): string | null {
     return sessionStorage.getItem(PENDING_INVITE_KEY);
   } catch {
     return null;
+  }
+}
+
+const PENDING_TEMPLATE_KEY = "pendingTemplateLink";
+
+/** Keeps a lead template share link across sign-in or registration, for this browser tab. */
+export function rememberPendingTemplateLink(token: string): void {
+  try {
+    sessionStorage.setItem(PENDING_TEMPLATE_KEY, token);
+  } catch {
+    // Storage unavailable. The visitor can open the link again.
+  }
+}
+
+export function peekPendingTemplateLink(): string | null {
+  try {
+    return sessionStorage.getItem(PENDING_TEMPLATE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function forgetPendingTemplateLink(): void {
+  try {
+    sessionStorage.removeItem(PENDING_TEMPLATE_KEY);
+  } catch {
+    // Nothing to clear.
   }
 }
 

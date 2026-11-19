@@ -146,7 +146,7 @@ export function SelfServeRegisterForm({ onSuccess, invitation }: SelfServeRegist
             error={!!errors.email}
             className="h-11 bg-background"
             startAdornment={<Mail className="h-4 w-4" />}
-            readOnly={!!invitation}
+            readOnly={!!invitation?.email}
             {...register("email")}
           />
           <FieldError>{errors.email?.message}</FieldError>
@@ -252,7 +252,7 @@ export function SelfServeRegisterForm({ onSuccess, invitation }: SelfServeRegist
       const res = await authService.registerSelfServe(registerData);
       toast.success(res.message || "Account created successfully!");
       onSuccess({
-        userId: res.userId,
+        userId: res.registrationId ?? res.userId ?? "",
         registerData,
         activated: res.activated,
         emailVerificationPending: res.emailVerificationPending,
