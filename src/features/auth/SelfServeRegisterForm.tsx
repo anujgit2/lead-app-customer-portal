@@ -146,7 +146,7 @@ export function SelfServeRegisterForm({ onSuccess, invitation }: SelfServeRegist
             error={!!errors.email}
             className="h-11 bg-background"
             startAdornment={<Mail className="h-4 w-4" />}
-            readOnly={!!invitation}
+            readOnly={!!invitation?.email}
             {...register("email")}
           />
           <FieldError>{errors.email?.message}</FieldError>
