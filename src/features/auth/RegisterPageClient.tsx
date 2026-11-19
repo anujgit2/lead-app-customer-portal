@@ -9,7 +9,7 @@ import { InvitationRegisterFlow } from "@/features/auth/InvitationRegisterFlow";
 import { SelfServeRegisterFlow } from "@/features/auth/SelfServeRegisterFlow";
 import { resolveRegisterEntry } from "@/features/auth/register-entry";
 import { invitationService } from "@/services/invitation.service";
-import { forgetPendingInvite, leadService, peekPendingInvite, peekPendingTemplateLink } from "@/services/lead.service";
+import { forgetPendingInvite, leadService, peekPendingInvite, peekPendingProgramLink } from "@/services/lead.service";
 import { userInvitationService } from "@/services/user-invitation.service";
 import { clearFullSession } from "@/lib/session";
 import type { InvitationDetails, RegistrationPolicy } from "@/types";
@@ -42,9 +42,9 @@ export function RegisterPageClient() {
   const [leadInvitationResolved, setLeadInvitationResolved] = useState(false);
   const leadInvitationChecked = !pendingLeadToken || leadInvitationResolved;
   // A share link is read the same way. It needs no lookup: the customer types their own email.
-  const pendingTemplateToken = useSyncExternalStore(
+  const pendingProgramToken = useSyncExternalStore(
     () => () => {},
-    () => (token || userInvitation ? null : peekPendingTemplateLink()),
+    () => (token || userInvitation ? null : peekPendingProgramLink()),
     () => null
   );
 
@@ -62,7 +62,7 @@ export function RegisterPageClient() {
     userInvitation,
     policy: policyLoaded ? policy : null,
     leadInvitation,
-    templateLink: pendingTemplateToken,
+    programLink: pendingProgramToken,
   });
 
   // Clear all tokens and cookies when landing on register page
@@ -221,7 +221,7 @@ export function RegisterPageClient() {
     return <SelfServeRegisterFlow invitation={{ token: entry.token, email: entry.email }} />;
   }
 
-  if (entry.kind === "template-link") {
+  if (entry.kind === "program-link") {
     return <SelfServeRegisterFlow invitation={{ token: entry.token, email: "" }} />;
   }
 

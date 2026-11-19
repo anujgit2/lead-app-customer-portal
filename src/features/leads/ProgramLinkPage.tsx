@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { PageShell } from "@/components/PageShell";
 import { ErrorState } from "@/components/ErrorState";
 import { parseApiError } from "@/lib/api-error";
-import { leadService, rememberPendingTemplateLink } from "@/services/lead.service";
+import { leadService, rememberPendingProgramLink } from "@/services/lead.service";
 
 /**
  * Opened from a partner's share link. A signed-in customer with a verified email gets their application
@@ -15,7 +15,7 @@ import { leadService, rememberPendingTemplateLink } from "@/services/lead.servic
  */
 type Phase = "checking" | "invalid" | "needs-account" | "claiming" | "failed";
 
-export function LeadTemplateLinkPage() {
+export function ProgramLinkPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
@@ -30,9 +30,9 @@ export function LeadTemplateLinkPage() {
 
     async function run() {
       try {
-        const info = await leadService.validateTemplateLink(token);
+        const info = await leadService.validateProgramLink(token);
         if (cancelled) return;
-        setTitle(`Start your ${info.templateName} application`);
+        setTitle(`Start your ${info.programName} application`);
       } catch (err: unknown) {
         if (cancelled) return;
         setPhase("invalid");
@@ -42,7 +42,7 @@ export function LeadTemplateLinkPage() {
 
       setPhase("claiming");
       try {
-        const { leadId } = await leadService.claimTemplateLink(token);
+        const { leadId } = await leadService.claimProgramLink(token);
         if (cancelled) return;
         router.replace(`/leads/view/?id=${leadId}`);
       } catch (err: unknown) {
@@ -50,7 +50,7 @@ export function LeadTemplateLinkPage() {
         const parsed = parseApiError(err);
         if (parsed.status === 401) {
           // Keep the link for after sign-in or registration.
-          rememberPendingTemplateLink(token);
+          rememberPendingProgramLink(token);
           setPhase("needs-account");
           return;
         }

@@ -1,12 +1,12 @@
 "use client";
 
 import { Suspense } from "react";
-import { LeadTemplateLinkPage } from "@/features/leads/LeadTemplateLinkPage";
+import { ProgramLinkPage } from "@/features/leads/ProgramLinkPage";
 
-export default function LeadTemplatePage() {
+export default function ProgramLinkRoute() {
   return (
     <Suspense fallback={<p className="text-sm text-muted-foreground">Loading…</p>}>
-      <LeadTemplateLinkPage />
+      <ProgramLinkPage />
     </Suspense>
   );
 }

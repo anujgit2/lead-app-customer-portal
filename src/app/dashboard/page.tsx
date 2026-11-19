@@ -3,13 +3,13 @@
 import { AppLayout } from "@/layouts/AppLayout";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { PendingLeadInviteRedirect } from "@/features/leads/PendingLeadInviteRedirect";
-import { PendingTemplateLinkRedirect } from "@/features/leads/PendingTemplateLinkRedirect";
+import { PendingProgramLinkRedirect } from "@/features/leads/PendingProgramLinkRedirect";
 
 export default function Dashboard() {
   return (
     <AppLayout>
       <PendingLeadInviteRedirect />
-      <PendingTemplateLinkRedirect />
+      <PendingProgramLinkRedirect />
       <DashboardPage />
     </AppLayout>
   );
