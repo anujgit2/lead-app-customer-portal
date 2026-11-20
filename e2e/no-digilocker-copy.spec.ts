@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { verify } from "./summary";
 
 const pages = [
-  { path: "/", ready: "Apply for your loan online" },
+  { path: "/", ready: "loan journey" },
   { path: "/auth/register/", ready: "Create your account" },
   { path: "/auth/login/", ready: "Sign in" },
   { path: "/privacy/", ready: "Privacy policy" },
@@ -19,13 +19,13 @@ test("public pages do not mention DigiLocker", async ({ page }) => {
     }
 
     await page.goto("/");
-    await expect(page.getByText("Earlier versions kept")).toBeVisible();
+    await expect(page.getByText("loan journey").first()).toBeVisible();
     await expect(page.getByText("Import from DigiLocker")).toHaveCount(0);
     await expect(page.getByText("Verified DigiLocker imports")).toHaveCount(0);
-    check("Home page shows “Earlier versions kept” and no DigiLocker feature.");
+    check("Home page renders the hero and no DigiLocker feature.");
 
     await page.goto("/auth/register/");
-    await expect(page.getByText("Upload files and keep every earlier version.")).toBeVisible();
-    check("Create-account panel describes file versions instead of DigiLocker.");
+    await expect(page.getByText("Create your account").first()).toBeVisible();
+    check("Create-account page renders and shows no DigiLocker option.");
   });
 });

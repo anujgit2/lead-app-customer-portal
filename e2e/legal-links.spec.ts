@@ -17,7 +17,7 @@ test("legal links open privacy and terms", async ({ page }) => {
 
     await page.getByRole("link", { name: "How it works" }).first().click();
     await expect(page).toHaveURL(/\/#how$/);
-    await expect(page.getByRole("heading", { name: "From sign-up to your lender in four steps" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "From profile to application progress" })).toBeVisible();
     check("How it works on a legal page returns to the home section.");
 
     await page.goto("/auth/login/");
