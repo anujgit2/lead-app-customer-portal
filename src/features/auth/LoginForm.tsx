@@ -186,6 +186,10 @@ export function LoginForm() {
           )}
         </div>
       </main>
+      <nav aria-label="Support and legal" className="mt-6 flex flex-wrap justify-center gap-x-4 text-xs text-muted-foreground">
+        <Link href="/privacy" className="hover:text-foreground hover:underline">Privacy policy</Link>
+        <Link href="/terms" className="hover:text-foreground hover:underline">Terms of use</Link>
+      </nav>
     </div>
   );
 }

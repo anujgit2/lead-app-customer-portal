@@ -31,6 +31,10 @@ export function RegisterPageClient() {
   const [policyLoaded, setPolicyLoaded] = useState(false);
   const [policy, setPolicy] = useState<RegistrationPolicy | null>(null);
 
+  const token = searchParams.get("token");
+  const tenant = searchParams.get("tenant");
+  const userInvitation = searchParams.get("userInvitation");
+
   // Lead invitation kept from the invite link. Read from session storage without an effect, and
   // resolved once, so the form never flashes before the invite is known.
   const pendingLeadToken = useSyncExternalStore(
@@ -53,9 +57,6 @@ export function RegisterPageClient() {
   const [userInviteEmail, setUserInviteEmail] = useState("");
   const [userInviteError, setUserInviteError] = useState("");
 
-  const token = searchParams.get("token");
-  const tenant = searchParams.get("tenant");
-  const userInvitation = searchParams.get("userInvitation");
   const entry = resolveRegisterEntry({
     token,
     tenant,
