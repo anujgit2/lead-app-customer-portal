@@ -135,7 +135,7 @@ export function LoginForm() {
   const landingHref = lendingSiteHome();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-[18px] py-10 text-foreground">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-[18px] py-10 text-foreground">
       <main className="auth-card w-full max-w-[420px] rounded-[10px] border border-border bg-card p-6 shadow-2 sm:p-8">
         <a href={landingHref} aria-label="Loantris home" className="inline-block">
           {/* Brand logo image in place of the text wordmark, for now the sign-in page only. */}
