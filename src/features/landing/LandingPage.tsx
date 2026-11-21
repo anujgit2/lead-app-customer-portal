@@ -163,8 +163,8 @@ export function LandingPage() {
                         <feature.icon size={16} strokeWidth={2.2} />
                       </span>
                       <div className="min-w-0">
-                        <strong className="block text-[13px] font-bold leading-tight text-[#1a2e40]">{feature.title}</strong>
-                        <small className="mt-1.5 block text-[11px] leading-relaxed text-[#5e7080]">{feature.description}</small>
+                        <strong className="font-display block text-base font-bold leading-snug tracking-tight text-[#1a2e40]">{feature.title}</strong>
+                        <small className="mt-1.5 block text-[13px] leading-6 text-[#4e6373]">{feature.description}</small>
                       </div>
                     </div>
                   ))}
