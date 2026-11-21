@@ -14,7 +14,6 @@ import {
   X,
   Bell,
   ChevronDown,
-  Building2,
   Loader2,
   UserPlus,
 } from "lucide-react";
@@ -96,7 +95,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </Button>
 
           <Link href="/dashboard" aria-label="Loantris home" className="flex min-w-0 items-center text-foreground">
-            <img src="/brand/loantris-primary.svg" alt="Loantris" width={141} height={32} className="h-7 w-auto shrink-0" />
+            <img src="/brand/loantris-primary.svg" alt="Loantris" width={141} height={32} className="h-6 w-auto shrink-0" />
           </Link>
 
           <nav className="hidden items-center gap-0.5 min-[901px]:flex" aria-label="Main">
@@ -182,13 +181,8 @@ export function AppLayout({ children }: AppLayoutProps) {
             className="absolute inset-y-0 left-0 flex w-72 flex-col gap-5 overflow-y-auto bg-card p-5 shadow-lg"
           >
             <div className="flex items-center justify-between">
-              <Link href="/dashboard" className="flex items-center gap-2.5" onClick={() => setMobileOpen(false)}>
-                <span className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">
-                  <Building2 className="h-5 w-5" />
-                </span>
-                <span>
-                  <span className="block text-sm font-semibold leading-[18px]">LoanPortal</span>
-                </span>
+              <Link href="/dashboard" aria-label="Loantris home" className="flex items-center" onClick={() => setMobileOpen(false)}>
+                <img src="/brand/loantris-primary.svg" alt="Loantris" width={141} height={32} className="h-6 w-auto shrink-0" />
               </Link>
               <Button
                 type="button"
