@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Download, Search, Share2, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, Download, LayoutDashboard, Search, Share2, Upload } from "lucide-react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { ErrorState } from "@/components/ErrorState";
 import { PageHeader, PageShell } from "@/components/PageShell";
@@ -216,7 +218,19 @@ export function DocumentsPage() {
 
   return (
     <PageShell>
-      <PageHeader title="Documents" description="Upload, find and share files for your application." />
+      <PageHeader
+        title="Documents"
+        description="Upload, find and share files for your application."
+        actions={
+          <Link
+            href="/documents/dashboard/"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8")}
+          >
+            <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+            Document dashboard
+          </Link>
+        }
+      />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1 basis-full sm:max-w-[420px] sm:basis-[280px]">
