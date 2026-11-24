@@ -135,7 +135,7 @@ export function LoginForm() {
   const landingHref = lendingSiteHome();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-[18px] py-10 text-foreground">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-[18px] py-10 text-foreground">
       <main className="auth-card w-full max-w-[420px] rounded-[10px] border border-border bg-card p-6 shadow-2 sm:p-8">
         <a href={landingHref} aria-label="Loantris home" className="inline-block">
           {/* Brand logo image in place of the text wordmark, for now the sign-in page only. */}
@@ -186,10 +186,11 @@ export function LoginForm() {
           )}
         </div>
       </main>
-      <nav aria-label="Support and legal" className="mt-6 flex flex-wrap justify-center gap-x-4 text-xs text-muted-foreground">
+      <nav aria-label="Support and legal" className="flex flex-wrap justify-center gap-x-4 text-center text-xs text-muted-foreground">
         <Link href="/privacy" className="hover:text-foreground hover:underline">Privacy policy</Link>
         <Link href="/terms" className="hover:text-foreground hover:underline">Terms of use</Link>
       </nav>
+      <p className="text-center text-xs text-muted-foreground">© {new Date().getFullYear()} Loantris. All rights reserved.</p>
     </div>
   );
 }
