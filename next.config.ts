@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
           destination: "/shared/link",
         },
         {
-          source: "/documents/:id((?!view(?:/|$))[^/]+)",
+          source: "/documents/:id((?!(?:view|dashboard)(?:/|$))[^/]+)",
           destination: "/documents/view",
         },
         {
