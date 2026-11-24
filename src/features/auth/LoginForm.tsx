@@ -186,10 +186,11 @@ export function LoginForm() {
           )}
         </div>
       </main>
-      <nav aria-label="Support and legal" className="mt-6 flex flex-wrap justify-center gap-x-4 text-xs text-muted-foreground">
+      <nav aria-label="Support and legal" className="flex flex-wrap justify-center gap-x-4 text-center text-xs text-muted-foreground">
         <Link href="/privacy" className="hover:text-foreground hover:underline">Privacy policy</Link>
         <Link href="/terms" className="hover:text-foreground hover:underline">Terms of use</Link>
       </nav>
+      <p className="text-center text-xs text-muted-foreground">© {new Date().getFullYear()} Loantris. All rights reserved.</p>
     </div>
   );
 }
