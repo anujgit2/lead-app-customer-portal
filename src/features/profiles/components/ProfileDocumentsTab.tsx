@@ -190,7 +190,7 @@ export function ProfileDocumentsTab({ profile }: ProfileDocumentsTabProps) {
             ) : null}
             {!documents.isLoading && !documents.isError
               ? rows.map((document) => {
-                  const financial = categoryKey(document.category) === "FINANCIALS";
+                  const financial = categoryKey(document.category) === "FINANCIAL";
                   const downloading = pendingKey === `${document.id}:${document.latestVersion}`;
                   const label = document.label ? `${document.typeName} ${document.label}` : document.typeName;
                   return (
@@ -229,7 +229,7 @@ export function ProfileDocumentsTab({ profile }: ProfileDocumentsTabProps) {
                       </TableCell>
                       <TableCell className="px-3">
                         <Badge variant={financial ? "brand" : "info"} size="sm">
-                          {categoryLabel(categoryKey(document.category), document.category)}
+                          {categoryLabel(document.category, document.categoryLabel)}
                         </Badge>
                       </TableCell>
                       <TableCell className="whitespace-nowrap px-3">

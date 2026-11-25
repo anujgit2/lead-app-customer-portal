@@ -2,13 +2,13 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import type { PortalDocument } from "../types";
 import {
+  buildWorkspaceTiles,
   countByTile,
   documentTypeOptions,
   fileKindOf,
   firstTileWithDocuments,
   sortDocuments,
   tileIdFor,
-  WORKSPACE_TILES,
 } from "./workspace";
 
 function doc(overrides: Partial<PortalDocument> & { id: string }): PortalDocument {
@@ -24,49 +24,78 @@ function doc(overrides: Partial<PortalDocument> & { id: string }): PortalDocumen
   };
 }
 
-describe("tileIdFor", () => {
-  it("maps backend categories to design tiles", () => {
-    assert.equal(tileIdFor(doc({ id: "a", category: "Identity" })), "personal");
-    assert.equal(tileIdFor(doc({ id: "a", category: "Financials" })), "financial");
-    assert.equal(tileIdFor(doc({ id: "a", category: "Taxation" })), "financial");
-    assert.equal(tileIdFor(doc({ id: "a", category: "Legal & Corporate" })), "legal");
-    assert.equal(tileIdFor(doc({ id: "a", category: "OTHER" })), "other");
+describe("buildWorkspaceTiles", () => {
+  it("makes one tile per document type category, with the friendly label", () => {
+    const tiles = buildWorkspaceTiles(
+      [
+        { category: "IDENTITY", categoryLabel: "Identity Proof" },
+        { category: "INCOME", categoryLabel: "Income Proof" },
+        { category: "IDENTITY", categoryLabel: "Identity Proof" },
+      ],
+      []
+    );
+    assert.deepEqual(tiles, [
+      { id: "IDENTITY", label: "Identity Proof" },
+      { id: "INCOME", label: "Income Proof" },
+    ]);
   });
 
-  it("sends unknown categories to Other", () => {
-    assert.equal(tileIdFor(doc({ id: "a", category: "Property" })), "other");
+  it("adds a tile for a document category that has no matching type", () => {
+    const tiles = buildWorkspaceTiles([], [doc({ id: "a", category: "CREDIT", categoryLabel: "Credit Assessment" })]);
+    assert.deepEqual(tiles, [{ id: "CREDIT", label: "Credit Assessment" }]);
+  });
+
+  it("falls back to a readable label when no friendly name is sent", () => {
+    const tiles = buildWorkspaceTiles([{ category: "LOAN_AGREEMENT" }], []);
+    assert.deepEqual(tiles, [{ id: "LOAN_AGREEMENT", label: "Loan Agreement" }]);
+  });
+});
+
+describe("tileIdFor", () => {
+  it("uses the backend category code as the tile id", () => {
+    assert.equal(tileIdFor(doc({ id: "a", category: "IDENTITY" })), "IDENTITY");
+    assert.equal(tileIdFor(doc({ id: "a", category: "POST_DISBURSAL" })), "POST_DISBURSAL");
   });
 });
 
 describe("countByTile", () => {
+  const tiles = [
+    { id: "IDENTITY", label: "Identity Proof" },
+    { id: "FINANCIAL", label: "Bank & Financials" },
+    { id: "OTHER", label: "Other" },
+  ];
+
   it("returns a zero count for every tile when empty", () => {
-    const counts = countByTile([]);
-    assert.deepEqual(Object.keys(counts), WORKSPACE_TILES.map((tile) => tile.id));
-    assert.ok(Object.values(counts).every((count) => count === 0));
+    const counts = countByTile([], tiles);
+    assert.deepEqual(counts, { IDENTITY: 0, FINANCIAL: 0, OTHER: 0 });
   });
 
   it("counts documents per tile", () => {
-    const counts = countByTile([
-      doc({ id: "a", category: "Identity" }),
-      doc({ id: "b", category: "Financials" }),
-      doc({ id: "c", category: "Taxation" }),
-      doc({ id: "d", category: "OTHER" }),
-    ]);
-    assert.equal(counts.personal, 1);
-    assert.equal(counts.financial, 2);
-    assert.equal(counts.other, 1);
-    assert.equal(counts.business, 0);
-    assert.equal(counts.loan, 0);
+    const counts = countByTile(
+      [
+        doc({ id: "a", category: "IDENTITY" }),
+        doc({ id: "b", category: "FINANCIAL" }),
+        doc({ id: "c", category: "FINANCIAL" }),
+        doc({ id: "d", category: "OTHER" }),
+      ],
+      tiles
+    );
+    assert.deepEqual(counts, { IDENTITY: 1, FINANCIAL: 2, OTHER: 1 });
   });
 });
 
 describe("firstTileWithDocuments", () => {
-  it("picks the first tile in design order that has documents", () => {
-    assert.equal(firstTileWithDocuments([doc({ id: "a", category: "Taxation" })]), "financial");
+  const tiles = [
+    { id: "IDENTITY", label: "Identity Proof" },
+    { id: "INCOME", label: "Income Proof" },
+  ];
+
+  it("picks the first tile in order that has documents", () => {
+    assert.equal(firstTileWithDocuments([doc({ id: "a", category: "INCOME" })], tiles), "INCOME");
   });
 
   it("falls back to the first tile when there are no documents", () => {
-    assert.equal(firstTileWithDocuments([]), "personal");
+    assert.equal(firstTileWithDocuments([], tiles), "IDENTITY");
   });
 });
 

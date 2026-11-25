@@ -1,11 +1,3 @@
-export const CATEGORY_FILTERS = [
-  { id: "ALL", label: "All" },
-  { id: "FINANCIALS", label: "Financials" },
-  { id: "LEGAL", label: "Legal & Corporate" },
-  { id: "TAXATION", label: "Taxation" },
-  { id: "IDENTITY", label: "Identity" },
-] as const;
-
 export const EXPIRY_PRESETS = [
   { value: "1", label: "1 day" },
   { value: "7", label: "7 days" },

@@ -25,6 +25,7 @@ export interface PortalDocument {
   typeName: string;
   label: string;
   category: string;
+  categoryLabel?: string;
   latestVersion: number;
   source: DocumentSource;
   updatedAt: string;
@@ -51,8 +52,11 @@ export interface DocumentDetail extends PortalDocument {
 
 export interface DocumentType {
   id: string;
+  /** Sub-category code, e.g. BANK_STATEMENT. */
+  code: string;
   name: string;
   category: string;
+  categoryLabel?: string;
   requiresLabel: boolean;
   labelHint?: string;
 }
@@ -70,10 +74,11 @@ export interface PreviewVersionInput {
 
 export interface UploadSubmission {
   file: File;
-  typeId: string;
-  label: string;
+  /** Backend category code, e.g. FINANCIAL. */
+  category: string;
+  /** Backend sub-category (document type) code, e.g. BANK_STATEMENT. */
+  subcategory: string;
   documentId?: string;
-  asNewDocument?: boolean;
   profileId?: string;
   relation?: DocumentProfileRelation;
 }
@@ -115,6 +120,8 @@ export interface CreateShareBody {
   expiresInDays: 1 | 7 | 30;
   allowDownload: boolean;
   password?: string;
+  /** Every document in a bundle share. The path document must be one of them. */
+  documentIds?: string[];
 }
 
 export interface CreateShareResult {

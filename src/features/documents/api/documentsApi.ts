@@ -97,12 +97,36 @@ export async function unlinkDocumentProfile(documentId: string, profileId: strin
   );
 }
 
-export async function uploadDocument(
+export async function deleteDocument(documentId: string): Promise<void> {
+  await apiClient.delete(`/api/documents/${encodeURIComponent(documentId)}`);
+}
+
+/** Every file upload creates a new document. */
+export function uploadDocument(
   formData: FormData,
   idemKey: string,
   onProgress: (percent: number) => void
 ): Promise<PortalDocument | null> {
-  const response = await apiClient.post("/api/documents", formData, {
+  return postUpload("/api/documents", formData, idemKey, onProgress);
+}
+
+/** Replaces a document's file by adding a new version to that document. */
+export function uploadDocumentVersion(
+  documentId: string,
+  formData: FormData,
+  idemKey: string,
+  onProgress: (percent: number) => void
+): Promise<PortalDocument | null> {
+  return postUpload(`/api/documents/${encodeURIComponent(documentId)}/versions`, formData, idemKey, onProgress);
+}
+
+async function postUpload(
+  url: string,
+  formData: FormData,
+  idemKey: string,
+  onProgress: (percent: number) => void
+): Promise<PortalDocument | null> {
+  const response = await apiClient.post(url, formData, {
     headers: { "Idempotency-Key": idemKey },
     timeout: 120_000,
     transformRequest: [
@@ -168,6 +192,7 @@ export async function createShare(id: string, body: CreateShareBody): Promise<Cr
     ...(body.email ? { email: body.email } : {}),
     ...(body.phone ? { phone: body.phone } : {}),
     ...(body.password ? { password: body.password } : {}),
+    ...(body.documentIds?.length ? { documentIds: body.documentIds } : {}),
   };
   const response = await apiClient.post(`/api/documents/${encodeURIComponent(id)}/shares`, payload);
   return normalizeCreateShareResult(response.data);

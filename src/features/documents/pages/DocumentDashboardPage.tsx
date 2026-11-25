@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { FileImage, FileSpreadsheet, FileText, FolderOpen, Upload } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileImage, FileSpreadsheet, FileText, FolderOpen, Upload } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { PageShell } from "@/components/PageShell";
@@ -10,14 +10,15 @@ import { BlockSkeleton } from "@/components/TableSkeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { parseApiError } from "@/lib/api-error";
-import { cn } from "@/lib/utils";
-import { useDocument, useDocuments } from "../api/queries";
+import { cn, formatFileSize } from "@/lib/utils";
+import { useDocument, useDocumentTypes, useDocuments } from "../api/queries";
 import type { DocumentDetail, PortalDocument } from "../types";
 import { UploadDialog } from "../components/UploadDialog";
-import { formatDisplayDate } from "../utils/format";
+import { SelectionPanel } from "../components/SelectionPanel";
+import { categoryKey, categoryLabel, formatDisplayDateTime } from "../utils/format";
 import {
   STATUS_NOT_REPORTED,
-  WORKSPACE_TILES,
+  buildWorkspaceTiles,
   countByTile,
   documentTypeOptions,
   fileKindOf,
@@ -82,13 +83,13 @@ function CategoryTile({
       onClick={onSelect}
       aria-pressed={active}
       className={cn(
-        "card flex flex-col items-start gap-2 text-left transition-colors duration-150 hover:bg-muted/60",
-        active && "border-primary bg-primary-soft",
+        "card flex shrink-0 snap-start items-center gap-2 whitespace-nowrap px-3 py-2 text-left transition-colors duration-150 hover:bg-muted/60",
+        active && "border-primary/30 bg-primary-soft",
       )}
     >
-      <FolderOpen className={cn("h-5 w-5", active ? "text-primary" : "text-muted-foreground")} aria-hidden="true" />
+      <FolderOpen className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} aria-hidden="true" />
       <span className="text-[13px] font-semibold text-foreground">{label}</span>
-      <span className="text-[12px] text-muted-foreground">{count === 1 ? "1 doc" : `${count} docs`}</span>
+      <span className="text-[12px] text-muted-foreground">{count}</span>
     </button>
   );
 }
@@ -117,12 +118,15 @@ function DocumentRow({
           <FileIcon kind={fileKindOf(document.fileName)} />
           <span className="min-w-0">
             <span className="block truncate text-[13px] font-semibold text-foreground">{name}</span>
-            <span className="block truncate text-[12px] text-muted-foreground">{document.typeName}</span>
+            <span className="block truncate text-[12px] text-muted-foreground">
+              {document.typeName}
+              {document.sizeBytes ? ` · ${formatFileSize(document.sizeBytes)}` : ""}
+            </span>
           </span>
         </button>
       </td>
       <td className="whitespace-nowrap px-3 py-2.5 text-[13px] tabular-nums text-muted-foreground">
-        {formatDisplayDate(document.updatedAt)}
+        {formatDisplayDateTime(document.updatedAt)}
       </td>
       <td className="whitespace-nowrap px-3 py-2.5 text-[13px] tabular-nums text-muted-foreground">v{document.latestVersion}</td>
       <td className="px-3 py-2.5">
@@ -134,12 +138,13 @@ function DocumentRow({
 
 function DetailsTab({ document }: { document: PortalDocument }) {
   const rows: [string, string][] = [
-    ["Type", document.typeName],
-    ["Category", document.category || "—"],
+    ["Category", categoryLabel(document.category, document.categoryLabel)],
+    ["Subcategory", document.typeName],
     ["Label", document.label || "—"],
     ["Source", document.source === "DIGILOCKER" ? "DigiLocker" : "Uploaded"],
     ["Version", `v${document.latestVersion}`],
-    ["Updated", formatDisplayDate(document.updatedAt)],
+    ["File size", document.sizeBytes ? formatFileSize(document.sizeBytes) : "—"],
+    ["Updated", formatDisplayDateTime(document.updatedAt)],
     ["Linked to", profileNames(document)],
     ["Review status", STATUS_NOT_REPORTED],
   ];
@@ -168,7 +173,7 @@ function ActivityTab({ detail, loading, failed }: { detail?: DocumentDetail | nu
             {version.source === "DIGILOCKER" ? "Imported from DigiLocker" : "Uploaded"} · v{version.version}
           </span>
           <span className="text-[12px] text-muted-foreground">
-            {formatDisplayDate(version.createdAt)}
+            {formatDisplayDateTime(version.createdAt)}
             {version.createdBy ? ` · ${version.createdBy}` : ""}
           </span>
         </li>
@@ -185,13 +190,100 @@ function OperationsTab() {
   );
 }
 
+/**
+ * Horizontal row with no visible scrollbar. Arrows appear when the pointer is over the row, and the
+ * mouse wheel scrolls it sideways (the page keeps scrolling once the row reaches either end).
+ */
+function TileScroller({ label, count, children }: { label: string; count: number; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const update = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 1);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    update();
+  }, [update, count]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      const atStart = el.scrollLeft <= 0 && event.deltaY < 0;
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1 && event.deltaY > 0;
+      if (atStart || atEnd) return;
+      event.preventDefault();
+      el.scrollLeft += event.deltaY;
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("scroll", update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("scroll", update);
+      observer.disconnect();
+    };
+  }, [update]);
+
+  const scrollByPage = (direction: 1 | -1) => {
+    const el = ref.current;
+    if (!el) return;
+    el.scrollBy({ left: direction * Math.max(el.clientWidth * 0.8, 160), behavior: "smooth" });
+  };
+
+  const arrowClass =
+    "absolute top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-sm opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-visible:opacity-100 hover:bg-muted";
+
+  return (
+    <div className="group relative -mx-4 sm:mx-0">
+      <div
+        ref={ref}
+        className="flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        role="group"
+        aria-label={label}
+      >
+        {children}
+      </div>
+      {canScrollLeft && (
+        <button
+          type="button"
+          aria-label="Scroll categories left"
+          onClick={() => scrollByPage(-1)}
+          className={cn(arrowClass, "left-1")}
+        >
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+        </button>
+      )}
+      {canScrollRight && (
+        <button
+          type="button"
+          aria-label="Scroll categories right"
+          onClick={() => scrollByPage(1)}
+          className={cn(arrowClass, "right-1")}
+        >
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function DocumentDashboardPage() {
   const documents = useDocuments({});
   const all = useMemo(() => documents.data ?? [], [documents.data]);
   const loading = documents.isLoading && !documents.data;
 
   const [tileOverride, setTileOverride] = useState<string | null>(null);
-  const activeTile = tileOverride ?? firstTileWithDocuments(all);
+  const documentTypes = useDocumentTypes();
+  const tiles = useMemo(() => buildWorkspaceTiles(documentTypes.data ?? [], all), [documentTypes.data, all]);
+  const activeTile = tileOverride ?? firstTileWithDocuments(all, tiles);
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [sort, setSort] = useState<WorkspaceSort>("newest");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -199,17 +291,33 @@ export function DocumentDashboardPage() {
   const [panelTab, setPanelTab] = useState<PanelTab>("details");
   const [uploadOpen, setUploadOpen] = useState(false);
 
-  const counts = useMemo(() => countByTile(all), [all]);
+  const counts = useMemo(() => countByTile(all, tiles), [all, tiles]);
   const tileDocuments = useMemo(() => all.filter((document) => tileIdFor(document) === activeTile), [all, activeTile]);
-  const typeOptions = useMemo(() => documentTypeOptions(tileDocuments), [tileDocuments]);
+  // Sub categories are the document types of the active category. Include types already seen on documents too,
+  // so a type that is only in the document list still shows.
+  const typeOptions = useMemo(() => {
+    const options = new Map<string, { id: string; name: string }>();
+    for (const type of documentTypes.data ?? []) {
+      if (categoryKey(type.category) === activeTile) options.set(type.id, { id: type.id, name: type.name });
+    }
+    for (const option of documentTypeOptions(tileDocuments)) {
+      if (!options.has(option.id)) options.set(option.id, option);
+    }
+    return [...options.values()].sort((left, right) => left.name.localeCompare(right.name));
+  }, [documentTypes.data, activeTile, tileDocuments]);
   const visible = useMemo(() => {
     const filtered = typeFilter === "ALL" ? tileDocuments : tileDocuments.filter((document) => document.typeId === typeFilter);
     return sortDocuments(filtered, sort);
   }, [tileDocuments, typeFilter, sort]);
 
   const focused = all.find((document) => document.id === focusId) ?? null;
+  const selectedDocs = useMemo(() => all.filter((document) => selectedIds.includes(document.id)), [all, selectedIds]);
+  const handleDeleted = (ids: string[]) => {
+    setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
+    if (focusId && ids.includes(focusId)) setFocusId(null);
+  };
   const detail = useDocument(focused?.id ?? "");
-  const tileLabel = WORKSPACE_TILES.find((tile) => tile.id === activeTile)?.label ?? "Documents";
+  const tileLabel = tiles.find((tile) => tile.id === activeTile)?.label ?? "Documents";
   const visibleIds = new Set(visible.map((document) => document.id));
   const allVisibleSelected = visible.length > 0 && visible.every((document) => selectedIds.includes(document.id));
 
@@ -240,8 +348,8 @@ export function DocumentDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6" role="group" aria-label="Document categories">
-        {WORKSPACE_TILES.map((tile) => (
+      <TileScroller label="Document categories" count={tiles.length}>
+        {tiles.map((tile) => (
           <CategoryTile
             key={tile.id}
             label={tile.label}
@@ -250,11 +358,11 @@ export function DocumentDashboardPage() {
             onSelect={() => {
               setTileOverride(tile.id);
               setTypeFilter("ALL");
-              setSelectedIds([]);
+              setFocusId(null);
             }}
           />
         ))}
-      </div>
+      </TileScroller>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <section className="card min-w-0 p-0" aria-label={`${tileLabel} documents`}>
@@ -262,8 +370,14 @@ export function DocumentDashboardPage() {
             <h2 className="mr-auto text-[15px] font-semibold text-foreground">
               {tileLabel} <span className="text-muted-foreground">({tileDocuments.length})</span>
             </h2>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="h-8 w-auto min-w-[170px] rounded-md px-3 text-[13px]" aria-label="Filter by document type">
+            <Select
+              value={typeFilter}
+              onValueChange={(value) => {
+                setTypeFilter(value);
+                setFocusId(null);
+              }}
+            >
+              <SelectTrigger className="h-8 w-auto min-w-[170px] rounded-md border-border/60 px-3 text-[13px] hover:border-border data-[state=open]:border-border/60" aria-label="Filter by document type">
                 <SelectValue placeholder="Document type" />
               </SelectTrigger>
               <SelectContent>
@@ -284,7 +398,7 @@ export function DocumentDashboardPage() {
               Upload
             </button>
             <Select value={sort} onValueChange={(value) => setSort(value as WorkspaceSort)}>
-              <SelectTrigger className="h-8 w-auto min-w-[120px] rounded-md px-3 text-[13px]" aria-label="Sort documents">
+              <SelectTrigger className="h-8 w-auto min-w-[120px] rounded-md border-border/60 px-3 text-[13px] hover:border-border data-[state=open]:border-border/60" aria-label="Sort documents">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -373,6 +487,14 @@ export function DocumentDashboardPage() {
         </section>
 
         <aside className="card flex min-w-0 flex-col gap-4" aria-label="Document panel">
+          {selectedDocs.length > 1 ? (
+            <SelectionPanel
+              documents={selectedDocs}
+              onClear={() => setSelectedIds([])}
+              onDeleted={handleDeleted}
+            />
+          ) : (
+          <>
           <div role="tablist" aria-label="Document panel sections" className="flex gap-4 border-b border-border">
             {PANEL_TABS.map((tab) => (
               <button
@@ -411,10 +533,17 @@ export function DocumentDashboardPage() {
               {panelTab === "operations" ? <OperationsTab /> : null}
             </>
           )}
+          </>
+          )}
         </aside>
       </div>
 
-      <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
+      <UploadDialog
+        open={uploadOpen}
+        onOpenChange={setUploadOpen}
+        initialCategory={activeTile}
+        initialTypeId={typeFilter !== "ALL" ? typeFilter : undefined}
+      />
     </PageShell>
   );
 }

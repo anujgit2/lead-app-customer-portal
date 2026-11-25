@@ -4,50 +4,42 @@ import type {
   ShareStatus,
   UnavailableReason,
 } from "../types";
-import { CATEGORY_FILTERS } from "./constants";
 import { toE164 } from "./phone";
 
-const CATEGORY_ALIASES: Record<string, string> = {
-  all: "ALL",
-  financials: "FINANCIALS",
-  financial: "FINANCIALS",
-  "legal & corporate": "LEGAL",
-  "legal and corporate": "LEGAL",
-  legal: "LEGAL",
-  corporate: "LEGAL",
-  taxation: "TAXATION",
-  tax: "TAXATION",
-  identity: "IDENTITY",
-  kyc: "IDENTITY",
-};
-
+/** Backend category code, e.g. "LOAN_AGREEMENT". Document categories are not aliased. */
 export function categoryKey(value: string): string {
-  const normalized = value.trim().toLowerCase();
-  if (!normalized) return "";
-  return (
-    CATEGORY_ALIASES[normalized] ??
-    normalized
-      .toUpperCase()
-      .replace(/&/g, "AND")
-      .replace(/[^A-Z0-9]+/g, "_")
-      .replace(/^_|_$/g, "")
-  );
+  return value
+    .trim()
+    .toUpperCase()
+    .replace(/&/g, "AND")
+    .replace(/[^A-Z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
 }
 
-export function categoryLabel(id: string, fallback?: string): string {
-  return CATEGORY_FILTERS.find((item) => item.id === id)?.label ?? fallback ?? id;
+/** Friendly label from the backend (categoryDisplayName). Falls back to a readable form of the code. */
+export function categoryLabel(category: string, label?: string | null): string {
+  const trimmed = label?.trim();
+  if (trimmed) return trimmed;
+  const words = category
+    .trim()
+    .toLowerCase()
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1));
+  return words.length > 0 ? words.join(" ") : category;
 }
 
-export function categoryFiltersFor(values: string[]): { id: string; label: string }[] {
-  const base = CATEGORY_FILTERS.map((item) => ({ id: item.id, label: item.label }));
-  const known = new Set<string>(base.map((item) => item.id));
-  const extras = new Map<string, string>();
-  for (const value of values) {
-    const key = categoryKey(value);
-    if (!key || key === "ALL" || known.has(key) || extras.has(key)) continue;
-    extras.set(key, value.trim());
+/** "All" plus one filter per category in the given document types. */
+export function categoryFiltersFor(
+  types: { category: string; categoryLabel?: string }[]
+): { id: string; label: string }[] {
+  const filters = new Map<string, string>();
+  for (const type of types) {
+    const id = categoryKey(type.category);
+    if (!id || filters.has(id)) continue;
+    filters.set(id, categoryLabel(type.category, type.categoryLabel));
   }
-  return [...base, ...[...extras.entries()].map(([id, label]) => ({ id, label }))];
+  return [{ id: "ALL", label: "All" }, ...[...filters].map(([id, label]) => ({ id, label }))];
 }
 
 export function filterDocuments(
