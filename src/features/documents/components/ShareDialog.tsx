@@ -207,6 +207,34 @@ function ShareDialogForm({ onOpenChange, documents }: Omit<ShareDialogProps, "op
               form.clearErrors("root");
               setPending(true);
               try {
+                if (documents.length > 1) {
+                  // One bundle link for the whole selection: the recipient gets every file behind it.
+                  let created: Awaited<ReturnType<typeof createShare>>;
+                  try {
+                    created = await createShare(documents[0].id, {
+                      ...payload,
+                      documentIds: documents.map((document) => document.id),
+                    });
+                  } catch (error) {
+                    if (parseApiError(error).status !== 401) {
+                      form.setError("root", { message: "Couldn't share these documents. Please try again." });
+                    }
+                    return;
+                  }
+                  await queryClient.invalidateQueries({ queryKey: ["shares", documents[0].id] });
+                  setSharedWith({ name: payload.recipientName, email: payload.email ?? "" });
+                  setSentMessage("");
+                  setSharedLinks([
+                    {
+                      id: created.id ?? documents[0].id,
+                      name: `${documents.length} documents`,
+                      typeName: `${documents.length} documents`,
+                      fileName: documents.map((document) => document.name).join(", "),
+                      url: toPublicShareLink(created.url, created.token),
+                    },
+                  ]);
+                  return;
+                }
                 type ShareAttempt =
                   | { status: "ok"; document: ShareDialogDocument; created: Awaited<ReturnType<typeof createShare>> }
                   | { status: "error"; document: ShareDialogDocument; error: unknown };

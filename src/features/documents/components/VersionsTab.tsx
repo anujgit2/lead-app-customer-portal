@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { formatFileSize } from "@/lib/utils";
 import type { DocumentDetail, DocumentVersion } from "../types";
-import { formatDisplayDate } from "../utils/format";
+import { formatDisplayDateTime } from "../utils/format";
 
 interface VersionsTabProps {
   document: DocumentDetail;
@@ -85,7 +85,7 @@ export function VersionsTab({
                       ) : null}
                     </span>
                   </TableCell>
-                  <TableCell className="num whitespace-nowrap">{formatDisplayDate(version.createdAt)}</TableCell>
+                  <TableCell className="num whitespace-nowrap">{formatDisplayDateTime(version.createdAt)}</TableCell>
                   <TableCell className="num whitespace-nowrap">
                     {version.sizeBytes ? formatFileSize(version.sizeBytes) : "—"}
                   </TableCell>

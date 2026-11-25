@@ -5,7 +5,6 @@ import { useDropzone } from "react-dropzone";
 import { FileText, Info, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +24,7 @@ import {
 import { cn, formatFileSize } from "@/lib/utils";
 import { toDropzoneAccept } from "@/utils/upload-config";
 import type { DocumentProfileRelation } from "@/types";
-import { useDocumentTypes, useVersionPreview } from "../api/queries";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useDocumentTypes } from "../api/queries";
 import { uploadFailureMessage, useUpload } from "../hooks/useUpload";
 import type { UploadSubmission } from "../types";
 import { ACCEPT_ATTRIBUTE, MAX_UPLOAD_BYTES } from "../utils/constants";
@@ -52,6 +50,10 @@ interface UploadDialogProps {
   onOpenChange: (open: boolean) => void;
   locked?: LockedUpload;
   presetProfile?: PresetProfileUpload;
+  /** Category code preselected when the dialog opens (e.g. the dashboard's selected category). */
+  initialCategory?: string;
+  /** Document type id preselected when the dialog opens (e.g. the dashboard's selected sub-category). */
+  initialTypeId?: string;
 }
 
 const controlClass = "h-[38px] text-sm";
@@ -108,39 +110,47 @@ function FieldError({ children }: { children: ReactNode }) {
   );
 }
 
-export function UploadDialog({ open, onOpenChange, locked, presetProfile }: UploadDialogProps) {
+export function UploadDialog({
+  open,
+  onOpenChange,
+  locked,
+  presetProfile,
+  initialCategory,
+  initialTypeId,
+}: UploadDialogProps) {
   if (!open) return null;
-  return <UploadDialogForm onOpenChange={onOpenChange} locked={locked} presetProfile={presetProfile} />;
+  return (
+    <UploadDialogForm
+      onOpenChange={onOpenChange}
+      locked={locked}
+      presetProfile={presetProfile}
+      initialCategory={initialCategory}
+      initialTypeId={initialTypeId}
+    />
+  );
 }
 
-function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDialogProps, "open">) {
+function UploadDialogForm({
+  onOpenChange,
+  locked,
+  presetProfile,
+  initialCategory,
+  initialTypeId,
+}: Omit<UploadDialogProps, "open">) {
   const upload = useUpload();
-  const types = useDocumentTypes(!locked);
-  const [category, setCategory] = useState(locked ? categoryKey(locked.category) : "");
-  const [typeId, setTypeId] = useState(locked?.typeId ?? "");
-  // The label field is hidden. Updating an existing document keeps its stored label.
-  const label = locked?.label ?? "";
+  const types = useDocumentTypes();
+  const [category, setCategory] = useState(locked ? categoryKey(locked.category) : categoryKey(initialCategory ?? ""));
+  const [typeId, setTypeId] = useState(locked?.typeId ?? initialTypeId ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
-  const [asNew, setAsNew] = useState(false);
 
   const markChanged = () => {
     upload.rotateKey();
     upload.reset();
   };
 
-  const debouncedLabel = useDebouncedValue(label.trim(), 400);
-  const previewEnabled = !asNew && !!typeId;
-  const preview = useVersionPreview(
-    {
-      typeId,
-      label: debouncedLabel || undefined,
-      documentId: locked?.documentId,
-    },
-    previewEnabled
-  );
 
-  const categories = categoryFiltersFor((types.data ?? []).map((type) => type.category)).filter(
+  const categories = categoryFiltersFor(types.data ?? []).filter(
     (item) => item.id !== "ALL"
   );
   const visibleTypes = (types.data ?? []).filter((type) => !category || categoryKey(type.category) === category);
@@ -174,7 +184,8 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
     },
   });
 
-  const canSubmit = !!file && (!!typeId || typeListEmpty) && !upload.isPending;
+  const selectedType = types.data?.find((type) => type.id === typeId);
+  const canSubmit = !!file && !!selectedType && !upload.isPending;
 
   const submit = (submission: UploadSubmission) => {
     upload.mutate(submission, {
@@ -186,24 +197,15 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
   };
 
   const buildSubmission = (): UploadSubmission | null => {
-    if (!file || (!typeId && !typeListEmpty)) return null;
+    if (!file || !selectedType) return null;
     return {
       file,
-      typeId,
-      label: label.trim(),
+      category: selectedType.category,
+      subcategory: selectedType.code,
       documentId: locked?.documentId,
-      asNewDocument: asNew,
       ...(presetProfile ? { profileId: presetProfile.profileId, relation: presetProfile.relation } : {}),
     };
   };
-
-  const versionHint = asNew
-    ? "This will be saved as a new document."
-    : preview.data
-      ? `This will be saved as v${preview.data.nextVersion}.`
-      : preview.isFetching
-        ? "Checking the next version…"
-        : null;
 
   const footerHint = upload.isPending
     ? "Uploading…"
@@ -337,7 +339,7 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={lockedCategory || locked.category}>
-                          {categoryLabel(lockedCategory, locked.category)}
+                          {categoryLabel(locked.category, (types.data ?? []).find((type) => categoryKey(type.category) === lockedCategory)?.categoryLabel)}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -428,28 +430,6 @@ function UploadDialogForm({ onOpenChange, locked, presetProfile }: Omit<UploadDi
                 </>
               )}
 
-              {!locked && preview.data && preview.data.nextVersion > 1 ? (
-                <div className="flex items-start gap-2.5">
-                  <Checkbox
-                    id="upload-as-new"
-                    className="mt-px"
-                    checked={asNew}
-                    disabled={upload.isPending}
-                    onCheckedChange={(checked) => {
-                      setAsNew(checked === true);
-                      markChanged();
-                    }}
-                  />
-                  <Label htmlFor="upload-as-new" className="font-normal">
-                    Upload as a new document
-                  </Label>
-                </div>
-              ) : null}
-              {versionHint ? (
-                <p className="text-[13px] leading-[18px] text-muted-foreground" role="status">
-                  {versionHint}
-                </p>
-              ) : null}
             </section>
 
             {upload.isError ? <FieldError>{uploadFailureMessage(upload.error)}</FieldError> : null}

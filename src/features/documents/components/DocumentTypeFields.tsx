@@ -46,7 +46,7 @@ export function DocumentTypeFields({
   lockedCategory,
   disabled,
 }: DocumentTypeFieldsProps) {
-  const categories = categoryFiltersFor(types.map((type) => type.category)).filter(
+  const categories = categoryFiltersFor(types).filter(
     (item) => item.id !== "ALL"
   );
   const visibleTypes = types.filter((type) => !category || categoryKey(type.category) === category);
@@ -58,7 +58,7 @@ export function DocumentTypeFields({
         <div>
           <p className="text-xs font-medium text-muted-foreground">Category</p>
           <p className="mt-1 text-sm font-semibold text-foreground">
-            {categoryLabel(categoryKey(lockedCategory ?? ""), lockedCategory)}
+            {categoryLabel(lockedCategory ?? "", types.find((type) => categoryKey(type.category) === categoryKey(lockedCategory ?? ""))?.categoryLabel)}
           </p>
         </div>
         <div>
