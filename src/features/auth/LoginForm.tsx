@@ -75,7 +75,7 @@ export function LoginForm() {
             placeholder={field.placeholder}
             error={!!errors.email}
             aria-describedby={errors.email ? "identifier-err" : undefined}
-            className="h-11 bg-background"
+            className="h-11 border-[#c5dae6] bg-white/80 backdrop-blur-md"
             startAdornment={<Mail className="h-4 w-4" />}
             {...register("email")}
           />
@@ -96,7 +96,7 @@ export function LoginForm() {
           placeholder={field.placeholder}
           error={!!errors.password}
           aria-describedby={errors.password ? "password-err" : undefined}
-          className="h-11 bg-background"
+          className="h-11 border-[#c5dae6] bg-white/80 backdrop-blur-md"
           startAdornment={<Lock className="h-4 w-4" />}
           endAdornment={
             <button
@@ -135,8 +135,16 @@ export function LoginForm() {
   const landingHref = lendingSiteHome();
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-[18px] py-10 text-foreground">
-      <main className="auth-card w-full max-w-[420px] rounded-[10px] border border-border bg-card p-6 shadow-2 sm:p-8">
+    <div className="relative flex min-h-screen flex-col items-center justify-center gap-6 overflow-hidden bg-[linear-gradient(120deg,#eef3f7,#dfeaf1,#d9e9e4,#e2ecf0)] px-[18px] py-10 text-foreground">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-36 -top-64 h-[580px] w-[580px] rounded-full bg-[radial-gradient(circle,rgba(58,140,168,0.32),transparent_68%)]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-80 -left-72 h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle,rgba(61,133,116,0.28),transparent_70%)]"
+      />
+      <main className="auth-card relative w-full max-w-[420px] rounded-[10px] border border-white/70 bg-white/80 p-6 shadow-2 backdrop-blur-md sm:p-8">
         <a href={landingHref} aria-label="Loantris home" className="inline-block">
           {/* Brand logo image in place of the text wordmark, for now the sign-in page only. */}
           <Image src="/brand/loantris-primary.svg" alt="Loantris" width={141} height={32} className="h-8 w-auto" />
@@ -186,11 +194,11 @@ export function LoginForm() {
           )}
         </div>
       </main>
-      <nav aria-label="Support and legal" className="flex flex-wrap justify-center gap-x-4 text-center text-xs text-muted-foreground">
+      <nav aria-label="Support and legal" className="relative flex flex-wrap justify-center gap-x-4 text-center text-xs text-muted-foreground">
         <Link href="/privacy" className="hover:text-foreground hover:underline">Privacy policy</Link>
         <Link href="/terms" className="hover:text-foreground hover:underline">Terms of use</Link>
       </nav>
-      <p className="text-center text-xs text-muted-foreground">© {new Date().getFullYear()} Loantris. All rights reserved.</p>
+      <p className="relative text-center text-xs text-muted-foreground">© {new Date().getFullYear()} Loantris. All rights reserved.</p>
     </div>
   );
 }
