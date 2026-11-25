@@ -181,12 +181,12 @@
 
   /* ---------- Shared portal components (ported from the partner portal) ---------- */
 
-  /* Buttons: compact 34px, 13px label. Hover changes colour only, no lift or scale. */
+  /* Buttons: 36px tall to match inputs, 7px radius, 13px label. Hover changes colour only, no lift or scale. */
   .btn {
-    border: 1px solid var(--ap-border-strong);
+    border: 1px solid hsl(var(--border) / 0.6);
     background: var(--ap-surface);
     border-radius: 7px;
-    min-height: 34px;
+    min-height: 36px;
     padding: 0 12px;
     cursor: pointer;
     font-size: 13px;
@@ -207,8 +207,10 @@
     height: 16px;
     flex: none;
   }
+  /* Hover darkens the edge, same as inputs (.ap-input and the Input component use border-foreground/55). */
   .btn:hover {
     background: var(--ap-hover);
+    border-color: hsl(var(--foreground) / 0.55);
   }
   .btn:active {
     background: var(--ap-subtle);
@@ -232,13 +234,9 @@
     outline-offset: 2px;
   }
   .btn.sm {
-    min-height: 28px;
-    padding: 0 10px;
-    font-size: 12px;
-  }
-  .btn.sm svg {
-    width: 14px;
-    height: 14px;
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 13px;
   }
   .btn.lg {
     min-height: 40px;
@@ -254,6 +252,7 @@
     box-shadow: none;
   }
   .btn.soft:hover {
+    border-color: transparent;
     background: color-mix(in srgb, var(--ap-primary) 14%, var(--ap-surface));
   }
 

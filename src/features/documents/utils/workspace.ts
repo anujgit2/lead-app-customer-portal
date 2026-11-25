@@ -85,3 +85,36 @@ export function documentTypeOptions(documents: PortalDocument[]): { id: string; 
     .map(([id, name]) => ({ id, name }))
     .sort((left, right) => left.name.localeCompare(right.name));
 }
+
+export interface CategorySummary {
+  totalFiles: number;
+  totalBytes: number;
+  /** Latest updatedAt across the category, or null when the category is empty. */
+  lastUploadedAt: string | null;
+  lastUploadedFileName: string | null;
+  /** Document types in this category, most files first. */
+  types: { id: string; name: string; count: number; bytes: number }[];
+}
+
+/** Totals, last upload and per-type counts for the documents of one category. */
+export function summarizeCategory(documents: PortalDocument[]): CategorySummary {
+  const types = new Map<string, { id: string; name: string; count: number; bytes: number }>();
+  let totalBytes = 0;
+  let latest: PortalDocument | null = null;
+  for (const document of documents) {
+    const bytes = document.sizeBytes ?? 0;
+    totalBytes += bytes;
+    const entry = types.get(document.typeId) ?? { id: document.typeId, name: document.typeName, count: 0, bytes: 0 };
+    entry.count += 1;
+    entry.bytes += bytes;
+    types.set(document.typeId, entry);
+    if (!latest || updatedTime(document.updatedAt) > updatedTime(latest.updatedAt)) latest = document;
+  }
+  return {
+    totalFiles: documents.length,
+    totalBytes,
+    lastUploadedAt: latest?.updatedAt ?? null,
+    lastUploadedFileName: latest ? displayName(latest) : null,
+    types: [...types.values()].sort((left, right) => right.count - left.count || left.name.localeCompare(right.name)),
+  };
+}

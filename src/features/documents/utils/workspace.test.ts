@@ -8,6 +8,7 @@ import {
   fileKindOf,
   firstTileWithDocuments,
   sortDocuments,
+  summarizeCategory,
   tileIdFor,
 } from "./workspace";
 
@@ -136,6 +137,34 @@ describe("documentTypeOptions", () => {
     assert.deepEqual(options, [
       { id: "t1", name: "PAN card" },
       { id: "t2", name: "Passport" },
+    ]);
+  });
+});
+
+describe("summarizeCategory", () => {
+  it("returns an empty summary for a category with no documents", () => {
+    assert.deepEqual(summarizeCategory([]), {
+      totalFiles: 0,
+      totalBytes: 0,
+      lastUploadedAt: null,
+      lastUploadedFileName: null,
+      types: [],
+    });
+  });
+
+  it("totals files and bytes, counts per type, and finds the latest upload", () => {
+    const summary = summarizeCategory([
+      doc({ id: "a", typeId: "pan", typeName: "PAN card", fileName: "pan.pdf", sizeBytes: 100, updatedAt: "2026-11-01T10:00:00Z" }),
+      doc({ id: "b", typeId: "aadhaar", typeName: "Aadhaar", fileName: "aadhaar.jpg", sizeBytes: 300, updatedAt: "2026-11-20T08:00:00Z" }),
+      doc({ id: "c", typeId: "pan", typeName: "PAN card", fileName: "pan-old.pdf", sizeBytes: 50, updatedAt: "2026-11-10T09:00:00Z" }),
+    ]);
+    assert.equal(summary.totalFiles, 3);
+    assert.equal(summary.totalBytes, 450);
+    assert.equal(summary.lastUploadedAt, "2026-11-20T08:00:00Z");
+    assert.equal(summary.lastUploadedFileName, "aadhaar.jpg");
+    assert.deepEqual(summary.types, [
+      { id: "pan", name: "PAN card", count: 2, bytes: 150 },
+      { id: "aadhaar", name: "Aadhaar", count: 1, bytes: 300 },
     ]);
   });
 });

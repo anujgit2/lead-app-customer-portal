@@ -32,6 +32,10 @@ export interface LeadDetail {
   configuration: Record<string, unknown>;
   properties: ApplicationProperty[];
   requests: LeadInfoRequest[];
+  /** When the customer submitted the current round. Null while it is still a draft. */
+  submittedAt?: string | null;
+  /** When the current round was last changed. */
+  updatedAt?: string | null;
 }
 
 export interface InvitePreview {

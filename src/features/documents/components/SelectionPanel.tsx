@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { parseApiError } from "@/lib/api-error";
-import { formatFileSize } from "@/lib/utils";
+import { cn, formatFileSize } from "@/lib/utils";
 import { deleteDocument, downloadDocumentFile, fileErrorMessage } from "../api/documentsApi";
 import type { PortalDocument } from "../types";
 import { DOCUMENT_DIALOG_CLASS } from "../utils/constants";
@@ -25,6 +25,8 @@ interface SelectionPanelProps {
   documents: PortalDocument[];
   onClear: () => void;
   onDeleted: (ids: string[]) => void;
+  /** "single" renders only the actions for one file (Download, Share, Delete), for use under its details. */
+  mode?: "selection" | "single";
 }
 
 type BusyState = { action: "download" | "delete"; done: number; total: number } | null;
@@ -63,7 +65,8 @@ function uniqueEntryName(name: string, used: Set<string>): string {
   }
 }
 
-export function SelectionPanel({ documents, onClear, onDeleted }: SelectionPanelProps) {
+export function SelectionPanel({ documents, onClear, onDeleted, mode = "selection" }: SelectionPanelProps) {
+  const single = mode === "single";
   const queryClient = useQueryClient();
   const [shareOpen, setShareOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -163,50 +166,61 @@ export function SelectionPanel({ documents, onClear, onDeleted }: SelectionPanel
   const disabled = busy !== null;
 
   return (
-    <div className="flex min-w-0 flex-col gap-4" role="region" aria-label="Selected documents">
-      <div>
-        <p className="text-[14px] font-semibold text-foreground">
-          {total} {total === 1 ? "file" : "files"} selected
-        </p>
-        <p className="text-[12px] text-muted-foreground">
-          {formatFileSize(totalBytes)} total
-          {categories.length > 0 ? ` · ${categories.join(", ")}` : ""}
-        </p>
-      </div>
+    <div className="flex min-w-0 flex-col gap-4" role="region" aria-label={single ? "Document actions" : "Selected documents"}>
+      {single ? null : (
+        <>
+          <div>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[14px] font-semibold text-foreground">
+                {total} {total === 1 ? "file" : "files"} selected
+              </p>
+              <button type="button" className="shrink-0 text-[12px] font-medium text-primary hover:underline" onClick={onClear} disabled={disabled}>
+                Clear selection
+              </button>
+            </div>
+            <p className="text-[12px] text-muted-foreground">
+              {formatFileSize(totalBytes)} total
+              {categories.length > 0 ? ` · ${categories.join(", ")}` : ""}
+            </p>
+          </div>
 
-      <div className="flex flex-wrap gap-1.5" aria-label="Selected document types">
-        {typeCounts.map(([name, count]) => (
-          <span key={name} className="pill neu">
-            {name}
-            {count > 1 ? ` × ${count}` : ""}
-          </span>
-        ))}
-      </div>
-
-      <ul className="flex max-h-64 flex-col divide-y divide-border overflow-y-auto rounded-md border border-border" aria-label="Selected file names">
-        {documents.map((document) => (
-          <li key={document.id} className="flex items-start gap-2.5 px-3 py-2">
-            <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-            <span className="min-w-0">
-              <span className="block truncate text-[13px] font-semibold text-foreground">{displayName(document)}</span>
-              <span className="block truncate text-[12px] text-muted-foreground">
-                {document.category ? `${document.category} · ` : ""}
-                {document.typeName} · v{document.latestVersion} · {formatDisplayDate(document.updatedAt)}
-                {document.sizeBytes ? ` · ${formatFileSize(document.sizeBytes)}` : ""}
+          <div className="flex flex-wrap gap-1.5" aria-label="Selected document types">
+            {typeCounts.map(([name, count]) => (
+              <span key={name} className="pill neu">
+                {name}
+                {count > 1 ? ` × ${count}` : ""}
               </span>
-            </span>
-          </li>
-        ))}
-      </ul>
+            ))}
+          </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => void downloadAsZip()}>
-          <Package aria-hidden="true" />
-          Download ZIP
-        </Button>
+          <ul className="flex max-h-64 flex-col divide-y divide-border overflow-y-auto rounded-md border border-border" aria-label="Selected file names">
+            {documents.map((document) => (
+              <li key={document.id} className="flex items-start gap-2.5 px-3 py-2">
+                <FileText className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span className="min-w-0">
+                  <span className="block truncate text-[13px] font-semibold text-foreground">{displayName(document)}</span>
+                  <span className="block truncate text-[12px] text-muted-foreground">
+                    {document.category ? `${document.category} · ` : ""}
+                    {document.typeName} · v{document.latestVersion} · {formatDisplayDate(document.updatedAt)}
+                    {document.sizeBytes ? ` · ${formatFileSize(document.sizeBytes)}` : ""}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      <div className={cn("grid gap-2", single ? "grid-cols-3" : "grid-cols-2")}>
+        {single ? null : (
+          <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => void downloadAsZip()}>
+            <Package aria-hidden="true" />
+            Download ZIP
+          </Button>
+        )}
         <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => void downloadAll()}>
           <Download aria-hidden="true" />
-          Download files
+          {single ? "Download" : "Download files"}
         </Button>
         <Button type="button" variant="outline" size="sm" disabled={disabled} onClick={() => setShareOpen(true)}>
           <Share2 aria-hidden="true" />
@@ -231,10 +245,6 @@ export function SelectionPanel({ documents, onClear, onDeleted }: SelectionPanel
           {message.text}
         </p>
       ) : null}
-
-      <button type="button" className="self-start text-[12px] font-medium text-primary hover:underline" onClick={onClear} disabled={disabled}>
-        Clear selection
-      </button>
 
       <ShareDialog
         open={shareOpen}

@@ -16,8 +16,9 @@ marketing and keeps its own look.
 
 ## Ground rules
 
-1. **Compact, not airy.** 13px body text, 34px controls (40px on sign-in and sign-up), 14–16px card
-   padding, 12–16px gaps. Page title 20px/600. No `p-8`, `text-2xl` or `text-3xl` headings on app
+1. **Compact, not airy.** 13px body text. Buttons and inputs share one height: 36px (`h-9`), 7px radius,
+   13px label (`font-semibold` for buttons). Sign-in and sign-up use 40px (`h-10`) for both. Never mix
+   heights in one row. 14–16px card padding, 12–16px gaps. Page title 20px/600. No `p-8`, `text-2xl` or `text-3xl` headings on app
    screens. Use `p-6 sm:p-8` only for the outer page padding.
 2. **No motion gimmicks.** No hover lift (`hover:-translate-y-*`), no `active:scale-*`, no
    `active:translate-*`, no glow shadows on buttons. Hover changes background or border colour only.
@@ -62,7 +63,7 @@ shadcn components in `src/components/ui` read the matching HSL tokens (`--primar
 | Class | What it is |
 |---|---|
 | `.head` with `h1` + `p` | Page header: title, one-line description, actions on the right |
-| `.btn`, `.btn.p`, `.btn.soft`, `.btn.sm`, `.btn.lg`, `.btn.full` | Secondary, primary, soft inline action, small, 40px large, full width |
+| `.btn`, `.btn.p`, `.btn.soft`, `.btn.sm`, `.btn.lg`, `.btn.full` | Secondary, primary, soft inline action, 36px (same as inputs), 40px large, full width. `.btn.sm` is also 36px; do not add smaller sizes |
 | `.pill.ok/.warn/.bad/.info/.neu` | Status tag with dot |
 | `.card` | White surface, 10px radius |
 | `.muted` | Helper text colour |
@@ -78,7 +79,7 @@ shadcn components in `src/components/ui` read the matching HSL tokens (`--primar
 |---|---|---|
 | `Notice` | `@/components/portal/Notice` | Inline message above a form: `tone`, `title`, `children`, `testId` |
 | `AuthHeading` | `@/components/portal/AuthHeading` | Title + description at the top of a sign-in or sign-up form |
-| `Button` | `@/components/ui/button` | shadcn primitive. Sizes: `sm` 28px, default 34px, `lg` 40px. `loading` shows a spinner |
+| `Button` | `@/components/ui/button` | shadcn primitive, same look as `.btn`. Sizes: `sm` and default 36px (match inputs), `lg` 40px. Radius 7px, 13px `font-semibold`. Outline resting border is `border-border/60`, the same light edge as the dashboard dropdowns (`.btn` uses `hsl(var(--border) / 0.6)`). Hover uses `border-foreground/55`, like inputs. `loading` shows a spinner |
 | `Input` | `@/components/ui/input` | shadcn primitive, 36px. `startAdornment`/`endAdornment` for icons. Use `className="h-10"` for sign-in fields |
 | `FieldError` | `@/features/auth/AuthScreen` | Field error text with icon, `id` for `aria-describedby` |
 | `DynamicField` | `@/components/forms/DynamicField` | Loan-application and profile form engine. Field styling comes from `Input`, `Select`, `Textarea` |
@@ -116,6 +117,8 @@ Every list has loading, error, empty and no-match states.
 
 - [ ] No hex, rgba or hard-coded colours in changed TSX (brand logo excepted)
 - [ ] No hover lift, press scale or glow on controls
+- [ ] Buttons and inputs in the same row share one height (36px, or 40px on sign-in and sign-up)
+- [ ] Use `Button` or `.btn`; do not restyle a button with ad-hoc height, radius or font classes
 - [ ] Loading, error and empty states present
 - [ ] Icons from lucide with `aria-hidden`; icon-only buttons have `aria-label`; inputs have labels
 - [ ] Checked at 390px wide: nothing overflows the page

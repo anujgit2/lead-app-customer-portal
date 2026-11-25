@@ -24,6 +24,7 @@ import {
   fileKindOf,
   firstTileWithDocuments,
   sortDocuments,
+  summarizeCategory,
   tileIdFor,
   type FileKind,
   type WorkspaceSort,
@@ -97,24 +98,25 @@ function CategoryTile({
 function DocumentRow({
   document,
   selected,
-  focused,
   onToggle,
-  onFocus,
 }: {
   document: PortalDocument;
   selected: boolean;
-  focused: boolean;
-  onToggle: (checked: boolean) => void;
-  onFocus: () => void;
+  /** Clicking a row toggles it: an unselected row is selected, a selected row is deselected. */
+  onToggle: () => void;
 }) {
   const name = displayName(document);
   return (
-    <tr className={cn("border-t border-border", focused && "bg-primary-soft")}>
-      <td className="w-10 px-3 py-2.5">
-        <Checkbox checked={selected} onCheckedChange={(checked) => onToggle(checked === true)} aria-label={`Select ${name}`} className="h-4 w-4" />
+    <tr
+      className={cn("cursor-pointer border-t border-border transition-colors duration-150 hover:bg-muted/40", selected && "bg-primary-soft hover:bg-primary-soft")}
+      aria-selected={selected}
+      onClick={onToggle}
+    >
+      <td className="w-10 px-3 py-2.5" onClick={(event) => event.stopPropagation()}>
+        <Checkbox checked={selected} onCheckedChange={() => onToggle()} aria-label={`Select ${name}`} className="h-4 w-4" />
       </td>
       <td className="px-3 py-2.5">
-        <button type="button" onClick={onFocus} className="flex min-w-0 items-center gap-3 text-left">
+        <div className="flex min-w-0 items-center gap-3 text-left">
           <FileIcon kind={fileKindOf(document.fileName)} />
           <span className="min-w-0">
             <span className="block truncate text-[13px] font-semibold text-foreground">{name}</span>
@@ -123,7 +125,7 @@ function DocumentRow({
               {document.sizeBytes ? ` · ${formatFileSize(document.sizeBytes)}` : ""}
             </span>
           </span>
-        </button>
+        </div>
       </td>
       <td className="whitespace-nowrap px-3 py-2.5 text-[13px] tabular-nums text-muted-foreground">
         {formatDisplayDateTime(document.updatedAt)}
@@ -179,6 +181,51 @@ function ActivityTab({ detail, loading, failed }: { detail?: DocumentDetail | nu
         </li>
       ))}
     </ol>
+  );
+}
+
+/** Shown in the right panel when nothing is selected: totals for the active category. */
+function CategorySummary({ label, documents }: { label: string; documents: PortalDocument[] }) {
+  const summary = useMemo(() => summarizeCategory(documents), [documents]);
+  if (summary.totalFiles === 0) {
+    return <p className="text-[13px] text-muted-foreground">No files in {label} yet. Upload a document to see a summary here.</p>;
+  }
+  const rows: [string, string][] = [
+    ["Category", label],
+    ["Files", String(summary.totalFiles)],
+    ["Total size", formatFileSize(summary.totalBytes)],
+    ["Last uploaded", summary.lastUploadedAt ? formatDisplayDateTime(summary.lastUploadedAt) : "—"],
+    ["Latest file", summary.lastUploadedFileName ?? "—"],
+  ];
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <p className="text-[14px] font-semibold text-foreground">{label} summary</p>
+        <p className="text-[12px] text-muted-foreground">Select a document to see its details.</p>
+      </div>
+      <dl className="grid grid-cols-[110px_minmax(0,1fr)] gap-x-3 gap-y-2.5 text-[13px]">
+        {rows.map(([name, value]) => (
+          <div key={name} className="contents">
+            <dt className="text-muted-foreground">{name}</dt>
+            <dd className="min-w-0 break-words text-foreground">{value}</dd>
+          </div>
+        ))}
+      </dl>
+      <div>
+        <p className="mb-2 text-[12px] font-semibold text-muted-foreground">By document type</p>
+        <ul className="flex flex-col divide-y divide-border rounded-md border border-border" aria-label="Files by document type">
+          {summary.types.map((type) => (
+            <li key={type.id} className="flex items-center justify-between gap-3 px-3 py-2 text-[13px]">
+              <span className="min-w-0 truncate font-semibold text-foreground">{type.name}</span>
+              <span className="shrink-0 text-right tabular-nums text-muted-foreground">
+                {type.count} {type.count === 1 ? "file" : "files"}
+                {type.bytes > 0 ? ` · ${formatFileSize(type.bytes)}` : ""}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }
 
@@ -287,7 +334,6 @@ export function DocumentDashboardPage() {
   const [typeFilter, setTypeFilter] = useState("ALL");
   const [sort, setSort] = useState<WorkspaceSort>("newest");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [focusId, setFocusId] = useState<string | null>(null);
   const [panelTab, setPanelTab] = useState<PanelTab>("details");
   const [uploadOpen, setUploadOpen] = useState(false);
 
@@ -310,11 +356,14 @@ export function DocumentDashboardPage() {
     return sortDocuments(filtered, sort);
   }, [tileDocuments, typeFilter, sort]);
 
-  const focused = all.find((document) => document.id === focusId) ?? null;
   const selectedDocs = useMemo(() => all.filter((document) => selectedIds.includes(document.id)), [all, selectedIds]);
+  // The panel shows details for a single selected file, a summary for several, and the category summary for none.
+  const focused = selectedDocs.length === 1 ? selectedDocs[0] : null;
   const handleDeleted = (ids: string[]) => {
     setSelectedIds((current) => current.filter((id) => !ids.includes(id)));
-    if (focusId && ids.includes(focusId)) setFocusId(null);
+  };
+  const toggleSelected = (id: string) => {
+    setSelectedIds((current) => (current.includes(id) ? current.filter((selectedId) => selectedId !== id) : [...current, id]));
   };
   const detail = useDocument(focused?.id ?? "");
   const tileLabel = tiles.find((tile) => tile.id === activeTile)?.label ?? "Documents";
@@ -358,7 +407,6 @@ export function DocumentDashboardPage() {
             onSelect={() => {
               setTileOverride(tile.id);
               setTypeFilter("ALL");
-              setFocusId(null);
             }}
           />
         ))}
@@ -372,12 +420,9 @@ export function DocumentDashboardPage() {
             </h2>
             <Select
               value={typeFilter}
-              onValueChange={(value) => {
-                setTypeFilter(value);
-                setFocusId(null);
-              }}
+              onValueChange={(value) => setTypeFilter(value)}
             >
-              <SelectTrigger className="h-8 w-auto min-w-[170px] rounded-md border-border/60 px-3 text-[13px] hover:border-border data-[state=open]:border-border/60" aria-label="Filter by document type">
+              <SelectTrigger className="h-9 w-auto min-w-[170px] rounded-[7px] border-border/60 px-3 text-[13px] hover:border-border data-[state=open]:border-border/60" aria-label="Filter by document type">
                 <SelectValue placeholder="Document type" />
               </SelectTrigger>
               <SelectContent>
@@ -391,14 +436,14 @@ export function DocumentDashboardPage() {
             </Select>
             <button
               type="button"
-              className="btn p sm:h-8"
+              className="btn p"
               onClick={() => setUploadOpen(true)}
             >
               <Upload aria-hidden="true" />
               Upload
             </button>
             <Select value={sort} onValueChange={(value) => setSort(value as WorkspaceSort)}>
-              <SelectTrigger className="h-8 w-auto min-w-[120px] rounded-md border-border/60 px-3 text-[13px] hover:border-border data-[state=open]:border-border/60" aria-label="Sort documents">
+              <SelectTrigger className="h-9 w-auto min-w-[120px] rounded-[7px] border-border/60 px-3 text-[13px] hover:border-border data-[state=open]:border-border/60" aria-label="Sort documents">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -468,15 +513,9 @@ export function DocumentDashboardPage() {
                       key={document.id}
                       document={document}
                       selected={selectedIds.includes(document.id)}
-                      focused={focusId === document.id}
-                      onToggle={(checked) => {
-                        setSelectedIds((current) =>
-                          checked ? [...current.filter((id) => id !== document.id), document.id] : current.filter((id) => id !== document.id),
-                        );
-                      }}
-                      onFocus={() => {
-                        setFocusId(document.id);
+                      onToggle={() => {
                         setPanelTab("details");
+                        toggleSelected(document.id);
                       }}
                     />
                   ))}
@@ -495,6 +534,7 @@ export function DocumentDashboardPage() {
             />
           ) : (
           <>
+          {focused ? (
           <div role="tablist" aria-label="Document panel sections" className="flex gap-4 border-b border-border">
             {PANEL_TABS.map((tab) => (
               <button
@@ -512,9 +552,10 @@ export function DocumentDashboardPage() {
               </button>
             ))}
           </div>
+          ) : null}
 
           {!focused ? (
-            <p className="text-[13px] text-muted-foreground">Select a document to see its details.</p>
+            <CategorySummary label={tileLabel} documents={tileDocuments} />
           ) : (
             <>
               <div className="flex items-start gap-3">
@@ -531,6 +572,12 @@ export function DocumentDashboardPage() {
                 <ActivityTab detail={detail.data} loading={detail.isLoading && !detail.data} failed={detail.isError} />
               ) : null}
               {panelTab === "operations" ? <OperationsTab /> : null}
+              <SelectionPanel
+                mode="single"
+                documents={[focused]}
+                onClear={() => setSelectedIds([])}
+                onDeleted={handleDeleted}
+              />
             </>
           )}
           </>

@@ -23,6 +23,10 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { PageShell } from "@/components/PageShell";
 import { ApplicationStatusBadge } from "@/features/applications/ApplicationStatusBadge";
+import {
+  APPLICATION_STEPS as STEPS,
+  ApplicationProgress,
+} from "@/features/applications/ApplicationSummaryCard";
 import { getApplicationHref } from "@/features/applications/ApplicationsTable";
 import { UploadDialog } from "@/features/documents/components/UploadDialog";
 import { useDocuments } from "@/features/documents/api/queries";
@@ -39,8 +43,6 @@ import type { ApplicationStatus, LoanApplication } from "@/types";
 
 type ActivityKind = "app" | "prof" | "doc";
 type ActivityFilter = "all" | ActivityKind;
-
-const STEPS = ["Draft", "Submitted", "In review", "Approved"] as const;
 
 const VERB: Record<ApplicationStatus, string> = {
   draft: "draft created",
@@ -90,13 +92,6 @@ function programLabel(app: LoanApplication): string {
   return app.programName || app.loanType || "—";
 }
 
-function stepIndex(status: ApplicationStatus): number {
-  if (status === "draft") return 0;
-  if (status === "submitted") return 1;
-  if (status === "under_review" || status === "rejected") return 2;
-  return 3;
-}
-
 function profileDisplayName(profile: { displayName?: string } | undefined): string {
   return profile?.displayName?.trim() || "Untitled profile";
 }
@@ -143,40 +138,6 @@ function RailChevron() {
       className="h-4 w-4 shrink-0 text-muted-foreground transition-colors duration-150 group-hover:text-primary"
       aria-hidden
     />
-  );
-}
-
-function HeroProgress({ status }: { status: ApplicationStatus }) {
-  const current = stepIndex(status);
-  const rejected = status === "rejected";
-  const label = rejected ? "Rejected" : STEPS[current];
-  return (
-    <div className="grid grid-cols-4 gap-1.5" aria-label={`Progress: ${label}`}>
-      {STEPS.map((step, index) => {
-        const lastRejected = index === 3 && rejected;
-        const reached = index <= current;
-        const active = index === current;
-        return (
-          <div key={step}>
-            <span
-              className={cn(
-                "block h-1 rounded-full bg-muted",
-                reached && "bg-primary",
-                lastRejected && "bg-danger"
-              )}
-            />
-            <span
-              className={cn(
-                "mt-1.5 block text-[11.5px] leading-4 text-muted-foreground",
-                active && "font-semibold text-foreground"
-              )}
-            >
-              {lastRejected ? "Rejected" : step}
-            </span>
-          </div>
-        );
-      })}
-    </div>
   );
 }
 
@@ -580,7 +541,7 @@ function LatestApplicationCard({ application }: { application: LoanApplication }
         </div>
         <ApplicationStatusBadge status={application.status} />
       </div>
-      <HeroProgress status={application.status} />
+      <ApplicationProgress status={application.status} />
       <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
         <span className="text-[13px] text-muted-foreground">
           Updated {formatProfileDay(application.updatedAt)}

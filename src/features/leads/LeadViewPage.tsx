@@ -4,12 +4,31 @@ import React, { useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { FormWizard } from "@/features/loan-application/FormWizard";
+import { ApplicationViewScreen } from "@/features/loan-application/ApplicationViewScreen";
 import { PageShell } from "@/components/PageShell";
 import { ErrorState } from "@/components/ErrorState";
 import { parseApiError } from "@/lib/api-error";
 import { propertiesToFormData } from "@/services/application.service";
-import { leadService, leadWizardBackend } from "@/services/lead.service";
+import { leadService, leadWizardBackend, type LeadDetail } from "@/services/lead.service";
 import { normalizeTemplateAuto } from "@/utils/template-mapper";
+import type { LoanApplication } from "@/types";
+
+/** A submitted lead shaped as a loan application, for the application view. Leads have no application record. */
+function leadAsApplication(id: string, lead: LeadDetail): LoanApplication {
+  const underReview = lead.status === "UNDER_REVIEW" || lead.status === "FORWARDED";
+  return {
+    id,
+    applicationNumber: `LEAD-${id.slice(0, 8).toUpperCase()}`,
+    loanType: "",
+    loanAmount: 0,
+    status: underReview ? "under_review" : "submitted",
+    createdAt: "",
+    submittedAt: lead.submittedAt ?? undefined,
+    updatedAt: lead.updatedAt ?? "",
+    userId: "",
+    programId: lead.programId,
+  };
+}
 import type { FormData, LoanProduct } from "@/types";
 
 export function LeadViewPage() {
@@ -78,13 +97,13 @@ export function LeadViewPage() {
   }
 
   if (lead.data.submitted) {
+    // The same read-only application view used for stored applications.
     return (
-      <PageShell width="narrow">
-        <h1 className="text-2xl font-semibold">Application submitted</h1>
-        <p className="text-sm text-muted-foreground">
-          Thank you. Your partner will contact you if anything else is needed.
-        </p>
-      </PageShell>
+      <ApplicationViewScreen
+        application={leadAsApplication(leadId, lead.data)}
+        product={product}
+        formData={initialFormData}
+      />
     );
   }
 
