@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
+import { Notice } from "@/components/portal/Notice";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -126,8 +127,8 @@ function RailIcon({
 function RailCopy({ title, detail }: { title: string; detail: string }) {
   return (
     <span className="min-w-0 flex-1">
-      <span className="block truncate text-[13.5px] font-semibold leading-[18px]">{title}</span>
-      <span className="block truncate text-[12.5px] leading-[17px] text-muted-foreground">{detail}</span>
+      <span className="block truncate text-[13px] font-semibold leading-[18px]">{title}</span>
+      <span className="block truncate text-xs leading-[17px] text-muted-foreground">{detail}</span>
     </span>
   );
 }
@@ -297,7 +298,7 @@ export function DashboardPage() {
   return (
     <PageShell width="detail" className="gap-5 pb-16 sm:gap-5 sm:pb-20">
       <section
-        className="relative grid items-center gap-5 overflow-hidden rounded-2xl bg-primary p-4 text-primary-foreground sm:p-5 min-[900px]:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] min-[900px]:p-6"
+        className="relative grid items-center gap-4 overflow-hidden rounded-lg bg-primary p-4 text-primary-foreground sm:p-5 min-[900px]:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] min-[900px]:p-6"
         aria-labelledby="hello"
       >
         <span
@@ -305,25 +306,25 @@ export function DashboardPage() {
           className="pointer-events-none absolute -bottom-[90px] -right-[60px] h-[200px] w-[200px] rounded-full border-[32px] border-primary-foreground/[0.07]"
         />
         <div className="relative z-[1]">
-          <h1 id="hello" className="text-[22px] font-[650] leading-7 tracking-tight sm:text-[26px] sm:leading-8">
-            {greeting}, {user?.firstName ?? "there"} 👋
+          <h1 id="hello" className="text-xl font-semibold leading-7 tracking-tight">
+            {greeting}, {user?.firstName ?? "there"}
           </h1>
-          <p className="mt-1 text-sm leading-5 text-primary-foreground/90">
+          <p className="mt-1 text-[13px] leading-5 text-primary-foreground/90">
             Here’s an overview of your loan applications.
           </p>
-          <div className="mt-6 flex flex-wrap gap-2.5 max-sm:[&_button]:flex-1">
+          <div className="mt-5 flex flex-wrap gap-2.5 max-sm:[&_button]:flex-1">
             <ApplyLoanMenu appearance="inverse" compact={false} className="max-sm:flex-1" />
             <button
               type="button"
               onClick={() => setUploadOpen(true)}
-              className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-primary-foreground/55 bg-transparent px-3 text-[13px] font-medium text-primary-foreground transition-colors duration-150 hover:bg-primary-foreground/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground max-sm:flex-1"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-[7px] border border-primary-foreground/55 bg-transparent px-3 text-[13px] font-semibold text-primary-foreground transition-colors duration-150 hover:bg-primary-foreground/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground max-sm:flex-1"
             >
               <Upload className="h-4 w-4" aria-hidden />
               Upload document
             </button>
           </div>
         </div>
-        <div className="relative z-[1] flex flex-col gap-3 rounded-lg bg-card p-3.5 text-foreground shadow-lg sm:p-4">
+        <div className="relative z-[1] flex flex-col gap-3 rounded-lg bg-card p-3.5 text-foreground shadow-sm sm:p-4">
           {appsLoading ? (
             <div className="space-y-3" aria-hidden>
               <div className="flex items-center gap-2.5">
@@ -352,7 +353,7 @@ export function DashboardPage() {
       <div className="grid items-start gap-5 min-[960px]:grid-cols-[minmax(0,1fr)_320px]">
         <section className="overflow-hidden rounded-lg border border-border bg-card shadow-sm" aria-labelledby="feed-h">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 px-4 pb-3 pt-4 sm:px-5">
-            <h2 id="feed-h" className="text-base font-[650] leading-6 tracking-tight">
+            <h2 id="feed-h" className="text-[15px] font-semibold leading-[22px] tracking-tight">
               Recent activity
             </h2>
             <div className="flex gap-1.5 overflow-x-auto" role="group" aria-label="Filter activity">
@@ -380,24 +381,26 @@ export function DashboardPage() {
           </div>
 
           {profilesQuery.isError || documentsQuery.isError ? (
-            <FeedNotice>
+            <div className="flex flex-col gap-2 border-t border-border px-4 py-3 sm:px-5">
               {profilesQuery.isError ? (
-                <NoticeLine
+                <FeedError
                   message="Profiles couldn’t be loaded."
+                  testId="dashboard-profiles-error"
                   onRetry={() => {
                     void profilesQuery.refetch();
                   }}
                 />
               ) : null}
               {documentsQuery.isError ? (
-                <NoticeLine
+                <FeedError
                   message="Documents couldn’t be loaded."
+                  testId="dashboard-documents-error"
                   onRetry={() => {
                     void documentsQuery.refetch();
                   }}
                 />
               ) : null}
-            </FeedNotice>
+            </div>
           ) : null}
 
           {feedLoading ? (
@@ -411,7 +414,7 @@ export function DashboardPage() {
           ) : (
             groups.map((group) => (
               <div key={group.day}>
-                <h3 className="border-t border-border bg-muted/45 px-4 pb-1.5 pt-2.5 text-xs font-[650] uppercase tracking-[0.05em] text-muted-foreground sm:px-5">
+                <h3 className="border-t border-border bg-muted/45 px-4 pb-1.5 pt-2.5 text-xs font-semibold uppercase tracking-[0.05em] text-muted-foreground sm:px-5">
                   {group.day}
                 </h3>
                 <ul>
@@ -426,14 +429,14 @@ export function DashboardPage() {
                         >
                           <RailIcon tone={event.tone} icon={Icon} />
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[13.5px] leading-[19px]">
-                              <b className="font-[650]">{event.title}</b> {event.verb}
+                            <span className="block truncate text-[13px] leading-[19px]">
+                              <b className="font-semibold">{event.title}</b> {event.verb}
                             </span>
-                            <span className="block truncate text-[12.5px] leading-[17px] text-muted-foreground">
+                            <span className="block truncate text-xs leading-[17px] text-muted-foreground">
                               {event.meta}
                             </span>
                           </span>
-                          <time className="shrink-0 text-[12.5px] tabular-nums text-muted-foreground">
+                          <time className="shrink-0 text-xs tabular-nums text-muted-foreground">
                             {event.time}
                           </time>
                         </button>
@@ -448,7 +451,7 @@ export function DashboardPage() {
 
         <aside className="flex flex-col gap-4 min-[960px]:sticky min-[960px]:top-[76px]" aria-label="Overview and shortcuts">
           <section className="rounded-lg border border-border bg-card shadow-sm" aria-labelledby="ov-h">
-            <h2 id="ov-h" className="px-4 pb-1.5 pt-3.5 text-[15px] font-[650] leading-[22px] tracking-tight">
+            <h2 id="ov-h" className="px-4 pb-1.5 pt-3.5 text-[15px] font-semibold leading-[22px] tracking-tight">
               Overview
             </h2>
             <ul className="px-2 pb-2 pt-1.5">
@@ -456,7 +459,7 @@ export function DashboardPage() {
                 <Link href="/applications" className={railItemClass}>
                   <RailIcon tone="tone-brand" icon={FileText} />
                   <RailCopy title="Applications" detail={applicationDetail} />
-                  <span className="text-lg font-[650] tabular-nums">{appsLoading ? "–" : summary.total}</span>
+                  <span className="text-lg font-semibold tabular-nums">{appsLoading ? "–" : summary.total}</span>
                   <RailChevron />
                 </Link>
               </li>
@@ -467,7 +470,7 @@ export function DashboardPage() {
                     title="Profiles"
                     detail={countsReady ? `${individualCount} individual · ${businessCount} business` : "–"}
                   />
-                  <span className="text-lg font-[650] tabular-nums">
+                  <span className="text-lg font-semibold tabular-nums">
                     {profilesLoading || profileTotal === undefined ? "–" : profileTotal}
                   </span>
                   <RailChevron />
@@ -486,7 +489,7 @@ export function DashboardPage() {
                           : "No uploads yet"
                     }
                   />
-                  <span className="text-lg font-[650] tabular-nums">
+                  <span className="text-lg font-semibold tabular-nums">
                     {documentsLoading ? "–" : documents.length}
                   </span>
                   <RailChevron />
@@ -496,7 +499,7 @@ export function DashboardPage() {
           </section>
 
           <section className="rounded-lg border border-border bg-card shadow-sm" aria-labelledby="qa-h">
-            <h2 id="qa-h" className="px-4 pb-1.5 pt-3.5 text-[15px] font-[650] leading-[22px] tracking-tight">
+            <h2 id="qa-h" className="px-4 pb-1.5 pt-3.5 text-[15px] font-semibold leading-[22px] tracking-tight">
               Quick actions
             </h2>
             <ul className="px-2 pb-2 pt-1.5">
@@ -534,8 +537,8 @@ function LatestApplicationCard({ application }: { application: LoanApplication }
           <FileText className="h-5 w-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <b className="block truncate text-[13.5px] font-[650] leading-[18px]">{title}</b>
-          <span className="block truncate text-[12.5px] leading-4 text-muted-foreground">
+          <b className="block truncate text-[13px] font-semibold leading-[18px]">{title}</b>
+          <span className="block truncate text-xs leading-4 text-muted-foreground">
             {programLabel(application)}
           </span>
         </div>
@@ -560,22 +563,26 @@ function LatestApplicationCard({ application }: { application: LoanApplication }
   );
 }
 
-function FeedNotice({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col gap-1 border-t border-border px-4 py-3 sm:px-5">{children}</div>;
-}
-
-function NoticeLine({ message, onRetry }: { message: string; onRetry: () => void }) {
+function FeedError({
+  message,
+  testId,
+  onRetry,
+}: {
+  message: string;
+  testId: string;
+  onRetry: () => void;
+}) {
   return (
-    <p className="text-[13px] leading-[18px] text-danger-strong">
+    <Notice tone="bad" testId={testId}>
       {message}{" "}
       <button
         type="button"
         onClick={onRetry}
-        className="font-semibold underline underline-offset-[3px]"
+        className="font-semibold underline underline-offset-[3px] hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
       >
         Try again
       </button>
-    </p>
+    </Notice>
   );
 }
 
