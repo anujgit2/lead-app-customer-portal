@@ -456,18 +456,18 @@ export function ProfilePage() {
             </div>
           ) : isError && !displayUser ? null : (
             <Tabs defaultValue="personal">
-              <TabsList className="mb-6">
-                <TabsTrigger value="personal" className="gap-2">
-                  <User className="h-3.5 w-3.5" />
-                  Personal
+              <TabsList className="mb-5 grid w-full grid-cols-3">
+                <TabsTrigger value="personal" className="min-w-0 gap-1.5 px-2 text-[13px]">
+                  <User className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  <span className="truncate">Personal</span>
                 </TabsTrigger>
-                <TabsTrigger value="contact" className="gap-2">
-                  <Phone className="h-3.5 w-3.5" />
-                  Contact
+                <TabsTrigger value="contact" className="min-w-0 gap-1.5 px-2 text-[13px]">
+                  <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  <span className="truncate">Contact</span>
                 </TabsTrigger>
-                <TabsTrigger value="security" className="gap-2">
-                  <Shield className="h-3.5 w-3.5" />
-                  Security
+                <TabsTrigger value="security" className="min-w-0 gap-1.5 px-2 text-[13px]">
+                  <Shield className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  <span className="truncate">Security</span>
                 </TabsTrigger>
               </TabsList>
 
