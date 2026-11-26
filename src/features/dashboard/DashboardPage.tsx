@@ -312,12 +312,12 @@ export function DashboardPage() {
           <p className="mt-1 text-[13px] leading-5 text-primary-foreground/90">
             Here’s an overview of your loan applications.
           </p>
-          <div className="mt-5 flex flex-wrap gap-2.5 max-sm:[&_button]:flex-1">
-            <ApplyLoanMenu appearance="inverse" compact={false} className="max-sm:flex-1" />
+          <div className="mt-5 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
+            <ApplyLoanMenu appearance="inverse" compact={false} className="w-full sm:w-auto" />
             <button
               type="button"
               onClick={() => setUploadOpen(true)}
-              className="inline-flex h-9 items-center justify-center gap-2 rounded-[7px] border border-primary-foreground/55 bg-transparent px-3 text-[13px] font-semibold text-primary-foreground transition-colors duration-150 hover:bg-primary-foreground/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground max-sm:flex-1"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-[7px] border border-primary-foreground/55 bg-transparent px-3 text-[13px] font-semibold text-primary-foreground transition-colors duration-150 hover:bg-primary-foreground/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground w-full sm:w-auto"
             >
               <Upload className="h-4 w-4" aria-hidden />
               Upload document

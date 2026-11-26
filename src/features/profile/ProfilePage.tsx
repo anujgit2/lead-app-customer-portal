@@ -13,12 +13,12 @@ import {
   Mail,
   CheckCircle2,
   Loader2,
-  AlertCircle,
   CalendarDays,
 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent } from "@/components/ui/card";
-import { PageHeader, PageShell } from "@/components/PageShell";
+import { PageShell } from "@/components/PageShell";
+import { Notice } from "@/components/portal/Notice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,10 +26,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
-import { formatDate, getInitials } from "@/lib/utils";
+import { parseApiError } from "@/lib/api-error";
+import { cn, formatDate, getInitials } from "@/lib/utils";
 import { toast } from "sonner";
 import type { User as UserType } from "@/types";
 
@@ -93,14 +93,14 @@ function PersonalTab({ profile }: { profile: UserType | null }) {
           <Label htmlFor="firstName">First Name</Label>
           <Input id="firstName" error={!!errors.firstName} {...register("firstName")} />
           {errors.firstName && (
-            <p className="text-xs text-destructive">{errors.firstName.message}</p>
+            <p className="text-xs text-danger-strong">{errors.firstName.message}</p>
           )}
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="lastName">Last Name</Label>
           <Input id="lastName" error={!!errors.lastName} {...register("lastName")} />
           {errors.lastName && (
-            <p className="text-xs text-destructive">{errors.lastName.message}</p>
+            <p className="text-xs text-danger-strong">{errors.lastName.message}</p>
           )}
         </div>
       </div>
@@ -116,8 +116,7 @@ function PersonalTab({ profile }: { profile: UserType | null }) {
             className="bg-muted/50 pr-28"
           />
           {profile?.emailVerified && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-success-strong">
-              <CheckCircle2 className="h-3.5 w-3.5" />
+            <span className="pill ok absolute right-2 top-1/2 -translate-y-1/2">
               Verified
             </span>
           )}
@@ -126,7 +125,7 @@ function PersonalTab({ profile }: { profile: UserType | null }) {
       </div>
 
       <div className="flex justify-end pt-2">
-        <Button type="submit" loading={isSubmitting} className="gap-2">
+        <Button type="submit" loading={isSubmitting} className="w-full gap-2 sm:w-auto">
           <Save className="h-4 w-4" />
           Save Changes
         </Button>
@@ -178,19 +177,18 @@ function ContactTab({ profile }: { profile: UserType | null }) {
             {...register("phone")}
           />
           {profile?.phoneVerified && (
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-success-strong">
-              <CheckCircle2 className="h-3.5 w-3.5" />
+            <span className="pill ok absolute right-2 top-1/2 -translate-y-1/2">
               Verified
             </span>
           )}
         </div>
         {errors.phone && (
-          <p className="text-xs text-destructive">{errors.phone.message}</p>
+          <p className="text-xs text-danger-strong">{errors.phone.message}</p>
         )}
       </div>
 
       <div className="flex justify-end pt-2">
-        <Button type="submit" loading={isSubmitting} className="gap-2">
+        <Button type="submit" loading={isSubmitting} className="w-full gap-2 sm:w-auto">
           <Save className="h-4 w-4" />
           Save Changes
         </Button>
@@ -228,7 +226,7 @@ function SecurityTab({ profile }: { profile: UserType | null }) {
       {/* Reset Password */}
       <div className="space-y-4">
         <div>
-          <h4 className="text-sm font-medium">Password Reset</h4>
+          <h4 className="text-[15px] font-semibold">Password Reset</h4>
           <p className="text-xs text-muted-foreground mt-0.5">
             We&apos;ll send a password reset OTP to your email address.
           </p>
@@ -268,7 +266,7 @@ function SecurityTab({ profile }: { profile: UserType | null }) {
 
       {/* Security Preferences */}
       <div className="space-y-4">
-        <h4 className="text-sm font-medium">Security Preferences</h4>
+        <h4 className="text-[15px] font-semibold">Security Preferences</h4>
         <div className="space-y-3">
           {[
             { label: "Two-factor authentication", desc: "Add an extra layer of security", defaultChecked: false },
@@ -292,20 +290,7 @@ function SecurityTab({ profile }: { profile: UserType | null }) {
 // ─── Details Overview ─────────────────────────────────────────────────────────
 
 function VerificationPill({ verified }: { verified?: boolean }) {
-  if (verified) {
-    return (
-      <span className="inline-flex items-center gap-1 text-xs text-success-strong shrink-0">
-        <CheckCircle2 className="h-3.5 w-3.5" />
-        Verified
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 text-xs text-warning-strong shrink-0">
-      <AlertCircle className="h-3.5 w-3.5" />
-      Unverified
-    </span>
-  );
+  return <span className={cn("pill shrink-0", verified ? "ok" : "warn")}>{verified ? "Verified" : "Unverified"}</span>;
 }
 
 function DetailRow({
@@ -326,7 +311,7 @@ function DetailRow({
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="text-sm font-medium truncate mt-0.5">{value}</p>
+        <p className="mt-0.5 break-all text-[13px] font-medium">{value}</p>
       </div>
       {trailing}
     </div>
@@ -351,22 +336,22 @@ function ProfileOverview({ profile }: { profile: UserType | null }) {
 
   return (
     <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center gap-4">
-          <Avatar className="h-14 w-14">
-            <AvatarFallback className="text-base bg-primary text-primary-foreground">
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar className="h-12 w-12 shrink-0">
+            <AvatarFallback className="bg-primary text-sm text-primary-foreground">
               {getInitials(profile.firstName, profile.lastName)}
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold tracking-tight truncate">
+            <h2 className="truncate text-[15px] font-semibold leading-[22px] tracking-tight">
               {fullName || "—"}
             </h2>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
               {profile.status && (
-                <Badge variant={profile.status === "ACTIVE" ? "success" : "secondary"}>
+                <span className={cn("pill", profile.status === "ACTIVE" ? "ok" : "neu")}>
                   {profile.status}
-                </Badge>
+                </span>
               )}
               <span className="text-xs text-muted-foreground">
                 Member since {memberSince}
@@ -411,7 +396,7 @@ function ProfileOverview({ profile }: { profile: UserType | null }) {
 export function ProfilePage() {
   const { user: storeUser, setUser } = useAuthStore();
 
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["profile"],
     queryFn: () => authService.getProfile(),
     staleTime: 5 * 60 * 1000,
@@ -422,24 +407,54 @@ export function ProfilePage() {
   }, [profile, setUser]);
 
   const displayUser = profile ?? storeUser;
+  const loadingFirst = isLoading && !displayUser;
 
   return (
-    <PageShell width="narrow" className="gap-6">
-      <PageHeader
-        title="Your Profile"
-        description="Manage your personal information and account settings"
-      />
+    <PageShell width="narrow" className="gap-5">
+      <div className="head">
+        <div>
+          <h1>Your Profile</h1>
+          <p>Manage your personal information and account settings</p>
+        </div>
+      </div>
 
-      {isLoading && !displayUser ? null : <ProfileOverview profile={displayUser} />}
+      {isError && !displayUser ? (
+        <Notice tone="bad" title="We couldn’t load your profile." testId="profile-load-error">
+          <button
+            type="button"
+            onClick={() => {
+              void refetch();
+            }}
+            className="font-semibold underline underline-offset-[3px] hover:no-underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            Try again
+          </button>
+          {error ? <span className="block">{parseApiError(error).message}</span> : null}
+        </Notice>
+      ) : null}
+
+      {loadingFirst ? (
+        <Card aria-busy="true">
+          <CardContent className="flex items-center gap-3 p-4 sm:p-5">
+            <span className="h-12 w-12 shrink-0 animate-pulse rounded-full bg-muted" />
+            <span className="min-w-0 flex-1 space-y-2">
+              <span className="block h-3.5 w-2/3 animate-pulse rounded bg-muted" />
+              <span className="block h-3 w-1/3 animate-pulse rounded bg-muted" />
+            </span>
+          </CardContent>
+        </Card>
+      ) : (
+        <ProfileOverview profile={displayUser} />
+      )}
 
       <Card>
-        <CardContent className="p-6">
-          {isLoading && !displayUser ? (
-            <div className="flex items-center justify-center py-12 gap-2 text-muted-foreground">
+        <CardContent className="p-4 sm:p-5">
+          {loadingFirst ? (
+            <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin" />
               <span className="text-sm">Loading profile…</span>
             </div>
-          ) : (
+          ) : isError && !displayUser ? null : (
             <Tabs defaultValue="personal">
               <TabsList className="mb-6">
                 <TabsTrigger value="personal" className="gap-2">
