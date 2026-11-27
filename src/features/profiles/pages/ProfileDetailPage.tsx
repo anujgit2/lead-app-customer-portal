@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Download, Pencil } from "lucide-react";
+import { ChevronRight, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ErrorState";
@@ -23,7 +23,6 @@ import {
 import { useProfileRouteId } from "@/features/documents/hooks/usePathSegment";
 import { OverflowTabList, type OverflowTabItem } from "../components/OverflowTabList";
 import { ProfileForm } from "../components/ProfileForm";
-import { ProfileMemoDialog } from "../components/ProfileMemoDialog";
 import { ProfileVersionsTab } from "../components/ProfileVersionsTab";
 import { VersionConflictDialog } from "../components/VersionConflictDialog";
 import { ProfileAvatar } from "../components/ProfileBadges";
@@ -82,7 +81,6 @@ export function ProfileDetailPage() {
   const completeProfile = useCompleteProfile(id);
   const [conflictOpen, setConflictOpen] = useState(false);
   const [reloading, setReloading] = useState(false);
-  const [memoOpen, setMemoOpen] = useState(false);
   const [tab, setTab] = useState("");
   const [formEpoch, setFormEpoch] = useState(0);
   const documentsQuery = useQuery({
@@ -154,7 +152,6 @@ export function ProfileDetailPage() {
   const templates = templateQuery.data ?? [];
   const formTab = templates.some((item) => item.code === tab) ? tab : (templates[0]?.code ?? "");
   const selectedTab = editing ? formTab : tab || "details";
-  const sections = templates.flatMap((item) => item.sections);
   const canEdit = profile.status === "DRAFT";
   const viewData = profileReviewFormData(templates, profile.data);
   const pan = profile.identifiers.pan;
@@ -244,10 +241,6 @@ export function ProfileDetailPage() {
             Last updated by <span className="break-all font-mono text-xs">{updatedBy}</span> on {updated}
           </p>
           <div className="mt-3.5 flex flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" className={onHero} onClick={() => setMemoOpen(true)}>
-              <Download className="h-4 w-4" />
-              Download memo
-            </Button>
             {editing ? (
               <Button
                 type="button"
@@ -373,12 +366,6 @@ export function ProfileDetailPage() {
         onReload={() => {
           void reloadLatest();
         }}
-      />
-      <ProfileMemoDialog
-        open={memoOpen}
-        profile={profile}
-        sections={sections}
-        onOpenChange={setMemoOpen}
       />
     </PageShell>
   );
