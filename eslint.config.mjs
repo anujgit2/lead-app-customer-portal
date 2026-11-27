@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "e2e/**",
     "playwright.config.ts",
+    // Leftover root-owned copies from earlier Docker runs. Not part of the app; linting them is very slow.
+    "**/*.root-owned-old/**",
+    "**/node_modules/**",
   ]),
 ]);
 

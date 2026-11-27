@@ -2,6 +2,7 @@
 
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import type { DraftApplication, FormTemplate, LoanProduct, FormData, WizardStepStatus } from "@/types";
+import { findCompanyName, programTypeLabel } from "@/utils/form-data-lookup";
 import { WizardProgress } from "./WizardProgress";
 import { WizardStep, type WizardStepHandle } from "./WizardStep";
 import { ReviewScreen } from "./ReviewScreen";
@@ -13,7 +14,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRight, AlertCircle, Save } from "lucide-react";
 import { StepperRecordHeader } from "@/features/loan-application/steppers/StepperRecordHeader";
-import { ApplicationIdProvider, PersistDocumentStepProvider, WizardAnswersProvider, WizardContinueProvider } from "@/components/forms/application-context";
+import { ApplicationIdProvider, WizardAnswersProvider, WizardContinueProvider } from "@/components/forms/application-context";
 import { isConsentAccepted } from "@/utils/consent";
 import { PanVerificationProvider } from "./pan-search-context";
 import { buildWizardSchema } from "@/utils/schema-builder";
@@ -202,48 +203,6 @@ export function FormWizard({
     },
     [currentStep, totalSteps, templates, draftId, updateFormData]
   );
-
-  const persistDocumentStep = useCallback(() => {
-    const template = templates[currentStep];
-    
-    if (!template || template.propertyType !== "DocumentProperty") {
-      return;
-    }
-    
-    const stepData = stepDataRef.current[template.code];
-    
-    if (stepData === undefined) {
-      return;
-    }
-
-    void backend
-      .saveDraft(
-        {
-          applicationId: draftId,
-          productCode: product.code,
-          programId,
-          currentStep,
-          formData: stepDataRef.current as FormData,
-          stepStatuses,
-        },
-        [template]
-      )
-      .then(() => {
-        queryClient.invalidateQueries({ queryKey: ["applications"] });
-      })
-      .catch((err: unknown) => {
-        toast.error(parseApiError(err).message);
-      });
-  }, [
-    templates,
-    currentStep,
-    draftId,
-    product.code,
-    programId,
-    stepStatuses,
-    queryClient,
-    backend,
-  ]);
 
   const handleValidChange = useCallback(
     (valid: boolean) => {
@@ -437,21 +396,24 @@ export function FormWizard({
       ? `Draft saved · ${formatSavedTime(savedAt)}`
       : "Draft";
 
+  const companyName = findCompanyName(stepData);
+  const accountId = applicationNumber || draftId;
+
   return (
     <PanVerificationProvider>
     <WizardAnswersProvider value={stepData}>
     <WizardContinueProvider onContinue={handleNext}>
     <ApplicationIdProvider applicationId={draftId}>
-    <PersistDocumentStepProvider onPersist={persistDocumentStep}>
     <div className="mx-auto flex w-full max-w-[880px] flex-col gap-5 px-4 pb-10 pt-6 sm:px-6">
       <section
         aria-label="Application progress"
-        className="relative z-10 overflow-visible rounded-2xl border border-slate-200 bg-white px-6 pb-6 pt-[22px] shadow-[0_5px_18px_rgba(29,58,94,0.055)] max-[600px]:rounded-xl max-[600px]:px-2.5 max-[600px]:pb-4 max-[600px]:pt-4"
+        className="relative z-10 overflow-visible rounded-[10px] border border-border bg-card px-6 pb-6 pt-[22px] shadow-sm max-[600px]:px-2.5 max-[600px]:pb-4 max-[600px]:pt-4"
       >
         <StepperRecordHeader
-          title={product.name}
-          applicationNumber={applicationNumber}
-          applicationId={draftId}
+          title={companyName ?? product.name}
+          subtitle={programTypeLabel(product.programType)}
+          applicationNumber={accountId}
+          applicationId={applicationNumber ? draftId : undefined}
           savedLabel={savedLabel}
           saved={Boolean(savedAt && savingMode === null)}
         />
@@ -466,15 +428,15 @@ export function FormWizard({
 
       <div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h2 className="text-2xl font-semibold leading-8 tracking-tight text-slate-900">
+          <h2 className="text-xl font-semibold leading-7 tracking-tight text-foreground">
             {currentTemplate?.title ?? "Review"}
           </h2>
-          <span className="whitespace-nowrap text-sm font-normal text-slate-500">
+          <span className="whitespace-nowrap text-[13px] font-normal text-muted-foreground">
             Step {currentStep + 1} of {totalSteps + 1}
           </span>
         </div>
         {currentTemplate?.description ? (
-          <p className="mt-0.5 max-w-2xl text-sm leading-5 text-muted-foreground">
+          <p className="mt-0.5 max-w-2xl text-[13px] leading-5 text-muted-foreground">
             {currentTemplate.description}
           </p>
         ) : null}
@@ -580,7 +542,6 @@ export function FormWizard({
         )}
       </div>
     </div>
-    </PersistDocumentStepProvider>
     </ApplicationIdProvider>
     </WizardContinueProvider>
     </WizardAnswersProvider>

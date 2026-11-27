@@ -608,7 +608,7 @@ function mapApplication(app: BackendApplication, loanType?: string): LoanApplica
   };
 }
 
-async function programNameCatalog(): Promise<Map<string, string>> {
+export async function programNameCatalog(): Promise<Map<string, string>> {
   try {
     const programs = await fetchTenantPrograms();
     const catalog = new Map<string, string>();

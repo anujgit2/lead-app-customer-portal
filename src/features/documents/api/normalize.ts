@@ -149,12 +149,13 @@ export function normalizeDocument(raw: unknown): PortalDocument | null {
     typeName: info.typeName || "Document",
     label: pick(raw, ["label", "displayLabel"]),
     category: info.category || "Other",
+    categoryLabel: pick(raw, ["categoryDisplayName"]) || undefined,
     latestVersion: pickNumber(raw, ["latestVersion", "currentVersion", "version"]) ?? 1,
     source: sourceText ? normalizeSource(sourceText) : "UPLOADED",
-    updatedAt: pick(raw, ["updatedAt", "modifiedAt", "createdAt"]),
+    updatedAt: pick(raw, ["latestUploadedAt", "updatedAt", "modifiedAt", "createdAt"]),
     fileName: fileNameFromRecord(raw, info.typeName),
     contentType: pick(raw, ["contentType", "mimeType"]) || undefined,
-    sizeBytes: pickNumber(raw, ["sizeBytes", "size"]),
+    sizeBytes: pickNumber(raw, ["latestSizeBytes", "sizeBytes", "size"]),
     linked: normalizeLinkedProfiles(raw.profiles ?? raw.linked),
   };
 }
@@ -187,12 +188,14 @@ export function normalizeDocumentList(data: unknown): PortalDocument[] {
 export function normalizeDocumentType(raw: unknown): DocumentType | null {
   if (!isRecord(raw)) return null;
   const id = pick(raw, ["id", "code", "typeId"]);
-  const name = pick(raw, ["name", "label", "typeName"]);
+  const name = pick(raw, ["displayName", "name", "label", "typeName"]);
   if (!id || !name) return null;
   return {
     id,
+    code: pick(raw, ["name", "code"]),
     name,
     category: pick(raw, ["category", "categoryName", "categoryCode"]) || "Other",
+    categoryLabel: pick(raw, ["categoryDisplayName"]) || undefined,
     requiresLabel: pickBoolean(raw, ["requiresLabel", "labelRequired"]) ?? false,
     labelHint: pick(raw, ["labelHint", "labelPlaceholder", "labelExample", "example"]) || undefined,
   };

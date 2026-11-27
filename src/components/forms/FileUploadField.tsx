@@ -12,7 +12,7 @@ import {
   toDropzoneAccept,
 } from "@/utils/upload-config";
 import { fileStorageService, isStoredFileReference } from "@/services/file-storage.service";
-import { useApplicationId, usePersistDocumentStep, useSyncFormToWizard } from "@/components/forms/application-context";
+import { useApplicationId, useSyncFormToWizard } from "@/components/forms/application-context";
 import { parseApiError } from "@/lib/api-error";
 import { toast } from "sonner";
 import type { StoredFileReference } from "@/types";
@@ -67,7 +67,6 @@ export function FileUploadField({
   const publishedItemsRef = useRef<Set<string>>(new Set());
   const applicationId = useApplicationId();
   const syncFormToWizard = useSyncFormToWizard();
-  const persistDocumentStep = usePersistDocumentStep();
   const onChangeRef = useRef(onChange);
   const storedItemsRef = useRef(storedItems);
 
@@ -111,13 +110,11 @@ export function FileUploadField({
     ),
   ];
 
+  // Only sync the in-memory form. Drafts are saved when the user clicks Continue or Save draft,
+  // not on every upload or removal.
   const notifyWizard = useCallback(() => {
     syncFormToWizard?.();
-    // Delay persist to ensure form data has been synced to the wizard
-    queueMicrotask(() => {
-      persistDocumentStep?.();
-    });
-  }, [syncFormToWizard, persistDocumentStep]);
+  }, [syncFormToWizard]);
 
   const publish = useCallback((transient: FileItem[]) => {
     const stored = storedItemsRef.current;

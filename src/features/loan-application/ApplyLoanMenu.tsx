@@ -58,7 +58,7 @@ export function ApplyLoanMenu({
           className={cn(
             appearance === "row"
               ? "group flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-left outline-none transition-colors duration-150 hover:bg-muted/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              : "inline-flex h-8 items-center justify-center gap-2 rounded-md px-3 text-[13px] font-medium outline-none transition-[background] duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+              : "inline-flex h-9 items-center justify-center gap-2 rounded-[7px] px-3 text-[13px] font-semibold outline-none transition-[background] duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
             appearance === "solid" &&
               "bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:outline-ring",
             appearance === "inverse" &&

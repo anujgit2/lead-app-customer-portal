@@ -52,6 +52,7 @@ type SortKey = "application" | "program" | "amount" | "updated";
 type SortDir = SortDirection;
 
 export function getApplicationHref(app: LoanApplication): string {
+  if (app.href) return app.href;
   const params = new URLSearchParams({ id: app.id });
   if (app.programId) params.set("programId", app.programId);
   if (app.programCode) params.set("programCode", app.programCode);

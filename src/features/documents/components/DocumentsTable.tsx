@@ -201,7 +201,7 @@ export function DocumentsTable({
             const extraProfiles = Math.max(0, (document.linked?.length ?? 0) - (profile ? 1 : 0));
             const name = profile ? profileName(profile) : "";
             const updated = formatDisplayDate(document.updatedAt);
-            const financial = categoryKey(document.category) === "FINANCIALS";
+            const financial = categoryKey(document.category) === "FINANCIAL";
             const downloading = pendingDownloadId === document.id;
             return (
               <TableRow
@@ -260,7 +260,7 @@ export function DocumentsTable({
                 </TableCell>
                 <TableCell className="hidden min-[901px]:table-cell">
                   <Badge variant={financial ? "brand" : "info"} size="sm">
-                    {categoryLabel(categoryKey(document.category), document.category)}
+                    {categoryLabel(document.category, document.categoryLabel)}
                   </Badge>
                 </TableCell>
                 <TableCell className="hidden min-[901px]:table-cell">

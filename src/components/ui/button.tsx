@@ -5,13 +5,13 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border border-transparent text-sm font-medium leading-none select-none transition-[background,border-color,color,box-shadow] duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-45 [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[7px] border border-transparent text-[13px] font-semibold leading-none select-none transition-[background,border-color,color,box-shadow] duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-45 [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary-hover",
         destructive: "bg-danger text-white hover:bg-danger/90",
-        outline: "border-input bg-card text-foreground hover:bg-muted",
+        outline: "border-border/60 bg-card text-foreground hover:border-foreground/55 hover:bg-muted",
         secondary:
           "bg-primary-soft text-primary-soft-foreground hover:bg-primary-soft/60 hover:shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.25)]",
         ghost: "text-foreground hover:bg-muted",
@@ -19,12 +19,12 @@ const buttonVariants = cva(
       },
       size: {
         xs: "h-6 px-2 text-xs",
-        sm: "h-7 px-2.5 text-xs",
-        default: "h-[34px] px-3",
+        sm: "h-9 px-3",
+        default: "h-9 px-3",
         md: "h-10 px-4",
         lg: "h-10 px-4 text-sm",
         xl: "h-14 px-8 text-base",
-        icon: "h-[34px] w-[34px] p-0",
+        icon: "h-9 w-9 p-0",
         "icon-sm": "h-7 w-7 p-0",
       },
     },

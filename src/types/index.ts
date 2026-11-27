@@ -145,6 +145,8 @@ export interface LoanApplication {
   memoFileId?: string;
   memoStatus?: ApplicationMemoStatus;
   memoGeneratedAt?: string;
+  /** Set for rows that are leads rather than applications: where the row opens. */
+  href?: string;
 }
 
 export type ApplicationMemoStatus = "PENDING" | "GENERATED" | "FAILED";
@@ -427,6 +429,8 @@ export interface LoanProduct {
   id: string;
   code: string;
   name: string;
+  /** Program type code from the configuration, e.g. BUSINESS_LOAN. */
+  programType?: string;
   description: string;
   /** Resolved from `ui.stepper`. Defaults to `minimal` (Minimal line). */
   stepper?: StepperVariant;

@@ -38,6 +38,7 @@
   ],
   "exclude": [
     "node_modules",
+    "**/*.root-owned-old",
     "e2e"
   ]
 }

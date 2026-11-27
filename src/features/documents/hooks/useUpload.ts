@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import { parseApiError } from "@/lib/api-error";
-import { uploadDocument } from "../api/documentsApi";
+import { uploadDocument, uploadDocumentVersion } from "../api/documentsApi";
 import type { UploadSubmission } from "../types";
 import {
   messageForUploadStatus,
@@ -33,10 +33,13 @@ export function useUpload() {
       if (problem) throw new UploadRejected(problem);
       const formData = new FormData();
       formData.append("file", input.file);
-      formData.append("typeId", input.typeId);
-      if (input.label.trim()) formData.append("label", input.label.trim());
-      if (input.documentId && !input.asNewDocument) formData.append("documentId", input.documentId);
-      if (input.asNewDocument) formData.append("asNewDocument", "true");
+      if (input.documentId) {
+        // Replacing a file is an explicit new version of that document.
+        setProgress(0);
+        return uploadDocumentVersion(input.documentId, formData, idemKey.current, setProgress);
+      }
+      formData.append("category", input.category);
+      formData.append("subcategory", input.subcategory);
       if (input.profileId) formData.append("profileId", input.profileId);
       if (input.relation) formData.append("relation", input.relation);
       setProgress(0);
@@ -45,7 +48,7 @@ export function useUpload() {
     onSuccess: async (_result, input) => {
       await queryClient.invalidateQueries({ queryKey: ["documents"] });
       await queryClient.invalidateQueries({ queryKey: ["document-preview"] });
-      if (input.documentId && !input.asNewDocument) {
+      if (input.documentId) {
         await queryClient.invalidateQueries({ queryKey: ["document", input.documentId] });
       }
     },

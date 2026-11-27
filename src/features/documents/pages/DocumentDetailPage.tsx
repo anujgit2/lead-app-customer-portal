@@ -15,7 +15,7 @@ import { useDocumentRouteId } from "../hooks/usePathSegment";
 import { useFileDownload } from "../hooks/useFileDownload";
 import type { DocumentDetail, DocumentSource, DocumentVersion } from "../types";
 import { downloadDocumentFile } from "../api/documentsApi";
-import { categoryLabel, categoryKey, formatDisplayDate, previewKind } from "../utils/format";
+import { categoryLabel, formatDisplayDateTime, previewKind } from "../utils/format";
 import { useObjectUrl } from "../hooks/useObjectUrl";
 import { ShareDialog } from "../components/ShareDialog";
 import { SharingTab } from "../components/SharingTab";
@@ -216,7 +216,7 @@ export function DocumentDetailPage() {
   const contentType = latest?.contentType || document.contentType;
   const updatedAt = latest?.createdAt || document.updatedAt;
   const downloadKey = latest ? `${document.id}:${latest.version}` : null;
-  const category = categoryLabel(categoryKey(document.category), document.category);
+  const category = categoryLabel(document.category, document.categoryLabel);
 
   const shownPreview =
     previewTarget ??
@@ -238,6 +238,8 @@ export function DocumentDetailPage() {
         >
           Documents
         </Link>
+        <ChevronRight className="h-3.5 w-3.5 opacity-60" aria-hidden />
+        <span>{category}</span>
         <ChevronRight className="h-3.5 w-3.5 opacity-60" aria-hidden />
         <span className="font-medium text-foreground" aria-current="page">
           {document.typeName}
@@ -269,7 +271,7 @@ export function DocumentDetailPage() {
                 {" · "}
               </>
             ) : null}
-            Updated <span className="num">{formatDisplayDate(updatedAt)}</span>
+            Updated <span className="num">{formatDisplayDateTime(updatedAt)}</span>
             {latest ? <> · Version {latest.version} is the latest.</> : null}
           </p>
           <div className="mt-6 flex flex-wrap gap-2.5 max-sm:[&>button]:min-w-0 max-sm:[&>button]:flex-1">
@@ -330,7 +332,7 @@ export function DocumentDetailPage() {
             </div>
             <div className="min-w-0">
               <span>Updated</span>
-              <b className="num mt-0.5 block text-sm font-semibold text-foreground">{formatDisplayDate(updatedAt)}</b>
+              <b className="num mt-0.5 block text-sm font-semibold text-foreground">{formatDisplayDateTime(updatedAt)}</b>
             </div>
           </div>
         </div>

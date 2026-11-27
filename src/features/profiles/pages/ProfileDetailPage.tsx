@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Download, Pencil } from "lucide-react";
+import { ChevronRight, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ErrorState } from "@/components/ErrorState";
@@ -23,7 +23,6 @@ import {
 import { useProfileRouteId } from "@/features/documents/hooks/usePathSegment";
 import { OverflowTabList, type OverflowTabItem } from "../components/OverflowTabList";
 import { ProfileForm } from "../components/ProfileForm";
-import { ProfileMemoDialog } from "../components/ProfileMemoDialog";
 import { ProfileVersionsTab } from "../components/ProfileVersionsTab";
 import { VersionConflictDialog } from "../components/VersionConflictDialog";
 import { ProfileAvatar } from "../components/ProfileBadges";
@@ -38,7 +37,7 @@ export function ProfileDetailSkeleton() {
       <div className="flex flex-col gap-6" aria-busy="true">
         <p className="sr-only">Loading profile</p>
         <div className="h-5 w-40 animate-pulse rounded-md bg-muted" />
-        <div className="h-44 animate-pulse rounded-2xl bg-muted" />
+        <div className="h-44 animate-pulse rounded-lg bg-muted" />
         <div className="h-10 animate-pulse rounded-md bg-muted" />
         <div className="h-64 animate-pulse rounded-lg bg-muted" />
       </div>
@@ -82,7 +81,6 @@ export function ProfileDetailPage() {
   const completeProfile = useCompleteProfile(id);
   const [conflictOpen, setConflictOpen] = useState(false);
   const [reloading, setReloading] = useState(false);
-  const [memoOpen, setMemoOpen] = useState(false);
   const [tab, setTab] = useState("");
   const [formEpoch, setFormEpoch] = useState(0);
   const documentsQuery = useQuery({
@@ -154,7 +152,6 @@ export function ProfileDetailPage() {
   const templates = templateQuery.data ?? [];
   const formTab = templates.some((item) => item.code === tab) ? tab : (templates[0]?.code ?? "");
   const selectedTab = editing ? formTab : tab || "details";
-  const sections = templates.flatMap((item) => item.sections);
   const canEdit = profile.status === "DRAFT";
   const viewData = profileReviewFormData(templates, profile.data);
   const pan = profile.identifiers.pan;
@@ -209,25 +206,25 @@ export function ProfileDetailPage() {
 
   return (
     <PageShell width="detail" className={editing ? "gap-6 pb-28 sm:pb-28" : "gap-6 pb-20 sm:pb-20"}>
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-muted-foreground">
-        <Link href="/profiles" className="rounded-sm hover:text-foreground hover:underline">
+      <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-sm text-muted-foreground">
+        <Link href="/profiles" className="shrink-0 rounded-sm hover:text-foreground hover:underline">
           Profiles
         </Link>
-        <ChevronRight className="h-3.5 w-3.5 opacity-60" aria-hidden />
-        <span aria-current="page" className="font-medium text-foreground">
+        <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden />
+        <span aria-current="page" className="min-w-0 truncate font-medium text-foreground">
           {name}
         </span>
       </nav>
 
       <section
         aria-labelledby="profile-name"
-        className="relative grid items-center gap-5 overflow-hidden rounded-2xl bg-primary p-4 text-primary-foreground sm:p-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]"
+        className="relative grid items-center gap-4 overflow-hidden rounded-lg bg-primary p-4 text-primary-foreground sm:p-6 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)]"
       >
         <span
           aria-hidden
           className="pointer-events-none absolute -bottom-[90px] -right-[60px] h-[200px] w-[200px] rounded-full border-[32px] border-primary-foreground/[0.07]"
         />
-        <div className="relative z-[1]">
+        <div className="relative z-[1] min-w-0">
           <div className="mb-2.5 flex flex-wrap gap-1.5">
             <span className="inline-flex h-[22px] items-center rounded-full bg-primary-foreground/15 px-2 text-xs font-semibold">
               {profileTypeLabel(profile.type)}
@@ -237,17 +234,13 @@ export function ProfileDetailPage() {
               {profileStatusLabel(profile.status)}
             </span>
           </div>
-          <h1 id="profile-name" className="text-[22px] font-semibold leading-7 tracking-[-0.02em] sm:text-[26px] sm:leading-8">
+          <h1 id="profile-name" className="break-words text-xl font-semibold leading-7 tracking-[-0.02em]">
             {name}
           </h1>
-          <p className="mt-1 text-sm leading-5 text-primary-foreground/90">
-            Last updated by <span className="font-mono text-xs">{updatedBy}</span> on {updated}
+          <p className="mt-1 break-words text-[13px] leading-5 text-primary-foreground/90">
+            Last updated by <span className="break-all font-mono text-xs">{updatedBy}</span> on {updated}
           </p>
           <div className="mt-3.5 flex flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" className={onHero} onClick={() => setMemoOpen(true)}>
-              <Download className="h-4 w-4" />
-              Download memo
-            </Button>
             {editing ? (
               <Button
                 type="button"
@@ -272,7 +265,7 @@ export function ProfileDetailPage() {
             ) : null}
           </div>
         </div>
-        <div className="relative z-[1] flex flex-col gap-3 rounded-lg bg-card p-4 text-foreground shadow-[var(--shadow-3)]">
+        <div className="relative z-[1] flex min-w-0 flex-col gap-3 rounded-lg bg-card p-4 text-foreground shadow-sm">
           <div className="flex min-w-0 items-center gap-3">
             <ProfileAvatar name={name} size="lg" className="shrink-0" />
             <div className="min-w-0">
@@ -280,7 +273,7 @@ export function ProfileDetailPage() {
               <p className="truncate font-mono text-sm font-semibold tracking-wide">{identifierValue}</p>
             </div>
           </div>
-          <div className="flex justify-between gap-5 border-t border-border pt-3 text-[13px] text-muted-foreground">
+          <div className="grid grid-cols-3 gap-3 border-t border-border pt-3 text-[13px] text-muted-foreground">
             <div className="min-w-0">
               <span>Version</span>
               <b className="mt-0.5 block text-sm font-semibold tabular-nums text-foreground">
@@ -373,12 +366,6 @@ export function ProfileDetailPage() {
         onReload={() => {
           void reloadLatest();
         }}
-      />
-      <ProfileMemoDialog
-        open={memoOpen}
-        profile={profile}
-        sections={sections}
-        onOpenChange={setMemoOpen}
       />
     </PageShell>
   );

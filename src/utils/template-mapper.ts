@@ -567,6 +567,7 @@ export function mapNewTemplateToOld(program: NewLoanProduct): LoanProduct {
     id: productId,
     code: program.programCode || productId,
     name: program.name || program.ui?.title || "Loan Product",
+    programType: program.programType,
     description: program.ui?.subtitle || program.name || "Loan Product",
     stepper: readStepperConfig(program),
     templates,

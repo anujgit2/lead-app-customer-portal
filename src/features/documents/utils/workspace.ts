@@ -1,46 +1,46 @@
 import type { PortalDocument } from "../types";
-import { categoryKey } from "./format";
+import { categoryKey, categoryLabel } from "./format";
 
-/**
- * Category tiles from the Document Workspace design. `categories` lists the backend category keys
- * (see categoryKey) that feed each tile. A tile with no backend category shows zero documents until
- * the backend provides one.
- */
+/** One tile per backend category. */
 export interface WorkspaceTile {
   id: string;
   label: string;
-  categories: string[];
 }
 
-export const WORKSPACE_TILES: WorkspaceTile[] = [
-  { id: "personal", label: "Personal & Identity", categories: ["IDENTITY"] },
-  { id: "business", label: "Business & Ownership", categories: [] },
-  { id: "financial", label: "Financial & Tax", categories: ["FINANCIALS", "TAXATION"] },
-  { id: "loan", label: "Loan & Collateral", categories: [] },
-  { id: "legal", label: "Legal & Compliance", categories: ["LEGAL"] },
-  { id: "other", label: "Other", categories: ["OTHER"] },
-];
+/** Tiles come from the document types, with any category seen only on documents added at the end. */
+export function buildWorkspaceTiles(
+  types: { category: string; categoryLabel?: string }[],
+  documents: PortalDocument[]
+): WorkspaceTile[] {
+  const tiles = new Map<string, string>();
+  const add = (category: string, label?: string) => {
+    const id = categoryKey(category);
+    if (id && !tiles.has(id)) tiles.set(id, categoryLabel(category, label));
+  };
+  for (const type of types) add(type.category, type.categoryLabel);
+  for (const document of documents) add(document.category, document.categoryLabel);
+  return [...tiles].map(([id, label]) => ({ id, label }));
+}
 
 /** Shown until the backend reports a review status for documents. */
 export const STATUS_NOT_REPORTED = "Not reported";
 
 export function tileIdFor(document: PortalDocument): string {
-  const key = categoryKey(document.category);
-  const tile = WORKSPACE_TILES.find((item) => item.categories.includes(key));
-  return tile ? tile.id : "other";
+  return categoryKey(document.category);
 }
 
-export function countByTile(documents: PortalDocument[]): Record<string, number> {
-  const counts: Record<string, number> = Object.fromEntries(WORKSPACE_TILES.map((tile) => [tile.id, 0]));
+export function countByTile(documents: PortalDocument[], tiles: WorkspaceTile[]): Record<string, number> {
+  const counts: Record<string, number> = Object.fromEntries(tiles.map((tile) => [tile.id, 0]));
   for (const document of documents) {
-    counts[tileIdFor(document)] += 1;
+    const id = tileIdFor(document);
+    if (id in counts) counts[id] += 1;
   }
   return counts;
 }
 
-export function firstTileWithDocuments(documents: PortalDocument[]): string {
-  const counts = countByTile(documents);
-  return WORKSPACE_TILES.find((tile) => counts[tile.id] > 0)?.id ?? WORKSPACE_TILES[0].id;
+export function firstTileWithDocuments(documents: PortalDocument[], tiles: WorkspaceTile[]): string {
+  const counts = countByTile(documents, tiles);
+  return tiles.find((tile) => counts[tile.id] > 0)?.id ?? tiles[0]?.id ?? "";
 }
 
 export type FileKind = "pdf" | "image" | "sheet" | "word" | "file";
@@ -84,4 +84,37 @@ export function documentTypeOptions(documents: PortalDocument[]): { id: string; 
   return [...seen.entries()]
     .map(([id, name]) => ({ id, name }))
     .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+export interface CategorySummary {
+  totalFiles: number;
+  totalBytes: number;
+  /** Latest updatedAt across the category, or null when the category is empty. */
+  lastUploadedAt: string | null;
+  lastUploadedFileName: string | null;
+  /** Document types in this category, most files first. */
+  types: { id: string; name: string; count: number; bytes: number }[];
+}
+
+/** Totals, last upload and per-type counts for the documents of one category. */
+export function summarizeCategory(documents: PortalDocument[]): CategorySummary {
+  const types = new Map<string, { id: string; name: string; count: number; bytes: number }>();
+  let totalBytes = 0;
+  let latest: PortalDocument | null = null;
+  for (const document of documents) {
+    const bytes = document.sizeBytes ?? 0;
+    totalBytes += bytes;
+    const entry = types.get(document.typeId) ?? { id: document.typeId, name: document.typeName, count: 0, bytes: 0 };
+    entry.count += 1;
+    entry.bytes += bytes;
+    types.set(document.typeId, entry);
+    if (!latest || updatedTime(document.updatedAt) > updatedTime(latest.updatedAt)) latest = document;
+  }
+  return {
+    totalFiles: documents.length,
+    totalBytes,
+    lastUploadedAt: latest?.updatedAt ?? null,
+    lastUploadedFileName: latest ? displayName(latest) : null,
+    types: [...types.values()].sort((left, right) => right.count - left.count || left.name.localeCompare(right.name)),
+  };
 }

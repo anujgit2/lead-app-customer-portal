@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 
 interface StepperRecordHeaderProps {
   title: string;
+  /** Shown under the title, e.g. the program type. */
+  subtitle?: string;
   applicationNumber?: string;
   applicationId?: string;
   savedLabel?: string;
@@ -65,11 +67,13 @@ function CopyButton({ value, label }: { value: string; label: string }) {
 
 function MetaChip({
   title,
+  label,
   value,
   copyLabel,
   icon,
 }: {
   title: string;
+  label: string;
   value: string;
   copyLabel: string;
   icon: "id" | "record";
@@ -80,8 +84,9 @@ function MetaChip({
       title={title}
       className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs leading-tight text-slate-600 max-[900px]:px-1.5 max-[900px]:py-1 max-[900px]:text-[11px]"
     >
-      <Icon className="h-3.5 w-3.5 shrink-0 text-slate-400" strokeWidth={1.8} aria-hidden />
-      <strong className="break-all font-medium text-slate-600">{value}</strong>
+      <Icon className="h-3.5 w-3.5 shrink-0 text-slate-500" strokeWidth={1.8} aria-hidden />
+      <span className="shrink-0 font-semibold text-slate-700">{label}</span>
+      <strong className="break-all font-mono font-medium text-slate-800">{value}</strong>
       <CopyButton value={value} label={copyLabel} />
     </span>
   );
@@ -90,6 +95,7 @@ function MetaChip({
 /** Stepper card header: current step, application number, and record id. */
 export function StepperRecordHeader({
   title,
+  subtitle,
   applicationNumber,
   applicationId,
   savedLabel,
@@ -103,16 +109,20 @@ export function StepperRecordHeader({
       <span className="grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full bg-primary-soft text-primary max-[600px]:h-8 max-[600px]:w-8">
         <FileText className="h-5 w-5 max-[600px]:h-4 max-[600px]:w-4" strokeWidth={1.8} aria-hidden />
       </span>
-      <h1 className="text-[15px] font-bold tracking-tight text-foreground max-[600px]:text-[13px]">
-        {title}
-      </h1>
+      <div className="min-w-0">
+        <h1 className="text-[15px] font-bold tracking-tight text-foreground max-[600px]:text-[13px]">
+          {title}
+        </h1>
+        {subtitle ? <p className="text-xs text-muted-foreground">{subtitle}</p> : null}
+      </div>
       {number || recordId ? (
         <span className="mx-0.5 h-[22px] w-px shrink-0 bg-slate-300 max-[600px]:hidden" aria-hidden />
       ) : null}
-      <div className="flex min-w-0 flex-wrap items-center gap-1.5 max-[900px]:gap-1 max-[600px]:hidden">
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5 max-[900px]:gap-1">
         {number ? (
           <MetaChip
             title="Application readable ID"
+            label="Account ID"
             value={number}
             copyLabel="Copy application ID"
             icon="id"
@@ -121,6 +131,7 @@ export function StepperRecordHeader({
         {recordId ? (
           <MetaChip
             title="Database unique ID"
+            label="Record ID"
             value={recordId}
             copyLabel="Copy database unique ID"
             icon="record"
