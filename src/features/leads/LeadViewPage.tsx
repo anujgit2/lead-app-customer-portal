@@ -10,6 +10,8 @@ import { parseApiError } from "@/lib/api-error";
 import { propertiesToFormData } from "@/services/application.service";
 import { leadService, leadWizardBackend } from "@/services/lead.service";
 import { normalizeTemplateAuto } from "@/utils/template-mapper";
+import { RequestedDocumentsChecklist } from "@/features/leads/RequestedDocumentsChecklist";
+import { agentEditedForms } from "@/utils/lead-provenance";
 import type { FormData, LoanProduct } from "@/types";
 
 export function LeadViewPage() {
@@ -91,6 +93,7 @@ export function LeadViewPage() {
   if (!wizardBackend) return null;
 
   const latestRequest = lead.data.requests.at(-1);
+  const agentEdited = agentEditedForms(lead.data.properties, product.templates);
 
   return (
     <>
@@ -99,6 +102,17 @@ export function LeadViewPage() {
           Your partner asked for more information: {latestRequest.reason}
         </p>
       )}
+      {agentEdited.length > 0 && (
+        <p role="status" className="mx-auto mt-4 max-w-3xl rounded border p-3 text-sm">
+          Your partner filled in or changed: <strong>{agentEdited.join(", ")}</strong>. Check these before you submit.
+        </p>
+      )}
+      <RequestedDocumentsChecklist
+        leadId={leadId}
+        rows={lead.data.requestedDocuments ?? []}
+        properties={lead.data.properties}
+        onChanged={() => void lead.refetch()}
+      />
     <FormWizard
       product={product}
       draftId={leadId}
