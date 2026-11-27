@@ -117,6 +117,11 @@ export interface ApplicationProperty {
   name: string;
   access?: Record<string, unknown>;
   value: unknown;
+  /** Set by the server, never sent by the portal. Who last changed this form, and everyone who has changed it. */
+  meta?: {
+    filledBy?: string[];
+    lastEditedBy?: { actorType: string; name?: string | null; at?: string | null };
+  };
 }
 
 export interface LoanApplication {

@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/axios";
+import { fileStorageService } from "@/services/file-storage.service";
 import { formDataToApplicationProperties } from "@/services/application.service";
 import type { WizardBackend } from "@/features/loan-application/FormWizard";
 import type { ApplicationProperty, DraftApplication, FormTemplate } from "@/types";
@@ -21,6 +22,17 @@ export interface LeadInfoRequest {
   createdAt: string;
 }
 
+/** A document the partner asked for after submission. REQUESTED means the customer still needs to upload it. */
+export interface RequestedDocument {
+  id: string;
+  documentCode: string;
+  label: string;
+  status: "REQUESTED" | "UPLOADED" | "ACCEPTED";
+  /** Why the partner refused the last upload, when it was refused. */
+  rejectReason: string | null;
+  roundNo: number;
+}
+
 export interface LeadDetail {
   id: string;
   status: string;
@@ -32,6 +44,7 @@ export interface LeadDetail {
   configuration: Record<string, unknown>;
   properties: ApplicationProperty[];
   requests: LeadInfoRequest[];
+  requestedDocuments: RequestedDocument[];
   /** When the customer submitted the current round. Null while it is still a draft. */
   submittedAt?: string | null;
   /** When the current round was last changed. */
@@ -60,6 +73,28 @@ export const leadService = {
 
   async saveProperties(leadId: string, properties: ApplicationProperty[]): Promise<void> {
     await apiClient.put(`/api/customer/leads/${encodeURIComponent(leadId)}/properties`, properties);
+  },
+
+  /**
+   * Uploads a file the partner asked for and attaches it to the lead's documents. The current documents are
+   * kept, and the new file is added with the requested document's code as its type.
+   */
+  async attachRequestedDocument(
+    leadId: string,
+    documentCode: string,
+    file: File,
+    currentProperties: ApplicationProperty[],
+  ): Promise<void> {
+    const stored = await fileStorageService.upload(file, { applicationId: leadId });
+    const existing = currentProperties.find((property) => property.name === "documents");
+    const documents = Array.isArray(existing?.value) ? existing.value : [];
+    await leadService.saveProperties(leadId, [
+      {
+        type: "DocumentProperty",
+        name: "documents",
+        value: [...documents, { ...stored, type: documentCode, uploadedAt: new Date().toISOString() }],
+      },
+    ]);
   },
 
   async submit(leadId: string): Promise<void> {
